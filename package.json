@@ -1,0 +1,23 @@
+{
+  "name": "custom-robo-v2-arena",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "AAA-quality Custom Robo style arena battle action game built with Three.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173",
+    "test": "node tools/simtest.mjs",
+    "shot": "node tools/screenshot.mjs"
+  },
+  "dependencies": {
+    "peerjs": "^1.5.5",
+    "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0",
+    "terser": "^5.36.0",
+    "vite": "^8.2.1"
+  }
+}
