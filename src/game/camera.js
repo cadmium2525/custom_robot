@@ -19,6 +19,7 @@ const _b = new THREE.Vector3();
 const _mid = new THREE.Vector3();
 const _desired = new THREE.Vector3();
 const _look = new THREE.Vector3();
+const _fit = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 
 export class DuelCamera {
@@ -48,6 +49,8 @@ export class DuelCamera {
     this.introT = 0;
     this.mode = 'intro';
     this.timeScale = 1;
+    /** Closed-loop boom multiplier from the on-screen framing check. */
+    this.fitBoost = 1;
 
     this._prevLocalPos = new THREE.Vector3();
     this._speedBlur = 0;
@@ -56,6 +59,7 @@ export class DuelCamera {
   reset(world, localIndex) {
     this.introT = 0;
     this.mode = 'intro';
+    this.fitBoost = 1;
     const r = world.robos[localIndex];
     const o = world.robos[1 - localIndex];
     this.yaw = Math.atan2(r.pos.x - o.pos.x, r.pos.z - o.pos.z);
@@ -116,8 +120,9 @@ export class DuelCamera {
 
     // Elevation comes from `height`; `pitch` is only the player's tilt nudge, so
     // the two don't compound into a top-down view.
-    const rawX = _mid.x + Math.sin(yaw) * this.distance;
-    const rawZ = _mid.z + Math.cos(yaw) * this.distance;
+    const boom = this.distance * this.fitBoost;
+    const rawX = _mid.x + Math.sin(yaw) * boom;
+    const rawZ = _mid.z + Math.cos(yaw) * boom;
 
     // Keep the camera inside the arena shell.
     const bd = this.arena.bounds;
@@ -132,7 +137,7 @@ export class DuelCamera {
 
     _desired.set(
       cx,
-      _mid.y + this.height + this.pitch * this.distance + lost * 0.95,
+      _mid.y + this.height + this.pitch * boom + lost * 0.95,
       cz
     );
     _desired.y = clamp(_desired.y, 1.4, bd.ceil - 0.8);
@@ -170,6 +175,26 @@ export class DuelCamera {
       cam.updateProjectionMatrix();
     }
     cam.updateMatrixWorld();
+
+    // ---- closed-loop framing check -------------------------------------
+    // Everything above is a good estimate, but estimates lose fighters:
+    // clamped positions, a lagging yaw and a changing FOV all conspire. So
+    // measure where the two robos actually land on screen and feed the error
+    // back into the boom length. Being measured rather than predicted is what
+    // makes this hold up when someone dashes into a corner.
+    if (this.mode === 'duel') {
+      let worst = 0;
+      for (let i = 0; i < 2; i++) {
+        _fit.set(interp[i].pos.x, interp[i].pos.y + 0.9, interp[i].pos.z).project(cam);
+        // Behind the camera projects to a mirrored point; treat it as fully out.
+        if (_fit.z > 1) { worst = 2; break; }
+        worst = Math.max(worst, Math.abs(_fit.x), Math.abs(_fit.y));
+      }
+      // 0.78 leaves a margin so nobody fights from behind the HUD plates.
+      const want = clamp(this.fitBoost * (worst / 0.78), 1, 2.4);
+      // Widen quickly (a lost opponent is a lost round), recover slowly.
+      this.fitBoost = damp(this.fitBoost, want, want > this.fitBoost ? 9 : 1.1, dt);
+    }
   }
 
   _updateIntro(world, mid, separation, dt, time) {

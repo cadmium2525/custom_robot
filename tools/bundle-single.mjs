@@ -50,3 +50,28 @@ console.log(`${OUT}  ${(Buffer.byteLength(out) / 1024 / 1024).toFixed(2)} MB`);
 function escapeRe(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+// ---------------------------------------------------------------------------
+// Artifact variant: the host wraps content in its own <!doctype>/<head>/<body>,
+// so strip our document shell and emit only the page content.
+// ---------------------------------------------------------------------------
+
+if (process.env.ARTIFACT_OUT) {
+  const title = (out.match(/<title>([^<]*)<\/title>/) || [])[1] || 'HOLOSSEUM';
+  const styles = [...out.matchAll(/<style>([\s\S]*?)<\/style>/g)].map((m) => m[1]);
+  const scripts = [...out.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+  const bodyInner = (out.match(/<body[^>]*>([\s\S]*?)<\/body>/) || [, ''])[1]
+    .replace(/<script[\s\S]*?<\/script>/g, '')
+    .replace(/<noscript>[\s\S]*?<\/noscript>/g, '')
+    .trim();
+
+  const page = [
+    `<title>${title}</title>`,
+    ...styles.map((s) => `<style>\n${s}\n</style>`),
+    bodyInner,
+    ...scripts.map((s) => `<script type="module">\n${s}\n</script>`),
+  ].join('\n');
+
+  await writeFile(process.env.ARTIFACT_OUT, page, 'utf8');
+  console.log(`${process.env.ARTIFACT_OUT}  ${(Buffer.byteLength(page) / 1024 / 1024).toFixed(2)} MB`);
+}
