@@ -34,6 +34,8 @@ uniform float knee;
 uniform float intensity;
 
 vec3 prefilter(vec3 c) {
+  // A single blown pixel should not become a soft grey continent.
+  c = min(c, vec3(28.0));
   float br = max(c.r, max(c.g, c.b));
   float soft = br - threshold + knee;
   soft = clamp(soft, 0.0, 2.0 * knee);
@@ -73,6 +75,7 @@ uniform sampler2D tDiffuse;
 uniform sampler2D tPrev;
 uniform vec2 texel;
 uniform float radius;
+uniform float weight;
 void main() {
   vec2 o = texel * radius;
   // 3x3 tent — smooth enough to hide the pyramid seams.
@@ -85,7 +88,13 @@ void main() {
   s += texture2D(tDiffuse, vUv + vec2(0.0, -o.y * 2.0)).rgb;
   s += texture2D(tDiffuse, vUv + vec2(-o.x, -o.y)).rgb * 2.0;
   s /= 12.0;
-  gl_FragColor = vec4(s + texture2D(tPrev, vUv).rgb, 1.0);
+  // A weight below 1 on the coarse levels is what keeps the glow attached to
+  // the emissive that made it. At weight 1.0 every octave lands with equal
+  // force and the widest one -- a 25px-across mip stretched over the whole
+  // frame -- becomes a flat veil that lifts the blacks the stage lighting
+  // worked to earn.
+  // (No backticks in here: this is a JS template literal, and one would end it.)
+  gl_FragColor = vec4(s * weight + texture2D(tPrev, vUv).rgb, 1.0);
 }`;
 
 const COMPOSITE_FRAG = /* glsl */`
@@ -107,6 +116,7 @@ uniform vec2  shockCenter;
 uniform float shockRadius;
 uniform float saturation;
 uniform float contrast;
+uniform float blackPoint;
 uniform vec3  lift;
 uniform vec3  gain;
 uniform float hitFlash;
@@ -163,6 +173,14 @@ void main() {
   // muddy once ACES has compressed everything toward the middle.
   col = col * gain + lift;
   col = mix(col, col * col * (3.0 - 2.0 * col), contrast);
+
+  // Hard black point. Bloom, fog and grain all deposit a fraction of a percent
+  // everywhere; without this the darkest part of the frame settles a few points
+  // above zero and the whole image reads as grey milk no matter how dark the
+  // art is. Anything under the black point is crushed to true black and the
+  // rest is re-expanded, so the arena keeps a real shadow end.
+  col = max(col - blackPoint, vec3(0.0)) / max(1.0 - blackPoint, 1e-3);
+
   float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = mix(vec3(luma), col, saturation);
 
@@ -177,7 +195,9 @@ void main() {
 
   if (grain > 0.0001) {
     float n = fract(sin(dot(gl_FragCoord.xy + time * 37.0, vec2(12.9898, 78.233))) * 43758.5453);
-    col += (n - 0.5) * grain * (1.0 - luma * 0.7);
+    // Keep grain out of the deepest shadows — it is the last thing that would
+    // re-lift the black point we just set.
+    col += (n - 0.5) * grain * smoothstep(0.015, 0.16, luma) * (1.0 - luma * 0.6);
   }
 
   // This is a raw shader, so three's automatic output conversion never runs —
@@ -282,11 +302,15 @@ export class PostFX {
     this.scratch = [];   // per-level ping-pong partner for the upsample chain
     this.mipCount = MIPS[settings.bloomQuality ?? 1];
 
+    // The contract with vfx.js/materials.js is that anything meant to glow is
+    // authored above 1.0 linear. Thresholding just under that keeps the bloom on
+    // actual emissives: a lit floor at 0.8 linear contributes nothing, so a
+    // bright deck stays a bright deck instead of turning into a light source.
     this.brightPass = new Pass(BRIGHT_FRAG, {
       tDiffuse: { value: null },
       texel: { value: new THREE.Vector2() },
-      threshold: { value: 0.92 },
-      knee: { value: 0.45 },
+      threshold: { value: 1.04 },
+      knee: { value: 0.16 },
       intensity: { value: 1.0 },
     });
 
@@ -300,17 +324,18 @@ export class PostFX {
       tPrev: { value: null },
       texel: { value: new THREE.Vector2() },
       radius: { value: 1.0 },
+      weight: { value: 1.0 },
     });
 
     this.compositePass = new Pass(COMPOSITE_FRAG, {
       tDiffuse: { value: null },
       tBloom: { value: null },
       tDither: { value: ditherTex },
-      bloomStrength: { value: 0.62 },
+      bloomStrength: { value: 0.66 },
       exposure: { value: 1.0 },
       vignette: { value: 0.34 },
       aberration: { value: 0.0018 },
-      grain: { value: 0.022 },
+      grain: { value: 0.014 },
       time: { value: 0 },
       radialBlur: { value: 0 },
       radialCenter: { value: new THREE.Vector2(0.5, 0.5) },
@@ -318,9 +343,13 @@ export class PostFX {
       shockCenter: { value: new THREE.Vector2(0.5, 0.5) },
       shockRadius: { value: 0 },
       saturation: { value: 1.16 },
-      contrast: { value: 0.42 },
-      lift: { value: new THREE.Vector3(0.002, 0.003, 0.008) },
-      gain: { value: new THREE.Vector3(1.05, 1.02, 1.0) },
+      contrast: { value: 0.5 },
+      blackPoint: { value: 0.042 },
+      // No lift. A positive lift is a milk pump: it raises the floor of every
+      // channel across the whole frame, which is exactly the "nothing is black"
+      // failure the arena rebuild is trying to fix.
+      lift: { value: new THREE.Vector3(0, 0, 0) },
+      gain: { value: new THREE.Vector3(1.06, 1.02, 0.99) },
       hitFlash: { value: 0 },
       hitFlashColor: { value: new THREE.Vector3(1, 0.35, 0.3) },
       resolution: { value: new THREE.Vector2(1, 1) },
@@ -381,7 +410,7 @@ export class PostFX {
       this.mipCount = next;
       this.setSize(this.width, this.height);
     }
-    this.uniforms.grain.value = settings.bloomQuality >= 2 ? 0.022 : 0.014;
+    this.uniforms.grain.value = settings.bloomQuality >= 2 ? 0.014 : 0.009;
   }
 
   _blit(pass, target) {
@@ -428,6 +457,9 @@ export class PostFX {
       uu.tPrev.value = dst.texture;
       uu.texel.value.set(1 / dst.width, 1 / dst.height);
       uu.radius.value = 1.0;
+      // Coarse levels are attenuated as they fold down, so the pyramid ends up
+      // as a tight halo with a faint wide skirt rather than a uniform haze.
+      uu.weight.value = i === 1 ? 0.82 : 0.55;
       // Ping-pong through the scratch target: reading and writing dst in one
       // pass is undefined behaviour on some mobile drivers.
       this._blit(this.upPass, this._scratchFor(dst));

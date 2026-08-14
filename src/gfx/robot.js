@@ -21,7 +21,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from './stage.js';
 import { armorTexture } from './textures.js';
-import { roboShell, additive, fresnelGlow, ensureAOChannel } from './materials.js';
+import { roboShell, additive, ensureAOChannel } from './materials.js';
 import { clamp, clamp01, lerp, damp, angleDelta, smoothstep, TAU } from '../core/mathx.js';
 
 // ---------------------------------------------------------------------------
@@ -81,13 +81,13 @@ const TRIM = {
  * 1.0 or the key light drives the top planes into a flat clipped white and the
  * value structure we just built disappears at the top end.
  */
-const PAINT_GAIN = 0.80;
-const PLANE_UP = 0.26;    // top faces lift...
-const PLANE_DOWN = 0.62;  // ...undersides crush. Sides are the reference value.
+const PAINT_GAIN = 0.78;
+const PLANE_UP = 0.34;    // top faces lift...
+const PLANE_DOWN = 0.66;  // ...undersides crush. Sides are the reference value.
 
 /** Lens/strip brightness. Above ~1.7 these stop reading as glass and bloom flat. */
-const EMIS_GAIN = 0.52;
-const FLARE_GAIN = 0.72;
+const EMIS_GAIN = 0.45;
+const FLARE_GAIN = 0.60;
 
 /**
  * armorTexture() bakes a part's colours straight into its albedo, which leaves
@@ -114,19 +114,34 @@ function swatch(hex, mul = 1) {
  * a colour scheme; anything less and there is nothing to separate groups with.
  */
 function buildPalette(look, legColour) {
+  // A near-black floor mixed into every shadow role. Without it a body whose
+  // primary is already dark (NOCTURNE) has no shadow value left to give, and its
+  // recesses go to literal zero, which reads as a hole rather than as shade.
+  const shade = (hex, mul) => {
+    _col.setHex(hex);
+    const k = PAINT_GAIN * mul;
+    return {
+      r: _col.r * k + 0.010 * PAINT_GAIN,
+      g: _col.g * k + 0.013 * PAINT_GAIN,
+      b: _col.b * k + 0.020 * PAINT_GAIN,
+    };
+  };
   return {
     hull: swatch(look.primary),
     // Same hue, shadow value. Reads as the SAME paint in shade rather than as a
     // second colour, which is what lets us stack three plates and still see all
     // three edges.
-    hullLo: swatch(look.primary, 0.40),
+    hullLo: shade(look.primary, 0.34),
     light: swatch(look.secondary),
     // Cool near-black with a trace of the hull in it, so recesses look like
     // shadowed machinery and not like holes cut in the model.
-    dark: swatch(look.primary, 0.11),
-    accent: swatch(look.accent, 0.92),
+    dark: shade(look.primary, 0.07),
+    accent: swatch(look.accent, 0.95),
     leg: swatch(legColour),
-    legLo: swatch(legColour, 0.38),
+    legLo: shade(legColour, 0.30),
+    // Weapons and hardware are hardware: a neutral dark grey that belongs to no
+    // part's colour scheme, so the gun never merges into the arm it hangs off.
+    gunmetal: shade(0x9aa6b4, 0.16),
     frame: { r: PAINT_GAIN, g: PAINT_GAIN, b: PAINT_GAIN },
   };
 }
@@ -272,7 +287,14 @@ class Build {
     this.arc = opts.arc;
     this.rad = opts.radial;
     this.low = opts.low;
-    this.pal = opts.pal;
+    // A missing palette must degrade to a visible (if wrong-coloured) robot
+    // rather than throwing halfway through the layout tables and taking the
+    // whole boot with it.
+    this.pal = opts.pal || buildPalette(NEUTRAL_LOOK, 0xdfe6ef);
+    // Overrides the per-group default paint for a run of parts — set while the
+    // weapon builders run so hardware paints itself without every call site
+    // having to name a colour.
+    this.def = null;
     // One shell bucket: with hue carried per-vertex there is no longer any
     // reason for torso/arms/legs to be three materials and three draw calls.
     this.buckets = { shell: [], frame: [], emis: [], flare: [] };
@@ -350,9 +372,9 @@ class Build {
   // shellT/shellA/shellL all land in the same bucket now; they stay distinct so
   // the layout code still says which armour group a plate belongs to, and so the
   // per-group default paint is picked for you when a call site doesn't care.
-  shellT(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.pal.hull); }
-  shellA(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.pal.hull); }
-  shellL(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.pal.leg); }
+  shellT(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.def || this.pal.hull); }
+  shellA(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.def || this.pal.hull); }
+  shellL(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.def || this.pal.leg); }
   frame(g, bone) { return this._push(this.buckets.frame, g, bone, this.pal.frame); }
 
   _tinted(list, g, bone, hex, intensity) {
@@ -1249,6 +1271,155 @@ function buildPod(B, P, C) {
 const at = (g, x, y, z) => { g.translate(x, y, z); return g; };
 
 // ---------------------------------------------------------------------------
+// Ground contact
+//
+// Two pieces of floor live here rather than in the stage, because they belong
+// to the robot: they have to exist in the garage and on the title screen, where
+// there is no stage at all, and they have to follow the machine when it moves.
+// ---------------------------------------------------------------------------
+
+/** 2D context helper — local so this file owns its own texture generation. */
+function canvas2d(size) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  return { c, g: c.getContext('2d') };
+}
+
+let _shadowTex = null;
+let _shadowGeo = null;
+
+/**
+ * Soft round contact shadow.
+ *
+ * Pure black with an alpha ramp, composited normally: black * a + dst * (1 - a)
+ * is exactly a multiply, so this darkens a near-white arena deck hard and a
+ * near-black garage floor gently, which is the behaviour you want from a
+ * shadow and not the behaviour you get from a grey decal.
+ */
+function contactShadowTexture() {
+  if (_shadowTex) return _shadowTex;
+  const S = 128;
+  const { c, g } = canvas2d(S);
+  const img = g.createImageData(S, S);
+  const d = img.data;
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const u = (x + 0.5) / S * 2 - 1;
+      const v = (y + 0.5) / S * 2 - 1;
+      const r = Math.min(1, Math.hypot(u, v));
+      // Dense core, long soft skirt — a penumbra, not a disc.
+      const core = 1 - smoothstep(0.0, 0.62, r);
+      const skirt = 1 - smoothstep(0.10, 1.0, r);
+      const a = clamp01(core * 0.62 + skirt * skirt * 0.55);
+      const o = (y * S + x) * 4;
+      d[o] = 0; d[o + 1] = 0; d[o + 2] = 0;
+      d[o + 3] = a * 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.needsUpdate = true;
+  _shadowTex = t;
+  return t;
+}
+
+function contactShadowGeometry() {
+  if (!_shadowGeo) _shadowGeo = new THREE.PlaneGeometry(2, 2);
+  return _shadowGeo;
+}
+
+/** One per robot — the opacity is animated per machine, so it cannot be shared. */
+function contactShadowMaterial() {
+  return new THREE.MeshBasicMaterial({
+    map: contactShadowTexture(),
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.7,
+    depthWrite: false,
+    toneMapped: false,
+    fog: false,
+  });
+}
+
+let _padMaps = null;
+
+/**
+ * The garage floor: a lit service pad for the hero to stand on.
+ *
+ * The review's complaint (#15) is that the machine hovers in a black void over a
+ * one-pixel ellipse. A pad fixes that twice over — it gives the contact shadow
+ * something to land on, and it gives the robot's dark frame and near-black
+ * recesses a mid value to be read against, which is most of what makes a
+ * silhouette legible. Deliberately mid-grey: a white pad would swallow the
+ * light top planes that the paint just spent its whole budget establishing.
+ */
+function padTextures() {
+  if (_padMaps) return _padMaps;
+  const S = 512;
+  const { c, g } = canvas2d(S);
+  const img = g.createImageData(S, S);
+  const d = img.data;
+  const R = S * 0.5;
+
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      const dx = (x + 0.5) - R, dy = (y + 0.5) - R;
+      const r = Math.hypot(dx, dy) / R;          // 0 at centre, 1 at rim
+      const th = Math.atan2(dy, dx);
+      const o = (y * S + x) * 4;
+
+      // Base deck: brushed mid grey, a touch cooler toward the rim.
+      let v = 0.40 - r * 0.10;
+
+      // Tread hatching, rotated 45 degrees so it never lines up with the ticks.
+      const hatch = Math.abs(((dx + dy) / 14) % 1 - 0.5);
+      v += (hatch < 0.16 ? 0.022 : 0) * (r > 0.30 ? 1 : 0);
+
+      // Scribed rings.
+      for (const rr of [0.30, 0.62, 0.90]) {
+        const t = Math.abs(r - rr);
+        if (t < 0.006) v += 0.20;
+        else if (t < 0.014) v -= 0.10;
+      }
+
+      // Radial ticks around the outer band, long ones on the quarters.
+      const seg = th / TAU * 48;
+      const tick = Math.abs(seg - Math.round(seg));
+      const long = Math.abs(seg / 12 - Math.round(seg / 12)) < 0.02;
+      if (r > (long ? 0.66 : 0.74) && r < 0.88 && tick < 0.10) v += 0.16;
+
+      // A single warm hazard wedge, so the pad has one non-grey note and the
+      // camera has something to read rotation against.
+      const wedge = Math.abs(((th + Math.PI) / TAU * 8) % 1 - 0.5);
+      const warm = (r > 0.34 && r < 0.58 && wedge > 0.30) ? 1 : 0;
+
+      // Dark blast staining under the middle, where the machine stands.
+      v -= (1 - smoothstep(0.0, 0.42, r)) * 0.13;
+
+      const cr = clamp01(v * (1 + warm * 0.55));
+      const cg = clamp01(v * (1 + warm * 0.20));
+      const cb = clamp01(v * (1 - warm * 0.35) + 0.012);
+
+      // Alpha dissolves the rim so the pad reads as a lit patch of a bigger
+      // floor rather than as a coin sitting in space.
+      const a = 1 - smoothstep(0.72, 1.0, r);
+
+      d[o] = Math.sqrt(cr) * 255;
+      d[o + 1] = Math.sqrt(cg) * 255;
+      d[o + 2] = Math.sqrt(cb) * 255;
+      d[o + 3] = a * 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  const map = new THREE.CanvasTexture(c);
+  map.colorSpace = THREE.SRGBColorSpace;
+  map.anisotropy = 8;
+  _padMaps = { map };
+  return _padMaps;
+}
+
+// ---------------------------------------------------------------------------
 // RoboModel
 // ---------------------------------------------------------------------------
 
@@ -1306,10 +1477,17 @@ export class RoboModel {
     this.rig = rig;
     this.group.add(rig.bones[0]);
 
-    const B = new Build(rig, { arc: low ? 1 : 1, radial: low ? 8 : 12, low });
+    // One palette for the whole machine, derived from the body's look plus the
+    // legs' own colour, and handed to every layout function. This is where the
+    // model's value structure is decided; the builders only say which role a
+    // plate plays.
+    const pal = buildPalette(look, ld.legs.look.colour);
+    this.pal = pal;
+
+    const B = new Build(rig, { arc: low ? 1 : 1, radial: low ? 8 : 12, low, pal });
     const C = {
       look, legs: ld.legs, gun: ld.gun, bomb: ld.bomb, pod: ld.pod,
-      em: look.emissive, ac: look.accent, team: teamHex,
+      em: look.emissive, ac: look.accent, team: teamHex, pal,
     };
 
     buildPelvis(B, P, C);
@@ -1321,37 +1499,40 @@ export class RoboModel {
       buildArm(B, P, C, s);
       buildLeg(B, P, L, C, s);
     }
+    // Hardware paints itself: weapons default to neutral gunmetal so a gun never
+    // dissolves into the arm it is bolted to.
+    B.def = pal.gunmetal;
     buildGun(B, P, C);
     buildBombArm(B, P, C);
     buildPod(B, P, C);
+    B.def = null;
 
     // --- materials -----------------------------------------------------------
     const texSize = low ? 256 : 512;
     const aniso = this.settings.anisotropy;
-    const legLook = {
-      primary: ld.legs.look.colour,
-      secondary: look.secondary,
-      accent: ld.legs.look.accent,
-      trim: look.trim,
-      emissive: look.emissive,
-      metalness: Math.min(1, (look.metalness ?? 0.9) * 0.96),
-      roughness: (look.roughness ?? 0.3) + 0.07,
-    };
 
-    const shell = (lk, seed, opts) => {
-      const maps = armorTexture(lk, texSize, seed);
-      for (const t of Object.values(maps)) if (t?.isTexture) t.anisotropy = aniso;
-      const m = roboShell(maps, lk, teamHex, opts);
-      m.envMap = this.envMap;
-      return m;
-    };
+    // ONE neutral detail bake for the whole machine — and, because armorTexture
+    // caches on the look, for every machine in the match. Hue and value are the
+    // vertex paint's job now, so there is nothing left for a per-part bake to
+    // decide except panel layout, and one panel layout is plenty.
+    const maps = armorTexture(NEUTRAL_LOOK, texSize, 0);
+    for (const t of Object.values(maps)) if (t?.isTexture) t.anisotropy = aniso;
 
-    // Rim and energy are deliberately restrained: they are an accent on painted
-    // metal, not the material itself. Push them higher and the whole robo reads
-    // as a hologram instead of a machine.
-    this.matTorso = shell(look, 0, { rimStrength: 0.22, rimPower: 4.2, energy: 0.10, normalScale: 1.15 });
-    this.matArms = low ? this.matTorso : shell(look, 3, { rimStrength: 0.18, rimPower: 4.2, energy: 0.08, normalScale: 1.05 });
-    this.matLegs = shell(legLook, 7, { rimStrength: 0.16, rimPower: 4.5, energy: 0.07, normalScale: 1.05 });
+    // Rim and energy are an ACCENT on painted metal, not the material itself.
+    // This is defect #5: at the strengths this shipped with, the fresnel term
+    // out-ran the albedo everywhere the surface turned away from camera, which
+    // is every chamfer on the model — so each plate glowed along its own edges,
+    // interior structure glowed through the plate in front of it, and the whole
+    // machine read as blue glass. A rim is allowed to describe an edge. It is
+    // not allowed to describe the whole robot.
+    this.matShell = roboShell(maps, look, teamHex, {
+      rimStrength: 0.10, rimPower: 5.2, energy: 0.03,
+      normalScale: 1.15, envMapIntensity: 0.5,
+    });
+    // Without this the entire paint system above is dead code and every plate
+    // renders at the neutral bake's value — one blue-grey machine, defect #24.
+    this.matShell.vertexColors = true;
+    this.matShell.envMap = this.envMap;
 
     const tr = TRIM[look.trim] || TRIM.gunmetal;
     this.matFrame = new THREE.MeshStandardMaterial({
@@ -1359,21 +1540,22 @@ export class RoboModel {
       roughness: tr.rough,
       metalness: tr.metal,
       envMap: this.envMap,
-      envMapIntensity: 1.5,
+      // The frame is the model's line art. A hot env reflection turns black
+      // line art into chrome highlight and the lines stop being lines.
+      envMapIntensity: 0.55,
+      vertexColors: true,
       dithering: true,
     });
 
     this.matEmis = new THREE.MeshBasicMaterial({
       color: 0xffffff, vertexColors: true, toneMapped: false, fog: false,
     });
-    this.matFlare = additive(0xffffff, { opacity: 1, side: THREE.DoubleSide });
+    this.matFlare = additive(0xffffff, { opacity: 0.5, side: THREE.DoubleSide });
     this.matFlare.vertexColors = true;
-    this.matHalo = low ? null : fresnelGlow(look.emissive, { power: 3.4, intensity: 0.34, opacity: 0.55 });
 
     // --- meshes --------------------------------------------------------------
     this.meshes = [];
-    this.shellMats = [this.matTorso, this.matLegs];
-    if (this.matArms !== this.matTorso) this.shellMats.push(this.matArms);
+    this.shellMats = [this.matShell];
 
     const shadows = !!this.settings.shadows;
     const mk = (list, mat, opts = {}) => {
@@ -1395,20 +1577,24 @@ export class RoboModel {
     this.group.updateMatrixWorld(true);
     this.skeleton = new THREE.Skeleton(rig.bones);
 
-    const merged = low
-      ? { torso: B.buckets.torso.concat(B.buckets.arms), arms: [], ...B.buckets }
-      : B.buckets;
-    if (low) { merged.arms = []; merged.legs = B.buckets.legs; }
-
-    mk(merged.torso, this.matTorso);
-    mk(merged.arms, this.matArms);
-    mk(merged.legs, this.matLegs);
+    // Four draw calls for the entire machine: painted shell, dark frame, lit
+    // emissives, additive plumes.
+    mk(B.buckets.shell, this.matShell);
     mk(B.buckets.frame, this.matFrame);
     mk(B.buckets.emis, this.matEmis, { noShadow: true, order: 1 });
     mk(B.buckets.flare, this.matFlare, { noShadow: true, order: 3 });
-    mk(B.buckets.halo, this.matHalo, { noShadow: true, order: 2 });
 
     for (const m of this.meshes) m.bind(this.skeleton, m.matrixWorld);
+
+    // Fifth call: the thing that puts the machine ON the floor rather than in
+    // front of it (defect #15). Not skinned, not parented to the rig — a
+    // contact shadow belongs to the ground, not to the body that throws it.
+    this.shadow = new THREE.Mesh(contactShadowGeometry(), contactShadowMaterial());
+    this.shadow.rotation.x = -Math.PI / 2;
+    this.shadow.renderOrder = -1;
+    this.shadowRadius = 0.62 + P.chestW * 0.55 + L.footW * 0.9;
+    this.shadow.scale.setScalar(this.shadowRadius);
+    this.group.add(this.shadow);
 
     // --- bone handles used every frame --------------------------------------
     const g = (n) => rig.get(n);
@@ -1440,11 +1626,16 @@ export class RoboModel {
       this.group.remove(m);
     }
     this.meshes = [];
-    for (const m of [this.matTorso, this.matArms, this.matLegs, this.matFrame,
-      this.matEmis, this.matFlare, this.matHalo]) {
-      if (m && m !== this.matTorso) m.dispose();
+    if (this.shadow) {
+      // The geometry and the texture are module-shared; only the material is
+      // this robot's to free.
+      this.shadow.material.dispose();
+      this.group.remove(this.shadow);
+      this.shadow = null;
     }
-    this.matTorso?.dispose();
+    for (const m of [this.matShell, this.matFrame, this.matEmis, this.matFlare]) {
+      m?.dispose();
+    }
     this.skeleton?.dispose?.();
     if (this.rig) this.group.remove(this.rig.bones[0]);
     this.rig = null;
@@ -1678,20 +1869,36 @@ export class RoboModel {
     // --- shader uniforms -----------------------------------------------------
     const hit = clamp01(robo.hurtFlash / 10);
     const invuln = robo.invuln > 0 ? (0.5 + 0.5 * Math.sin(time * 26)) : 0;
+
+    // The idle floor on these two is the whole of defect #5. Whatever the
+    // constructor asks for, this loop runs every frame and it used to reinstate
+    // rim 0.5 / energy 0.22 on every surface — a permanent fresnel wash that no
+    // amount of albedo work can out-shout. They are event tells now: at rest
+    // they are barely there, and they only come up when the robot is doing
+    // something the player has to notice.
     for (let i = 0; i < this.shellMats.length; i++) {
       const u = this.shellMats[i].userData.u;
       if (!u) continue;
       u.uTime.value = time;
       u.uHitFlash.value = hit * hit * 0.85;
       u.uCharge.value = this.chargeAmt * (robo.chargeReady ? 1 : 0.55);
-      u.uEnergy.value = 0.22 + heat * 0.35 + invuln * 0.5;
-      u.uRimStrength.value = 0.5 + invuln * 0.9 + hit * 0.6;
+      u.uEnergy.value = 0.03 + heat * 0.10 + invuln * 0.22;
+      u.uRimStrength.value = 0.10 + invuln * 0.65 + hit * 0.5;
     }
-    if (this.matHalo) {
-      this.matHalo.uniforms.uIntensity.value = 0.3 + this.chargeAmt * 1.9 + heat * 0.4 + hit * 1.3;
+    this.matFlare.opacity = clamp01(0.18 + heat * 0.55);
+
+    // --- contact shadow ------------------------------------------------------
+    // Stays welded to the ground plane while the group rides the robot, spreads
+    // and fades with altitude, and shrinks to nothing on the frame the machine
+    // is knocked down and its mass is no longer over its feet.
+    if (this.shadow) {
+      const alt = Math.max(0, robo.pos.y);
+      const fade = 1 / (1 + alt * 0.55);
+      this.shadow.position.y = 0.016 - robo.pos.y;
+      this.shadow.scale.setScalar(this.shadowRadius * (1 + alt * 0.10) * (1 - dwn * 0.15));
+      this.shadow.material.opacity = 0.72 * fade * (1 - dwn * 0.25);
+      this.shadow.visible = alt < 7;
     }
-    this.matEmis.opacity = 1;
-    this.matFlare.opacity = clamp01(0.55 + heat * 0.5);
 
     // Dead robos settle instead of standing at attention.
     if (isDead) this.group.position.y -= 0.02;
@@ -1727,7 +1934,7 @@ export class RoboModel {
     }
     const shadows = !!settings.shadows;
     for (const m of this.meshes) {
-      if (m.material === this.matEmis || m.material === this.matFlare || m.material === this.matHalo) continue;
+      if (m.material === this.matEmis || m.material === this.matFlare) continue;
       m.castShadow = shadows;
       m.receiveShadow = shadows;
     }
@@ -1755,7 +1962,41 @@ export class RoboPreview {
     this.envMap = envMap;
     this.group = new THREE.Group();
     this.t = 0;
+    this._makePad();
     this._make(loadout);
+  }
+
+  /**
+   * The hero stands on a service pad, not in a void (defect #15).
+   *
+   * It is one circle and one draw call, and it buys three separate things: a
+   * surface for the key light's shadow to land on, a mid value for the dark
+   * frame and near-black recesses to read against, and a floor line that tells
+   * you how big the machine is. The pad is deliberately larger than the model's
+   * footprint so the shadow has somewhere to fall as the robot shifts weight.
+   */
+  _makePad() {
+    const { map } = padTextures();
+    const pad = new THREE.Mesh(
+      new THREE.CircleGeometry(1.6, 64),
+      new THREE.MeshStandardMaterial({
+        map,
+        transparent: true,
+        roughness: 0.72,
+        metalness: 0.08,
+        envMapIntensity: 0.35,
+        envMap: this.envMap,
+        depthWrite: false,
+        dithering: true,
+      })
+    );
+    pad.rotation.x = -Math.PI / 2;
+    // Above the menu's own pedestal cap, below its accent ring.
+    pad.position.y = 0.002;
+    pad.receiveShadow = true;
+    pad.renderOrder = -2;
+    this.pad = pad;
+    this.group.add(pad);
   }
 
   _make(loadout) {
@@ -1778,7 +2019,10 @@ export class RoboPreview {
     s.aimYaw = Math.sin(this.t * 0.32) * 0.22;
     s.aimPitch = Math.sin(this.t * 0.23 + 1.1) * 0.10 - 0.04;
     s.yaw = s.aimYaw * 0.45;
-    s.boostHeat = 0.10 + Math.max(0, Math.sin(this.t * 0.55)) * 0.16;
+    // Barely idling. A parked machine venting hard wraps itself in additive
+    // plume every frame of the garage, which is the single cheapest way to make
+    // painted metal look like a hologram again.
+    s.boostHeat = 0.02 + Math.max(0, Math.sin(this.t * 0.55)) * 0.05;
     s.stepPhase = 0;
     this.model.update(s, dt, time);
   }
@@ -1790,6 +2034,11 @@ export class RoboPreview {
 
   dispose() {
     this.model.dispose();
+    if (this.pad) {
+      this.pad.geometry.dispose();
+      this.pad.material.dispose();
+      this.pad = null;
+    }
     this.group.clear();
   }
 }

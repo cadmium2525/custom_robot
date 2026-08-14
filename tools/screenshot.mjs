@@ -9,8 +9,13 @@
  * Usage:
  *   node tools/screenshot.mjs --shot title
  *   node tools/screenshot.mjs --shot fight --time 6 --out shots/fight.png
+ *   node tools/screenshot.mjs --shots title,garage,settings --prefix ui-
  *   node tools/screenshot.mjs --all
  *   node tools/screenshot.mjs --shot fight --device iphone12
+ *
+ * `--shots` takes a comma-separated list and captures all of them from one
+ * browser launch. A review pass wants ten screens at once and paying the boot
+ * cost ten times is most of the wall clock.
  *
  * Assumes a server is already running (npm run preview) unless --serve is given.
  */
@@ -62,6 +67,88 @@ const SCENARIOS = {
     settle: 1.6,
     setup: async (page) => {
       await page.evaluate(() => window.__game.menus.show('arena', { arenaId: window.__game.arenaId }));
+    },
+  },
+
+  // --- menu screens that had no scenario, so nobody had ever looked at them --
+
+  mode: {
+    settle: 1.4,
+    setup: async (page) => {
+      await page.evaluate(() => window.__game.menus.show('mode'));
+    },
+  },
+
+  netplay: {
+    settle: 1.4,
+    setup: async (page) => {
+      await page.evaluate(() => {
+        const m = window.__game.menus;
+        m.show('netplay');
+        // Show it mid-flight rather than idle: a host code is up and we are
+        // waiting on a peer, which is the state with the most chrome in it.
+        m.setNetState({ status: 'hosting', code: 'K7QX', message: 'waiting for challenger', pingMs: 0 });
+      });
+    },
+  },
+
+  boot: {
+    settle: 1.2,
+    setup: async (page) => {
+      await page.evaluate(() => {
+        const m = window.__game.menus;
+        m.show('boot');
+        m.setLoading(0.62, 'arena geometry');
+      });
+    },
+  },
+
+  settings: {
+    settle: 1.2,
+    setup: async (page) => {
+      await page.evaluate(() => window.__game.menus.show('settings'));
+    },
+  },
+
+  controls: {
+    settle: 1.2,
+    setup: async (page) => {
+      await page.evaluate(() => window.__game.menus.show('controls'));
+    },
+  },
+
+  results: {
+    settle: 1.4,
+    setup: async (page) => {
+      await page.evaluate(() => window.__game.menus.show('results', {
+        winner: 0,
+        wins: [2, 1],
+        localIndex: 0,
+        names: ['RAY-01', 'ACE'],
+        rounds: [
+          { round: 1, winner: 0 },
+          { round: 2, winner: 1, timeout: true },
+          { round: 3, winner: 0 },
+        ],
+        stats: { damage: 2480, hits: 63, accuracy: '41%', 'longest chain': 7 },
+      }));
+    },
+  },
+
+  // Pause sits over a live match, so the match has to be running underneath.
+  pause: {
+    settle: 1.0,
+    ticks: 300,
+    setup: async (page) => {
+      await page.evaluate(() => {
+        const g = window.__game;
+        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'grid', loadouts: g.loadouts });
+        g.setDemo(true);
+      });
+    },
+    beforeShot: async (page) => {
+      await page.evaluate(() => window.__game.pause());
+      await page.waitForTimeout(500);
     },
   },
 
@@ -134,6 +221,53 @@ const SCENARIOS = {
     },
   },
 
+  // The touch layer only mounts after a real touch, so a plain phone capture
+  // shows an empty screen and the whole control layer goes unreviewed. This
+  // wakes it and then holds two fingers down — stick out, FIRE pressed.
+  touch: {
+    settle: 1.0,
+    ticks: 380,
+    setup: async (page, opts) => {
+      await page.evaluate((o) => {
+        const g = window.__game;
+        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: o.arenaId || 'grid', loadouts: g.loadouts });
+        g.setDemo(true);
+      }, opts);
+    },
+    beforeShot: async (page) => {
+      // A tap is enough to mount the layer; only then can we measure it.
+      await page.touchscreen.tap(60, 500);
+      await page.waitForTimeout(250);
+
+      const pts = await page.evaluate(() => {
+        const c = (sel) => {
+          const r = document.querySelector(sel)?.getBoundingClientRect();
+          return r && r.width ? { x: r.left + r.width / 2, y: r.top + r.height / 2 } : null;
+        };
+        const zone = document.querySelector('.tc__zone--move')?.getBoundingClientRect();
+        return {
+          move: zone && zone.width
+            ? { x: zone.left + zone.width * 0.45, y: zone.top + zone.height * 0.74 }
+            : null,
+          fire: c('.tb--fire'),
+        };
+      });
+      if (!pts.move || !pts.fire) return;
+
+      // Real held touches, via CDP — Playwright's tap always releases.
+      const cdp = await page.context().newCDPSession(page);
+      const send = (type, points) =>
+        cdp.send('Input.dispatchTouchEvent', { type, touchPoints: points });
+      const thumb = { x: pts.move.x, y: pts.move.y, id: 1 };
+      const trigger = { x: pts.fire.x, y: pts.fire.y, id: 2 };
+      await send('touchStart', [thumb]);
+      // Drag the stick off-centre so the nub is not sitting dead centre.
+      await send('touchMove', [{ x: thumb.x + 34, y: thumb.y - 26, id: 1 }]);
+      await send('touchStart', [{ x: thumb.x + 34, y: thumb.y - 26, id: 1 }, trigger]);
+      await page.waitForTimeout(500);
+    },
+  },
+
   // Static hero framing of a single robo, for model review.
   hero: {
     settle: 2.4,
@@ -167,7 +301,7 @@ async function capture(browser, name, opts = {}) {
   const page = await context.newPage();
 
   const errors = [];
-  page.on('pageerror', (e) => errors.push(String(e)));
+  page.on('pageerror', (e) => errors.push(e?.stack ? `${e.stack}` : String(e)));
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(`console: ${m.text()}`);
   });
@@ -175,7 +309,37 @@ async function capture(browser, name, opts = {}) {
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 45000 });
 
   // Wait for the shell to construct and the loop to be running.
-  await page.waitForFunction(() => window.__game && window.__game.engine?.running, null, { timeout: 45000 });
+  //
+  // When this times out it is almost always because something threw during
+  // construction, and the bare timeout says nothing about what. Re-throw with
+  // the page errors attached — a boot crash reported as "waitForFunction:
+  // Timeout" costs whoever hits it an hour of bisecting their own diff.
+  try {
+    await page.waitForFunction(() => window.__game && window.__game.engine?.running, null, { timeout: 45000 });
+  } catch (e) {
+    const where = await page.evaluate(() => ({
+      hasGame: !!window.__game,
+      state: window.__game?.state ?? '(none)',
+      screen: window.__game?.menus?.current ?? '(none)',
+      running: !!window.__game?.engine?.running,
+    })).catch(() => null);
+
+    const lines = [`the game never reached engine.running (${e.message.split('\n')[0]})`];
+    if (where) {
+      lines.push(`  page state: __game=${where.hasGame} state=${where.state} ` +
+        `screen=${where.screen} running=${where.running}`);
+    }
+    if (errors.length) {
+      lines.push(`  ${errors.length} page error(s) — this is very likely the cause:`);
+      for (const err of errors.slice(0, 5)) {
+        lines.push(err.split('\n').slice(0, 6).map((l) => `    ${l.trim()}`).join('\n'));
+      }
+    } else {
+      lines.push('  no page errors were logged — boot is hanging rather than throwing.');
+    }
+    await context.close();
+    throw new Error(lines.join('\n'));
+  }
 
   if (opts.tier != null) {
     await page.evaluate((t) => {
@@ -222,7 +386,8 @@ async function capture(browser, name, opts = {}) {
   }).catch(() => null);
 
   await mkdir(OUT_DIR, { recursive: true });
-  const file = opts.out || path.join(OUT_DIR, `${name}${opts.device && opts.device !== 'desktop' ? `-${opts.device}` : ''}.png`);
+  const suffix = opts.device && opts.device !== 'desktop' ? `-${opts.device}` : '';
+  const file = opts.out || path.join(OUT_DIR, `${opts.prefix || ''}${name}${suffix}.png`);
   await page.screenshot({ path: file });
   await context.close();
 
@@ -258,9 +423,12 @@ async function main() {
     ],
   });
 
+  const shots = flag('shots');
   const list = flag('all')
     ? ['title', 'garage', 'arena', 'fight', 'explosion', 'foundry', 'orbital']
-    : [flag('shot', 'fight')];
+    : typeof shots === 'string'
+      ? shots.split(',').map((s) => s.trim()).filter(Boolean)
+      : [flag('shot', 'fight')];
 
   const results = [];
   for (const name of list) {
@@ -269,6 +437,7 @@ async function main() {
         device: DEVICE,
         time: flag('time') ? Number(flag('time')) : undefined,
         out: list.length === 1 ? flag('out') : null,
+        prefix: flag('prefix') || '',
         arenaId: flag('arena'),
         ticks: flag('ticks') ? Number(flag('ticks')) : undefined,
         tier: flag('tier') != null ? flag('tier') : undefined,

@@ -2,10 +2,14 @@
 # Build + serve + capture on a private port, so several people can iterate on
 # the same working tree at once without fighting over dist/ or port 4173.
 #
-#   tools/devshot.sh <name> <port> <scenario> [extra screenshot flags...]
+#   tools/devshot.sh <name> <port> <scenario>[,<scenario>...] [screenshot flags]
 #
 # Example:
 #   tools/devshot.sh robot 4201 hero --tier 3
+#   tools/devshot.sh ui 4204 title,garage,settings --tier 3
+#
+# A comma-separated list captures every scenario from one build and one browser
+# launch, which is most of the wall clock on a review pass.
 #
 # Writes shots/<name>-<scenario>.png and prints the in-page perf stats.
 set -euo pipefail
@@ -37,8 +41,17 @@ if ! curl -s -o /dev/null "http://127.0.0.1:$PORT/"; then
 fi
 
 mkdir -p "$ROOT/shots"
-node tools/screenshot.mjs \
-  --base "http://127.0.0.1:$PORT/" \
-  --shot "$SCENE" \
-  --out "$ROOT/shots/$NAME-$SCENE.png" \
-  "$@"
+if [[ "$SCENE" == *,* ]]; then
+  node tools/screenshot.mjs \
+    --base "http://127.0.0.1:$PORT/" \
+    --shots "$SCENE" \
+    --outdir "$ROOT/shots" \
+    --prefix "$NAME-" \
+    "$@"
+else
+  node tools/screenshot.mjs \
+    --base "http://127.0.0.1:$PORT/" \
+    --shot "$SCENE" \
+    --out "$ROOT/shots/$NAME-$SCENE.png" \
+    "$@"
+fi
