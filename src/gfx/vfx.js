@@ -71,7 +71,7 @@ void main() {
   else                     a = smoothstep(1.0, 0.75, t);
 
   // Sparks streak thin and long; smoke swells as it dissipates.
-  float grow = aFlags.z < 1.5 ? (1.0 - t * 0.55) : (0.55 + t * 1.5);
+  float grow = aFlags.z < 1.5 ? (1.0 - t * 0.55) : (0.5 + t * 0.85);
   float size = aParams.z * grow * uSizeScale;
 
   float depth = -mv.z;
@@ -442,10 +442,12 @@ void main() {
     // floor, and they linger rather than flash.
     a = smoothstep(0.0, 0.06, vT) * pow(fade, 0.8) * 0.5;
   } else {
-    // Cool from white-hot through the tint as the shell expands.
-    col = mix(vec3(2.6, 2.3, 1.9), col, smoothstep(0.0, 0.42, vT));
-    col *= 0.6 + fade * 1.9;
-    a = pow(fade, 1.4);
+    // Cool from white-hot through the tint as the shell expands. The hot phase
+    // is deliberately short — held any longer and a nearby blast just reads as
+    // a white screen once bloom gets hold of it.
+    col = mix(vec3(1.55, 1.3, 1.0), col, smoothstep(0.0, 0.22, vT));
+    col *= 0.45 + fade * 0.95;
+    a = pow(fade, 1.9);
   }
 
   if (uUseMap > 0.5) {
@@ -568,8 +570,8 @@ export class VFX {
 
     // --- particle batches -------------------------------------------------
     this.sparks = new ParticleBatch(Math.round(budget * 0.5), this.sp.spark, { additive: true, sizeScale: 1 });
-    this.smoke = new ParticleBatch(Math.round(budget * 0.28), this.sp.smoke, { additive: false, opacity: 0.34, renderOrder: 4, maxSize: 150 });
-    this.energy = new ParticleBatch(Math.round(budget * 0.22), this.sp.glow, { additive: true, sizeScale: 1.15 });
+    this.smoke = new ParticleBatch(Math.round(budget * 0.28), this.sp.smoke, { additive: false, opacity: 0.3, renderOrder: 4, maxSize: 108 });
+    this.energy = new ParticleBatch(Math.round(budget * 0.22), this.sp.glow, { additive: true, sizeScale: 1.0, maxSize: 130 });
     scene.add(this.smoke.points, this.sparks.points, this.energy.points);
 
     // --- trails -----------------------------------------------------------
@@ -777,8 +779,8 @@ export class VFX {
         this.smoke.spawn(
           ev.x + dx * 0.3, ev.y + dy * 0.3, ev.z + dz * 0.3,
           dx * 1.6 + vfxRng.s(), dy * 1.6 + 0.9, dz * 1.6 + vfxRng.s(),
-          t, 0.5 + vfxRng.f() * 0.3, 0.14 + vfxRng.f() * 0.1,
-          0.5, 0.52, 0.58, -0.6, 2.2, 2
+          t, 0.5 + vfxRng.f() * 0.3, 0.08 + vfxRng.f() * 0.05,
+          0.26, 0.27, 0.31, -0.6, 2.2, 2
         );
       }
     }
@@ -902,21 +904,21 @@ export class VFX {
     hot(look.colour, 2.6, _rgb);
 
     // (a) white-hot core
-    this.fireballs.spawn(ev.x, ev.y, ev.z, null, t, 0.42, R * 0.14, R * 0.72,
+    this.fireballs.spawn(ev.x, ev.y, ev.z, null, t, 0.36, R * 0.12, R * 0.5,
       _rgb[0], _rgb[1], _rgb[2]);
-    this.fireballs.spawn(ev.x, ev.y, ev.z, null, t + 0.04, 0.62, R * 0.05, R * 1.0,
+    this.fireballs.spawn(ev.x, ev.y, ev.z, null, t + 0.04, 0.55, R * 0.04, R * 0.72,
       _rgb[0] * 0.5, _rgb[1] * 0.42, _rgb[2] * 0.35);
 
     // (b) ground-aligned shockwave
     this.shockwaves.spawn(ev.x, Math.max(0.03, ev.y - R * 0.35), ev.z, null,
-      t, 0.55, R * 0.2, R * 2.1, 2.2, 1.7, 1.2);
+      t, 0.5, R * 0.18, R * 1.45, 1.5, 1.15, 0.8);
     // and a second one facing the camera, so it reads in the air too
     _v.set(ev.x, ev.y, ev.z);
     this.shockwaves.spawn(ev.x, ev.y, ev.z, this._faceCameraUp(_v),
-      t, 0.4, R * 0.1, R * 1.5, _rgb[0], _rgb[1], _rgb[2]);
+      t, 0.36, R * 0.08, R * 1.0, _rgb[0], _rgb[1], _rgb[2]);
 
     // (c) billowing smoke
-    const smokeN = Math.round(18 * s * clamp(R / 3.4, 0.6, 1.8));
+    const smokeN = Math.round(11 * s * clamp(R / 3.4, 0.6, 1.6));
     for (let i = 0; i < smokeN; i++) {
       const a = vfxRng.f() * 6.283;
       const el = vfxRng.f() * 1.2;
@@ -924,8 +926,8 @@ export class VFX {
       this.smoke.spawn(
         ev.x + vfxRng.s() * R * 0.2, ev.y + vfxRng.f() * R * 0.25, ev.z + vfxRng.s() * R * 0.2,
         Math.cos(a) * sp * Math.cos(el), sp * Math.sin(el) * 0.7 + 1.2, Math.sin(a) * sp * Math.cos(el),
-        t + vfxRng.f() * 0.09, 1.0 + vfxRng.f() * 0.9, R * (0.09 + vfxRng.f() * 0.08),
-        0.34, 0.31, 0.3, -0.7, 1.5, 2
+        t + vfxRng.f() * 0.09, 1.0 + vfxRng.f() * 0.9, R * (0.07 + vfxRng.f() * 0.06),
+        0.2, 0.18, 0.18, -0.7, 1.5, 2
       );
     }
 
@@ -997,8 +999,8 @@ export class VFX {
         this.smoke.spawn(
           ev.x, ev.y + 0.06, ev.z,
           Math.cos(a) * 3.2, 0.7 + vfxRng.f(), Math.sin(a) * 3.2,
-          t, 0.55 + vfxRng.f() * 0.3, 0.2 + vfxRng.f() * 0.12,
-          0.44, 0.45, 0.48, -0.2, 3.0, 2
+          t, 0.55 + vfxRng.f() * 0.3, 0.1 + vfxRng.f() * 0.07,
+          0.24, 0.25, 0.28, -0.2, 3.0, 2
         );
       }
     }
@@ -1059,8 +1061,8 @@ export class VFX {
       this.smoke.spawn(
         ev.x + Math.cos(a) * 0.3, ev.y + 0.08, ev.z + Math.sin(a) * 0.3,
         Math.cos(a) * sp, 0.5 + vfxRng.f() * 0.8, Math.sin(a) * sp,
-        t, 0.6 + vfxRng.f() * 0.5, 0.2 + vfxRng.f() * 0.16,
-        0.46, 0.47, 0.5, -0.15, 2.6, 2
+        t, 0.6 + vfxRng.f() * 0.5, 0.11 + vfxRng.f() * 0.09,
+        0.25, 0.26, 0.29, -0.15, 2.6, 2
       );
     }
     if (hard) {
@@ -1133,7 +1135,7 @@ export class VFX {
     if (!r) return;
     // Reuse the explosion recipe at a much larger radius, twice, offset in time.
     this._explode({ x: r.pos.x, y: r.pos.y + 0.9, z: r.pos.z, radius: 6.5, kind: PK.BOMB, part: 0 });
-    this.fireballs.spawn(r.pos.x, r.pos.y + 1.2, r.pos.z, null, this.time + 0.12, 0.9, 0.4, 7.5,
+    this.fireballs.spawn(r.pos.x, r.pos.y + 1.2, r.pos.z, null, this.time + 0.12, 0.85, 0.35, 4.6,
       2.4, 1.4, 0.7);
     this._addShake(vfxRng.s() * 1.2, 0.6, vfxRng.s() * 1.2, vfxRng.s() * 0.06);
 
@@ -1143,8 +1145,8 @@ export class VFX {
       this.smoke.spawn(
         r.pos.x + vfxRng.s() * 0.8, r.pos.y + 0.4 + vfxRng.f() * 1.5, r.pos.z + vfxRng.s() * 0.8,
         vfxRng.s() * 1.2, 1.6 + vfxRng.f() * 1.8, vfxRng.s() * 1.2,
-        this.time + vfxRng.f() * 0.7, 2.0 + vfxRng.f() * 1.4, 0.3 + vfxRng.f() * 0.25,
-        0.3, 0.28, 0.28, -0.5, 0.9, 2
+        this.time + vfxRng.f() * 0.7, 2.0 + vfxRng.f() * 1.4, 0.22 + vfxRng.f() * 0.18,
+        0.19, 0.18, 0.18, -0.5, 0.9, 2
       );
     }
   }
@@ -1168,7 +1170,7 @@ export class VFX {
     this.energy.spawn(
       pos.x + vfxRng.s() * 0.1, pos.y + vfxRng.s() * 0.1, pos.z + vfxRng.s() * 0.1,
       dx * sp + vfxRng.s() * 1.2, dy * sp + vfxRng.s() * 1.2, dz * sp + vfxRng.s() * 1.2,
-      this.time, 0.16 + vfxRng.f() * 0.14, 0.11 + intensity * 0.08,
+      this.time, 0.16 + vfxRng.f() * 0.14, 0.06 + intensity * 0.05,
       _rgb[0], _rgb[1], _rgb[2], 0, 5.5, 1
     );
 
@@ -1176,8 +1178,8 @@ export class VFX {
       this.smoke.spawn(
         pos.x, pos.y, pos.z,
         dx * 2 + vfxRng.s(), dy * 2 + 0.4, dz * 2 + vfxRng.s(),
-        this.time, 0.4 + vfxRng.f() * 0.25, 0.11,
-        0.5, 0.53, 0.6, -0.4, 3.0, 2
+        this.time, 0.4 + vfxRng.f() * 0.25, 0.06,
+        0.24, 0.25, 0.3, -0.4, 3.0, 2
       );
     }
   }

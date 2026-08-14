@@ -97,7 +97,9 @@ export function roboShell(maps, look, teamColor, opts = {}) {
   const mat = pbr(maps, {
     roughness: 1.0,
     metalness: 1.0,
-    envMapIntensity: opts.envMapIntensity ?? 1.35,
+    // Painted panels are mostly dielectric now, so a strong env contribution
+    // just washes them out; direct light does the shaping instead.
+    envMapIntensity: opts.envMapIntensity ?? 0.85,
     normalScale: opts.normalScale ?? 1.0,
   });
 

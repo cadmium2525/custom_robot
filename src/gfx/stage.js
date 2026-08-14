@@ -11,12 +11,17 @@ import { floorTexture, wallTexture, sprites } from './textures.js';
 import { pbr, ensureAOChannel, makeSkyMaterial, bakeEnvironment, additive, fresnelGlow } from './materials.js';
 import { Noise } from './noise.js';
 
+/**
+ * Per-kind albedo tint. Obstacles sit deliberately darker than the deck: their
+ * job is to read as a silhouette you can duck behind, and a bright block on a
+ * bright floor reads as nothing at all.
+ */
 const KIND_TINT = {
-  dais: 1.0,
-  block: 0.94,
-  pillar: 0.9,
-  rail: 1.06,
-  wallblock: 0.86,
+  dais: 0.72,
+  block: 0.58,
+  pillar: 0.5,
+  rail: 0.66,
+  wallblock: 0.46,
 };
 
 export class Stage {
@@ -29,6 +34,7 @@ export class Stage {
     this.time = 0;
 
     this.envMap = bakeEnvironment(renderer, this.theme, settings.envSize);
+    this.environmentIntensity = 0.55;
     this.fog = new THREE.FogExp2(this.theme.fog, this.theme.fogDensity);
 
     this._buildSky();
@@ -68,8 +74,8 @@ export class Stage {
     const mat = pbr(tex, {
       emissive: 0xffffff,
       emissiveIntensity: 1.5,
-      envMapIntensity: 0.85,
-      normalScale: 0.9,
+      envMapIntensity: 0.42,
+      normalScale: 1.2,
     });
     mat.envMap = this.envMap;
     this.floorMat = mat;
@@ -116,8 +122,8 @@ export class Stage {
     const mat = pbr(tex, {
       emissive: 0xffffff,
       emissiveIntensity: 1.3,
-      envMapIntensity: 0.7,
-      normalScale: 1.1,
+      envMapIntensity: 0.34,
+      normalScale: 1.3,
       side: THREE.DoubleSide,
     });
     mat.envMap = this.envMap;
@@ -204,9 +210,9 @@ export class Stage {
       ensureAOChannel(merged);
       const mat = pbr(this.wallTex, {
         emissive: 0xffffff,
-        emissiveIntensity: 0.8,
-        envMapIntensity: 0.9,
-        normalScale: 1.0,
+        emissiveIntensity: 1.1,
+        envMapIntensity: 0.34,
+        normalScale: 1.35,
       });
       mat.envMap = this.envMap;
       mat.vertexColors = true;
@@ -223,7 +229,7 @@ export class Stage {
     if (trims.length) {
       const trim = new THREE.Mesh(
         mergeGeometries(trims),
-        additive(this.theme.emissive, { opacity: 0.85, side: THREE.FrontSide })
+        additive(this.theme.emissive, { opacity: 1.0, side: THREE.FrontSide })
       );
       trim.name = 'obstacleTrim';
       this.group.add(trim);

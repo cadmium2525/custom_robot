@@ -106,6 +106,7 @@ uniform float shockwave;      // screen-space ripple amplitude
 uniform vec2  shockCenter;
 uniform float shockRadius;
 uniform float saturation;
+uniform float contrast;
 uniform vec3  lift;
 uniform vec3  gain;
 uniform float hitFlash;
@@ -157,8 +158,11 @@ void main() {
   col *= exposure;
   col = aces(col);
 
-  // Grade: lift/gain then saturation, after tonemap so it stays predictable.
+  // Grade: lift/gain, then an S-curve, then saturation — all after tonemap so
+  // the result is predictable. The curve is what stops the mid-tones going
+  // muddy once ACES has compressed everything toward the middle.
   col = col * gain + lift;
+  col = mix(col, col * col * (3.0 - 2.0 * col), contrast);
   float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = mix(vec3(luma), col, saturation);
 
@@ -313,9 +317,10 @@ export class PostFX {
       shockwave: { value: 0 },
       shockCenter: { value: new THREE.Vector2(0.5, 0.5) },
       shockRadius: { value: 0 },
-      saturation: { value: 1.08 },
-      lift: { value: new THREE.Vector3(0.004, 0.004, 0.012) },
-      gain: { value: new THREE.Vector3(1.02, 1.0, 1.02) },
+      saturation: { value: 1.16 },
+      contrast: { value: 0.42 },
+      lift: { value: new THREE.Vector3(0.002, 0.003, 0.008) },
+      gain: { value: new THREE.Vector3(1.05, 1.02, 1.0) },
       hitFlash: { value: 0 },
       hitFlashColor: { value: new THREE.Vector3(1, 0.35, 0.3) },
       resolution: { value: new THREE.Vector2(1, 1) },

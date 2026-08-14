@@ -225,10 +225,26 @@ class Game {
     this.previewScene.add(grid);
     this.previewGrid = grid;
 
+    // Image-based light gives shape but flattens everything if it dominates;
+    // the directional rig is what makes the armour read as sculpted.
+    this.previewScene.environmentIntensity = 0.45;
+
     // Three-point rig: a dominant warm key so the armour reads as painted metal,
     // a restrained cool rim for separation, and a soft bounce underneath.
     const key = new THREE.DirectionalLight(0xfff4e2, 5.2);
     key.position.set(2.6, 4.4, 3.4);
+    // Self-shadowing is what separates the chest from the arms and stops the
+    // model reading as a single translucent mass.
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.left = -1.6;
+    key.shadow.camera.right = 1.6;
+    key.shadow.camera.top = 2.4;
+    key.shadow.camera.bottom = -0.6;
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 12;
+    key.shadow.bias = -0.0006;
+    key.shadow.normalBias = 0.02;
     const rim = new THREE.DirectionalLight(0x8fc8ff, 1.5);
     rim.position.set(-3.2, 2.2, -2.6);
     const kick = new THREE.DirectionalLight(0xffd6a8, 1.1);
@@ -242,6 +258,7 @@ class Game {
       new THREE.MeshStandardMaterial({ color: 0x11151d, roughness: 0.42, metalness: 0.9 })
     );
     pedestal.position.y = -0.045;
+    pedestal.receiveShadow = true;
     this.previewScene.add(pedestal);
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(0.88, 0.99, 64),
@@ -649,7 +666,7 @@ class Game {
       u.shockwave.value = 0;
       u.exposure.value = 1.22;
       u.vignette.value = 0.42;
-      u.saturation.value = 1.08;
+      u.saturation.value = 1.16;
       return;
     }
 
@@ -699,7 +716,7 @@ class Game {
     // Low HP darkens and desaturates the frame — legible without a HUD glance.
     const hpFrac = me.hp / me.maxHp;
     u.exposure.value = damp(u.exposure.value, hpFrac < 0.25 ? 1.18 : 1.35, 2, dt);
-    u.saturation.value = damp(u.saturation.value, hpFrac < 0.25 ? 0.86 : 1.08, 2, dt);
+    u.saturation.value = damp(u.saturation.value, hpFrac < 0.25 ? 0.9 : 1.16, 2, dt);
     u.vignette.value = damp(u.vignette.value, hpFrac < 0.25 ? 0.58 : 0.34, 2, dt);
 
     // --- UI --------------------------------------------------------------

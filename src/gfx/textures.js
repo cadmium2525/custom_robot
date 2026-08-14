@@ -183,7 +183,13 @@ export function armorTexture(look, size = 512, seedOffset = 0) {
       const rough = clamp01(
         (look.roughness ?? 0.3) * (0.72 + micro * 0.5) + wear * 0.3 + seam * 0.25 - stripe * 0.1
       );
-      const metal = clamp01((look.metalness ?? 0.9) * (1 - stripe * 0.55) - wear * 0.12);
+      // Armour is PAINTED, so the plates are dielectric — bare metal only shows
+      // where the coat is worn through, at the seams and along scuffed edges.
+      // Making the whole shell metallic turns the robo into a mirror, and a
+      // mirror in a dark arena reads as a hologram rather than a machine.
+      const metal = clamp01(
+        0.10 + wear * 0.55 * (look.metalness ?? 0.9) + seam * 0.3 - stripe * 0.08
+      );
 
       orm[o] = ao * 255;
       orm[o + 1] = rough * 255;
@@ -464,7 +470,7 @@ export function sprites() {
         const turb = n.fbm2(x / smokeSize * 4.5, y / smokeSize * 4.5, 5) * 0.5 + 0.5;
         const a = clamp01((1 - smoothstep(0.15, 1.0, r)) * (0.45 + turb * 0.85) - 0.12);
         const o = (y * smokeSize + x) * 4;
-        const l = 0.6 + turb * 0.4;
+        const l = 0.22 + turb * 0.3;
         d[o] = l * 255; d[o + 1] = l * 255; d[o + 2] = l * 255;
         d[o + 3] = a * 255;
       }

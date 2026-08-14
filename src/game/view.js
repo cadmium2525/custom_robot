@@ -51,6 +51,7 @@ export class GameView {
     this.stage = new Stage(renderer, world.arena, settings);
     scene.add(this.stage.group);
     scene.environment = this.stage.envMap;
+    scene.environmentIntensity = this.stage.environmentIntensity ?? 1;
     scene.fog = this.stage.fog;
 
     this.vfx = new VFX(scene, settings, camera, world.arena.theme);
