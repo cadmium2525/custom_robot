@@ -75,6 +75,16 @@
 }
 
 .crv2-ui * { box-sizing: border-box; }
+
+/* Both forms, deliberately. `.crv2-ui .is-hidden` is a descendant selector and
+   never matches a layer root, which itself carries `.crv2-ui` — so
+   `menus.hide()` set `is-hidden` on the menus root and nothing happened. The
+   screens vanished (they need `.is-on`), but `.menus__bg` kept painting a
+   full-viewport scrim that ramps to 86% black, at #ui-layer's z-index 20 —
+   above the HUD and above the arena. Every match frame was being rendered
+   through it: nothing in a fight capture reached white, and the whole bottom
+   of the HUD sat under an 86% black wash. */
+.crv2-ui.is-hidden,
 .crv2-ui .is-hidden { display: none !important; }
 
 /* Element resets go through :where() so they contribute zero specificity.
@@ -271,7 +281,19 @@
   transform: translateX(calc((1 - var(--hp)) * 100%));
 }
 
-.bar__flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+/* The hit flash is clipped to the *remaining* health, not the whole track.
+   Flashing the full width whites out the filled/empty boundary for the length
+   of the flash — i.e. it blinds the reading precisely on the frame the player
+   took damage. Scaled by --hp, the spent track stays black and the hit
+   actually sharpens the edge instead of erasing it. */
+.bar__flash {
+  position: absolute; inset: 0;
+  background: #fff;
+  opacity: 0;
+  transform-origin: left center;
+  transform: scaleX(var(--hp));
+}
+.hud__plate--r .bar__flash { transform-origin: right center; }
 
 .hud__plate.is-low .bar__fill { animation: hpPulse .7s ease-in-out infinite; }
 .hud__plate.is-low .hp__now { color: #ff8093; }
@@ -344,7 +366,16 @@
   max-width: calc(100% - 44px);
 }
 
-.gear__charge { width: min(30vw, 240px); }
+/* Backing plate, matching the cooldown chips. The charge readout used to sit
+   bare on the arena floor; now that the floor is near-white in places, white
+   11px type on it had nothing to hold it. The cluster reads as one object. */
+.gear__charge {
+  width: min(30vw, 240px);
+  padding: 6px 11px 7px;
+  background: rgba(3, 7, 14, .8);
+  box-shadow: inset 0 0 0 1px var(--line);
+  clip-path: var(--clip-s);
+}
 .charge__head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .charge__name { font-size: 11px; letter-spacing: .24em; color: var(--ink); }
 .charge__kana { font-size: 8px; letter-spacing: .16em; color: var(--ink-faint); }
@@ -869,7 +900,9 @@
   font-size: 9px; letter-spacing: .24em;
   color: rgba(130, 160, 200, .55);
 }
-.tf__r { color: rgba(130, 160, 200, .75); text-align: right; }
+.title__hint { color: rgba(130, 160, 200, .75); text-align: right; }
+.title__hint b { font-size: 9px; letter-spacing: .24em; }
+.title__hint i { font-size: 8px; letter-spacing: .2em; margin-top: 3px; }
 
 /* ---- mode select ---- */
 
@@ -1068,7 +1101,7 @@
 .info__b { margin: 10px 0 14px; font-size: 11px; line-height: 1.7; color: var(--ink-dim); letter-spacing: .01em; }
 
 .info__swl { font-size: 8px; letter-spacing: .22em; color: var(--ink-faint); margin-bottom: 5px; }
-.info__swl i { display: inline; margin-left: 5px; }
+.info__swl i { display: inline; font-size: 8px; letter-spacing: .12em; margin-left: 5px; }
 .info__sw { display: flex; gap: 5px; margin-bottom: 16px; }
 .info__sw i { width: 30px; height: 8px; background: var(--c, transparent); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .18); }
 .info__sw i.is-off { display: none; }
@@ -1076,7 +1109,11 @@
 /* Compare table.
    Order is label → number → bar, because the number is the answer and the bar
    is the context. The bar sitting above its own value read as an orphan. */
-.info__statl { display: flex; justify-content: space-between; align-items: baseline; font-size: 8px; letter-spacing: .22em; color: var(--ink-faint); margin-bottom: 7px; }
+/* Column header for the compare table. Without it the right-hand delta column
+   is a bare "—" aligned to nothing, which reads as a broken widget rather than
+   as "identical to what you have equipped". */
+.info__statl { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 8px; letter-spacing: .22em; color: var(--ink-faint); margin-bottom: 7px; }
+.info__statl i { display: inline; font-size: 8px; letter-spacing: .12em; margin-left: 5px; }
 .info__stats { display: flex; flex-direction: column; gap: 11px; }
 .st { display: grid; grid-template-columns: 1fr auto auto; gap: 3px 10px; align-items: baseline; }
 .st.is-off { display: none; }

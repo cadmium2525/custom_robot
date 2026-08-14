@@ -449,8 +449,14 @@ export class HUD {
     }
 
     if (r.hp !== s.hp) {
+      // First sight of this plate: adopt the value outright. Easing from the
+      // initial 0 made the numeral count up from zero while the bar was already
+      // correct, so bar and readout disagreed for the first ~10 frames of every
+      // round — and disagreed in every screenshot taken during them.
+      const first = s.hp === -1;
       const healed = r.hp > s.hp;
       s.hp = r.hp;
+      if (first) s.shownHp = r.hp;
       const frac = r.maxHp > 0 ? r.hp / r.maxHp : 0;
       s.frac = frac;
       p.el.style.setProperty('--hp', frac.toFixed(4));

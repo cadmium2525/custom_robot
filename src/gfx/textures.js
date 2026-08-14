@@ -311,11 +311,16 @@ export function floorTexture(theme, size = 1024) {
       const field = smoothstep(0.075, 0.095, edge);
       const notch = (cu < 0.07 || cu > 0.93) && (cv < 0.07 || cv > 0.93) ? 1 : 0;
 
-      const grime = n.fbm2(u * 6, v * 6, 4) * 0.5 + 0.5;
-      const speck = n.fbm2(u * 90, v * 90, 2) * 0.5 + 0.5;
+      // Octave counts here are pixels of freeze on the loading screen, so each
+      // one has to earn itself. `speck` and `scratch` are already near the
+      // Nyquist limit of the map at its first octave — their second octaves
+      // land at a two-pixel period and are gone the instant a mipmap is built,
+      // so they were pure cost.
+      const grime = n.fbm2(u * 6, v * 6, 3) * 0.5 + 0.5;
+      const speck = n.simplex2(u * 90, v * 90) * 0.5 + 0.5;
       // Cheap directional scuff. worley() looks lovely and costs four times as
       // much for something nobody can see at arena range.
-      const scratch = smoothstep(0.42, 0.88, n.fbm2(u * 130, v * 22, 2) * 0.5 + 0.5);
+      const scratch = smoothstep(0.42, 0.88, n.simplex2(u * 130, v * 22) * 0.5 + 0.5);
 
       // Five plate types keep the deck from repeating visibly under the camera.
       // The mix is deliberately weighted toward plain bright deck: the dark and
@@ -430,16 +435,29 @@ export function floorTexture(theme, size = 1024) {
 /**
  * Armour plate courses, laid like brickwork so vertical seams never stack into
  * a continuous crack. Authored to tile at one texture repeat per ~2 m, and
- * applied through `worldUV()` in stage.js so a 6 m dais and a 0.5 m rail end up
- * with the same texel density instead of BoxGeometry's flat 0..1 squash.
+ * applied through `boxFaceUV()` in stage.js so a 6 m dais and a 0.5 m rail end
+ * up with the same texel density instead of BoxGeometry's flat 0..1 squash.
+ *
+ * THEME-INDEPENDENT ON PURPOSE. Every theme was baking its own copy of this,
+ * and every one of them was the same greyscale plating multiplied by a single
+ * colour — the albedo was literally `themeColour * shade` and the emissive was
+ * literally `accent * led`. So it bakes once, white, and stage.js tints it with
+ * `material.color` / `material.emissive`, which the GPU does for free. Three
+ * arenas, one bake. It is also the truthful reading: these are the same
+ * league's prefab plates bolted together in every venue.
+ *
+ * The one thing a multiply cannot reproduce is paint that is BRIGHTER than the
+ * plate it sits on, so the stencil marks now carry their contrast in roughness
+ * and metalness — a matte dielectric patch on glossy metal — rather than in a
+ * raw albedo value. That is how a real stencil reads anyway.
  */
-export function structureTexture(theme, size = 512) {
-  const key = `struct:${theme.key}:${size}`;
+export function structureTexture(size = 256) {
+  const key = `struct:${size}`;
   if (cache.has(key)) return cache.get(key);
 
-  const n = new Noise(0x57a1 + theme.wall);
-  const base = hex(theme.struct ?? theme.wall);
-  const acc = hex(theme.accent);
+  const n = new Noise(0x57a1);
+  const base = { r: 1, g: 1, b: 1 };
+  const acc = { r: 1, g: 1, b: 1 };
 
   const albedo = new Uint8ClampedArray(size * size * 4);
   const orm = new Uint8ClampedArray(size * size * 4);
@@ -476,10 +494,10 @@ export function structureTexture(theme, size = 512) {
       const bevel = smoothstep(gap * 1.2, gap * 4.5, edge);
 
       const grain = n.simplex2(u * 210, v * 26) * 0.045;
-      const macro = n.fbm2(u * 5, v * 5, 4) * 0.5 + 0.5;
-      const micro = n.fbm2(u * 55, v * 55, 3) * 0.5 + 0.5;
+      const macro = n.fbm2(u * 5, v * 5, 3) * 0.5 + 0.5;
+      const micro = n.simplex2(u * 55, v * 55) * 0.5 + 0.5;
       // Rain/coolant streaks always run down the surface, never across it.
-      const streak = clamp01(n.fbm2(u * 34, v * 2.4, 3) * 0.5 + 0.5);
+      const streak = clamp01(n.fbm2(u * 34, v * 2.4, 2) * 0.5 + 0.5);
 
       const tone = 0.86 + pr * 0.26;
       let shade = tone * (0.8 + macro * 0.34) * (1 - groove * 0.78) * (0.95 + bevel * 0.1) + grain;
@@ -523,13 +541,15 @@ export function structureTexture(theme, size = 512) {
           h += sub * 0.34;
           r *= 1 + sub * 0.1; g *= 1 + sub * 0.1; b *= 1 + sub * 0.1;
         } else if (pr > 0.44) {
-          // Stencilled ident block.
+          // Stencilled ident block. Lifted toward white rather than to a fixed
+          // grey, so it survives the theme tint as the lightest thing on the
+          // plate; the rough/metal break below does the rest of the work.
           const mk = stencilMark(pid, (cu - 0.26) / 0.48, (rv - 0.4) / 0.22);
-          r = mix(r, 0.68, mk * 0.72);
-          g = mix(g, 0.7, mk * 0.72);
-          b = mix(b, 0.72, mk * 0.72);
-          rough += mk * 0.3;
-          metal -= mk * 0.5;
+          r = mix(r, 1.0, mk * 0.8);
+          g = mix(g, 1.0, mk * 0.8);
+          b = mix(b, 1.0, mk * 0.8);
+          rough += mk * 0.34;
+          metal -= mk * 0.62;
         }
       }
 
@@ -584,25 +604,23 @@ export function structureTexture(theme, size = 512) {
 // Spectator galleries
 // ---------------------------------------------------------------------------
 
+const GALLERY_ROWS = 12, GALLERY_SEATS = 40;
+
 /**
- * A packed, near-black seating bank speckled with crowd lights. The gallery
- * exists to be *dark* — it frames the lit deck. All the information is in the
- * emissive channel, which costs nothing and survives bloom beautifully.
+ * The seating bank itself: a packed, near-black rake of seat backs. Nothing in
+ * here knows what arena it is in — the same moulded plastic seat is bolted into
+ * every venue in the league — so it bakes once and every theme shares it. The
+ * expensive part of a gallery bake (the grime fbm and the normal map) lives
+ * entirely on this side of the split.
  */
-export function galleryTexture(theme, size = 512) {
-  const key = `gallery:${theme.key}:${size}`;
+function galleryBase(size) {
+  const key = `gallery-base:${size}`;
   if (cache.has(key)) return cache.get(key);
 
-  const n = new Noise(0xc0d3 + theme.wall);
-  const acc = hex(theme.accent);
-  const warm = hex(theme.crowdWarm ?? 0xffb066);
-
+  const n = new Noise(0xc0d3);
   const albedo = new Uint8ClampedArray(size * size * 4);
   const orm = new Uint8ClampedArray(size * size * 4);
-  const emis = new Uint8ClampedArray(size * size * 4);
   const height = new Float32Array(size * size);
-
-  const ROWS = 12, SEATS = 40;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -610,12 +628,9 @@ export function galleryTexture(theme, size = 512) {
       const i = y * size + x;
       const o = i * 4;
 
-      const rowF = v * ROWS, row = Math.floor(rowF), rv = rowF - row;
-      const seatF = u * SEATS + (row & 1) * 0.35, seat = Math.floor(seatF);
-      const su = seatF - seat;
-
-      const sid = (Math.imul(row + 3, 40499) ^ Math.imul(seat + 11, 86111)) >>> 0;
-      const sr = (sid % 65536) / 65536;
+      const rowF = v * GALLERY_ROWS, row = Math.floor(rowF), rv = rowF - row;
+      const seatF = u * GALLERY_SEATS + (row & 1) * 0.35;
+      const su = seatF - Math.floor(seatF);
 
       // Seat backs: a rounded block with a gap to its neighbour and a step
       // shadow under the row above.
@@ -631,27 +646,6 @@ export function galleryTexture(theme, size = 512) {
       albedo[o + 1] = clamp01(l * 0.95) * 255;
       albedo[o + 2] = clamp01(l * 1.15) * 255;
       albedo[o + 3] = 255;
-
-      // Crowd: a sparse scatter of hand-lights, mostly the arena accent with a
-      // few warm ones so the bank doesn't read as a single flat colour.
-      let er = 0, eg = 0, eb = 0;
-      if (sr > 0.90 && su > 0.2 && su < 0.8 && rv > 0.25 && rv < 0.75) {
-        const dot = (1 - smoothstep(0.12, 0.3, Math.hypot(su - 0.5, (rv - 0.5) * 1.4)));
-        const warmOne = sr > 0.975;
-        const c = warmOne ? warm : acc;
-        const amp = dot * (warmOne ? 1.5 : 1.1);
-        er = c.r * amp; eg = c.g * amp; eb = c.b * amp;
-      }
-      // Aisle strip lighting every eighth seat column: guides the eye around
-      // the bowl and gives the tiers a legible rhythm.
-      if (Math.abs((seatF / 8) % 1 - 0.5) > 0.482) {
-        er += acc.r * 0.5; eg += acc.g * 0.5; eb += acc.b * 0.5;
-      }
-
-      emis[o] = clamp01(er) * 255;
-      emis[o + 1] = clamp01(eg) * 255;
-      emis[o + 2] = clamp01(eb) * 255;
-      emis[o + 3] = 255;
 
       orm[o] = clamp01(0.35 + stepShade * 0.5 - gapU * 0.3) * 255;
       orm[o + 1] = clamp01(0.82 + grime * 0.16) * 255;   // fabric + matte plastic
@@ -671,49 +665,149 @@ export function galleryTexture(theme, size = 512) {
   const res = {
     map: mk(albedo, true),
     ormMap: mk(orm, false),
-    emissiveMap: mk(emis, true),
     normalMap: toTexture(heightToNormal(height, size, 1.4), { aniso: 4 }),
   };
   cache.set(key, res);
   return res;
 }
 
-// ---------------------------------------------------------------------------
-// Banner / jumbotron band
-// ---------------------------------------------------------------------------
-
 /**
- * The ring of screens above the galleries. Mostly emissive: at arena distance
- * the content only has to read as "moving league broadcast", so it is built
- * from wordmark bars, a telemetry ladder and scanlines.
+ * The crowd: the only part of a gallery that knows which arena it is sitting
+ * in. Two colours interact here (accent hand-lights and a scatter of warm
+ * ones), so unlike the plating this genuinely cannot collapse into a tint —
+ * but it is pure integer hashing with no noise in it, which makes it about the
+ * cheapest map in the file to re-bake per theme.
  */
-export function screenTexture(theme, size = 512) {
-  const key = `screen:${theme.key}:${size}`;
+function galleryEmissive(theme, size) {
+  const key = `gallery-emis:${theme.key}:${size}`;
   if (cache.has(key)) return cache.get(key);
 
-  const n = new Noise(0x5c33 + theme.accent);
   const acc = hex(theme.accent);
-  const hot = hex(theme.emissive);
-
-  const albedo = new Uint8ClampedArray(size * size * 4);
+  const warm = hex(theme.crowdWarm ?? 0xffb066);
   const emis = new Uint8ClampedArray(size * size * 4);
-  const orm = new Uint8ClampedArray(size * size * 4);
-
-  // Four panels across the tile, each with its own content block.
-  const PANELS = 4;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const u = x / size, v = y / size;
       const o = (y * size + x) * 4;
 
-      const pF = u * PANELS, p = Math.floor(pF), pu = pF - p;
-      const pr = cellRand(p * 31 + 7);
+      const rowF = v * GALLERY_ROWS, row = Math.floor(rowF), rv = rowF - row;
+      const seatF = u * GALLERY_SEATS + (row & 1) * 0.35, seat = Math.floor(seatF);
+      const su = seatF - seat;
 
-      // Bezel around every panel — without a frame a screen reads as a hole.
-      const bez = Math.min(Math.min(pu, 1 - pu) * PANELS, Math.min(v, 1 - v));
+      const sid = (Math.imul(row + 3, 40499) ^ Math.imul(seat + 11, 86111)) >>> 0;
+      const sr = (sid % 65536) / 65536;
+
+      // A sparse scatter of hand-lights, mostly the arena accent with a few
+      // warm ones so the bank doesn't read as a single flat colour.
+      let er = 0, eg = 0, eb = 0;
+      if (sr > 0.90 && su > 0.2 && su < 0.8 && rv > 0.25 && rv < 0.75) {
+        const dot = (1 - smoothstep(0.12, 0.3, Math.hypot(su - 0.5, (rv - 0.5) * 1.4)));
+        const warmOne = sr > 0.975;
+        const c = warmOne ? warm : acc;
+        const amp = dot * (warmOne ? 1.5 : 1.1);
+        er = c.r * amp; eg = c.g * amp; eb = c.b * amp;
+      }
+      // Aisle strip lighting every eighth seat column: guides the eye around
+      // the bowl and gives the tiers a legible rhythm.
+      if (Math.abs((seatF / 8) % 1 - 0.5) > 0.482) {
+        er += acc.r * 0.5; eg += acc.g * 0.5; eb += acc.b * 0.5;
+      }
+
+      emis[o] = clamp01(er) * 255;
+      emis[o + 1] = clamp01(eg) * 255;
+      emis[o + 2] = clamp01(eb) * 255;
+      emis[o + 3] = 255;
+    }
+  }
+
+  const { c, g } = ctx2d(size);
+  g.putImageData(new ImageData(emis, size, size), 0, 0);
+  const t = toTexture(c, { srgb: true, aniso: 4 });
+  cache.set(key, t);
+  return t;
+}
+
+/**
+ * A packed, near-black seating bank speckled with crowd lights. The gallery
+ * exists to be *dark* — it frames the lit deck. All the information is in the
+ * emissive channel, which costs nothing and survives bloom beautifully.
+ */
+export function galleryTexture(theme, size = 256) {
+  return { ...galleryBase(size), emissiveMap: galleryEmissive(theme, size) };
+}
+
+// ---------------------------------------------------------------------------
+// Banner / jumbotron band
+// ---------------------------------------------------------------------------
+
+/** Four panels across the tile, each with its own content block. */
+const SCREEN_PANELS = 4;
+
+/** Bezel + dead glass. Same hardware in every venue, so it bakes once. */
+function screenBase(size) {
+  const key = `screen-base:${size}`;
+  if (cache.has(key)) return cache.get(key);
+
+  const n = new Noise(0x5c33);
+  const albedo = new Uint8ClampedArray(size * size * 4);
+  const orm = new Uint8ClampedArray(size * size * 4);
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size, v = y / size;
+      const o = (y * size + x) * 4;
+
+      const pF = u * SCREEN_PANELS, pu = pF - Math.floor(pF);
+      const bez = Math.min(Math.min(pu, 1 - pu) * SCREEN_PANELS, Math.min(v, 1 - v));
       const inScreen = smoothstep(0.055, 0.075, bez);
       const frame = 1 - inScreen;
+
+      // The frame is dark structural metal; the panel face is near-black glass.
+      const fl = frame > 0.5 ? 0.09 + n.fbm2(u * 20, v * 20, 2) * 0.03 : 0.015;
+      albedo[o] = fl * 235;
+      albedo[o + 1] = fl * 240;
+      albedo[o + 2] = fl * 255;
+      albedo[o + 3] = 255;
+
+      orm[o] = clamp01(0.6 + inScreen * 0.4) * 255;
+      orm[o + 1] = frame > 0.5 ? 150 : 40;
+      orm[o + 2] = frame > 0.5 ? 200 : 30;
+      orm[o + 3] = 255;
+    }
+  }
+
+  const mk = (arr, srgb) => {
+    const { c, g } = ctx2d(size);
+    g.putImageData(new ImageData(arr, size, size), 0, 0);
+    return toTexture(c, { srgb, aniso: 4 });
+  };
+
+  const res = { map: mk(albedo, true), ormMap: mk(orm, false) };
+  cache.set(key, res);
+  return res;
+}
+
+/** The broadcast itself — the half of a jumbotron that carries the league's colour. */
+function screenEmissive(theme, size) {
+  const key = `screen-emis:${theme.key}:${size}`;
+  if (cache.has(key)) return cache.get(key);
+
+  const n = new Noise(0x5c33 + theme.accent);
+  const acc = hex(theme.accent);
+  const hot = hex(theme.emissive);
+  const emis = new Uint8ClampedArray(size * size * 4);
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size, v = y / size;
+      const o = (y * size + x) * 4;
+
+      const pF = u * SCREEN_PANELS, p = Math.floor(pF), pu = pF - p;
+      const pr = cellRand(p * 31 + 7);
+
+      const bez = Math.min(Math.min(pu, 1 - pu) * SCREEN_PANELS, Math.min(v, 1 - v));
+      const inScreen = smoothstep(0.055, 0.075, bez);
 
       let er = 0, eg = 0, eb = 0;
 
@@ -754,34 +848,23 @@ export function screenTexture(theme, size = 512) {
       emis[o + 1] = clamp01(eg) * 255;
       emis[o + 2] = clamp01(eb) * 255;
       emis[o + 3] = 255;
-
-      // The frame is dark structural metal; the panel face is near-black glass.
-      const fl = frame > 0.5 ? 0.09 + n.fbm2(u * 20, v * 20, 2) * 0.03 : 0.015;
-      albedo[o] = fl * 235;
-      albedo[o + 1] = fl * 240;
-      albedo[o + 2] = fl * 255;
-      albedo[o + 3] = 255;
-
-      orm[o] = clamp01(0.6 + inScreen * 0.4) * 255;
-      orm[o + 1] = frame > 0.5 ? 150 : 40;
-      orm[o + 2] = frame > 0.5 ? 200 : 30;
-      orm[o + 3] = 255;
     }
   }
 
-  const mk = (arr, srgb) => {
-    const { c, g } = ctx2d(size);
-    g.putImageData(new ImageData(arr, size, size), 0, 0);
-    return toTexture(c, { srgb, aniso: 4 });
-  };
+  const { c, g } = ctx2d(size);
+  g.putImageData(new ImageData(emis, size, size), 0, 0);
+  const t = toTexture(c, { srgb: true, aniso: 4 });
+  cache.set(key, t);
+  return t;
+}
 
-  const res = {
-    map: mk(albedo, true),
-    ormMap: mk(orm, false),
-    emissiveMap: mk(emis, true),
-  };
-  cache.set(key, res);
-  return res;
+/**
+ * The ring of screens above the galleries. Mostly emissive: at arena distance
+ * the content only has to read as "moving league broadcast", so it is built
+ * from wordmark bars, a telemetry ladder and scanlines.
+ */
+export function screenTexture(theme, size = 256) {
+  return { ...screenBase(size), emissiveMap: screenEmissive(theme, size) };
 }
 
 // ---------------------------------------------------------------------------
@@ -792,13 +875,18 @@ export function screenTexture(theme, size = 512) {
  * Diagonal warning stripes, laid as thin decal bands around obstacle skirts.
  * This is the single cheapest cue that a block is a built, maintained object
  * rather than a grey box the level designer left behind.
+ *
+ * Theme-independent, like the plating: the stripe was `mix(near-black, warn)`,
+ * which is a tint, so it bakes white once and stage.js sets `material.color` to
+ * the theme's hazard colour. The dark half of the stripe stays dark under any
+ * tint because 0.04 times anything is still 0.04.
  */
-export function hazardTexture(theme, size = 128) {
-  const key = `hazard:${theme.key}:${size}`;
+export function hazardTexture(size = 64) {
+  const key = `hazard:${size}`;
   if (cache.has(key)) return cache.get(key);
 
-  const n = new Noise(0x4a2d + theme.accent);
-  const warn = hex(theme.hazard ?? 0xf5c53a);
+  const n = new Noise(0x4a2d);
+  const warn = { r: 1, g: 1, b: 1 };
 
   const albedo = new Uint8ClampedArray(size * size * 4);
   const orm = new Uint8ClampedArray(size * size * 4);
@@ -914,10 +1002,10 @@ export function wallTexture(theme, size = 512) {
       const pil = 1 - smoothstep(0.035, 0.055, Math.min(bu, 1 - bu));
       const pilEdge = 1 - smoothstep(0.055, 0.07, Math.min(bu, 1 - bu));
 
-      const grunge = n.fbm2(u * 8, v * 8, 4) * 0.5 + 0.5;
+      const grunge = n.fbm2(u * 8, v * 8, 3) * 0.5 + 0.5;
       // Weathering runs DOWN a wall. Streaking it along u was another reason
       // the old surface read as abstract stripes rather than as a built thing.
-      const streak = clamp01(n.fbm2(u * 44, v * 2.6, 3) * 0.5 + 0.5);
+      const streak = clamp01(n.fbm2(u * 44, v * 2.6, 2) * 0.5 + 0.5);
 
       let l = 1;            // luminance multiplier on the base wall colour
       let rough = 0.5 + grunge * 0.3 + streak * 0.14;

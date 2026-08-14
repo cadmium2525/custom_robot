@@ -54,6 +54,31 @@ const STRUCT_TILE = 2.0;
 /** Wall elevation tiles once per this many metres of run (two bays). */
 const WALL_BAY = 8.4;
 
+/**
+ * Texture budget, in pixels, per device tier.
+ *
+ * Every one of these is a synchronous CPU pixel loop that runs on the loading
+ * screen, so the number here is milliseconds of freeze on a phone, not a
+ * quality slider. They are sized by TEXEL DENSITY, not by habit:
+ *
+ *   floor    one tile covers ~16 m of deck  ->  512 px = 32 texels/m
+ *   wall     one tile is the full 7 m elevation, two bays wide
+ *   struct   one tile covers 2 m of plating  ->  256 px = 128 texels/m, which
+ *            is already generous for something you mostly see edge-on
+ *   gallery  a 12x40 seat bank seen from 30 m away
+ *   screen   emissive, read as shape, never as text
+ *   hazard   eight diagonal stripes. It does not need 512. It never did.
+ *
+ * `envSize` is the tier's own resolution knob, so it doubles as the tier signal
+ * rather than threading a second field through every call site.
+ */
+function texBudget(settings) {
+  const e = settings.envSize ?? 128;
+  if (e >= 256) return { floor: 512, wall: 256, struct: 256, gallery: 256, screen: 256, hazard: 64 };
+  if (e >= 128) return { floor: 512, wall: 256, struct: 128, gallery: 128, screen: 128, hazard: 64 };
+  return { floor: 256, wall: 128, struct: 128, gallery: 128, screen: 128, hazard: 64 };
+}
+
 // ---------------------------------------------------------------------------
 // Geometry helpers
 // ---------------------------------------------------------------------------
@@ -174,6 +199,7 @@ export class Stage {
     this.arena = arena;
     this.theme = arena.theme;
     this.settings = settings;
+    this.tex = texBudget(settings);
     this.group = new THREE.Group();
     this.group.name = 'stage';
     this.time = 0;
@@ -186,7 +212,6 @@ export class Stage {
     const b = arena.bounds;
     this.wallH = Math.min(b.ceil * 0.55, 7.0);
 
-    this.envMap = bakeEnvironment(renderer, this.theme, settings.envSize);
     // Ambient is rationed: this is the single biggest lever on whether the
     // frame has blacks in it.
     this.environmentIntensity = 0.3;
@@ -202,15 +227,18 @@ export class Stage {
     // the build cost is a real part of time-to-first-frame on a phone and has
     // to be measurable rather than assumed. One performance.now() per phase is
     // free; guessing at a multi-second hitch nobody can see in a screenshot is
-    // not.
-    const profile = this.buildProfile = { env: 0 };
-    profile.env = Math.round(performance.now() - t0);
+    // not. Each phase is timed around the work itself — an `env` bucket that
+    // quietly also contained "everything above it in the constructor" is how a
+    // slow phase hides behind a fast one.
+    const profile = this.buildProfile = {};
     const step = (name, fn) => {
       const t = performance.now();
-      fn();
+      const r = fn();
       profile[name] = Math.round(performance.now() - t);
+      return r;
     };
 
+    this.envMap = step('env', () => bakeEnvironment(renderer, this.theme, settings.envSize));
     step('sky', () => this._buildSky());
     step('floor', () => this._buildFloor());
     step('walls', () => this._buildWalls());
@@ -235,7 +263,7 @@ export class Stage {
 
   _buildFloor() {
     const b = this.arena.bounds;
-    const tex = floorTexture(this.theme, this.settings.envSize >= 256 ? 1024 : 512);
+    const tex = floorTexture(this.theme, this.tex.floor);
     for (const t of Object.values(tex)) {
       if (t?.isTexture) {
         t.repeat.set(b.hx / 8, b.hz / 8);   // ~2m panels — readable at range
@@ -270,7 +298,7 @@ export class Stage {
   _buildWalls() {
     const b = this.arena.bounds;
     const h = this.wallH;
-    const tex = wallTexture(this.theme, this.settings.envSize >= 256 ? 512 : 256);
+    const tex = wallTexture(this.theme, this.tex.wall);
     for (const t of Object.values(tex)) {
       if (t?.isTexture) {
         t.repeat.set(1, 1);              // per-plane UVs carry the tiling now
@@ -358,7 +386,7 @@ export class Stage {
     const rakeRun = 9.0, rakeRise = 6.4;
     const gy = h + 0.15;
     if (galleryOn) {
-      const gtex = galleryTexture(t, this.settings.envSize >= 256 ? 512 : 256);
+      const gtex = galleryTexture(t, this.tex.gallery);
       for (const tx of Object.values(gtex)) {
         if (tx?.isTexture) tx.anisotropy = this.settings.anisotropy;
       }
@@ -392,7 +420,7 @@ export class Stage {
     const screenH = 2.6;
     const sHx = outHx + rakeRun, sHz = outHz + rakeRun;
     if (t.screens && this.settings.crowd) {
-      const stex = screenTexture(t, this.settings.envSize >= 256 ? 512 : 256);
+      const stex = screenTexture(t, this.tex.screen);
       const smat = pbr(stex, {
         emissive: 0xffffff,
         emissiveIntensity: 2.4,
@@ -620,16 +648,13 @@ export class Stage {
     }
 
     if (solids.length) {
-      const stex = structureTexture(this.theme, this.settings.envSize >= 256 ? 512 : 256);
-      for (const t of Object.values(stex)) {
-        if (t?.isTexture) t.anisotropy = this.settings.anisotropy;
-      }
-      this.structTex = stex;
+      const stex = this._structureTex();
 
       const merged = mergeGeometries(solids);
       ensureAOChannel(merged);
       const mat = pbr(stex, {
-        emissive: 0xffffff,
+        color: this.theme.struct ?? this.theme.wall,
+        emissive: this.theme.accent,
         emissiveIntensity: 1.4,
         envMapIntensity: 0.22,
         normalScale: 1.35,
@@ -654,14 +679,26 @@ export class Stage {
    * architecture, every practical light, all the hazard paint and the contact
    * shadows — which is the trade a phone GPU wants.
    */
-  _flushBatches() {
+  /**
+   * The plating bake is shared by every theme and every arena in the session;
+   * what makes an arena's architecture its own is the tint applied at the
+   * material, not a private copy of the same greyscale plates.
+   */
+  _structureTex() {
     if (!this.structTex) {
-      this.structTex = structureTexture(this.theme, this.settings.envSize >= 256 ? 512 : 256);
+      this.structTex = structureTexture(this.tex.struct);
+      for (const t of Object.values(this.structTex)) {
+        if (t?.isTexture) t.anisotropy = this.settings.anisotropy;
+      }
     }
+    return this.structTex;
+  }
 
+  _flushBatches() {
     if (this._struct.length) {
-      const mat = pbr(this.structTex, {
-        emissive: 0xffffff,
+      const mat = pbr(this._structureTex(), {
+        color: this.theme.struct ?? this.theme.wall,
+        emissive: this.theme.accent,
         emissiveIntensity: 1.2,
         envMapIntensity: 0.16,
         normalScale: 1.1,
@@ -683,11 +720,12 @@ export class Stage {
     }
 
     if (this._hazard.length) {
-      const htex = hazardTexture(this.theme, 128);
+      const htex = hazardTexture(this.tex.hazard);
       for (const t of Object.values(htex)) {
         if (t?.isTexture) t.anisotropy = this.settings.anisotropy;
       }
       const mat = pbr(htex, {
+        color: this.theme.hazard ?? 0xffb01f,
         emissive: 0x000000,
         emissiveIntensity: 0,
         envMapIntensity: 0.12,
@@ -996,7 +1034,9 @@ export class Stage {
         for (const m of mats) m.dispose();
       }
     });
-    this.envMap?.dispose();
+    // envMap is shared across every arena that uses this theme and outlives the
+    // stage — disposing it here would make the next arena re-bake it, which is
+    // exactly the cost this pass exists to remove.
   }
 }
 

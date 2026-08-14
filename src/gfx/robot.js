@@ -23,6 +23,13 @@ import { mergeGeometries } from './stage.js';
 import { armorTexture } from './textures.js';
 import { roboShell, additive, ensureAOChannel } from './materials.js';
 import { clamp, clamp01, lerp, damp, angleDelta, smoothstep, TAU } from '../core/mathx.js';
+// GLSL-style three-argument edge ramp. mathx's smoothstep takes ONE argument,
+// so `smoothstep(0.0, 0.62, r)` silently evaluates smoothstep(0.0) — a
+// constant — and every ramp written that way collapses to a flat value. That
+// is exactly what happened to the two textures below: the contact shadow baked
+// as a fully opaque black square and the garage pad baked at 14% alpha, which
+// is why the machine stood in a black hole on an invisible floor.
+import { smoothstep as ramp } from './noise.js';
 
 // ---------------------------------------------------------------------------
 // Scratch — hoisted so the frame loop never allocates.
@@ -930,11 +937,17 @@ function buildArm(B, P, C, s) {
 
   // Upper arm: inner frame sleeve + outer armour shell, so the joint gap has
   // depth instead of showing a hole.
-  // The upper arm stays in shadow value: it lives directly under the pauldron,
-  // and matching them would fuse shoulder and arm into one lump.
+  //
+  // The mass stays a step below the pauldron — matching them would fuse
+  // shoulder and arm into one lump — but it is the body's own hue in shadow,
+  // not the near-black recess value it used to be. Painted black, the upper
+  // arms simply stopped existing against the garage backdrop and the machine
+  // lost both its arms from the silhouette. The outer plate then takes the
+  // light value, so the limb has the same three-step structure as every other
+  // armour group: light plane, mid mass, dark edge.
   B.frame(segBox(x, P.shY, 0, eY, eZ, aw * 0.62, aw * 0.62, aw * 0.3, 1), `arm${side}`);
-  B.shellA(segBox(x, P.shY - 0.02, 0.0, eY + 0.02, eZ * 0.9, aw, aw * 1.05, 0.028, a), `arm${side}`, pal.dark);
-  B.shellA(segBox(x + s * aw * 0.42, P.shY - 0.04, 0.0, eY + 0.05, eZ * 0.8, aw * 0.30, aw * 0.7, 0.012, a), `arm${side}`, pal.hullLo);
+  B.shellA(segBox(x, P.shY - 0.02, 0.0, eY + 0.02, eZ * 0.9, aw, aw * 1.05, 0.028, a), `arm${side}`, pal.hullLo);
+  B.shellA(segBox(x + s * aw * 0.42, P.shY - 0.04, 0.0, eY + 0.05, eZ * 0.8, aw * 0.34, aw * 0.7, 0.012, a), `arm${side}`, pal.light);
 
   // Elbow: ball joint, guard plate, and a piston that visibly spans the joint.
   B.frame(at(ball(aw * 0.60, B.low ? 6 : 10), x, eY, eZ), `arm${side}`);
@@ -1326,6 +1339,11 @@ let _shadowGeo = null;
  * is exactly a multiply, so this darkens a near-white arena deck hard and a
  * near-black garage floor gently, which is the behaviour you want from a
  * shadow and not the behaviour you get from a grey decal.
+ *
+ * The ramp matters as much as the size. A flat opaque core reads as a hole cut
+ * in the floor — in the garage it swallowed the pad, the feet and the lower
+ * legs whole — so the alpha peaks below 1 and falls off continuously from the
+ * first texel. Density is the material's job, not the texture's.
  */
 function contactShadowTexture() {
   if (_shadowTex) return _shadowTex;
@@ -1338,10 +1356,11 @@ function contactShadowTexture() {
       const u = (x + 0.5) / S * 2 - 1;
       const v = (y + 0.5) / S * 2 - 1;
       const r = Math.min(1, Math.hypot(u, v));
-      // Dense core, long soft skirt — a penumbra, not a disc.
-      const core = 1 - smoothstep(0.0, 0.62, r);
-      const skirt = 1 - smoothstep(0.10, 1.0, r);
-      const a = clamp01(core * 0.62 + skirt * skirt * 0.55);
+      // Umbra under the footprint, penumbra out to the rim — and nothing at
+      // all past it, so the quad's edge is never visible.
+      const core = 1 - ramp(0.0, 0.52, r);
+      const skirt = 1 - ramp(0.0, 0.96, r);
+      const a = clamp01(core * 0.55 + skirt * skirt * 0.42);
       const o = (y * S + x) * 4;
       d[o] = 0; d[o + 1] = 0; d[o + 2] = 0;
       d[o + 3] = a * 255;
@@ -1400,8 +1419,12 @@ function padTextures() {
       const th = Math.atan2(dy, dx);
       const o = (y * S + x) * 4;
 
-      // Base deck: brushed mid grey, a touch cooler toward the rim.
-      let v = 0.62 - r * 0.16;
+      // Base deck: brushed grey, a touch cooler toward the rim. High enough to
+      // sit clearly above the machine's shadow values and give the dark legs
+      // and feet something to be a silhouette against; still a stop under the
+      // hero plates, because a white pad would swallow the light top planes
+      // the paint spends its whole budget establishing.
+      let v = 0.50 - r * 0.14;
 
       // Tread hatching, rotated 45 degrees so it never lines up with the ticks.
       const hatch = Math.abs(((dx + dy) / 14) % 1 - 0.5);
@@ -1425,8 +1448,10 @@ function padTextures() {
       const wedge = Math.abs(((th + Math.PI) / TAU * 8) % 1 - 0.5);
       const warm = (r > 0.34 && r < 0.58 && wedge > 0.30) ? 1 : 0;
 
-      // Dark blast staining under the middle, where the machine stands.
-      v -= (1 - smoothstep(0.0, 0.42, r)) * 0.13;
+      // Dark blast staining under the middle, where the machine stands. Light:
+      // the contact shadow already lands here, and two darkenings stacked on
+      // the same 40cm is how the pad disappeared in the first place.
+      v -= (1 - ramp(0.0, 0.42, r)) * 0.07;
 
       const cr = clamp01(v * (1 + warm * 0.55));
       const cg = clamp01(v * (1 + warm * 0.20));
@@ -1434,7 +1459,7 @@ function padTextures() {
 
       // Alpha dissolves the rim so the pad reads as a lit patch of a bigger
       // floor rather than as a coin sitting in space.
-      const a = 1 - smoothstep(0.72, 1.0, r);
+      const a = 1 - ramp(0.72, 1.0, r);
 
       d[o] = Math.sqrt(cr) * 255;
       d[o + 1] = Math.sqrt(cg) * 255;
@@ -1623,7 +1648,12 @@ export class RoboModel {
     this.shadow = new THREE.Mesh(contactShadowGeometry(), contactShadowMaterial());
     this.shadow.rotation.x = -Math.PI / 2;
     this.shadow.renderOrder = -1;
-    this.shadowRadius = 0.62 + P.chestW * 0.55 + L.footW * 0.9;
+    // Sized off the STANCE, not the machine. The previous number came out at
+    // 1.02 — a two-metre black disc under a 1.6m robot, which on the garage's
+    // dark floor read as a pit and on the arena's bright deck as a bruise. A
+    // contact shadow is the size of what touches the floor plus a little
+    // penumbra, and nothing else on the model gets a vote.
+    this.shadowRadius = 0.30 + P.chestW * 0.26 + L.footW * 0.60;
     this.shadow.scale.setScalar(this.shadowRadius);
     this.group.add(this.shadow);
 
@@ -2009,7 +2039,11 @@ export class RoboPreview {
   _makePad() {
     const { map } = padTextures();
     const pad = new THREE.Mesh(
-      new THREE.CircleGeometry(1.6, 64),
+      // 1.4m across for a 1.62m machine: wide enough to catch the shadow and
+      // read as a place to stand, small enough to sit inside the garage's
+      // preview slot instead of running out under the panels and off the
+      // bottom of the frame, which is where a 3.2m pad ended up.
+      new THREE.CircleGeometry(0.7, 64),
       new THREE.MeshStandardMaterial({
         map,
         transparent: true,
@@ -2017,6 +2051,15 @@ export class RoboPreview {
         metalness: 0.08,
         envMapIntensity: 0.35,
         envMap: this.envMap,
+        // The pad's whole job is to be a mid value the dark machine reads
+        // against, and the menu's key light is aimed at the robot, not at the
+        // floor 40cm below it. A self-lit floor guarantees the value: the
+        // emissive channel carries the deck at half strength and the lights
+        // shape what is left, so the pad cannot go black no matter what the
+        // menu rig or the grade does above it.
+        emissive: 0xffffff,
+        emissiveMap: map,
+        emissiveIntensity: 0.35,
         depthWrite: false,
         dithering: true,
       })

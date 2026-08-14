@@ -615,12 +615,16 @@ export class Menus {
       return `<div class="list" data-cat="${c.key}">${rows}</div>`;
     }).join('');
 
+    // Source order is load-bearing: label, then the number, then the bar
+    // underneath. `.st__bar` spans the full row, so grid auto-placement puts
+    // whatever follows it on a new line — listing the bar second pushed the
+    // value below it and left the bar reading as an orphan above its own label.
     const statRows = Array.from({ length: MAX_STAT_ROWS }, () => `
       <div class="st">
         <span class="st__l"><b></b><i></i></span>
-        <span class="st__bar"><i class="st__a"></i><i class="st__b"></i></span>
         <span class="st__v"></span>
         <span class="st__d"></span>
+        <span class="st__bar"><i class="st__a"></i><i class="st__b"></i></span>
       </div>`).join('');
 
     const eqChips = CATEGORIES.map((c) => `
@@ -674,7 +678,9 @@ export class Menus {
             <span class="info__c"></span>
           </div>
           <p class="info__b"></p>
+          <div class="info__swl">LIVERY<i>塗装</i></div>
           <div class="info__sw"><i></i><i></i><i></i></div>
+          <div class="info__statl"><span>PERFORMANCE<i>性能</i></span><span>VS EQUIPPED</span></div>
           <div class="info__stats">${statRows}</div>
           <div class="info__legend">
             <span class="lg lg--a">EQUIPPED</span>
@@ -796,14 +802,17 @@ export class Menus {
 
         const delta = st.raw(part) - st.raw(base);
         const eps = Math.abs(st.raw(base)) * 1e-4 + 1e-6;
+        // The up/down tint belongs on the delta cell itself. Toggling it on the
+        // row never matched `.st__d.is-up`, so every delta rendered in the same
+        // dim grey and the compare panel lost the one signal it exists for.
         if (Math.abs(delta) <= eps) {
           row.d.textContent = '—';
-          row.el.classList.remove('is-up', 'is-down');
+          row.d.classList.remove('is-up', 'is-down');
         } else {
           const good = st.better === 'hi' ? delta > 0 : delta < 0;
           row.d.textContent = `${delta > 0 ? '+' : '−'}${st.fmt(Math.abs(delta))}`;
-          row.el.classList.toggle('is-up', good);
-          row.el.classList.toggle('is-down', !good);
+          row.d.classList.toggle('is-up', good);
+          row.d.classList.toggle('is-down', !good);
         }
       }
 

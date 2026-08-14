@@ -460,33 +460,20 @@ export class PostFX {
       // Coarse levels are attenuated as they fold down, so the pyramid ends up
       // as a tight halo with a faint wide skirt rather than a uniform haze.
       uu.weight.value = i === 1 ? 0.82 : 0.55;
-      // Ping-pong through the scratch target: reading and writing dst in one
-      // pass is undefined behaviour on some mobile drivers.
-      this._blit(this.upPass, this._scratchFor(dst));
-      const tmp = this.mips[i - 1];
-      this.mips[i - 1] = this._scratch;
-      this._scratch = tmp;
+      // Ping-pong through this level's own same-size partner: reading and
+      // writing one target in a single pass is undefined behaviour on several
+      // mobile drivers. The partner is pre-allocated in setSize, so the swap
+      // below costs two array writes and never touches the GL allocator.
+      const spare = this.scratch[i - 1];
+      this._blit(this.upPass, spare);
+      this.mips[i - 1] = spare;
+      this.scratch[i - 1] = dst;
     }
 
     this.uniforms.tDiffuse.value = this.sceneTarget.texture;
     this.uniforms.tBloom.value = this.mips[0].texture;
     this.uniforms.time.value = time;
     this._finish();
-  }
-
-  _scratchFor(like) {
-    if (!this._scratch || this._scratch.width !== like.width || this._scratch.height !== like.height) {
-      this._scratch?.dispose();
-      this._scratch = new THREE.WebGLRenderTarget(like.width, like.height, {
-        type: this.hdrType,
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        depthBuffer: false,
-        stencilBuffer: false,
-      });
-      this._scratch.texture.colorSpace = THREE.NoColorSpace;
-    }
-    return this._scratch;
   }
 
   _finish() {
@@ -507,8 +494,8 @@ export class PostFX {
   dispose() {
     this.sceneTarget.dispose();
     this.ldrTarget.dispose();
-    this._scratch?.dispose();
     for (const m of this.mips) m.dispose();
+    for (const m of this.scratch) m.dispose();
     this.brightPass.dispose();
     this.downPass.dispose();
     this.upPass.dispose();

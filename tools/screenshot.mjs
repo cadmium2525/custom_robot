@@ -12,10 +12,16 @@
  *   node tools/screenshot.mjs --shots title,garage,settings --prefix ui-
  *   node tools/screenshot.mjs --all
  *   node tools/screenshot.mjs --shot fight --device iphone12
+ *   node tools/screenshot.mjs --shot fight --clip hud-l
+ *   node tools/screenshot.mjs --shot fight --clip 0,0,520,140
  *
  * `--shots` takes a comma-separated list and captures all of them from one
  * browser launch. A review pass wants ten screens at once and paying the boot
  * cost ten times is most of the wall clock.
+ *
+ * `--clip` crops the capture, either to a named region (see CLIPS below) or to
+ * a literal `x,y,w,h`. Crops are written alongside the full frame with the
+ * region name appended, never over it.
  *
  * Assumes a server is already running (npm run preview) unless --serve is given.
  */
@@ -46,6 +52,66 @@ const VIEWPORTS = {
   iphone12: { width: 390, height: 844, deviceScaleFactor: 3, mobile: true },
   ipad: { width: 1024, height: 768, deviceScaleFactor: 2, mobile: true },
 };
+
+/**
+ * Named crop regions for `--clip`, as fractions of the viewport so one name
+ * works on a 1600x900 desktop frame and on a 390x844 phone.
+ *
+ * A 15px-tall health bar occupies 1.7% of a 1600x900 PNG. Judging whether its
+ * filled/empty boundary actually reads is guesswork at that size, and two
+ * different HP values look identical. These crop to the widget instead.
+ */
+const CLIPS = {
+  'hud-top':    [0, 0, 1, 0.20],
+  'hud-l':      [0, 0, 0.33, 0.17],
+  'hud-r':      [0.67, 0, 0.33, 0.17],
+  'hud-centre': [0.37, 0, 0.26, 0.20],
+  gear:         [0, 0.72, 0.44, 0.28],
+  reticle:      [0.40, 0.35, 0.20, 0.30],
+  net:          [0.70, 0.72, 0.30, 0.28],
+  foot:         [0, 0.85, 1, 0.15],
+  info:         [0.71, 0.03, 0.29, 0.94],
+  rail:         [0, 0.03, 0.32, 0.94],
+  pad:          [0.42, 0.55, 0.58, 0.45],
+};
+
+/**
+ * `--clip` takes a literal `x,y,w,h` in CSS pixels, or a comma-separated list
+ * of named regions — `--clip hud-l,hud-r,gear` writes three detail PNGs from a
+ * single page load. Four numeric tokens are the literal form; anything else is
+ * read as names.
+ *
+ * Returns [] for no clip and skips names it does not know, so a typo costs one
+ * crop rather than throwing halfway through a ten-screen run.
+ */
+function resolveClips(spec, vp) {
+  if (typeof spec !== 'string') return [];
+  const toks = spec.split(',').map((s) => s.trim()).filter(Boolean);
+
+  const nums = toks.map(Number);
+  if (toks.length === 4 && nums.every((v) => Number.isFinite(v))) {
+    return [{ tag: 'crop', rect: { x: nums[0], y: nums[1], width: nums[2], height: nums[3] } }];
+  }
+
+  const out = [];
+  for (const t of toks) {
+    const f = CLIPS[t];
+    if (!f) {
+      console.error(`  ⚠ unknown --clip region "${t}" — known: ${Object.keys(CLIPS).join(', ')}`);
+      continue;
+    }
+    out.push({
+      tag: t,
+      rect: {
+        x: Math.round(f[0] * vp.width),
+        y: Math.round(f[1] * vp.height),
+        width: Math.round(f[2] * vp.width),
+        height: Math.round(f[3] * vp.height),
+      },
+    });
+  }
+  return out;
+}
 
 /**
  * Each scenario is a recipe run inside the page against `window.__game`.
@@ -386,23 +452,33 @@ async function capture(browser, name, opts = {}) {
   }).catch(() => null);
 
   await mkdir(OUT_DIR, { recursive: true });
-  const suffix = opts.device && opts.device !== 'desktop' ? `-${opts.device}` : '';
-  const file = opts.out || path.join(OUT_DIR, `${opts.prefix || ''}${name}${suffix}.png`);
+  const clips = resolveClips(opts.clip, vp);
 
-  // `--clip x,y,w,h` crops to a region. A 15px-tall health bar in a 1600x900
-  // frame is four pixels tall by the time anyone looks at the PNG, so judging
-  // HUD detail from full frames is guesswork; this crops to the widget.
-  let clip;
-  if (typeof opts.clip === 'string') {
-    const n = opts.clip.split(',').map(Number);
-    if (n.length === 4 && n.every((v) => Number.isFinite(v))) {
-      clip = { x: n[0], y: n[1], width: n[2], height: n[3] };
+  // A crop gets its own filename. Writing a 500px detail view over the
+  // full-frame PNG of the same scenario loses the frame you were comparing
+  // against, which is exactly when you need both.
+  const nameFor = (tag) => {
+    if (opts.out) return tag ? opts.out.replace(/(\.png)?$/i, `-${tag}.png`) : opts.out;
+    const dev = opts.device && opts.device !== 'desktop' ? `-${opts.device}` : '';
+    return path.join(OUT_DIR, `${opts.prefix || ''}${name}${dev}${tag ? `-${tag}` : ''}.png`);
+  };
+
+  const files = [];
+  if (!clips.length) {
+    const f = nameFor('');
+    await page.screenshot({ path: f });
+    files.push(f);
+  } else {
+    // All crops come off the same settled frame — no re-boot per region.
+    for (const c of clips) {
+      const f = nameFor(c.tag);
+      await page.screenshot({ path: f, clip: c.rect });
+      files.push(f);
     }
   }
-  await page.screenshot({ path: file, ...(clip ? { clip } : {}) });
   await context.close();
 
-  return { file, stats, errors };
+  return { file: files.join(', '), files, stats, errors };
 }
 
 async function main() {

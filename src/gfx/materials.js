@@ -297,14 +297,51 @@ export function makeSkyMaterial(theme) {
   });
 }
 
+// One generator for the whole session. Constructing a PMREMGenerator allocates
+// its render targets and compiles the blur + GGX shader chain, and disposing it
+// throws all of that away — so the old build-one-per-bake pattern paid a full
+// shader compile for every arena. That single line was the largest item in the
+// boot profile: 7.4 s to enter an arena whose textures were already cached.
+let _pmrem = null;
+let _pmremRenderer = null;
+
+function pmremFor(renderer) {
+  if (_pmrem && _pmremRenderer === renderer) return _pmrem;
+  _pmrem?.dispose();
+  _pmrem = new THREE.PMREMGenerator(renderer);
+  _pmremRenderer = renderer;
+  return _pmrem;
+}
+
+/** Baked environments, keyed by theme + cube size. Live for the session. */
+const _envCache = new Map();
+
 /**
- * Bake the sky into a PMREM environment map. Runs once per arena — the cost is
- * paid on the loading screen, and every metal surface in the scene gets a
- * believable reflection out of it.
+ * An environment map is prefiltered by roughness, so above a certain size the
+ * extra texels are blurred away before anything ever samples them. Nothing in
+ * the arena is a mirror — the highest envMapIntensity in the whole scene is
+ * 0.85 on painted robo armour — so 128 is genuinely the top of the useful
+ * range, and the cost of the blur chain scales with the square of this.
  */
-export function bakeEnvironment(renderer, theme, size = 256) {
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  pmrem.compileEquirectangularShader();
+function cubeSizeFor(size) {
+  return size <= 64 ? 64 : 128;
+}
+
+/**
+ * Bake the sky into a PMREM environment map.
+ *
+ * Cached per theme: re-entering an arena, or returning to one you have already
+ * played, costs nothing. `Stage.dispose()` deliberately does NOT dispose this —
+ * see `disposeEnvCache()` for the teardown path.
+ */
+export function bakeEnvironment(renderer, theme, size = 128) {
+  const cube = cubeSizeFor(size);
+  const key = `${theme.key}:${cube}`;
+  const cached = _envCache.get(key);
+  globalThis.__envLog = (globalThis.__envLog || []).concat(`${key} ${cached ? 'HIT' : 'MISS'}`);
+  if (cached) return cached;
+
+  const pmrem = pmremFor(renderer);
 
   const scene = new THREE.Scene();
   const sky = new THREE.Mesh(new THREE.SphereGeometry(10, 32, 24), makeSkyMaterial(theme));
@@ -326,11 +363,30 @@ export function bakeEnvironment(renderer, theme, size = 256) {
   );
   scene.add(bounce);
 
-  const rt = pmrem.fromScene(scene, 0.04, 0.1, 100);
+  // `size` lives in the options bag — passing it positionally (as this used to)
+  // silently leaves every tier on the 256 default, which is why LOW and MID
+  // were paying ULTRA's environment cost.
+  const rt = pmrem.fromScene(scene, 0.04, 0.1, 100, { size: cube });
   sky.geometry.dispose();
   sky.material.dispose();
   bounce.geometry.dispose();
   bounce.material.dispose();
-  pmrem.dispose();
+
+  _envCache.set(key, rt.texture);
   return rt.texture;
+}
+
+/** Full teardown. Only for a real shutdown — not for leaving an arena. */
+export function disposeEnvCache() {
+  for (const t of _envCache.values()) t.dispose();
+  _envCache.clear();
+  _pmrem?.dispose();
+  _pmrem = null;
+  _pmremRenderer = null;
+}
+
+/** True if this texture belongs to the shared cache and must not be disposed. */
+export function isCachedEnv(texture) {
+  for (const t of _envCache.values()) if (t === texture) return true;
+  return false;
 }
