@@ -275,6 +275,7 @@ export class PostFX {
     this.ldrTarget.texture.colorSpace = THREE.NoColorSpace;
 
     this.mips = [];
+    this.scratch = [];   // per-level ping-pong partner for the upsample chain
     this.mipCount = MIPS[settings.bloomQuality ?? 1];
 
     this.brightPass = new Pass(BRIGHT_FRAG, {
@@ -340,10 +341,11 @@ export class PostFX {
     this.uniforms.resolution.value.set(this.width, this.height);
 
     for (const m of this.mips) m.dispose();
+    for (const m of this.scratch) m.dispose();
     this.mips.length = 0;
-    let w = Math.max(1, this.width >> 1);
-    let h = Math.max(1, this.height >> 1);
-    for (let i = 0; i < this.mipCount; i++) {
+    this.scratch.length = 0;
+
+    const makeRT = (w, h) => {
       const rt = new THREE.WebGLRenderTarget(Math.max(1, w), Math.max(1, h), {
         type: this.hdrType,
         minFilter: THREE.LinearFilter,
@@ -352,7 +354,16 @@ export class PostFX {
         stencilBuffer: false,
       });
       rt.texture.colorSpace = THREE.NoColorSpace;
-      this.mips.push(rt);
+      return rt;
+    };
+
+    let w = Math.max(1, this.width >> 1);
+    let h = Math.max(1, this.height >> 1);
+    for (let i = 0; i < this.mipCount; i++) {
+      this.mips.push(makeRT(w, h));
+      // Same-size partner so the upsample never reads and writes one target,
+      // which is undefined behaviour on several mobile drivers.
+      this.scratch.push(makeRT(w, h));
       w = Math.max(1, w >> 1);
       h = Math.max(1, h >> 1);
     }
