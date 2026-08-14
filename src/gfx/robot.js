@@ -1214,9 +1214,12 @@ export class RoboModel {
       return m;
     };
 
-    this.matTorso = shell(look, 0, { rimStrength: 0.6, energy: 0.30, normalScale: 1.1 });
-    this.matArms = low ? this.matTorso : shell(look, 3, { rimStrength: 0.5, energy: 0.24, normalScale: 1.0 });
-    this.matLegs = shell(legLook, 7, { rimStrength: 0.45, energy: 0.20, normalScale: 1.0 });
+    // Rim and energy are deliberately restrained: they are an accent on painted
+    // metal, not the material itself. Push them higher and the whole robo reads
+    // as a hologram instead of a machine.
+    this.matTorso = shell(look, 0, { rimStrength: 0.22, rimPower: 4.2, energy: 0.10, normalScale: 1.15 });
+    this.matArms = low ? this.matTorso : shell(look, 3, { rimStrength: 0.18, rimPower: 4.2, energy: 0.08, normalScale: 1.05 });
+    this.matLegs = shell(legLook, 7, { rimStrength: 0.16, rimPower: 4.5, energy: 0.07, normalScale: 1.05 });
 
     const tr = TRIM[look.trim] || TRIM.gunmetal;
     this.matFrame = new THREE.MeshStandardMaterial({
@@ -1233,7 +1236,7 @@ export class RoboModel {
     });
     this.matFlare = additive(0xffffff, { opacity: 1, side: THREE.DoubleSide });
     this.matFlare.vertexColors = true;
-    this.matHalo = low ? null : fresnelGlow(look.emissive, { power: 2.2, intensity: 1.5, opacity: 0.85 });
+    this.matHalo = low ? null : fresnelGlow(look.emissive, { power: 3.4, intensity: 0.34, opacity: 0.55 });
 
     // --- meshes --------------------------------------------------------------
     this.meshes = [];
@@ -1553,7 +1556,7 @@ export class RoboModel {
       u.uRimStrength.value = 0.5 + invuln * 0.9 + hit * 0.6;
     }
     if (this.matHalo) {
-      this.matHalo.uniforms.uIntensity.value = 1.2 + this.chargeAmt * 2.2 + heat * 0.6 + hit * 1.5;
+      this.matHalo.uniforms.uIntensity.value = 0.3 + this.chargeAmt * 1.9 + heat * 0.4 + hit * 1.3;
     }
     this.matEmis.opacity = 1;
     this.matFlare.opacity = clamp01(0.55 + heat * 0.5);

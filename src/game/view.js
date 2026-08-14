@@ -214,15 +214,32 @@ export class GameView {
     return view;
   }
 
-  update(dt, alpha, time) {
-    this.time = time;
+  /**
+   * Resolve interpolated world positions for this frame.
+   *
+   * This has to run BEFORE the camera rig, or the camera frames where the
+   * robots were on the previous frame. At 60 fps that's an invisible frame of
+   * lag; at 5 fps it points the camera at empty floor.
+   */
+  prepare(alpha) {
     this._interpolate(alpha);
-
     const views = this.interp;
     for (let i = 0; i < 2; i++) {
       const r = this.render[i];
+      views[i].pos.x = r.rx;
+      views[i].pos.y = r.ry;
+      views[i].pos.z = r.rz;
+    }
+    return views;
+  }
+
+  update(dt, alpha, time) {
+    this.time = time;
+    const views = this.prepare(alpha);
+
+    for (let i = 0; i < 2; i++) {
+      const r = this.render[i];
       const v = views[i];
-      v.pos.x = r.rx; v.pos.y = r.ry; v.pos.z = r.rz;
       this.models[i].update(v, dt, time);
 
       // Boost plume follows the robot's back, opposite its travel.

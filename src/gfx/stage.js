@@ -55,7 +55,7 @@ export class Stage {
     const tex = floorTexture(this.theme, this.settings.envSize >= 256 ? 1024 : 512);
     for (const t of Object.values(tex)) {
       if (t?.isTexture) {
-        t.repeat.set(b.hx / 3.2, b.hz / 3.2);
+        t.repeat.set(b.hx / 8, b.hz / 8);   // ~2m panels — readable at range
         t.anisotropy = this.settings.anisotropy;
       }
     }
@@ -66,8 +66,8 @@ export class Stage {
     ensureAOChannel(geo);
 
     const mat = pbr(tex, {
-      emissive: this.theme.floorAccent,
-      emissiveIntensity: 2.2,
+      emissive: 0xffffff,
+      emissiveIntensity: 1.5,
       envMapIntensity: 0.85,
       normalScale: 0.9,
     });
@@ -114,8 +114,8 @@ export class Stage {
 
     const h = b.ceil;
     const mat = pbr(tex, {
-      emissive: this.theme.accent,
-      emissiveIntensity: 1.8,
+      emissive: 0xffffff,
+      emissiveIntensity: 1.3,
       envMapIntensity: 0.7,
       normalScale: 1.1,
       side: THREE.DoubleSide,
@@ -158,7 +158,7 @@ export class Stage {
     stripGeo.push(sm(b.hz * 2, b.hx - 0.06, 0, -Math.PI / 2));
     const strip = new THREE.Mesh(
       mergeGeometries(stripGeo),
-      additive(this.theme.emissive, { opacity: 0.9, side: THREE.DoubleSide, depthTest: true })
+      additive(this.theme.emissive, { opacity: 0.55, side: THREE.DoubleSide, depthTest: true })
     );
     strip.name = 'boundary';
     this.group.add(strip);
@@ -203,8 +203,8 @@ export class Stage {
       const merged = mergeGeometries(solids);
       ensureAOChannel(merged);
       const mat = pbr(this.wallTex, {
-        emissive: this.theme.accent,
-        emissiveIntensity: 1.1,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.8,
         envMapIntensity: 0.9,
         normalScale: 1.0,
       });
@@ -258,12 +258,12 @@ export class Stage {
     this.lights.key = key;
 
     // Cool fill from the opposite side keeps shadowed metal from going black.
-    const fill = new THREE.DirectionalLight(t.rimColour, t.sunIntensity * 0.28);
+    const fill = new THREE.DirectionalLight(t.rimColour, t.sunIntensity * 0.42);
     fill.position.set(-t.sunDir[0] * 24, 14, -t.sunDir[2] * 24);
     this.group.add(fill);
     this.lights.fill = fill;
 
-    const hemi = new THREE.HemisphereLight(t.skyTop, t.floor, 0.55);
+    const hemi = new THREE.HemisphereLight(t.skyTop, t.floor, 1.15);
     this.group.add(hemi);
     this.lights.hemi = hemi;
 
@@ -272,7 +272,7 @@ export class Stage {
       const b = this.arena.bounds;
       this.rigLights = [];
       for (let i = 0; i < 2; i++) {
-        const l = new THREE.PointLight(t.accent, 40, b.hx * 2.2, 2.0);
+        const l = new THREE.PointLight(t.accent, 90, b.hx * 2.4, 2.0);
         l.position.set(i === 0 ? -b.hx * 0.55 : b.hx * 0.55, b.ceil * 0.72, 0);
         this.group.add(l);
         this.rigLights.push(l);
@@ -334,7 +334,7 @@ export class Stage {
         varying float vFade;
         void main() {
           vec4 t = texture2D(uMap, gl_PointCoord);
-          gl_FragColor = vec4(uColor * t.rgb, t.a * vFade * 0.34);
+          gl_FragColor = vec4(uColor * t.rgb, t.a * vFade * 0.16);
         }`,
       transparent: true,
       blending: THREE.AdditiveBlending,
@@ -353,8 +353,8 @@ export class Stage {
       const shafts = new THREE.Group();
       for (let i = 0; i < 4; i++) {
         const a = (i / 4) * Math.PI * 2 + 0.4;
-        const g = new THREE.CylinderGeometry(0.35, 5.2, b.ceil * 1.1, 12, 1, true);
-        const m = additive(this.theme.accent, { opacity: 0.055, side: THREE.DoubleSide, depthTest: true });
+        const g = new THREE.CylinderGeometry(0.22, 2.4, b.ceil * 1.05, 10, 1, true);
+        const m = additive(this.theme.accent, { opacity: 0.012, side: THREE.DoubleSide, depthTest: true });
         const mesh = new THREE.Mesh(g, m);
         mesh.position.set(Math.cos(a) * b.hx * 0.62, b.ceil * 0.55, Math.sin(a) * b.hz * 0.62);
         mesh.rotation.z = Math.cos(a) * 0.16;

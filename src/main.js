@@ -69,6 +69,7 @@ class Game {
     this.hudLayer = document.getElementById('hud-layer');
     this.uiLayer = document.getElementById('ui-layer');
     this.hud = new HUD(this.hudLayer);
+    this.hud.setVisible(false);          // stays down until a match starts
     this.menus = new Menus(this.uiLayer);
     this.touch = new TouchControls(this.hudLayer);
     this.input.touch = this.touch;
@@ -224,12 +225,16 @@ class Game {
     this.previewScene.add(grid);
     this.previewGrid = grid;
 
-    const key = new THREE.DirectionalLight(0xfff2e0, 3.4);
-    key.position.set(2.4, 4.2, 3.0);
-    const rim = new THREE.DirectionalLight(0x59b7ff, 2.6);
-    rim.position.set(-3.0, 1.8, -2.4);
-    const fill = new THREE.HemisphereLight(0x2a3a58, 0x0a0c12, 0.7);
-    this.previewScene.add(key, rim, fill);
+    // Three-point rig: a dominant warm key so the armour reads as painted metal,
+    // a restrained cool rim for separation, and a soft bounce underneath.
+    const key = new THREE.DirectionalLight(0xfff4e2, 5.2);
+    key.position.set(2.6, 4.4, 3.4);
+    const rim = new THREE.DirectionalLight(0x8fc8ff, 1.5);
+    rim.position.set(-3.2, 2.2, -2.6);
+    const kick = new THREE.DirectionalLight(0xffd6a8, 1.1);
+    kick.position.set(-2.4, 0.6, 2.2);
+    const fill = new THREE.HemisphereLight(0x40587e, 0x141820, 1.1);
+    this.previewScene.add(key, rim, kick, fill);
 
     // A dark pedestal grounds the model instead of leaving it floating in void.
     const pedestal = new THREE.Mesh(
@@ -304,6 +309,7 @@ class Game {
       this.names = ['PLAYER', d ? d.name : 'RIVAL'];
     }
 
+    this.demoAI = null;
     this.hud.setVisible(true);
     this.menus.hide();
     this.state = 'match';
@@ -507,13 +513,43 @@ class Game {
   // Frame
   // -------------------------------------------------------------------------
 
+  /**
+   * Advance the simulation by `ticks` without waiting for wall-clock time.
+   *
+   * The capture harness runs under software GL at a few frames per second, so
+   * "wait six seconds and screenshot" would only ever photograph the intro.
+   * This drives the same `_fixedStep` path the real loop uses, so what gets
+   * captured is a genuine game state, not a posed one.
+   */
+  /** Hand the local robo to an AI (attract mode / deterministic captures). */
+  setDemo(on, difficulty = 'ace') {
+    if (!on || !this.world) { this.demoAI = null; return; }
+    this.demoAI = new RoboAI(this.world, this.localIndex, difficulty, (this.world.seed ^ 0xDEAD) >>> 0);
+  }
+
+  fastForward(ticks = 300) {
+    if (this.state !== 'match' || !this.world) return 0;
+    let n = 0;
+    for (let i = 0; i < ticks; i++) {
+      this._fixedStep();
+      n++;
+      if (this.world.phase === PHASE.MATCH_END) break;
+    }
+    return n;
+  }
+
   _fixedStep() {
     if (this.state !== 'match' || !this.world) return;
 
     const look = this.input.consumeLook();
     if (look.dx || look.dy) this.rig.look(look.dx, look.dy);
 
-    const local = this.input.sample(this.rig.yaw + this.rig.yawOffset);
+    // Demo mode hands the local robo to the AI as well — used by the capture
+    // harness so screenshots show a real fight rather than a player standing
+    // still, and available as an attract-mode driver.
+    const local = this.demoAI
+      ? this.demoAI.update()
+      : this.input.sample(this.rig.yaw + this.rig.yawOffset);
 
     this.view.beginStep();
 
@@ -611,7 +647,7 @@ class Game {
       u.radialBlur.value = 0;
       u.hitFlash.value = 0;
       u.shockwave.value = 0;
-      u.exposure.value = 1.0;
+      u.exposure.value = 1.22;
       u.vignette.value = 0.42;
       u.saturation.value = 1.08;
       return;
@@ -623,7 +659,9 @@ class Game {
 
     if (!this.world || !this.view) return;
 
-    const views = this.view.interp;
+    // Positions first, then the camera that frames them, then the models and
+    // effects that need the final camera for billboarding.
+    const views = this.view.prepare(alpha);
     this.rig.update(this.world, views, this.localIndex, dt, time);
     this.view.update(dt, alpha, time);
 
@@ -660,7 +698,7 @@ class Game {
 
     // Low HP darkens and desaturates the frame — legible without a HUD glance.
     const hpFrac = me.hp / me.maxHp;
-    u.exposure.value = damp(u.exposure.value, hpFrac < 0.25 ? 0.94 : 1.02, 2, dt);
+    u.exposure.value = damp(u.exposure.value, hpFrac < 0.25 ? 1.18 : 1.35, 2, dt);
     u.saturation.value = damp(u.saturation.value, hpFrac < 0.25 ? 0.86 : 1.08, 2, dt);
     u.vignette.value = damp(u.vignette.value, hpFrac < 0.25 ? 0.58 : 0.34, 2, dt);
 

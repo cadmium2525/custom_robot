@@ -18,6 +18,7 @@
 import { chromium, devices } from 'playwright';
 import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -66,22 +67,26 @@ const SCENARIOS = {
 
   // Two robos squared up mid-round, mid-firefight.
   fight: {
-    settle: 7.0,
+    settle: 1.0,
+    ticks: 420,
     setup: async (page, opts) => {
       await page.evaluate((o) => {
         const g = window.__game;
         g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: o.arenaId || 'grid', loadouts: g.loadouts });
+        g.setDemo(true);
       }, opts);
     },
   },
 
   // Frozen at the instant a charged shot detonates.
   explosion: {
-    settle: 5.0,
+    settle: 1.0,
+    ticks: 400,
     setup: async (page, opts) => {
       await page.evaluate((o) => {
         const g = window.__game;
         g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: o.arenaId || 'grid', loadouts: g.loadouts });
+        g.setDemo(true);
       }, opts);
     },
     beforeShot: async (page) => {
@@ -106,21 +111,25 @@ const SCENARIOS = {
   },
 
   foundry: {
-    settle: 6.0,
+    settle: 1.0,
+    ticks: 420,
     setup: async (page) => {
       await page.evaluate(() => {
         const g = window.__game;
         g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'foundry', loadouts: g.loadouts });
+        g.setDemo(true);
       });
     },
   },
 
   orbital: {
-    settle: 6.0,
+    settle: 1.0,
+    ticks: 420,
     setup: async (page) => {
       await page.evaluate(() => {
         const g = window.__game;
         g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'orbital', loadouts: g.loadouts });
+        g.setDemo(true);
       });
     },
   },
@@ -173,6 +182,22 @@ async function capture(browser, name, opts = {}) {
   const settle = Number(opts.time ?? scenario.settle ?? 2);
   if (scenario.setup) await scenario.setup(page, opts);
   await page.waitForTimeout(settle * 1000);
+
+  // Software GL renders at a few fps here, so drive the sim directly rather
+  // than hoping enough real time elapses.
+  const ticks = Number(opts.ticks ?? scenario.ticks ?? 0);
+  if (ticks > 0) {
+    // Bulk-advance to an interesting point in the round...
+    await page.evaluate((n) => window.__game.fastForward(Math.max(0, n - 40)), ticks);
+    // ...then hand the last stretch over in small slices with real frames in
+    // between, so per-frame systems (trails, particle spawn timing, camera
+    // damping) settle the way they would at 60fps instead of being sampled once.
+    for (let i = 0; i < 10; i++) {
+      await page.evaluate(() => window.__game.fastForward(4));
+      await page.waitForTimeout(260);
+    }
+  }
+
   if (scenario.beforeShot) await scenario.beforeShot(page);
 
   const stats = await page.evaluate(() => {
@@ -207,8 +232,14 @@ async function main() {
     await new Promise((r) => setTimeout(r, 2500));
   }
 
+  // The sandbox image ships a pinned Chromium that may not match the version
+  // this Playwright build expects, so use it directly rather than downloading.
+  const pinned = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+  const executablePath = existsSync(pinned) ? pinned : undefined;
+
   const browser = await chromium.launch({
     headless: HEADLESS,
+    executablePath,
     args: [
       '--use-gl=angle',
       '--use-angle=swiftshader',
@@ -232,6 +263,7 @@ async function main() {
         time: flag('time') ? Number(flag('time')) : undefined,
         out: list.length === 1 ? flag('out') : null,
         arenaId: flag('arena'),
+        ticks: flag('ticks') ? Number(flag('ticks')) : undefined,
       });
       results.push({ name, ...r });
       console.log(`✓ ${name} -> ${r.file}`);

@@ -103,10 +103,10 @@ export function roboShell(maps, look, teamColor, opts = {}) {
 
   const u = {
     uRimColor: { value: new THREE.Color(look.emissive ?? 0x88ccff) },
-    uRimPower: { value: opts.rimPower ?? 3.0 },
-    uRimStrength: { value: opts.rimStrength ?? 0.55 },
+    uRimPower: { value: opts.rimPower ?? 4.0 },
+    uRimStrength: { value: opts.rimStrength ?? 0.22 },
     uTeamColor: { value: new THREE.Color(teamColor) },
-    uEnergy: { value: opts.energy ?? 0.28 },
+    uEnergy: { value: opts.energy ?? 0.10 },
     uHitFlash: { value: 0 },
     uCharge: { value: 0 },
     uTime: { value: 0 },
