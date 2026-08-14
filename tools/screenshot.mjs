@@ -388,7 +388,18 @@ async function capture(browser, name, opts = {}) {
   await mkdir(OUT_DIR, { recursive: true });
   const suffix = opts.device && opts.device !== 'desktop' ? `-${opts.device}` : '';
   const file = opts.out || path.join(OUT_DIR, `${opts.prefix || ''}${name}${suffix}.png`);
-  await page.screenshot({ path: file });
+
+  // `--clip x,y,w,h` crops to a region. A 15px-tall health bar in a 1600x900
+  // frame is four pixels tall by the time anyone looks at the PNG, so judging
+  // HUD detail from full frames is guesswork; this crops to the widget.
+  let clip;
+  if (typeof opts.clip === 'string') {
+    const n = opts.clip.split(',').map(Number);
+    if (n.length === 4 && n.every((v) => Number.isFinite(v))) {
+      clip = { x: n[0], y: n[1], width: n[2], height: n[3] };
+    }
+  }
+  await page.screenshot({ path: file, ...(clip ? { clip } : {}) });
   await context.close();
 
   return { file, stats, errors };
@@ -438,6 +449,7 @@ async function main() {
         time: flag('time') ? Number(flag('time')) : undefined,
         out: list.length === 1 ? flag('out') : null,
         prefix: flag('prefix') || '',
+        clip: flag('clip'),
         arenaId: flag('arena'),
         ticks: flag('ticks') ? Number(flag('ticks')) : undefined,
         tier: flag('tier') != null ? flag('tier') : undefined,

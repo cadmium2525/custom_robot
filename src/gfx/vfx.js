@@ -17,10 +17,98 @@
 
 import * as THREE from 'three';
 import { sprites } from './textures.js';
+import { Noise } from './noise.js';
 import { EV, PK } from '../sim/constants.js';
 import { GUNS, BOMBS, PODS } from '../sim/parts.js';
 import { MAX_PROJ } from '../sim/world.js';
 import { vfxRng, clamp } from '../core/mathx.js';
+
+// ---------------------------------------------------------------------------
+// Local sprite set
+//
+// These three live here rather than in textures.js because they exist purely to
+// give the effects their read: a flash needs rays, a spark needs a long axis,
+// and a fireball needs a turbulence field it can look up per pixel. All are
+// generated once at boot and shared by every batch.
+// ---------------------------------------------------------------------------
+
+function paint(size, fn, { srgb = true, repeat = false } = {}) {
+  const c = typeof OffscreenCanvas !== 'undefined'
+    ? new OffscreenCanvas(size, size)
+    : Object.assign(document.createElement('canvas'), { width: size, height: size });
+  const g = c.getContext('2d', { willReadFrequently: true });
+  const img = g.createImageData(size, size);
+  const d = img.data;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      fn((x + 0.5) / size * 2 - 1, (y + 0.5) / size * 2 - 1, d, (y * size + x) * 4, x, y);
+    }
+  }
+  g.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+  t.wrapS = t.wrapT = repeat ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+  t.needsUpdate = true;
+  return t;
+}
+
+const g2 = (v, s) => Math.exp(-(v * v) / (s * s));
+
+/**
+ * Impact flash: a tiny white core, a four-ray cross and a shorter diagonal
+ * cross. The rays are what make a single card read as *detonation* instead of
+ * "soft dot" — and unlike an anamorphic streak it has no preferred axis, so it
+ * looks deliberate at any billboard roll.
+ */
+function flashSprite() {
+  return paint(256, (u, v, d, o) => {
+    const r2 = u * u + v * v;
+    const core = Math.exp(-r2 / 0.0022);
+    const glow = Math.exp(-r2 / 0.045) * 0.5;
+    const cross = g2(v, 0.026) * g2(u, 0.66) + g2(u, 0.026) * g2(v, 0.66);
+    const ud = (u + v) * 0.7071, vd = (u - v) * 0.7071;
+    const diag = (g2(vd, 0.017) * g2(ud, 0.38) + g2(ud, 0.017) * g2(vd, 0.38)) * 0.42;
+    const a = Math.min(1, core + glow + cross * 0.8 + diag);
+    d[o] = 255; d[o + 1] = 255; d[o + 2] = 255;
+    d[o + 3] = a * 255;
+  });
+}
+
+/**
+ * Spark / debris streak, long axis on +X. The particle shader rotates it onto
+ * the screen-space velocity, so every spark points along its own flight path
+ * instead of being one more round dot.
+ */
+function streakSprite() {
+  return paint(128, (u, v, d, o) => {
+    const body = g2(u, 0.52) * g2(v, 0.085);
+    const core = Math.exp(-((u * u) / 0.012 + (v * v) / 0.0024));
+    const head = g2(u - 0.28, 0.13) * g2(v, 0.05);
+    const a = Math.min(1, body * 0.55 + core * 0.9 + head * 0.7);
+    d[o] = 255; d[o + 1] = 255; d[o + 2] = 255;
+    d[o + 3] = a * 255;
+  });
+}
+
+/** Tiling fbm used as the fireball's turbulence lookup. Raw values, no encode. */
+function turbulenceSprite() {
+  const n = new Noise(0x9e13);
+  const S = 128;
+  return paint(S, (u, v, d, o, x, y) => {
+    // Blend the field with a shifted copy so the texture tiles without a seam.
+    const fx = x / S, fy = y / S;
+    const a1 = n.fbm2(fx * 4, fy * 4, 4) * 0.5 + 0.5;
+    const a2 = n.fbm2((fx + 1) * 4, fy * 4, 4) * 0.5 + 0.5;
+    const a3 = n.fbm2(fx * 4, (fy + 1) * 4, 4) * 0.5 + 0.5;
+    const a4 = n.fbm2((fx + 1) * 4, (fy + 1) * 4, 4) * 0.5 + 0.5;
+    const w = (1 - fx) * (1 - fy) * a1 + fx * (1 - fy) * a2 + (1 - fx) * fy * a3 + fx * fy * a4;
+    const fine = n.fbm2(fx * 13, fy * 13, 3) * 0.5 + 0.5;
+    d[o] = clamp(w, 0, 1) * 255;
+    d[o + 1] = clamp(fine, 0, 1) * 255;
+    d[o + 2] = clamp(w * fine * 1.6, 0, 1) * 255;
+    d[o + 3] = 255;
+  }, { srgb: false, repeat: true });
+}
 
 // ---------------------------------------------------------------------------
 // GPU particle batch
@@ -36,6 +124,8 @@ uniform float uTime;
 uniform float uPixelRatio;
 uniform float uSizeScale;
 uniform float uMaxSize;
+uniform float uAlign;        // 1 = rotate the sprite onto screen-space velocity
+uniform float uAspect;
 
 varying vec3 vColor;
 varying float vAlpha;
@@ -85,6 +175,21 @@ void main() {
   vColor = aColor;
   vAlpha = a;
   vSeed = aFlags.y;
+
+  // Velocity-aligned sprites. A round dot carries no information about where a
+  // spark came from or where it is going; a streak laid along the particle's own
+  // screen-space path turns the same buffer into readable debris. The velocity
+  // is the analytic derivative of the position above, so it stays exact under
+  // drag and gravity.
+  if (uAlign > 0.5) {
+    vec3 vNow = aVel * exp(-k * age);
+    vNow.y -= aFlags.x * age;
+    vec4 c2 = projectionMatrix * (modelViewMatrix * vec4(p + vNow * 0.02, 1.0));
+    vec2 s0 = gl_Position.xy / max(abs(gl_Position.w), 1e-4);
+    vec2 s1 = c2.xy / max(abs(c2.w), 1e-4);
+    vec2 dscr = (s1 - s0) * vec2(uAspect, 1.0);
+    if (dot(dscr, dscr) > 1e-10) vSeed = atan(dscr.y, dscr.x);
+  }
 }`;
 
 const PARTICLE_FRAG = /* glsl */`
@@ -108,7 +213,7 @@ void main() {
 }`;
 
 class ParticleBatch {
-  constructor(capacity, map, { additive = true, opacity = 1, sizeScale = 1, renderOrder = 5, maxSize = 190 } = {}) {
+  constructor(capacity, map, { additive = true, opacity = 1, sizeScale = 1, renderOrder = 5, maxSize = 190, align = false } = {}) {
     this.capacity = capacity;
     this.cursor = 0;
     this.live = 0;
@@ -146,6 +251,8 @@ class ParticleBatch {
         uOpacity: { value: opacity },
         uSizeScale: { value: sizeScale },
         uMaxSize: { value: maxSize },
+        uAlign: { value: align ? 1 : 0 },
+        uAspect: { value: 16 / 9 },
       },
       transparent: true,
       depthWrite: false,
@@ -225,7 +332,9 @@ attribute vec3 aDir;         // world-space direction along the ribbon
 attribute float aSide;       // -1 / +1
 attribute vec2 aMeta;        // x: t along the trail, y: width
 attribute vec4 aTint;        // rgb + alpha scale
+uniform float uMinWidth;     // view units per unit depth: a screen-space floor
 varying float vT;
+varying float vSide;
 varying vec4 vTint;
 
 void main() {
@@ -236,20 +345,36 @@ void main() {
   vec2 perp = vec2(-dirV.y, dirV.x);
   float len = length(perp);
   perp = len > 0.0001 ? perp / len : vec2(1.0, 0.0);
-  mv.xy += perp * aSide * aMeta.y * (1.0 - aMeta.x * 0.75);
+  // Taper to a point at the tail, and never let the ribbon fall below a couple
+  // of pixels wide: a sub-pixel core scintillates and then reads as a smudge
+  // once bloom gets hold of the leftovers.
+  float taper = pow(max(1.0 - aMeta.x, 0.0), 0.55);
+  float w = max(aMeta.y, -mv.z * uMinWidth) * taper;
+  mv.xy += perp * aSide * w;
   gl_Position = projectionMatrix * mv;
   vT = aMeta.x;
+  vSide = aSide;
   vTint = aTint;
 }`;
 
 const TRAIL_FRAG = /* glsl */`
 precision mediump float;
 varying float vT;
+varying float vSide;
 varying vec4 vTint;
 void main() {
-  float a = pow(1.0 - vT, 1.6) * vTint.a;
+  // Three parts, and all three are needed for a discharge to read: a hard white
+  // core down the centre line, a tight coloured sheath either side of it, and a
+  // head-to-tail brightness ramp that states which way the shot is travelling.
+  float s = abs(vSide);
+  float head = pow(1.0 - vT, 1.3);
+  float core = smoothstep(0.44, 0.02, s);
+  float sheath = exp(-s * s * 3.4);
+  float a = (core * 0.9 + sheath * 0.38) * head * vTint.a;
   if (a <= 0.004) discard;
-  gl_FragColor = vec4(vTint.rgb * (0.4 + (1.0 - vT) * 1.5), a);
+  vec3 col = vTint.rgb * (0.5 + head * 1.15)
+           + vec3(1.0, 0.97, 0.93) * core * core * (0.7 + head * 2.4);
+  gl_FragColor = vec4(col, a);
 }`;
 
 class TrailPool {
@@ -285,6 +410,7 @@ class TrailPool {
         this.meta[(v + 1) * 2] = t;
       }
     }
+    this._maxLen = 6;
 
     const g = new THREE.BufferGeometry();
     this.aPos = new THREE.BufferAttribute(this.position, 3).setUsage(THREE.DynamicDrawUsage);
@@ -302,7 +428,7 @@ class TrailPool {
     this.material = new THREE.ShaderMaterial({
       vertexShader: TRAIL_VERT,
       fragmentShader: TRAIL_FRAG,
-      uniforms: {},
+      uniforms: { uMinWidth: { value: 0.0016 } },
       transparent: true,
       depthWrite: false,
       blending: THREE.AdditiveBlending,
@@ -322,7 +448,8 @@ class TrailPool {
   }
 
   /** Push a new head position for a slot, shifting the history back. */
-  push(slot, x, y, z, r, g, b, width, fresh) {
+  push(slot, x, y, z, r, g, b, width, fresh, maxLen) {
+    this._maxLen = maxLen || 6;
     const h = this.history[slot];
     const seg = this.segments;
     if (fresh || !this.used[slot]) {
@@ -345,14 +472,45 @@ class TrailPool {
     const seg = this.segments;
     const h = this.history[slot];
     const base = slot * seg * 2;
+    const maxLen = this._maxLen;
+
+    // The history holds one sample per rendered frame, so its world length is
+    // whatever the projectile's speed happens to be times the frame time — at
+    // 78 m/s that is a 25-metre banner draped across the arena. Walk the path
+    // instead and cut it at a fixed world length, remapping the fade to real
+    // distance travelled. The tracer is then the same readable blade whether it
+    // came off a lance round or a lobbed pod.
+    let acc = 0;
+    let cutX = h[0], cutY = h[1], cutZ = h[2];
+    let cut = false;
+
     for (let i = 0; i < seg; i++) {
-      const px = h[i * 3], py = h[i * 3 + 1], pz = h[i * 3 + 2];
+      let px = h[i * 3], py = h[i * 3 + 1], pz = h[i * 3 + 2];
+
+      if (!cut && i > 0) {
+        const ax = h[(i - 1) * 3], ay = h[(i - 1) * 3 + 1], az = h[(i - 1) * 3 + 2];
+        const sx = px - ax, sy = py - ay, sz = pz - az;
+        const segLen = Math.hypot(sx, sy, sz);
+        if (acc + segLen > maxLen) {
+          const k = segLen > 1e-6 ? (maxLen - acc) / segLen : 0;
+          px = ax + sx * k; py = ay + sy * k; pz = az + sz * k;
+          acc = maxLen;
+          cut = true;
+          cutX = px; cutY = py; cutZ = pz;
+        } else {
+          acc += segLen;
+        }
+      } else if (cut) {
+        px = cutX; py = cutY; pz = cutZ;
+      }
+
       // Direction toward the previous sample gives the ribbon its orientation.
       const j = Math.min(seg - 1, i + 1);
       let dx = h[j * 3] - px, dy = h[j * 3 + 1] - py, dz = h[j * 3 + 2] - pz;
       const l = Math.hypot(dx, dy, dz);
       if (l < 1e-5) { dx = 0; dy = 1; dz = 0; } else { dx /= l; dy /= l; dz /= l; }
 
+      const t = acc / maxLen;
       const v = base + i * 2;
       for (let k = 0; k < 2; k++) {
         const o = v + k;
@@ -360,8 +518,10 @@ class TrailPool {
         const o4 = o * 4;
         this.position[o3] = px; this.position[o3 + 1] = py; this.position[o3 + 2] = pz;
         this.dir[o3] = dx; this.dir[o3 + 1] = dy; this.dir[o3 + 2] = dz;
+        this.meta[o * 2] = t;
         this.meta[o * 2 + 1] = width;
-        this.tint[o4] = r; this.tint[o4 + 1] = g; this.tint[o4 + 2] = b; this.tint[o4 + 3] = 1;
+        this.tint[o4] = r; this.tint[o4 + 1] = g; this.tint[o4 + 2] = b;
+        this.tint[o4 + 3] = cut && t >= 1 ? 0 : 1;
       }
     }
   }
@@ -396,30 +556,81 @@ class TrailPool {
 // Expanding shells (explosion cores, shockwave rings, muzzle flares)
 // ---------------------------------------------------------------------------
 
+/**
+ * Shell modes. One shader, four jobs — a fireball, a shock ring, a billboard
+ * flash card and a scorch decal — because each extra material is another draw
+ * call and the budget for the whole effects layer is about a dozen.
+ */
+const SHELL_FIREBALL = 0;
+const SHELL_RING = 1;
+const SHELL_CARD = 2;
+const SHELL_SOOT = 3;
+
 const SHELL_VERT = /* glsl */`
 attribute vec4 aLife;     // birth, life, scale0, scale1
 attribute vec4 aTint;     // rgb + kind
+attribute vec4 aMotion;   // local drift per second + seed
 uniform float uTime;
+uniform float uMode;
+uniform float uEase;
 varying float vT;
 varying vec4 vTint;
 varying vec2 vUv;
+varying vec3 vLocal;
+varying float vRim;
+varying float vSeed;
+
+float hash13(vec3 p) {
+  p = fract(p * 0.1031);
+  p += dot(p, p.yzx + 33.33);
+  return fract((p.x + p.y) * p.z);
+}
+
+float vnoise(vec3 x) {
+  vec3 i = floor(x);
+  vec3 f = fract(x);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = mix(hash13(i + vec3(0.0, 0.0, 0.0)), hash13(i + vec3(1.0, 0.0, 0.0)), f.x);
+  float b = mix(hash13(i + vec3(0.0, 1.0, 0.0)), hash13(i + vec3(1.0, 1.0, 0.0)), f.x);
+  float c = mix(hash13(i + vec3(0.0, 0.0, 1.0)), hash13(i + vec3(1.0, 0.0, 1.0)), f.x);
+  float d = mix(hash13(i + vec3(0.0, 1.0, 1.0)), hash13(i + vec3(1.0, 1.0, 1.0)), f.x);
+  return mix(mix(a, b, f.y), mix(c, d, f.y), f.z);
+}
 
 void main() {
   float age = uTime - aLife.x;
-  float t = age / aLife.y;
+  float t = age / max(aLife.y, 1e-4);
   if (age < 0.0 || t > 1.0) {
     gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
     vT = 2.0;
     return;
   }
   // Fast out, slow settle — the classic detonation curve.
-  float e = 1.0 - pow(1.0 - t, 2.6);
+  float e = 1.0 - pow(1.0 - t, uEase);
   float s = mix(aLife.z, aLife.w, e);
-  vec3 p = position * s;
+
+  vec3 p = position;
+  vLocal = normalize(position + 1e-5);
+  if (uMode < 0.5 && aTint.w > 0.5) {
+    // Push the surface in and out along two octaves of noise so the fireball is
+    // a cluster of billows rather than a balloon, and let the lobes deepen as it
+    // cools — that growth is what sells a mass of burning gas expanding.
+    float n1 = vnoise(position * 1.7 + aMotion.w);
+    float n2 = vnoise(position * 4.3 - aMotion.w * 1.7);
+    float lump = (n1 - 0.5) * 0.9 + (n2 - 0.5) * 0.42;
+    p *= 1.0 + lump * (0.24 + t * 0.66);
+  }
+  p *= s;
+  p += aMotion.xyz * age;
+
+  vec4 mv = modelViewMatrix * instanceMatrix * vec4(p, 1.0);
+  vec3 nv = normalize((modelViewMatrix * instanceMatrix * vec4(vLocal, 0.0)).xyz);
+  vRim = abs(nv.z);
   vUv = uv;
   vT = t;
   vTint = aTint;
-  gl_Position = projectionMatrix * modelViewMatrix * instanceMatrix * vec4(p, 1.0);
+  vSeed = aMotion.w;
+  gl_Position = projectionMatrix * mv;
 }`;
 
 const SHELL_FRAG = /* glsl */`
@@ -427,9 +638,21 @@ precision mediump float;
 varying float vT;
 varying vec4 vTint;
 varying vec2 vUv;
+varying vec3 vLocal;
+varying float vRim;
+varying float vSeed;
 uniform sampler2D uMap;
 uniform float uUseMap;
-uniform float uSoot;      // 1 = scorch decal: dark, no hot ramp, slow fade
+uniform float uMode;
+
+// Fire ramp, in linear light. Everything from ORANGE up is over 1.0 so it
+// clears the bloom threshold; SMOKE and EMBER stay under it so the tail of the
+// fireball cools *out* of the glow instead of staying lit forever.
+const vec3 C_SMOKE  = vec3(0.055, 0.048, 0.046);
+const vec3 C_EMBER  = vec3(0.90, 0.16, 0.03);
+const vec3 C_ORANGE = vec3(2.30, 0.66, 0.07);
+const vec3 C_YELLOW = vec3(3.30, 2.00, 0.42);
+const vec3 C_WHITE  = vec3(4.40, 3.80, 3.00);
 
 void main() {
   if (vT > 1.0 || vT < 0.0) discard;
@@ -437,40 +660,77 @@ void main() {
   vec3 col = vTint.rgb;
   float a;
 
-  if (uSoot > 0.5) {
+  if (uMode > 2.5) {
     // Scorch marks are burnt material, not light: they must never brighten the
     // floor, and they linger rather than flash.
     a = smoothstep(0.0, 0.06, vT) * pow(fade, 0.8) * 0.5;
+    vec4 tx = texture2D(uMap, vUv);
+    col *= tx.rgb;
+    a *= tx.a;
+  } else if (uMode > 1.5) {
+    // Billboard flash card. The hot phase is deliberately short — held any
+    // longer and a nearby blast just reads as a white screen once bloom has it.
+    col = mix(vec3(2.6, 2.3, 1.9) * col, col, smoothstep(0.0, 0.3, vT));
+    col *= 0.4 + fade * 1.1;
+    a = pow(fade, 1.7);
+    vec4 tx = texture2D(uMap, vUv);
+    col *= tx.rgb;
+    a *= tx.a;
+  } else if (uMode > 0.5) {
+    // Shock ring: a thin bright front that races outward through the geometry
+    // while the geometry itself expands. Kind 1 pins the band instead, for the
+    // charge tell that collapses inward.
+    float r = length(vUv - 0.5) * 2.0;
+    float centre = vTint.w > 0.5 ? 0.80 : mix(0.5, 0.95, vT);
+    float hw = vTint.w > 0.5 ? 0.12 : mix(0.30, 0.07, vT);
+    float band = exp(-pow((r - centre) / hw, 2.0));
+    float fill = (1.0 - smoothstep(centre - hw, centre + hw * 0.3, r)) * 0.16 * fade;
+    a = (band + fill) * pow(fade, 1.3);
+    col = col * (0.4 + band * 1.5) + vec3(1.0, 0.95, 0.88) * pow(band, 3.0) * fade * 1.3;
   } else {
-    // Cool from white-hot through the tint as the shell expands. The hot phase
-    // is deliberately short — held any longer and a nearby blast just reads as
-    // a white screen once bloom gets hold of it.
-    col = mix(vec3(1.55, 1.3, 1.0), col, smoothstep(0.0, 0.22, vT));
-    col *= 0.45 + fade * 0.95;
-    a = pow(fade, 1.9);
+    // Fireball. Two turbulence taps drive a temperature field that cools with
+    // age; the ramp then carries it white -> yellow -> orange -> ember -> smoke.
+    // The colour break-up is the whole point: an even ball of white is a puff of
+    // steam, a broken one with cool pockets is an explosion.
+    float cs = cos(vSeed), sn = sin(vSeed);
+    vec2 nuv = vec2(vLocal.x * cs - vLocal.z * sn, vLocal.x * sn + vLocal.z * cs) * 0.42;
+    nuv += vec2(vLocal.y * 0.28, -vT * 0.16);
+    float t1 = texture2D(uMap, nuv).r;
+    float t2 = texture2D(uMap, nuv * 2.7 + vec2(0.37, 0.11)).g;
+    float turb = t1 * 0.68 + t2 * 0.32;
+
+    float heat = clamp((1.0 - vT * 0.85) * (0.30 + turb * 1.30) - vT * 0.42, 0.0, 1.2);
+    if (vTint.w < 0.5) heat = max(heat, 1.15 * pow(fade, 0.5));   // smooth flash core
+
+    col = mix(C_SMOKE, C_EMBER, smoothstep(0.02, 0.24, heat));
+    col = mix(col, C_ORANGE, smoothstep(0.22, 0.50, heat));
+    col = mix(col, C_YELLOW, smoothstep(0.50, 0.78, heat));
+    col = mix(col, C_WHITE, smoothstep(0.80, 1.06, heat));
+    col *= mix(vec3(1.0), vTint.rgb, 0.35);
+
+    a = smoothstep(0.03, 0.30, heat) * pow(fade, 0.7) * 0.62;
+    a *= 0.30 + 0.70 * smoothstep(0.0, 0.5, vRim);
   }
 
-  if (uUseMap > 0.5) {
-    vec4 t = texture2D(uMap, vUv);
-    col *= t.rgb;
-    a *= t.a;
-  }
   if (a <= 0.004) discard;
   gl_FragColor = vec4(col, a);
 }`;
 
 class ShellPool {
-  constructor(geometry, capacity, map = null, { renderOrder = 7, soot = false } = {}) {
+  constructor(geometry, capacity, map = null, { renderOrder = 7, mode = SHELL_FIREBALL, ease = 2.6 } = {}) {
     this.capacity = capacity;
     this.cursor = 0;
     this.life = new Float32Array(capacity * 4);
     this.tint = new Float32Array(capacity * 4);
+    this.motion = new Float32Array(capacity * 4);
 
     const g = geometry;
     this.aLife = new THREE.InstancedBufferAttribute(this.life, 4).setUsage(THREE.DynamicDrawUsage);
     this.aTint = new THREE.InstancedBufferAttribute(this.tint, 4).setUsage(THREE.DynamicDrawUsage);
+    this.aMotion = new THREE.InstancedBufferAttribute(this.motion, 4).setUsage(THREE.DynamicDrawUsage);
     g.setAttribute('aLife', this.aLife);
     g.setAttribute('aTint', this.aTint);
+    g.setAttribute('aMotion', this.aMotion);
 
     this.material = new THREE.ShaderMaterial({
       vertexShader: SHELL_VERT,
@@ -479,7 +739,8 @@ class ShellPool {
         uTime: { value: 0 },
         uMap: { value: map },
         uUseMap: { value: map ? 1 : 0 },
-        uSoot: { value: soot ? 1 : 0 },
+        uMode: { value: mode },
+        uEase: { value: ease },
       },
       transparent: true,
       depthWrite: false,
@@ -502,7 +763,7 @@ class ShellPool {
     for (let i = 0; i < capacity; i++) this.life[i * 4 + 1] = 0;
   }
 
-  spawn(x, y, z, quat, birth, life, from, to, r, g, b) {
+  spawn(x, y, z, quat, birth, life, from, to, r, g, b, kind = 0, mx = 0, my = 0, mz = 0) {
     const i = this.cursor;
     this.cursor = (i + 1) % this.capacity;
     this._p.set(x, y, z);
@@ -511,7 +772,9 @@ class ShellPool {
     const i4 = i * 4;
     this.life[i4] = birth; this.life[i4 + 1] = life;
     this.life[i4 + 2] = from; this.life[i4 + 3] = to;
-    this.tint[i4] = r; this.tint[i4 + 1] = g; this.tint[i4 + 2] = b; this.tint[i4 + 3] = 1;
+    this.tint[i4] = r; this.tint[i4 + 1] = g; this.tint[i4 + 2] = b; this.tint[i4 + 3] = kind;
+    this.motion[i4] = mx; this.motion[i4 + 1] = my; this.motion[i4 + 2] = mz;
+    this.motion[i4 + 3] = vfxRng.f() * 12.0;
     this._dirty = true;
   }
 
@@ -521,6 +784,7 @@ class ShellPool {
     this.mesh.instanceMatrix.needsUpdate = true;
     this.aLife.needsUpdate = true;
     this.aTint.needsUpdate = true;
+    this.aMotion.needsUpdate = true;
     this._dirty = false;
   }
 
@@ -537,6 +801,37 @@ class ShellPool {
 }
 
 // ---------------------------------------------------------------------------
+// Projectile bodies
+// ---------------------------------------------------------------------------
+
+const BOLT_VERT = /* glsl */`
+varying vec3 vTint;
+varying vec3 vNv;
+varying float vNose;
+void main() {
+  vTint = instanceColor;
+  vec4 mv = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
+  vNv = normalize((modelViewMatrix * instanceMatrix * vec4(normal, 0.0)).xyz);
+  // The bolt geometry is stretched along +Z and the instance is rotated onto the
+  // velocity, so local Z is literally "how far toward the nose".
+  vNose = smoothstep(-2.4, 2.4, position.z);
+  gl_Position = projectionMatrix * mv;
+}`;
+
+const BOLT_FRAG = /* glsl */`
+precision mediump float;
+varying vec3 vTint;
+varying vec3 vNv;
+varying float vNose;
+void main() {
+  // Facing ratio gives a free hot centre: the middle of the silhouette points
+  // at the lens, the edges fall away to the part colour. Nose brighter than
+  // tail, so a still frame still says which way the round is going.
+  float face = pow(abs(normalize(vNv).z), 2.0);
+  vec3 col = vTint * (0.5 + vNose * 0.6)
+           + vec3(1.0, 0.96, 0.9) * face * (1.3 + vNose * 2.0);
+  gl_FragColor = vec4(col, 0.38 + face * 0.62);
+}`;
 
 const _v = new THREE.Vector3();
 const _v2 = new THREE.Vector3();
@@ -555,6 +850,16 @@ function hot(hex, boost, out) {
   return out;
 }
 
+/** Hue with the value normalised out, for shaders that supply their own ramp. */
+function hotNorm(hex, out) {
+  _col.setHex(hex);
+  const m = Math.max(_col.r, _col.g, _col.b, 1e-4);
+  out[0] = _col.r / m;
+  out[1] = _col.g / m;
+  out[2] = _col.b / m;
+  return out;
+}
+
 const _rgb = [0, 0, 0];
 
 export class VFX {
@@ -565,13 +870,22 @@ export class VFX {
     this.theme = theme || {};
     this.time = 0;
     this.sp = sprites();
+    this.tex = {
+      flash: flashSprite(),
+      streak: streakSprite(),
+      turb: turbulenceSprite(),
+    };
 
     const budget = settings.particleBudget;
 
     // --- particle batches -------------------------------------------------
-    this.sparks = new ParticleBatch(Math.round(budget * 0.5), this.sp.spark, { additive: true, sizeScale: 1 });
-    this.smoke = new ParticleBatch(Math.round(budget * 0.28), this.sp.smoke, { additive: false, opacity: 0.3, renderOrder: 4, maxSize: 108 });
-    this.energy = new ParticleBatch(Math.round(budget * 0.22), this.sp.glow, { additive: true, sizeScale: 1.0, maxSize: 130 });
+    // Sparks are velocity-aligned streaks; smoke and energy stay round.
+    this.sparks = new ParticleBatch(Math.round(budget * 0.5), this.tex.streak,
+      { additive: true, sizeScale: 1.35, maxSize: 120, align: true });
+    this.smoke = new ParticleBatch(Math.round(budget * 0.28), this.sp.smoke,
+      { additive: false, opacity: 0.62, renderOrder: 4, maxSize: 150 });
+    this.energy = new ParticleBatch(Math.round(budget * 0.22), this.sp.glow,
+      { additive: true, sizeScale: 1.0, maxSize: 96 });
     scene.add(this.smoke.points, this.sparks.points, this.energy.points);
 
     // --- trails -----------------------------------------------------------
@@ -579,17 +893,19 @@ export class VFX {
     scene.add(this.trails.mesh);
 
     // --- expanding shells -------------------------------------------------
-    const sphere = new THREE.IcosahedronGeometry(1, settings.bloomQuality >= 2 ? 2 : 1);
-    this.fireballs = new ShellPool(sphere, 24);
+    const sphere = new THREE.IcosahedronGeometry(1, settings.bloomQuality >= 2 ? 3 : 2);
+    this.fireballs = new ShellPool(sphere, 48, this.tex.turb, { mode: SHELL_FIREBALL, ease: 2.2 });
     scene.add(this.fireballs.mesh);
 
-    const ring = new THREE.RingGeometry(0.72, 1.0, 40, 1);
+    // Nearly a disc: the visible ring is a travelling band inside the geometry,
+    // so the front can start tight in the middle and race out to the rim.
+    const ring = new THREE.RingGeometry(0.2, 1.0, 56, 1);
     ring.rotateX(-Math.PI / 2);
-    this.shockwaves = new ShellPool(ring, 20, null, { renderOrder: 8 });
+    this.shockwaves = new ShellPool(ring, 24, null, { renderOrder: 8, mode: SHELL_RING, ease: 3.0 });
     scene.add(this.shockwaves.mesh);
 
     const flareQuad = new THREE.PlaneGeometry(1, 1);
-    this.flares = new ShellPool(flareQuad, 48, this.sp.flare, { renderOrder: 9 });
+    this.flares = new ShellPool(flareQuad, 48, this.tex.flash, { renderOrder: 9, mode: SHELL_CARD, ease: 3.4 });
     scene.add(this.flares.mesh);
 
     // --- projectile bodies ------------------------------------------------
@@ -637,7 +953,10 @@ export class VFX {
     boltGeo.scale(1, 1, 2.4);
     this.bolts = new THREE.InstancedMesh(
       boltGeo,
-      new THREE.MeshBasicMaterial({
+      new THREE.ShaderMaterial({
+        vertexShader: BOLT_VERT,
+        fragmentShader: BOLT_FRAG,
+        uniforms: {},
         transparent: true, blending: THREE.AdditiveBlending,
         depthWrite: false, toneMapped: false, fog: false,
       }),
@@ -687,7 +1006,7 @@ export class VFX {
   _buildDecals() {
     const cap = this.settings.decals;
     const geo = new THREE.PlaneGeometry(1, 1);
-    this.decals = new ShellPool(geo, cap, this.sp.smoke, { renderOrder: 3, soot: true });
+    this.decals = new ShellPool(geo, cap, this.sp.smoke, { renderOrder: 3, mode: SHELL_SOOT, ease: 1.4 });
     this.decals.material.blending = THREE.NormalBlending;
     this.decals.material.depthWrite = false;
     this.decals.mesh.renderOrder = 3;
@@ -749,26 +1068,27 @@ export class VFX {
     const dy = Math.sin(ev.pitch || 0);
     const dz = Math.cos(ev.yaw || 0) * cp;
 
-    hot(look.colour, charged ? 3.4 : 2.1, _rgb);
+    hot(look.colour, charged ? 4.2 : 2.6, _rgb);
 
-    // Flare card oriented to face the camera, scaled by the muzzle style.
+    // Flare card oriented to face the camera, scaled by the muzzle style. The
+    // card is a rayed star, so it reads as a discharge at any billboard roll.
     const styleScale = look.muzzle === 'lance' ? 2.4 : look.muzzle === 'cone' ? 1.7 : 1.2;
     _v.set(ev.x + dx * 0.5, ev.y + dy * 0.5, ev.z + dz * 0.5);
     this.flares.spawn(
       _v.x, _v.y, _v.z, this._faceCamera(_v),
-      t, charged ? 0.19 : 0.085,
-      (charged ? 0.2 : 0.1) * styleScale, (charged ? 0.62 : 0.26) * styleScale,
+      t, charged ? 0.15 : 0.07,
+      (charged ? 0.24 : 0.12) * styleScale, (charged ? 0.78 : 0.32) * styleScale,
       _rgb[0], _rgb[1], _rgb[2]
     );
 
     // A pop of sparks along the barrel line.
     const n = Math.round((charged ? 22 : 7) * s);
     for (let i = 0; i < n; i++) {
-      const sp = (charged ? 9 : 5) * (0.4 + vfxRng.f());
+      const sp = (charged ? 14 : 8) * (0.4 + vfxRng.f());
       this.sparks.spawn(
         ev.x, ev.y, ev.z,
         dx * sp + vfxRng.s() * 2.4, dy * sp + vfxRng.s() * 2.4 + 0.6, dz * sp + vfxRng.s() * 2.4,
-        t, 0.12 + vfxRng.f() * 0.18, (charged ? 0.1 : 0.055) * (0.6 + vfxRng.f()),
+        t, 0.1 + vfxRng.f() * 0.14, (charged ? 0.075 : 0.05) * (0.6 + vfxRng.f()),
         _rgb[0], _rgb[1], _rgb[2], 4, 3.2, 0
       );
     }
@@ -843,41 +1163,43 @@ export class VFX {
     const heavy = !!(ev.heavy || ev.charged);
 
     const colour = surface ? 0xffd9a0 : 0xfff0d0;
-    hot(colour, heavy ? 3.2 : 2.2, _rgb);
+    hot(colour, heavy ? 4.0 : 2.8, _rgb);
 
     const n = Math.round((heavy ? 26 : 11) * s);
     for (let i = 0; i < n; i++) {
       // Cone around the surface normal, with a wide skirt.
       const spread = heavy ? 1.5 : 1.0;
-      const vx = nx * 5 + vfxRng.s() * 5 * spread;
-      const vy = ny * 5 + vfxRng.s() * 4 * spread + 1.5;
-      const vz = nz * 5 + vfxRng.s() * 5 * spread;
+      const vx = nx * 7 + vfxRng.s() * 6 * spread;
+      const vy = ny * 7 + vfxRng.s() * 5 * spread + 1.5;
+      const vz = nz * 7 + vfxRng.s() * 6 * spread;
       this.sparks.spawn(
         ev.x, ev.y, ev.z, vx, vy, vz,
-        t, 0.24 + vfxRng.f() * 0.4, 0.045 + vfxRng.f() * 0.05,
-        _rgb[0], _rgb[1], _rgb[2], 16, 1.4, 0
+        t, 0.2 + vfxRng.f() * 0.36, 0.04 + vfxRng.f() * 0.045,
+        _rgb[0], _rgb[1], _rgb[2], 20, 0.9, 0
       );
     }
 
-    // Flash card.
+    // Flash card — the whole impact read, on one billboard, gone in ~90ms.
     _v.set(ev.x, ev.y, ev.z);
     this.flares.spawn(ev.x, ev.y, ev.z, this._faceCamera(_v), t,
-      heavy ? 0.14 : 0.07, 0.08, heavy ? 0.42 : 0.22, _rgb[0], _rgb[1], _rgb[2]);
+      heavy ? 0.12 : 0.06, 0.1, heavy ? 0.62 : 0.3, _rgb[0], _rgb[1], _rgb[2]);
 
-    // Surface ring, oriented to the impact normal.
     if (surface) {
+      // A ring only ever lies on the surface it hit, never free in the air, and
+      // it is gone inside 150ms. Rings that hang around at arbitrary angles are
+      // what turned the old arena into a field of grey donuts.
       _q.setFromUnitVectors(_up, _v2.set(nx, ny, nz).normalize());
       this.shockwaves.spawn(
         ev.x + nx * 0.03, ev.y + ny * 0.03, ev.z + nz * 0.03, _q,
-        t, 0.28, 0.14, heavy ? 1.5 : 0.8, _rgb[0] * 0.7, _rgb[1] * 0.7, _rgb[2] * 0.7
+        t, heavy ? 0.15 : 0.11, 0.2, heavy ? 1.5 : 0.85,
+        _rgb[0] * 1.1, _rgb[1] * 1.0, _rgb[2] * 0.85
       );
       this._decal(ev.x, ev.y, ev.z, nx, ny, nz, heavy ? 1.1 : 0.55);
     } else {
-      // Armour spark ring facing the shot.
-      this.shockwaves.spawn(
-        ev.x, ev.y, ev.z, this._faceCameraUp(_v),
-        t, 0.22, 0.2, heavy ? 1.4 : 0.7, 1.8, 1.1, 0.7
-      );
+      // Armour hit: a second, tighter flash instead of a ring. Nothing about a
+      // round bouncing off a chest plate says "expanding disc on the ground".
+      this.flares.spawn(ev.x, ev.y, ev.z, this._faceCamera(_v), t + 0.02,
+        heavy ? 0.16 : 0.08, 0.06, heavy ? 0.34 : 0.16, 3.4, 2.4, 1.6);
       const prox = this._proximity(ev.x, ev.y, ev.z);
       const mag = (heavy ? 0.24 : 0.06) * prox;
       this._addShake(vfxRng.s() * mag, vfxRng.s() * mag * 0.7, vfxRng.s() * mag, vfxRng.s() * mag * 0.05);
@@ -894,73 +1216,157 @@ export class VFX {
   }
 
   _explode(ev) {
-    const t = this.time;
-    const s = this._budgetScale();
-    const R = ev.radius || 3;
     const isPod = ev.kind === PK.POD;
     const part = isPod ? PODS[ev.part] || PODS[0] : BOMBS[ev.part] || BOMBS[0];
-    const look = part.look;
+    this._detonate(ev.x, ev.y, ev.z, ev.radius || 3, part.look.colour);
+  }
 
-    hot(look.colour, 2.6, _rgb);
+  /**
+   * A detonation in legible stages, because "one bright ball" is a puff of
+   * steam. In order of what the eye catches:
+   *
+   *   0-80ms    flash — rayed card plus a smooth white core, over before you
+   *             can focus on it, but it is what makes the hit feel *hard*
+   *   0-700ms   fireball — a cluster of turbulent billows cooling through
+   *             white → yellow → orange → ember, rising as they cool
+   *   0-350ms   shock — a thin bright front racing out along the deck
+   *   50ms-1.3s dust wave — pale, fast, flat, hugging the floor
+   *   100ms-3s  smoke column — dark, slow, rising: the opposite read to dust
+   *   0-1.5s    debris — sparks and chunks on sim gravity, arcing and falling
+   *   0-550ms   light — the blast throws real light onto the arena
+   *
+   * Positional args rather than an event object: this is called from event
+   * handling, where allocating anything at all is off the table.
+   */
+  _detonate(x, y, z, R, colourHex) {
+    const t = this.time;
+    const s = this._budgetScale();
+    const scale = clamp(R / 3.4, 0.55, 2.0);
+    const grounded = y < 3.2;
+    const deck = 0.06;
 
-    // (a) white-hot core
-    this.fireballs.spawn(ev.x, ev.y, ev.z, null, t, 0.36, R * 0.12, R * 0.5,
-      _rgb[0], _rgb[1], _rgb[2]);
-    this.fireballs.spawn(ev.x, ev.y, ev.z, null, t + 0.04, 0.55, R * 0.04, R * 0.72,
-      _rgb[0] * 0.5, _rgb[1] * 0.42, _rgb[2] * 0.35);
+    // Hue only — the fire ramp in the shader supplies the value, the part just
+    // leans it. An HE bomb and a plasma pod should not be the same colour.
+    hotNorm(colourHex, _rgb);
+    const hr = _rgb[0], hg = _rgb[1], hb = _rgb[2];
 
-    // (b) ground-aligned shockwave
-    this.shockwaves.spawn(ev.x, Math.max(0.03, ev.y - R * 0.35), ev.z, null,
-      t, 0.5, R * 0.18, R * 1.45, 1.5, 1.15, 0.8);
-    // and a second one facing the camera, so it reads in the air too
-    _v.set(ev.x, ev.y, ev.z);
-    this.shockwaves.spawn(ev.x, ev.y, ev.z, this._faceCameraUp(_v),
-      t, 0.36, R * 0.08, R * 1.0, _rgb[0], _rgb[1], _rgb[2]);
+    // --- 1. flash ---------------------------------------------------------
+    _v.set(x, y, z);
+    this.flares.spawn(x, y, z, this._faceCamera(_v), t, 0.1,
+      R * 0.3, R * 2.0, 5.4, 4.7, 3.7);
+    this.fireballs.spawn(x, y, z, null, t, 0.14, R * 0.05, R * 0.66,
+      1.0, 0.95, 0.86, 0);
 
-    // (c) billowing smoke
-    const smokeN = Math.round(11 * s * clamp(R / 3.4, 0.6, 1.6));
+    // --- 2. fireball cluster ---------------------------------------------
+    this.fireballs.spawn(x, y + R * 0.05, z, null, t, 0.66, R * 0.16, R * 0.82,
+      hr, hg, hb, 1, 0, R * 0.22, 0);
+    const billows = Math.round(5 * (s > 0.5 ? 1 : 0.6));
+    for (let i = 0; i < billows; i++) {
+      const a = (i / billows) * 6.283 + vfxRng.f() * 0.9;
+      const el = vfxRng.f() * 0.9 - 0.15;
+      const ca = Math.cos(a) * Math.cos(el), sa = Math.sin(a) * Math.cos(el);
+      const rad = R * (0.2 + vfxRng.f() * 0.28);
+      this.fireballs.spawn(
+        x + ca * rad, y + Math.sin(el) * rad * 0.7 + R * 0.05, z + sa * rad, null,
+        t + i * 0.028, 0.5 + vfxRng.f() * 0.36, R * 0.1, R * (0.36 + vfxRng.f() * 0.2),
+        hr, hg, hb, 1,
+        ca * R * 0.5, R * (0.35 + vfxRng.f() * 0.5), sa * R * 0.5
+      );
+    }
+
+    // --- 3. shock front ---------------------------------------------------
+    if (grounded) {
+      this.shockwaves.spawn(x, deck, z, null, t, 0.19, R * 0.45, R * 2.1,
+        3.8, 2.9, 1.8, 0);
+      this.shockwaves.spawn(x, deck, z, null, t + 0.035, 0.3, R * 0.8, R * 3.3,
+        1.7, 1.15, 0.7, 0);
+    } else {
+      this.shockwaves.spawn(x, y, z, null, t, 0.16, R * 0.4, R * 1.9,
+        3.2, 2.4, 1.6, 0);
+    }
+
+    // --- 4. ground-hugging dust wave -------------------------------------
+    // Pale, flat and fast, with enough drag that it piles up at the end of its
+    // run. Deliberately a different colour, speed and direction from the smoke
+    // column so the two never read as one grey mass.
+    if (grounded) {
+      const dustN = Math.round(16 * s * scale);
+      for (let i = 0; i < dustN; i++) {
+        const a = (i / dustN) * 6.283 + vfxRng.s() * 0.5;
+        const ca = Math.cos(a), sa = Math.sin(a);
+        const sp = R * (2.4 + vfxRng.f() * 1.6);
+        this.smoke.spawn(
+          x + ca * R * 0.25, deck + 0.06 + vfxRng.f() * 0.2, z + sa * R * 0.25,
+          ca * sp, 0.35 + vfxRng.f() * 0.55, sa * sp,
+          t + vfxRng.f() * 0.05, 1.0 + vfxRng.f() * 0.7, R * (0.09 + vfxRng.f() * 0.05),
+          1.0, 0.88, 0.74, -0.22, 2.8, 2
+        );
+      }
+    }
+
+    // --- 5. smoke column --------------------------------------------------
+    const smokeN = Math.round(10 * s * scale);
     for (let i = 0; i < smokeN; i++) {
       const a = vfxRng.f() * 6.283;
-      const el = vfxRng.f() * 1.2;
-      const sp = R * (0.5 + vfxRng.f() * 0.9);
+      const rad = vfxRng.f() * R * 0.35;
       this.smoke.spawn(
-        ev.x + vfxRng.s() * R * 0.2, ev.y + vfxRng.f() * R * 0.25, ev.z + vfxRng.s() * R * 0.2,
-        Math.cos(a) * sp * Math.cos(el), sp * Math.sin(el) * 0.7 + 1.2, Math.sin(a) * sp * Math.cos(el),
-        t + vfxRng.f() * 0.09, 1.0 + vfxRng.f() * 0.9, R * (0.07 + vfxRng.f() * 0.06),
-        0.2, 0.18, 0.18, -0.7, 1.5, 2
+        x + Math.cos(a) * rad, y + vfxRng.f() * R * 0.4, z + Math.sin(a) * rad,
+        Math.cos(a) * 1.3, 2.6 + vfxRng.f() * 2.4, Math.sin(a) * 1.3,
+        t + 0.05 + vfxRng.f() * 0.3, 1.7 + vfxRng.f() * 1.2, R * (0.12 + vfxRng.f() * 0.08),
+        0.17, 0.155, 0.15, -0.5, 1.1, 2
       );
     }
 
-    // (d) debris / spark shower with real gravity
-    const sparkN = Math.round(52 * s * clamp(R / 3.4, 0.6, 1.6));
+    // --- 6. debris --------------------------------------------------------
+    // Gravity 26 is the sim's own constant, so the arcs match how a knocked-down
+    // robo falls. Low drag keeps them ballistic instead of floaty.
+    const sparkN = Math.round(66 * s * scale);
     for (let i = 0; i < sparkN; i++) {
       const a = vfxRng.f() * 6.283;
-      const el = vfxRng.f() * 1.5 - 0.2;
-      const sp = R * (1.2 + vfxRng.f() * 2.4);
+      const el = vfxRng.f() * 1.5 - 0.15;
+      const ce = Math.cos(el);
+      const sp = R * (1.5 + vfxRng.f() * 3.6);
+      const heat = 0.55 + vfxRng.f() * 0.8;
       this.sparks.spawn(
-        ev.x, ev.y, ev.z,
-        Math.cos(a) * sp * Math.cos(el), sp * Math.sin(el) + 3, Math.sin(a) * sp * Math.cos(el),
-        t, 0.5 + vfxRng.f() * 0.9, 0.05 + vfxRng.f() * 0.08,
-        _rgb[0] * 1.3, _rgb[1] * 1.05, _rgb[2] * 0.7, 20, 0.9, 0
+        x, y, z,
+        Math.cos(a) * ce * sp, Math.sin(el) * sp + 4.5, Math.sin(a) * ce * sp,
+        t, 0.5 + vfxRng.f() * 1.0, 0.04 + vfxRng.f() * 0.06,
+        3.6 * heat, 2.1 * heat * heat, 0.7 * heat * heat * heat,
+        26, 0.22, 0
       );
     }
 
-    // (e) transient light
+    const chunkN = Math.round(12 * s * scale);
+    for (let i = 0; i < chunkN; i++) {
+      const a = vfxRng.f() * 6.283;
+      const el = vfxRng.f() * 1.1 + 0.1;
+      const ce = Math.cos(el);
+      const sp = R * (1.1 + vfxRng.f() * 1.9);
+      // Opaque and unlit: a tumbling fragment of the shell casing, not a spark.
+      this.smoke.spawn(
+        x, y, z,
+        Math.cos(a) * ce * sp, Math.sin(el) * sp + 3.5, Math.sin(a) * ce * sp,
+        t, 0.7 + vfxRng.f() * 0.7, R * (0.018 + vfxRng.f() * 0.02),
+        0.13, 0.115, 0.105, 26, 0.1, 0
+      );
+    }
+
+    // --- 7. light on the arena -------------------------------------------
     const li = this.lightCursor % this.lights.length;
     this.lightCursor++;
     const l = this.lights[li];
-    l.position.set(ev.x, ev.y + 0.3, ev.z);
-    l.color.setRGB(clamp(_rgb[0], 0, 1), clamp(_rgb[1], 0, 1), clamp(_rgb[2], 0, 1));
-    l.intensity = 60 * clamp(R / 3.4, 0.5, 2);
-    l.distance = R * 7;
+    l.position.set(x, y + 0.45, z);
+    l.color.setRGB(1.0, 0.6, 0.26);
+    l.intensity = 190 * scale;
+    l.distance = R * 9;
     l.visible = true;
-    this.lightTimers[li] = 0.34;
+    this.lightTimers[li] = 0.55;
 
-    const prox = this._proximity(ev.x, ev.y, ev.z);
-    const mag = clamp(R / 3.4, 0.5, 2.2) * prox * 0.5;
+    const prox = this._proximity(x, y, z);
+    const mag = scale * prox * 0.8;
     this._addShake(vfxRng.s() * mag, vfxRng.s() * mag * 0.8, vfxRng.s() * mag, vfxRng.s() * mag * 0.05);
 
-    this._decal(ev.x, 0.001, ev.z, 0, 1, 0, R * 0.8);
+    if (grounded) this._decal(x, 0.001, z, 0, 1, 0, R * 0.9);
   }
 
   _wallHit(ev) {
@@ -992,15 +1398,15 @@ export class VFX {
     hot(air ? 0x9fd8ff : 0xcfd8e4, air ? 2.2 : 1.1, _rgb);
 
     if (!air) {
-      // Ground kick: a low dust ring.
-      this.shockwaves.spawn(ev.x, ev.y + 0.03, ev.z, null, t, 0.4, 0.25, 1.9, 0.9, 0.92, 1.0);
+      // Ground kick: dust only. A takeoff does not warrant a shock ring, and
+      // every ring that is not an impact is one more donut on the floor.
       for (let i = 0; i < Math.round(12 * s); i++) {
         const a = vfxRng.f() * 6.283;
         this.smoke.spawn(
           ev.x, ev.y + 0.06, ev.z,
-          Math.cos(a) * 3.2, 0.7 + vfxRng.f(), Math.sin(a) * 3.2,
-          t, 0.55 + vfxRng.f() * 0.3, 0.1 + vfxRng.f() * 0.07,
-          0.24, 0.25, 0.28, -0.2, 3.0, 2
+          Math.cos(a) * 3.4, 0.7 + vfxRng.f(), Math.sin(a) * 3.4,
+          t, 0.5 + vfxRng.f() * 0.3, 0.09 + vfxRng.f() * 0.06,
+          0.62, 0.58, 0.52, -0.2, 3.2, 2
         );
       }
     }
@@ -1039,7 +1445,15 @@ export class VFX {
       _rgb[0], _rgb[1], _rgb[2]);
 
     if (!ev.air) {
-      this.shockwaves.spawn(ev.x, ev.y + 0.03, ev.z, null, t, 0.32, 0.3, 1.5, 0.8, 0.9, 1.0);
+      for (let i = 0; i < Math.round(7 * s); i++) {
+        const a = vfxRng.f() * 6.283;
+        this.smoke.spawn(
+          ev.x - dx * 0.2, ev.y + 0.08, ev.z - dz * 0.2,
+          Math.cos(a) * 2.4 - dx * 2.5, 0.5 + vfxRng.f() * 0.6, Math.sin(a) * 2.4 - dz * 2.5,
+          t, 0.4 + vfxRng.f() * 0.25, 0.08 + vfxRng.f() * 0.05,
+          0.58, 0.55, 0.5, -0.2, 3.4, 2
+        );
+      }
     }
     const prox = this._proximity(ev.x, ev.y, ev.z);
     this._addShake(vfxRng.s() * 0.05 * prox, 0, vfxRng.s() * 0.05 * prox, 0);
@@ -1051,18 +1465,21 @@ export class VFX {
     const hard = !!ev.hard;
     const power = clamp((ev.speed || 6) / 16, 0.25, 1.6);
 
-    this.shockwaves.spawn(ev.x, ev.y + 0.03, ev.z, null, t,
-      hard ? 0.5 : 0.32, 0.3, (hard ? 3.2 : 1.7) * power, 0.95, 0.97, 1.0);
+    // Only a hard landing gets a ring, and only for a sixth of a second.
+    if (hard) {
+      this.shockwaves.spawn(ev.x, ev.y + 0.04, ev.z, null, t,
+        0.17, 0.4, 3.0 * power, 2.6, 2.5, 2.3, 0);
+    }
 
     const n = Math.round((hard ? 22 : 9) * s * power);
     for (let i = 0; i < n; i++) {
       const a = vfxRng.f() * 6.283;
-      const sp = (hard ? 5.5 : 3) * (0.5 + vfxRng.f());
+      const sp = (hard ? 6.5 : 3.4) * (0.5 + vfxRng.f());
       this.smoke.spawn(
         ev.x + Math.cos(a) * 0.3, ev.y + 0.08, ev.z + Math.sin(a) * 0.3,
-        Math.cos(a) * sp, 0.5 + vfxRng.f() * 0.8, Math.sin(a) * sp,
-        t, 0.6 + vfxRng.f() * 0.5, 0.11 + vfxRng.f() * 0.09,
-        0.25, 0.26, 0.29, -0.15, 2.6, 2
+        Math.cos(a) * sp, 0.4 + vfxRng.f() * 0.7, Math.sin(a) * sp,
+        t, 0.55 + vfxRng.f() * 0.45, 0.1 + vfxRng.f() * 0.08,
+        0.66, 0.62, 0.56, -0.15, 2.8, 2
       );
     }
     if (hard) {
@@ -1100,9 +1517,19 @@ export class VFX {
 
   _getUp(ev) {
     const t = this.time;
-    hot(0xa8e0ff, 1.8, _rgb);
-    this.shockwaves.spawn(ev.x, ev.y + 0.04, ev.z, null, t, 0.45, 0.2, 2.0,
-      _rgb[0], _rgb[1], _rgb[2]);
+    const s = this._budgetScale();
+    hot(0xa8e0ff, 2.6, _rgb);
+    this.shockwaves.spawn(ev.x, ev.y + 0.04, ev.z, null, t, 0.16, 0.3, 2.0,
+      _rgb[0], _rgb[1], _rgb[2], 0);
+    for (let i = 0; i < Math.round(8 * s); i++) {
+      const a = vfxRng.f() * 6.283;
+      this.smoke.spawn(
+        ev.x, ev.y + 0.07, ev.z,
+        Math.cos(a) * 3.0, 0.5 + vfxRng.f() * 0.5, Math.sin(a) * 3.0,
+        t, 0.5 + vfxRng.f() * 0.3, 0.09 + vfxRng.f() * 0.05,
+        0.6, 0.57, 0.52, -0.15, 3.0, 2
+      );
+    }
   }
 
   _chargeReady(ev, world) {
@@ -1124,19 +1551,21 @@ export class VFX {
         t, 0.3, 0.09, _rgb[0], _rgb[1], _rgb[2], 0, 0.4, 1
       );
     }
+    // Kind 1: the band is pinned to the geometry, so the whole ring converges on
+    // the robo as the shell shrinks — a gathering, not a blast.
     _v.set(r.pos.x, r.pos.y + 1.0, r.pos.z);
     this.shockwaves.spawn(_v.x, _v.y, _v.z, this._faceCameraUp(_v),
-      t, 0.34, 1.9, 0.5, _rgb[0], _rgb[1], _rgb[2]);
+      t, 0.3, 2.1, 0.45, _rgb[0], _rgb[1], _rgb[2], 1);
   }
 
   _ko(ev, world) {
     const loser = ev.winner < 0 ? -1 : 1 - ev.winner;
     const r = loser >= 0 ? world?.robos?.[loser] : null;
     if (!r) return;
-    // Reuse the explosion recipe at a much larger radius, twice, offset in time.
-    this._explode({ x: r.pos.x, y: r.pos.y + 0.9, z: r.pos.z, radius: 6.5, kind: PK.BOMB, part: 0 });
-    this.fireballs.spawn(r.pos.x, r.pos.y + 1.2, r.pos.z, null, this.time + 0.12, 0.85, 0.35, 4.6,
-      2.4, 1.4, 0.7);
+    // Reuse the detonation recipe at a much larger radius, twice, offset in time.
+    this._detonate(r.pos.x, r.pos.y + 0.9, r.pos.z, 6.5, 0xffd166);
+    this.fireballs.spawn(r.pos.x, r.pos.y + 1.2, r.pos.z, null, this.time + 0.12, 0.9, 0.35, 4.6,
+      1.0, 0.72, 0.4, 1, 0, 2.2, 0);
     this._addShake(vfxRng.s() * 1.2, 0.6, vfxRng.s() * 1.2, vfxRng.s() * 0.06);
 
     // Lingering smoke column.
@@ -1257,9 +1686,11 @@ export class VFX {
     _v.set(p.vel.x / speed, p.vel.y / speed, p.vel.z / speed);
     _q.setFromUnitVectors(_v2.set(0, 0, 1), _v);
 
-    const w = look.width * (charged ? 2.4 : 1) * (1 + p.scale * 0.15);
-    const len = look.len * (charged ? 1.6 : 1) * 0.34;
-    this._scaleV.set(w * 3.4, w * 3.4, len);
+    // Longer and thinner than before: a bolt is a spike travelling nose-first,
+    // and length is what sells speed. Width is what made the old one a lozenge.
+    const w = look.width * (charged ? 1.8 : 1) * (1 + p.scale * 0.15);
+    const len = look.len * (charged ? 1.5 : 1) * 0.5;
+    this._scaleV.set(w * 2.6, w * 2.6, len);
     this._m4.compose(_v2.set(px, py, pz), _q, this._scaleV);
     this.bolts.setMatrixAt(count, this._m4);
 
@@ -1268,16 +1699,17 @@ export class VFX {
 
     const slot = this._trailSlot(i);
     if (slot >= 0) {
-      hot(look.trail, charged ? 2.4 : 1.5, _rgb);
+      hot(look.trail, charged ? 2.6 : 1.8, _rgb);
       this.trails.push(slot, px, py, pz, _rgb[0], _rgb[1], _rgb[2],
-        look.width * (charged ? 3.2 : 1.6), fresh);
+        look.width * (charged ? 1.7 : 1.0), fresh, charged ? 7.5 : 5.5);
     }
 
-    // Charged rounds carry a corona of their own.
+    // Charged rounds carry a corona of their own — small, or it swallows the
+    // core it is supposed to be surrounding.
     if (charged && (i & 1) === 0) {
       hot(look.colour, 2.2, _rgb);
       this.energy.spawn(px, py, pz, vfxRng.s() * 0.6, vfxRng.s() * 0.6, vfxRng.s() * 0.6,
-        this.time, 0.2, 0.22, _rgb[0], _rgb[1], _rgb[2], 0, 4, 0);
+        this.time, 0.16, 0.1, _rgb[0], _rgb[1], _rgb[2], 0, 4, 0);
     }
     return count + 1;
   }
@@ -1312,7 +1744,7 @@ export class VFX {
     const slot = this._trailSlot(i);
     if (slot >= 0) {
       hot(look.colour, 1.1, _rgb);
-      this.trails.push(slot, px, py, pz, _rgb[0] * 0.4, _rgb[1] * 0.4, _rgb[2] * 0.4, 0.09, fresh);
+      this.trails.push(slot, px, py, pz, _rgb[0] * 0.4, _rgb[1] * 0.4, _rgb[2] * 0.4, 0.06, fresh, 3.5);
     }
     return count + 1;
   }
@@ -1345,7 +1777,7 @@ export class VFX {
     const slot = this._trailSlot(i);
     if (slot >= 0) {
       hot(look.colour, 1.8, _rgb);
-      this.trails.push(slot, px, py, pz, _rgb[0], _rgb[1], _rgb[2], 0.07, fresh);
+      this.trails.push(slot, px, py, pz, _rgb[0], _rgb[1], _rgb[2], 0.055, fresh, 4.5);
     }
     return count + 1;
   }
@@ -1360,6 +1792,9 @@ export class VFX {
     this.sparks.material.uniforms.uPixelRatio.value = pr;
     this.smoke.material.uniforms.uPixelRatio.value = pr;
     this.energy.material.uniforms.uPixelRatio.value = pr;
+    // Streak alignment happens in NDC, so it needs the frame's aspect to know
+    // which way "along the velocity" actually points on screen.
+    this.sparks.material.uniforms.uAspect.value = this.camera?.aspect || 16 / 9;
 
     this.sparks.flush(time);
     this.smoke.flush(time);
@@ -1378,7 +1813,10 @@ export class VFX {
         l.visible = false;
         l.intensity = 0;
       } else {
-        l.intensity *= Math.exp(-dt * 9);
+        // Slow enough that the blast actually lands on the geometry for a few
+        // frames. The old 9/s decay meant the light was gone before the fireball
+        // had finished expanding, so nothing in the arena ever showed the flash.
+        l.intensity *= Math.exp(-dt * 5.0);
       }
     }
   }

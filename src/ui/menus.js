@@ -474,11 +474,11 @@ export class Menus {
     el.innerHTML = `
       <div class="title">
         <div class="logo">
-          <div class="logo__mark"><span class="mark__hex"></span><span class="mark__id">CR·V2</span></div>
+          <div class="logo__mark">${MARK}<span class="mark__id">HLS·02</span></div>
           <div class="logo__text">
-            <div class="logo__eyebrow">CUSTOM MACHINE COMBAT LEAGUE</div>
-            <h1 class="logo__word" data-text="ARENA">ARENA<em>V2</em></h1>
-            <div class="logo__kana">ホロシアム・アリーナ</div>
+            <div class="logo__eyebrow">CUSTOM MACHINE COMBAT LEAGUE<i>機甲競技連盟</i></div>
+            <h1 class="logo__word" data-text="HOLOSSEUM">HOLOSSEUM</h1>
+            <div class="logo__kana">ホロシアム<i>SEASON 02</i></div>
           </div>
         </div>
 

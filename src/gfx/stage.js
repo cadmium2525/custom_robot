@@ -170,6 +170,7 @@ function slab(w, h, d, x, y, z, yaw = 0, uvScale = STRUCT_TILE) {
 
 export class Stage {
   constructor(renderer, arena, settings) {
+    const t0 = performance.now();
     this.arena = arena;
     this.theme = arena.theme;
     this.settings = settings;
@@ -197,14 +198,28 @@ export class Stage {
     this._hazard = [];      // warm painted chevrons
     this._decals = [];      // contact darkening on the deck
 
-    this._buildSky();
-    this._buildFloor();
-    this._buildWalls();
-    this._buildArchitecture();
-    this._buildBoxes();
-    this._flushBatches();
-    this._buildLights();
-    this._buildAtmosphere();
+    // Every texture in here is baked on the CPU during the loading screen, so
+    // the build cost is a real part of time-to-first-frame on a phone and has
+    // to be measurable rather than assumed. One performance.now() per phase is
+    // free; guessing at a multi-second hitch nobody can see in a screenshot is
+    // not.
+    const profile = this.buildProfile = { env: 0 };
+    profile.env = Math.round(performance.now() - t0);
+    const step = (name, fn) => {
+      const t = performance.now();
+      fn();
+      profile[name] = Math.round(performance.now() - t);
+    };
+
+    step('sky', () => this._buildSky());
+    step('floor', () => this._buildFloor());
+    step('walls', () => this._buildWalls());
+    step('arch', () => this._buildArchitecture());
+    step('boxes', () => this._buildBoxes());
+    step('flush', () => this._flushBatches());
+    step('lights', () => this._buildLights());
+    step('atmos', () => this._buildAtmosphere());
+    profile.total = Math.round(performance.now() - t0);
   }
 
   // -------------------------------------------------------------------------

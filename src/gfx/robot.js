@@ -353,7 +353,10 @@ class Build {
     for (let i = 0; i < c; i++) {
       const ny = n.getY(i);
       const plane = ny >= 0 ? 1 + ny * ny * PLANE_UP : 1 - ny * ny * PLANE_DOWN;
-      const k = plane * (0.68 + 0.32 * smoothstep((p.getY(i) - 0.02) / 1.2));
+      // Gentle: this is grime, not a second value structure. Crushed harder it
+      // drags the white leg armour down into the same grey as the blue torso
+      // and undoes the colour blocking it is supposed to support.
+      const k = plane * (0.82 + 0.18 * smoothstep((p.getY(i) - 0.02) / 1.2));
       arr[i * 3] = paint.r * k;
       arr[i * 3 + 1] = paint.g * k;
       arr[i * 3 + 2] = paint.b * k;
@@ -588,10 +591,12 @@ function buildChest(B, P, C) {
   const { look, em, ac, team, pal } = C;
   const cy = P.chestY, cw = P.chestW, ch = P.chestH, cd = P.chestD;
 
-  // Core torso volume: a tapered barrel, never a plain box. It sits in shadow
-  // value so the hero plate bolted to the front of it has something to read
-  // against — a light plate on a light body is not a plate, it is a smudge.
-  B.shellT(at(taperBox(cw * 0.96, cw * 0.80, ch, cd * 0.94, cd * 0.82, 0.045, a), 0, cy, 0), 'chest', pal.hullLo);
+  // Core torso volume: a tapered barrel, never a plain box. This is the machine's
+  // ONE big statement of its own colour — at 40 pixels the torso is most of what
+  // you see, and a torso painted in shadow value just makes a dark blob with a
+  // white mark on it. The hero plate reads because it is white on mid, and the
+  // sternum reads because it is black on mid.
+  B.shellT(at(taperBox(cw * 0.96, cw * 0.80, ch, cd * 0.94, cd * 0.82, 0.045, a), 0, cy, 0), 'chest', pal.hull);
   // Upper back plate, floated so the shoulder yoke reads as a separate piece.
   B.shellT(at(roundedBox(cw * 0.84, ch * 0.52, cd * 0.30, 0.03, a), 0, cy + ch * 0.20, -cd * 0.46), 'chest', pal.dark);
   // Collar / shoulder yoke.
@@ -827,14 +832,17 @@ function buildShoulder(B, P, C, s) {
   // Deltoid frame under the pauldron so the gap has something inside it.
   B.frame(at(ball(P.armW * 0.72, B.low ? 6 : 10), x, y, 0), clav);
 
-  // Every pauldron is body in the hull colour with a LIGHT top cap. The cap is
-  // the highest horizontal plane on the machine and reads as the shoulder line;
-  // without it the pauldron dissolves into the chest, which is defect #24.
+  // The pauldrons carry the machine's LIGHT value, and they are the biggest
+  // single block of it on the model. This is the read at 32 pixels: two bright
+  // caps at the top of a mid-value torso, with black underneath them. Painting
+  // them in the hull colour — which is what shipped — is most of defect #24,
+  // because it fuses shoulder, chest and arm into one continuous blue mass.
   switch (look.shoulder) {
     case 'block': {
       // SHELLBIT: rectangular blocks with vertical slats.
-      B.shellT(at(roundedBox(0.20 * sc, 0.24, 0.26, 0.035, a), x + s * 0.08, y + 0.05, 0), clav, pal.hull);
-      B.shellT(at(roundedBox(0.16 * sc, 0.07, 0.22, 0.02, a), x + s * 0.08, y + 0.20, 0), clav, pal.light);
+      B.shellT(at(roundedBox(0.20 * sc, 0.24, 0.26, 0.035, a), x + s * 0.08, y + 0.05, 0), clav, pal.light);
+      B.shellT(at(roundedBox(0.21 * sc, 0.05, 0.27, 0.018, a), x + s * 0.08, y - 0.08, 0), clav, pal.dark);
+      B.shellT(at(roundedBox(0.16 * sc, 0.07, 0.22, 0.02, a), x + s * 0.08, y + 0.20, 0), clav, pal.hull);
       if (!B.low) {
         for (let i = 0; i < 3; i++) {
           B.frame(at(roundedBox(0.022, 0.16, 0.03, 0.006, 1),
@@ -850,11 +858,15 @@ function buildShoulder(B, P, C, s) {
       fin.rotateZ(-s * 0.30);
       fin.rotateX(0.36);
       fin.translate(x + s * 0.075, y + 0.06, -0.06);
-      B.shellT(fin, clav, pal.hull);
+      B.shellT(fin, clav, pal.light);
       const cap = taperBox(0.09, 0.13, 0.13, 0.14, 0.19, 0.022, a);
       cap.rotateZ(-s * 0.18);
       cap.translate(x + s * 0.055, y + 0.03, 0.01);
-      B.shellT(cap, clav, pal.light);
+      B.shellT(cap, clav, pal.hull);
+      const lip = taperBox(0.10, 0.14, 0.045, 0.15, 0.20, 0.014, a);
+      lip.rotateZ(-s * 0.18);
+      lip.translate(x + s * 0.055, y - 0.045, 0.01);
+      B.shellT(lip, clav, pal.dark);
       B.emis(at(roundedBox(0.012, 0.20, 0.012, 0.004, 1).rotateX(0.36).rotateZ(-s * 0.30),
         x + s * 0.115, y + 0.07, -0.05), clav, em, 1.9);
       break;
@@ -862,14 +874,15 @@ function buildShoulder(B, P, C, s) {
     case 'vent': {
       // GRAND ISO: radiator drums. Every panel is a heatsink, so make it one.
       B.shellT(at(cyl(0.115, 0.125, 0.19, B.low ? 10 : 14).rotateZ(Math.PI / 2),
-        x + s * 0.085, y + 0.03, 0), clav, pal.hull);
+        x + s * 0.085, y + 0.03, 0), clav, pal.light);
       B.frame(at(cyl(0.075, 0.075, 0.21, B.low ? 8 : 12).rotateZ(Math.PI / 2),
         x + s * 0.085, y + 0.03, 0), clav);
+      B.shellT(at(roundedBox(0.20, 0.05, 0.22, 0.016, a), x + s * 0.085, y - 0.10, 0), clav, pal.dark);
       if (!B.low) {
         for (let i = 0; i < 4; i++) {
           const t = (i / 4) * Math.PI * 2 + 0.4;
           B.shellT(at(roundedBox(0.19, 0.035, 0.05, 0.008, 1)
-            .rotateX(t), x + s * 0.085, y + 0.03 + Math.cos(t) * 0.115, Math.sin(t) * 0.115), clav, pal.light);
+            .rotateX(t), x + s * 0.085, y + 0.03 + Math.cos(t) * 0.115, Math.sin(t) * 0.115), clav, pal.hullLo);
         }
       }
       B.emis(at(ringGeo(0.09, 0.010, B.low ? 10 : 16, 4).rotateY(Math.PI / 2),
@@ -878,14 +891,23 @@ function buildShoulder(B, P, C, s) {
     }
     default: {
       // RAY-01: layered pauldron floating clear of the torso.
-      const pau = taperBox(0.15 * sc, 0.20 * sc, 0.22, 0.17, 0.24, 0.032, a);
+      const pau = taperBox(0.15 * sc, 0.21 * sc, 0.24, 0.17, 0.25, 0.032, a);
       pau.rotateZ(-s * 0.14);
-      pau.translate(x + s * 0.075, y + 0.055, 0);
-      B.shellT(pau, clav, pal.hull);
-      const cap = taperBox(0.10 * sc, 0.16 * sc, 0.06, 0.12, 0.20, 0.018, a);
+      pau.translate(x + s * 0.075, y + 0.065, 0);
+      B.shellT(pau, clav, pal.light);
+      // Cap in the hull colour: the top plane still steps up in value off the
+      // paint ramp, and the pauldron gets a coloured band that says which team
+      // and which body this is without breaking the white block.
+      const cap = taperBox(0.10 * sc, 0.16 * sc, 0.055, 0.12, 0.20, 0.018, a);
       cap.rotateZ(-s * 0.14);
-      cap.translate(x + s * 0.085, y + 0.185, 0);
-      B.shellT(cap, clav, pal.light);
+      cap.translate(x + s * 0.085, y + 0.198, 0);
+      B.shellT(cap, clav, pal.hull);
+      // Black lip along the bottom edge, so the white block ENDS somewhere and
+      // does not bleed into the upper arm hanging out of it.
+      const lip = taperBox(0.155 * sc, 0.19 * sc, 0.05, 0.18, 0.24, 0.016, a);
+      lip.rotateZ(-s * 0.14);
+      lip.translate(x + s * 0.078, y - 0.065, 0);
+      B.shellT(lip, clav, pal.dark);
       B.frame(at(roundedBox(0.05, 0.14, 0.20, 0.014, 1), x + s * 0.01, y + 0.05, 0), clav);
       B.emis(at(roundedBox(0.10, 0.018, 0.016, 0.005, 1), x + s * 0.10, y + 0.13, 0.10), clav, team, 1.7);
       if (!B.low) {
@@ -911,8 +933,8 @@ function buildArm(B, P, C, s) {
   // The upper arm stays in shadow value: it lives directly under the pauldron,
   // and matching them would fuse shoulder and arm into one lump.
   B.frame(segBox(x, P.shY, 0, eY, eZ, aw * 0.62, aw * 0.62, aw * 0.3, 1), `arm${side}`);
-  B.shellA(segBox(x, P.shY - 0.02, 0.0, eY + 0.02, eZ * 0.9, aw, aw * 1.05, 0.028, a), `arm${side}`, pal.hullLo);
-  B.shellA(segBox(x + s * aw * 0.42, P.shY - 0.04, 0.0, eY + 0.05, eZ * 0.8, aw * 0.30, aw * 0.7, 0.012, a), `arm${side}`, pal.light);
+  B.shellA(segBox(x, P.shY - 0.02, 0.0, eY + 0.02, eZ * 0.9, aw, aw * 1.05, 0.028, a), `arm${side}`, pal.dark);
+  B.shellA(segBox(x + s * aw * 0.42, P.shY - 0.04, 0.0, eY + 0.05, eZ * 0.8, aw * 0.30, aw * 0.7, 0.012, a), `arm${side}`, pal.hullLo);
 
   // Elbow: ball joint, guard plate, and a piston that visibly spans the joint.
   B.frame(at(ball(aw * 0.60, B.low ? 6 : 10), x, eY, eZ), `arm${side}`);
@@ -953,15 +975,21 @@ function buildLeg(B, P, L, C, s) {
   B.frame(at(ball(tw * 0.60, B.low ? 6 : 10), x, hip - 0.02, 0), `hip${side}`);
   B.shellL(at(taperBox(tw * 0.9, tw * 1.15, 0.13, tw * 0.9, tw * 1.1, 0.022, a), x + s * 0.015, hip - 0.05, 0), `thigh${side}`, pal.legLo);
 
-  // Thigh.
+  // Thigh. The legs are the part of the machine that touches the arena deck,
+  // and the deck is near-white — so the leg mass is the SHADOW value of the leg
+  // colour and only the forward-facing plates are painted up. Legs in full
+  // light-grey armour disappear into the floor from twenty metres away.
   B.frame(segBox(x, hip - 0.02, 0, kY + 0.02, kZ, tw * 0.60, tw * 0.60, tw * 0.28, 1), `thigh${side}`);
-  B.shellL(segBox(x, hip - 0.06, 0, kY + 0.04, kZ * 0.9, tw, tw * 1.05, 0.03, a), `thigh${side}`, pal.leg);
+  B.shellL(segBox(x, hip - 0.06, 0, kY + 0.04, kZ * 0.9, tw, tw * 1.05, 0.03, a), `thigh${side}`, pal.legLo);
+  // Forward thigh plate in the light value: one bright plane per limb segment,
+  // facing the camera in the fighting stance.
+  B.shellL(segBox(x, hip - 0.05, tw * 0.52, kY + 0.02, kZ + tw * 0.48, tw * 0.62, tw * 0.30, 0.014, a), `thigh${side}`, pal.leg);
   if (style === 'tank') {
     // Bolted-on outer thigh armour with a lip — pure mass reading.
-    B.shellL(segBox(x + s * tw * 0.52, hip - 0.10, 0, kY + 0.02, kZ, tw * 0.34, tw * 1.15, 0.016, a), `thigh${side}`, pal.legLo);
-    B.shellL(segBox(x, hip - 0.08, -tw * 0.55, kY, kZ - tw * 0.5, tw * 0.85, tw * 0.28, 0.014, a), `thigh${side}`, pal.legLo);
+    B.shellL(segBox(x + s * tw * 0.52, hip - 0.10, 0, kY + 0.02, kZ, tw * 0.34, tw * 1.15, 0.016, a), `thigh${side}`, pal.leg);
+    B.shellL(segBox(x, hip - 0.08, -tw * 0.55, kY, kZ - tw * 0.5, tw * 0.85, tw * 0.28, 0.014, a), `thigh${side}`, pal.dark);
   } else if (style === 'digitigrade') {
-    B.shellL(segBox(x, hip - 0.04, -tw * 0.42, kY + 0.06, kZ - tw * 0.30, tw * 0.66, tw * 0.42, 0.016, a), `thigh${side}`, pal.legLo);
+    B.shellL(segBox(x, hip - 0.04, -tw * 0.42, kY + 0.06, kZ - tw * 0.30, tw * 0.66, tw * 0.42, 0.016, a), `thigh${side}`, pal.dark);
   }
 
   // Knee: joint sphere, guard, and a piston bridging thigh to shin. The guard
@@ -1045,8 +1073,11 @@ function buildLeg(B, P, L, C, s) {
     } else {
       const spread = style === 'tank' ? 1.0 : 0.85;
       B.shellL(at(taperBox(fw * 0.9, fw * 1.15, 0.10, fw * 1.5, fw * 1.9, 0.02, a), x, L.toeY + 0.02, L.toeZ * 0.35), `foot${side}`, pal.legLo);
+      // The toe cap is the lowest thing on the machine and it is read against a
+      // near-white deck, so it is the model's darkest note. It is also what
+      // makes the contact shadow look like it belongs to something.
       B.shellL(at(taperBox(fw * 1.05, fw * 0.85, 0.075, fw * 0.9, fw * 0.7, 0.016, a).rotateX(0.12),
-        x, L.toeY - 0.005, L.toeZ + 0.03), `toe${side}`, pal.leg);
+        x, L.toeY - 0.005, L.toeZ + 0.03), `toe${side}`, pal.dark);
       if (!B.low) {
         for (let i = -1; i <= 1; i++) {
           if (style !== 'tank' && i === 0) continue;
@@ -1370,7 +1401,7 @@ function padTextures() {
       const o = (y * S + x) * 4;
 
       // Base deck: brushed mid grey, a touch cooler toward the rim.
-      let v = 0.40 - r * 0.10;
+      let v = 0.62 - r * 0.16;
 
       // Tread hatching, rotated 45 degrees so it never lines up with the ticks.
       const hatch = Math.abs(((dx + dy) / 14) % 1 - 0.5);
