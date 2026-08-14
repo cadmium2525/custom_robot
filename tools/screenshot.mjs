@@ -142,7 +142,7 @@ const SCENARIOS = {
         const g = window.__game;
         if (o.loadout) {
           g.loadouts[0] = { ...g.loadouts[0], ...o.loadout };
-          g.preview.setLoadout(window.__resolve(g.loadouts[0]));
+          g.menus.emit?.('loadoutChange', { index: 0, loadout: g.loadouts[0] });
         }
         g.menus.show('garage', { loadouts: g.loadouts, index: 0 });
       }, opts);
@@ -176,8 +176,15 @@ async function capture(browser, name, opts = {}) {
 
   // Wait for the shell to construct and the loop to be running.
   await page.waitForFunction(() => window.__game && window.__game.engine?.running, null, { timeout: 45000 });
-  // Expose the loadout resolver for the hero scenario.
-  await page.evaluate(() => import('/src/sim/parts.js').then((m) => { window.__resolve = m.resolveLoadout; }).catch(() => {}));
+
+  if (opts.tier != null) {
+    await page.evaluate((t) => {
+      const q = window.__game.engine.quality;
+      q.auto = false;
+      q.setTier(t);
+    }, Number(opts.tier));
+    await page.waitForTimeout(400);
+  }
 
   const settle = Number(opts.time ?? scenario.settle ?? 2);
   if (scenario.setup) await scenario.setup(page, opts);
@@ -264,6 +271,8 @@ async function main() {
         out: list.length === 1 ? flag('out') : null,
         arenaId: flag('arena'),
         ticks: flag('ticks') ? Number(flag('ticks')) : undefined,
+        tier: flag('tier') != null ? flag('tier') : undefined,
+        loadout: flag('body') ? { body: flag('body') } : undefined,
       });
       results.push({ name, ...r });
       console.log(`✓ ${name} -> ${r.file}`);
