@@ -71,12 +71,16 @@ export class GameView {
     this.blobs = [];
     for (let i = 0; i < 2; i++) {
       const blob = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.5, 1.5),
+        new THREE.PlaneGeometry(1.4, 1.4),
         new THREE.MeshBasicMaterial({
           map: sp.shadow,
           transparent: true,
-          opacity: 0.55,
+          opacity: 0.9,
           depthWrite: false,
+          // Multiply, not alpha-over: a contact shadow should darken whatever
+          // surface it lands on rather than paint grey on top of it, which is
+          // what let the previous version wash out under the exposure grade.
+          blending: THREE.MultiplyBlending,
           color: 0x000000,
           toneMapped: false,
           fog: false,
@@ -263,10 +267,12 @@ export class GameView {
       const blob = this.blobs[i];
       const groundY = this._groundUnder(r.rx, r.rz);
       const h = Math.max(0, r.ry - groundY);
-      const k = clamp(1 - h / 6.5, 0, 1);
-      blob.position.set(r.rx, groundY + 0.02, r.rz);
-      blob.scale.setScalar(0.9 + (1 - k) * 1.5);
-      blob.material.opacity = 0.5 * k * k;
+      // A contact shadow is tight and dark when the feet are down, and spreads
+      // and fades as the robo climbs — that contrast is the anchoring cue.
+      const k = clamp(1 - h / 7.0, 0, 1);
+      blob.position.set(r.rx, groundY + 0.015, r.rz);
+      blob.scale.setScalar(0.85 + (1 - k) * 1.9);
+      blob.material.opacity = 0.92 * k * k;
       blob.visible = k > 0.02 && r.state !== STATE.DEAD;
     }
 

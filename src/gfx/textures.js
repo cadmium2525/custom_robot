@@ -12,7 +12,7 @@
  */
 
 import * as THREE from 'three';
-import { Noise, worley2, smoothstep, mix, clamp01 } from './noise.js';
+import { Noise, smoothstep, mix, clamp01 } from './noise.js';
 
 const cache = new Map();
 
@@ -229,9 +229,47 @@ export function armorTexture(look, size = 512, seedOffset = 0) {
 }
 
 // ---------------------------------------------------------------------------
-// Arena floor
+// Shared industrial-surface helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * A blocky 5x3 glyph cluster driven off a hash — at arena distance the eye
+ * reads "there is a stencilled serial number there" long before it could read
+ * an actual character, so painting real letters would be wasted texels.
+ */
+function stencilMark(hash, su, sv) {
+  if (su < 0 || su > 1 || sv < 0 || sv > 1) return 0;
+  const gx = Math.floor(su * 5);
+  const gy = Math.floor(sv * 3);
+  // Keep a margin inside each cell so glyphs read as separate strokes.
+  const fx = su * 5 - gx, fy = sv * 3 - gy;
+  if (fx < 0.14 || fx > 0.86 || fy < 0.2 || fy > 0.8) return 0;
+  const bit = ((hash >>> ((gx * 3 + gy) & 31)) ^ (hash >>> (gx + 7))) & 1;
+  return bit;
+}
+
+/** Deterministic 0..1 from an integer cell id. */
+const cellRand = (i) => ((Math.imul(i, 2654435761) >>> 0) % 65536) / 65536;
+
+// ---------------------------------------------------------------------------
+// Arena floor — the lit combat deck
+// ---------------------------------------------------------------------------
+
+/**
+ * The combat deck. This is the single most important surface in the game: it is
+ * the largest thing on screen and it is what every robot silhouette is read
+ * against, so it is authored as a NEAR-WHITE painted deck, not as dark metal.
+ *
+ * Two rules do most of the work:
+ *   1. Low metalness. Metal has no diffuse response, so a metallic floor in a
+ *      dark room can only ever be as bright as its reflections — which is how
+ *      you end up with a grey arena no matter how hard you light it. The deck
+ *      is coated composite: dielectric, bright, and it takes the key light.
+ *   2. A real internal value range. Bright deck plates, mid tread plates and
+ *      genuinely dark service/vent plates all live on the same floor, so the
+ *      ground reads as a built surface and gives the frame its blacks *and*
+ *      its whites without touching a single light.
+ */
 export function floorTexture(theme, size = 1024) {
   const key = `floor:${theme.key}:${size}`;
   if (cache.has(key)) return cache.get(key);
@@ -239,6 +277,8 @@ export function floorTexture(theme, size = 1024) {
   const n = new Noise(0xf100 + theme.floor);
   const base = hex(theme.floor);
   const acc = hex(theme.floorAccent);
+  const deck = hex(theme.deck ?? theme.floor);
+  const warn = hex(theme.hazard ?? 0xf5b21e);
 
   const albedo = new Uint8ClampedArray(size * size * 4);
   const orm = new Uint8ClampedArray(size * size * 4);
@@ -246,7 +286,7 @@ export function floorTexture(theme, size = 1024) {
   const height = new Float32Array(size * size);
 
   const cells = 8;          // tiles across the texture
-  const lineW = 0.012;
+  const lineW = 0.0075;     // narrower than before: a crisp scribed line, not a gutter
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -256,52 +296,114 @@ export function floorTexture(theme, size = 1024) {
 
       const cu = (u * cells) % 1;
       const cv = (v * cells) % 1;
-      const ci = Math.floor(u * cells) + Math.floor(v * cells) * cells;
-      const cr = ((ci * 2654435761) >>> 0) / 4294967296;
+      const cx = Math.floor(u * cells), cy = Math.floor(v * cells);
+      const ci = cx + cy * cells;
+      const cr = cellRand(ci);
+      const cr2 = cellRand(ci + 977);
 
       const edge = Math.min(Math.min(cu, 1 - cu), Math.min(cv, 1 - cv));
-      const seam = 1 - smoothstep(lineW, lineW * 2.2, edge);
-      const glowLine = 1 - smoothstep(lineW * 0.35, lineW * 1.3, edge);
+      const seam = 1 - smoothstep(lineW, lineW * 2.4, edge);
+      const glowLine = 1 - smoothstep(lineW * 0.3, lineW * 1.15, edge);
 
-      // Inner tile detail: an inset frame plus corner notches.
-      const inner = smoothstep(0.055, 0.075, edge);
-      const notch = (cu < 0.09 || cu > 0.91) && (cv < 0.09 || cv > 0.91) ? 1 : 0;
+      // Inset frame inside each tile, then a raised centre field. Two steps of
+      // relief is what stops a tiled floor reading as wallpaper.
+      const inner = smoothstep(0.035, 0.055, edge);
+      const field = smoothstep(0.075, 0.095, edge);
+      const notch = (cu < 0.07 || cu > 0.93) && (cv < 0.07 || cv > 0.93) ? 1 : 0;
 
-      const grime = n.fbm2(u * 6, v * 6, 5) * 0.5 + 0.5;
+      const grime = n.fbm2(u * 6, v * 6, 4) * 0.5 + 0.5;
       const speck = n.fbm2(u * 90, v * 90, 2) * 0.5 + 0.5;
-      const scratch = smoothstep(0.55, 0.85, worley2(u * 26, v * 26, 3));
+      // Cheap directional scuff. worley() looks lovely and costs four times as
+      // much for something nobody can see at arena range.
+      const scratch = smoothstep(0.42, 0.88, n.fbm2(u * 130, v * 22, 2) * 0.5 + 0.5);
 
-      let r = base.r * (0.75 + grime * 0.5) * (0.9 + cr * 0.18);
-      let g = base.g * (0.75 + grime * 0.5) * (0.9 + cr * 0.18);
-      let b = base.b * (0.75 + grime * 0.5) * (0.9 + cr * 0.18);
+      // Five plate types keep the deck from repeating visibly under the camera.
+      // The mix is deliberately weighted toward plain bright deck: the dark and
+      // marked plates are punctuation, and punctuation stops working if you use
+      // it in every sentence.
+      const kind = cr < 0.07 ? 4 : cr < 0.17 ? 3 : cr < 0.34 ? 1 : cr < 0.44 ? 2 : 0;
 
-      r *= 1 - seam * 0.55; g *= 1 - seam * 0.55; b *= 1 - seam * 0.55;
-      r = mix(r, r * 1.25, inner * 0.4);
-      g = mix(g, g * 1.25, inner * 0.4);
-      b = mix(b, b * 1.25, inner * 0.4);
-      r = mix(r, 0.55, scratch * 0.12);
-      g = mix(g, 0.57, scratch * 0.12);
-      b = mix(b, 0.6, scratch * 0.12);
+      // Base plate rides most of the way to `deck`, which is near-white. The
+      // floor is the light source of the composition even though it emits
+      // nothing — everything else in the arena is darker than this.
+      let shade = (0.9 + grime * 0.2) * (0.94 + cr2 * 0.12);
+      let r = mix(base.r, deck.r, 0.88) * shade;
+      let g = mix(base.g, deck.g, 0.88) * shade;
+      let b = mix(base.b, deck.b, 0.88) * shade;
+
+      let h = inner * 0.22 + field * 0.16 - seam * 0.75 + grime * 0.05 + notch * 0.2;
+      let rough = 0.38 + grime * 0.26 + scratch * 0.16;
+      // Coated composite deck: dielectric. Only the raw service plates and the
+      // scribed grooves show bare metal.
+      let metal = 0.05 + speck * 0.1;
+
+      if (kind === 1 && field > 0.5) {
+        // Tread plate: a diamond raised pattern, matte and grippy.
+        const tu = (u * cells * 6) % 1 - 0.5;
+        const tv = (v * cells * 6) % 1 - 0.5;
+        const dia = 1 - smoothstep(0.16, 0.3, Math.abs(tu) + Math.abs(tv));
+        h += dia * 0.3;
+        shade = 0.86 + dia * 0.2;
+        r *= shade; g *= shade; b *= shade;
+        rough += 0.22 * dia;
+      } else if (kind === 2 && field > 0.5) {
+        // Service plate: a dark recessed grille. This is where the floor gets
+        // its blacks — a bare grating drops two full stops below the deck.
+        const lo = Math.abs(((v * cells * 9) % 1) - 0.5);
+        const slot = 1 - smoothstep(0.22, 0.4, lo);
+        const inset = smoothstep(0.075, 0.1, edge);
+        const d = 0.55 + slot * 0.42;
+        h -= slot * inset * 0.5;
+        r *= 1 - d * inset; g *= 1 - d * inset; b *= 1 - d * inset;
+        metal += inset * 0.5;
+        rough += inset * 0.15;
+      } else if (kind === 3 && field > 0.5) {
+        // Stencilled ident plate — painted, so it goes matte and dielectric.
+        const mk = stencilMark((ci * 2246822519) >>> 0, (cu - 0.28) / 0.44, (cv - 0.4) / 0.2);
+        r = mix(r, 0.07, mk * 0.85);
+        g = mix(g, 0.075, mk * 0.85);
+        b = mix(b, 0.09, mk * 0.85);
+        rough += mk * 0.3;
+      } else if (kind === 4 && field > 0.5) {
+        // Hazard plate: painted warning chevrons. The arena's only large warm
+        // note lives on the deck, where the eye spends all its time.
+        const s = ((cu + cv * 0.6) * 4) % 1;
+        const stripe = smoothstep(0.46, 0.54, s) * smoothstep(0.9, 0.78, Math.abs(cv - 0.5) * 2);
+        const worn = smoothstep(0.55, 0.9, grime);
+        r = mix(r, mix(warn.r, 0.06, 0.0), stripe * (1 - worn * 0.45));
+        g = mix(g, mix(warn.g, 0.06, 0.0), stripe * (1 - worn * 0.45));
+        b = mix(b, mix(warn.b, 0.07, 0.0), stripe * (1 - worn * 0.45));
+        r *= 1 - (1 - stripe) * 0.55; g *= 1 - (1 - stripe) * 0.55; b *= 1 - (1 - stripe) * 0.55;
+        rough += 0.2;
+        metal *= 0.4;
+      }
+
+      // The scribed grid is a dark line, not a glowing one. Dark line on bright
+      // deck is legible in every lighting condition; the emissive version only
+      // reads in the dark and turns to mush under bloom.
+      r *= 1 - seam * 0.86; g *= 1 - seam * 0.86; b *= 1 - seam * 0.86;
 
       albedo[o] = clamp01(r) * 255;
       albedo[o + 1] = clamp01(g) * 255;
       albedo[o + 2] = clamp01(b) * 255;
       albedo[o + 3] = 255;
 
-      // Emissive grid lines, brighter on a scattering of "live" tiles.
-      const live = cr > 0.82 ? 1 : 0.42;
-      const e = glowLine * live + notch * 0.5 * live;
+      // Emissive is now rationed: only the corner nodes of a few "live" tiles
+      // light up. Painting the whole grid emissive is what turned the deck into
+      // a light box and ate the contrast we just built.
+      const live = cr > 0.9 ? 1 : 0;
+      const e = live * (notch * 1.15 + glowLine * 0.35);
       emis[o] = clamp01(acc.r * e) * 255;
       emis[o + 1] = clamp01(acc.g * e) * 255;
       emis[o + 2] = clamp01(acc.b * e) * 255;
       emis[o + 3] = 255;
 
-      orm[o] = clamp01(1 - seam * 0.6) * 255;
-      orm[o + 1] = clamp01(0.34 + grime * 0.4 + scratch * 0.18 - glowLine * 0.2) * 255;
-      orm[o + 2] = clamp01(0.55 + speck * 0.25 - scratch * 0.2) * 255;
+      orm[o] = clamp01(1 - seam * 0.8 - (1 - inner) * 0.12) * 255;
+      orm[o + 1] = clamp01(rough) * 255;
+      orm[o + 2] = clamp01(metal) * 255;
       orm[o + 3] = 255;
 
-      height[i] = inner * 0.35 - seam * 0.6 + grime * 0.05 + notch * 0.15;
+      height[i] = h;
     }
   }
 
@@ -315,7 +417,443 @@ export function floorTexture(theme, size = 1024) {
     map: mk(albedo, true),
     ormMap: mk(orm, false),
     emissiveMap: mk(emis, true),
-    normalMap: toTexture(heightToNormal(height, size, 1.6), { aniso: 8 }),
+    normalMap: toTexture(heightToNormal(height, size, 1.7), { aniso: 8 }),
+  };
+  cache.set(key, res);
+  return res;
+}
+
+// ---------------------------------------------------------------------------
+// Structure plating — obstacles, pylons, gantries, anything engineered
+// ---------------------------------------------------------------------------
+
+/**
+ * Armour plate courses, laid like brickwork so vertical seams never stack into
+ * a continuous crack. Authored to tile at one texture repeat per ~2 m, and
+ * applied through `worldUV()` in stage.js so a 6 m dais and a 0.5 m rail end up
+ * with the same texel density instead of BoxGeometry's flat 0..1 squash.
+ */
+export function structureTexture(theme, size = 512) {
+  const key = `struct:${theme.key}:${size}`;
+  if (cache.has(key)) return cache.get(key);
+
+  const n = new Noise(0x57a1 + theme.wall);
+  const base = hex(theme.struct ?? theme.wall);
+  const acc = hex(theme.accent);
+
+  const albedo = new Uint8ClampedArray(size * size * 4);
+  const orm = new Uint8ClampedArray(size * size * 4);
+  const emis = new Uint8ClampedArray(size * size * 4);
+  const height = new Float32Array(size * size);
+
+  const ROWS = 2, COLS = 2;
+  const gap = 0.008;          // ~1.6 cm at a 2 m tile
+  const BOLT = 0.0625;        // bolt lattice pitch; divides 1 so it tiles
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size, v = y / size;
+      const i = y * size + x;
+      const o = i * 4;
+
+      const rowF = v * ROWS;
+      const row = Math.floor(rowF);
+      const rv = rowF - row;
+      const colF = u * COLS + (row & 1) * 0.5;
+      const col = Math.floor(colF);
+      const cu = colF - col;
+
+      const pid = (Math.imul(row + 1, 7919) ^ Math.imul(col + 1, 104729)) >>> 0;
+      const pr = (pid % 65536) / 65536;
+
+      // Plate-edge distance, converted back into UV units so the groove is the
+      // same physical width on both axes.
+      const du = Math.min(cu, 1 - cu) / COLS;
+      const dv = Math.min(rv, 1 - rv) / ROWS;
+      const edge = Math.min(du, dv);
+
+      const groove = 1 - smoothstep(gap * 0.5, gap * 1.7, edge);
+      const bevel = smoothstep(gap * 1.2, gap * 4.5, edge);
+
+      const grain = n.simplex2(u * 210, v * 26) * 0.045;
+      const macro = n.fbm2(u * 5, v * 5, 4) * 0.5 + 0.5;
+      const micro = n.fbm2(u * 55, v * 55, 3) * 0.5 + 0.5;
+      // Rain/coolant streaks always run down the surface, never across it.
+      const streak = clamp01(n.fbm2(u * 34, v * 2.4, 3) * 0.5 + 0.5);
+
+      const tone = 0.86 + pr * 0.26;
+      let shade = tone * (0.8 + macro * 0.34) * (1 - groove * 0.78) * (0.95 + bevel * 0.1) + grain;
+      let r = base.r * shade, g = base.g * shade, b = base.b * shade;
+
+      let h = bevel * 0.4 + macro * 0.06 + micro * 0.025 - groove * 0.7;
+      let ao = 1 - groove * 0.9 - (1 - bevel) * 0.2;
+      let rough = 0.44 + macro * 0.3 + streak * 0.2 + groove * 0.2;
+      let metal = 0.7 - macro * 0.2;
+      let e = 0;
+
+      // Bolt heads on a global lattice, kept to the perimeter band of a plate
+      // so they read as fasteners rather than decoration.
+      const bu = ((u / BOLT) % 1 - 0.5) * BOLT;
+      const bv = ((v / BOLT) % 1 - 0.5) * BOLT;
+      const bd = Math.hypot(bu, bv);
+      if (edge > gap * 1.8 && edge < gap * 5.5 && bd < 0.013) {
+        const head = 1 - smoothstep(0.007, 0.012, bd);
+        h += head * 0.5;
+        r *= 1 + head * 0.18; g *= 1 + head * 0.18; b *= 1 + head * 0.18;
+        rough -= head * 0.18;
+        ao -= (1 - head) * 0.1;
+      }
+
+      const interior = edge > gap * 7;
+      if (interior) {
+        if (pr > 0.78) {
+          // Louvred cooling vent.
+          const lo = Math.abs(((rv * ROWS * 7) % 1) - 0.5);
+          const slot = 1 - smoothstep(0.19, 0.34, lo);
+          const inset = smoothstep(gap * 7, gap * 11, edge);
+          h -= slot * inset * 0.62;
+          const d = slot * inset;
+          r *= 1 - d * 0.62; g *= 1 - d * 0.62; b *= 1 - d * 0.62;
+          ao -= d * 0.4;
+          metal += d * 0.2;
+        } else if (pr > 0.56) {
+          // Raised sub-plate bolted over the main course.
+          const su = Math.abs(cu - 0.5), sv = Math.abs(rv - 0.5);
+          const sub = (1 - smoothstep(0.3, 0.33, su)) * (1 - smoothstep(0.28, 0.31, sv));
+          h += sub * 0.34;
+          r *= 1 + sub * 0.1; g *= 1 + sub * 0.1; b *= 1 + sub * 0.1;
+        } else if (pr > 0.44) {
+          // Stencilled ident block.
+          const mk = stencilMark(pid, (cu - 0.26) / 0.48, (rv - 0.4) / 0.22);
+          r = mix(r, 0.68, mk * 0.72);
+          g = mix(g, 0.7, mk * 0.72);
+          b = mix(b, 0.72, mk * 0.72);
+          rough += mk * 0.3;
+          metal -= mk * 0.5;
+        }
+      }
+
+      // A single status LED per powered plate: cheap, and it makes the whole
+      // structure read as machinery that is switched on.
+      if (pr > 0.3 && pr < 0.42) {
+        const lu = cu - 0.12, lv = rv - 0.14;
+        const ld = Math.hypot(lu / COLS, lv / ROWS);
+        e = (1 - smoothstep(0.004, 0.009, ld)) * 1.4;
+      }
+
+      // Grime pooling under the plate lips.
+      const dirt = streak * (1 - bevel) * 0.3 + streak * 0.12;
+      r *= 1 - dirt * 0.4; g *= 1 - dirt * 0.42; b *= 1 - dirt * 0.44;
+
+      albedo[o] = clamp01(r) * 255;
+      albedo[o + 1] = clamp01(g) * 255;
+      albedo[o + 2] = clamp01(b) * 255;
+      albedo[o + 3] = 255;
+
+      emis[o] = clamp01(acc.r * e) * 255;
+      emis[o + 1] = clamp01(acc.g * e) * 255;
+      emis[o + 2] = clamp01(acc.b * e) * 255;
+      emis[o + 3] = 255;
+
+      orm[o] = clamp01(ao) * 255;
+      orm[o + 1] = clamp01(rough) * 255;
+      orm[o + 2] = clamp01(metal) * 255;
+      orm[o + 3] = 255;
+
+      height[i] = h;
+    }
+  }
+
+  const mk = (arr, srgb) => {
+    const { c, g } = ctx2d(size);
+    g.putImageData(new ImageData(arr, size, size), 0, 0);
+    return toTexture(c, { srgb, aniso: 8 });
+  };
+
+  const res = {
+    map: mk(albedo, true),
+    ormMap: mk(orm, false),
+    emissiveMap: mk(emis, true),
+    normalMap: toTexture(heightToNormal(height, size, 2.4), { aniso: 8 }),
+  };
+  cache.set(key, res);
+  return res;
+}
+
+// ---------------------------------------------------------------------------
+// Spectator galleries
+// ---------------------------------------------------------------------------
+
+/**
+ * A packed, near-black seating bank speckled with crowd lights. The gallery
+ * exists to be *dark* — it frames the lit deck. All the information is in the
+ * emissive channel, which costs nothing and survives bloom beautifully.
+ */
+export function galleryTexture(theme, size = 512) {
+  const key = `gallery:${theme.key}:${size}`;
+  if (cache.has(key)) return cache.get(key);
+
+  const n = new Noise(0xc0d3 + theme.wall);
+  const acc = hex(theme.accent);
+  const warm = hex(theme.crowdWarm ?? 0xffb066);
+
+  const albedo = new Uint8ClampedArray(size * size * 4);
+  const orm = new Uint8ClampedArray(size * size * 4);
+  const emis = new Uint8ClampedArray(size * size * 4);
+  const height = new Float32Array(size * size);
+
+  const ROWS = 12, SEATS = 40;
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size, v = y / size;
+      const i = y * size + x;
+      const o = i * 4;
+
+      const rowF = v * ROWS, row = Math.floor(rowF), rv = rowF - row;
+      const seatF = u * SEATS + (row & 1) * 0.35, seat = Math.floor(seatF);
+      const su = seatF - seat;
+
+      const sid = (Math.imul(row + 3, 40499) ^ Math.imul(seat + 11, 86111)) >>> 0;
+      const sr = (sid % 65536) / 65536;
+
+      // Seat backs: a rounded block with a gap to its neighbour and a step
+      // shadow under the row above.
+      const gapU = 1 - smoothstep(0.06, 0.16, Math.min(su, 1 - su));
+      const stepShade = smoothstep(0.0, 0.45, rv);
+
+      const grime = n.fbm2(u * 12, v * 12, 3) * 0.5 + 0.5;
+      let l = 0.055 + grime * 0.05;
+      l *= 1 - gapU * 0.7;
+      l *= 0.45 + stepShade * 0.55;
+
+      albedo[o] = clamp01(l * 0.9) * 255;
+      albedo[o + 1] = clamp01(l * 0.95) * 255;
+      albedo[o + 2] = clamp01(l * 1.15) * 255;
+      albedo[o + 3] = 255;
+
+      // Crowd: a sparse scatter of hand-lights, mostly the arena accent with a
+      // few warm ones so the bank doesn't read as a single flat colour.
+      let er = 0, eg = 0, eb = 0;
+      if (sr > 0.90 && su > 0.2 && su < 0.8 && rv > 0.25 && rv < 0.75) {
+        const dot = (1 - smoothstep(0.12, 0.3, Math.hypot(su - 0.5, (rv - 0.5) * 1.4)));
+        const warmOne = sr > 0.975;
+        const c = warmOne ? warm : acc;
+        const amp = dot * (warmOne ? 1.5 : 1.1);
+        er = c.r * amp; eg = c.g * amp; eb = c.b * amp;
+      }
+      // Aisle strip lighting every eighth seat column: guides the eye around
+      // the bowl and gives the tiers a legible rhythm.
+      if (Math.abs((seatF / 8) % 1 - 0.5) > 0.482) {
+        er += acc.r * 0.5; eg += acc.g * 0.5; eb += acc.b * 0.5;
+      }
+
+      emis[o] = clamp01(er) * 255;
+      emis[o + 1] = clamp01(eg) * 255;
+      emis[o + 2] = clamp01(eb) * 255;
+      emis[o + 3] = 255;
+
+      orm[o] = clamp01(0.35 + stepShade * 0.5 - gapU * 0.3) * 255;
+      orm[o + 1] = clamp01(0.82 + grime * 0.16) * 255;   // fabric + matte plastic
+      orm[o + 2] = 20;
+      orm[o + 3] = 255;
+
+      height[i] = (1 - gapU) * 0.35 + stepShade * 0.2 - 0.1;
+    }
+  }
+
+  const mk = (arr, srgb) => {
+    const { c, g } = ctx2d(size);
+    g.putImageData(new ImageData(arr, size, size), 0, 0);
+    return toTexture(c, { srgb, aniso: 4 });
+  };
+
+  const res = {
+    map: mk(albedo, true),
+    ormMap: mk(orm, false),
+    emissiveMap: mk(emis, true),
+    normalMap: toTexture(heightToNormal(height, size, 1.4), { aniso: 4 }),
+  };
+  cache.set(key, res);
+  return res;
+}
+
+// ---------------------------------------------------------------------------
+// Banner / jumbotron band
+// ---------------------------------------------------------------------------
+
+/**
+ * The ring of screens above the galleries. Mostly emissive: at arena distance
+ * the content only has to read as "moving league broadcast", so it is built
+ * from wordmark bars, a telemetry ladder and scanlines.
+ */
+export function screenTexture(theme, size = 512) {
+  const key = `screen:${theme.key}:${size}`;
+  if (cache.has(key)) return cache.get(key);
+
+  const n = new Noise(0x5c33 + theme.accent);
+  const acc = hex(theme.accent);
+  const hot = hex(theme.emissive);
+
+  const albedo = new Uint8ClampedArray(size * size * 4);
+  const emis = new Uint8ClampedArray(size * size * 4);
+  const orm = new Uint8ClampedArray(size * size * 4);
+
+  // Four panels across the tile, each with its own content block.
+  const PANELS = 4;
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size, v = y / size;
+      const o = (y * size + x) * 4;
+
+      const pF = u * PANELS, p = Math.floor(pF), pu = pF - p;
+      const pr = cellRand(p * 31 + 7);
+
+      // Bezel around every panel — without a frame a screen reads as a hole.
+      const bez = Math.min(Math.min(pu, 1 - pu) * PANELS, Math.min(v, 1 - v));
+      const inScreen = smoothstep(0.055, 0.075, bez);
+      const frame = 1 - inScreen;
+
+      let er = 0, eg = 0, eb = 0;
+
+      if (inScreen > 0.5) {
+        const su = (pu - 0.09) / 0.82;
+        const sv = (v - 0.09) / 0.82;
+
+        if (pr < 0.4) {
+          // Wordmark: heavy bars, the league name as pure shape.
+          const bar = stencilMark((p * 2654435761) >>> 0, (su - 0.06) / 0.88, (sv - 0.3) / 0.4);
+          er = acc.r * bar * 2.6; eg = acc.g * bar * 2.6; eb = acc.b * bar * 2.6;
+        } else if (pr < 0.72) {
+          // Telemetry ladder: a stacked bar chart that reads as live data.
+          const col = Math.floor(su * 14);
+          const cr = cellRand(col * 17 + p * 5);
+          const barTop = 0.15 + cr * 0.7;
+          const lit = sv > (1 - barTop) && Math.abs((su * 14) % 1 - 0.5) < 0.34 ? 1 : 0;
+          const hotBar = cr > 0.78 ? 1 : 0;
+          const c = hotBar ? hot : acc;
+          er = c.r * lit * 2.2; eg = c.g * lit * 2.2; eb = c.b * lit * 2.2;
+        } else {
+          // Sweeping gradient wash with a marquee band.
+          const wash = 0.25 + 0.35 * Math.sin(sv * 5.0 + p);
+          const band = 1 - smoothstep(0.05, 0.14, Math.abs(sv - 0.5));
+          er = acc.r * (wash * 0.5 + band * 1.8);
+          eg = acc.g * (wash * 0.5 + band * 1.8);
+          eb = acc.b * (wash * 0.5 + band * 1.8);
+        }
+
+        // Scanlines + a little sensor grain: sells "emissive display" over
+        // "glowing rectangle".
+        const scan = 0.72 + 0.28 * Math.sin(v * size * 0.55);
+        const grain = 0.9 + n.simplex2(u * 300, v * 300) * 0.12;
+        er *= scan * grain; eg *= scan * grain; eb *= scan * grain;
+      }
+
+      emis[o] = clamp01(er) * 255;
+      emis[o + 1] = clamp01(eg) * 255;
+      emis[o + 2] = clamp01(eb) * 255;
+      emis[o + 3] = 255;
+
+      // The frame is dark structural metal; the panel face is near-black glass.
+      const fl = frame > 0.5 ? 0.09 + n.fbm2(u * 20, v * 20, 2) * 0.03 : 0.015;
+      albedo[o] = fl * 235;
+      albedo[o + 1] = fl * 240;
+      albedo[o + 2] = fl * 255;
+      albedo[o + 3] = 255;
+
+      orm[o] = clamp01(0.6 + inScreen * 0.4) * 255;
+      orm[o + 1] = frame > 0.5 ? 150 : 40;
+      orm[o + 2] = frame > 0.5 ? 200 : 30;
+      orm[o + 3] = 255;
+    }
+  }
+
+  const mk = (arr, srgb) => {
+    const { c, g } = ctx2d(size);
+    g.putImageData(new ImageData(arr, size, size), 0, 0);
+    return toTexture(c, { srgb, aniso: 4 });
+  };
+
+  const res = {
+    map: mk(albedo, true),
+    ormMap: mk(orm, false),
+    emissiveMap: mk(emis, true),
+  };
+  cache.set(key, res);
+  return res;
+}
+
+// ---------------------------------------------------------------------------
+// Hazard chevrons
+// ---------------------------------------------------------------------------
+
+/**
+ * Diagonal warning stripes, laid as thin decal bands around obstacle skirts.
+ * This is the single cheapest cue that a block is a built, maintained object
+ * rather than a grey box the level designer left behind.
+ */
+export function hazardTexture(theme, size = 128) {
+  const key = `hazard:${theme.key}:${size}`;
+  if (cache.has(key)) return cache.get(key);
+
+  const n = new Noise(0x4a2d + theme.accent);
+  const warn = hex(theme.hazard ?? 0xf5c53a);
+
+  const albedo = new Uint8ClampedArray(size * size * 4);
+  const orm = new Uint8ClampedArray(size * size * 4);
+  const height = new Float32Array(size * size);
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size, v = y / size;
+      const i = y * size + x;
+      const o = i * 4;
+
+      // 45-degree stripes: period 0.25 in u so the band tiles cleanly.
+      const s = ((u + v * 0.5) * 8) % 1;
+      const stripe = smoothstep(0.46, 0.54, s);
+
+      // Paint wears off the raised edges of the band first.
+      const wear = clamp01(n.fbm2(u * 18, v * 18, 3) * 0.5 + 0.5);
+      const chip = smoothstep(0.62, 0.88, wear);
+
+      let r = mix(0.04, warn.r, stripe);
+      let g = mix(0.04, warn.g, stripe);
+      let b = mix(0.045, warn.b, stripe);
+      r = mix(r, 0.3, chip * 0.55);
+      g = mix(g, 0.31, chip * 0.55);
+      b = mix(b, 0.33, chip * 0.55);
+
+      // Edge grime along the top and bottom of the band.
+      const edge = Math.min(v, 1 - v);
+      const soot = 1 - smoothstep(0.06, 0.3, edge);
+      r *= 1 - soot * 0.45; g *= 1 - soot * 0.45; b *= 1 - soot * 0.45;
+
+      albedo[o] = clamp01(r) * 255;
+      albedo[o + 1] = clamp01(g) * 255;
+      albedo[o + 2] = clamp01(b) * 255;
+      albedo[o + 3] = 255;
+
+      orm[o] = clamp01(1 - soot * 0.5) * 255;
+      orm[o + 1] = clamp01(0.62 + wear * 0.3) * 255;   // painted, so fairly matte
+      orm[o + 2] = clamp01(0.1 + chip * 0.6) * 255;    // bare metal in the chips
+      orm[o + 3] = 255;
+
+      height[i] = stripe * 0.08 + wear * 0.05 - soot * 0.1;
+    }
+  }
+
+  const mk = (arr, srgb) => {
+    const { c, g } = ctx2d(size);
+    g.putImageData(new ImageData(arr, size, size), 0, 0);
+    return toTexture(c, { srgb, aniso: 8 });
+  };
+
+  const res = {
+    map: mk(albedo, true),
+    ormMap: mk(orm, false),
+    normalMap: toTexture(heightToNormal(height, size, 1.2), { aniso: 4 }),
   };
   cache.set(key, res);
   return res;
@@ -325,6 +863,20 @@ export function floorTexture(theme, size = 1024) {
 // Walls / structures
 // ---------------------------------------------------------------------------
 
+/**
+ * The arena boundary wall, authored as a single full-height ELEVATION rather
+ * than a tiling swatch: v = 0 is the deck, v = 1 is the top rail, and the tile
+ * repeats horizontally only. That is the difference between "a wall" and "a
+ * stripe pattern that happens to be vertical" — the old map ran sixteen
+ * identical ribs top to bottom, which is why all four walls read the same and
+ * gave the eye nothing to measure the arena against.
+ *
+ * Storeys, bottom to top:
+ *   plinth · armoured plating (two courses) · service gutter · capping course
+ *
+ * Two bays per tile, hashed differently, so the repeat period is 2 bays and the
+ * wall never reads as a single stamped module.
+ */
 export function wallTexture(theme, size = 512) {
   const key = `wall:${theme.key}:${size}`;
   if (cache.has(key)) return cache.get(key);
@@ -332,11 +884,19 @@ export function wallTexture(theme, size = 512) {
   const n = new Noise(0xa11 + theme.wall);
   const base = hex(theme.wall);
   const acc = hex(theme.accent);
+  const warn = hex(theme.hazard ?? 0xf5b21e);
 
   const albedo = new Uint8ClampedArray(size * size * 4);
   const orm = new Uint8ClampedArray(size * size * 4);
   const emis = new Uint8ClampedArray(size * size * 4);
   const height = new Float32Array(size * size);
+
+  const BAYS = 2;
+  // Storey boundaries in v.
+  const V_PLINTH = 0.085;
+  const V_MID = 0.46;       // course break inside the plating
+  const V_GUTTER = 0.79;
+  const V_CAP = 0.87;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -344,43 +904,138 @@ export function wallTexture(theme, size = 512) {
       const i = y * size + x;
       const o = i * 4;
 
-      // Horizontal ribbing with a heavier band every fourth rib.
-      const rib = (v * 16) % 1;
-      const ribEdge = Math.min(rib, 1 - rib);
-      const ribShade = smoothstep(0.0, 0.14, ribEdge);
-      const major = Math.floor(v * 16) % 4 === 0 ? 1 : 0;
+      const bayF = u * BAYS;
+      const bay = Math.floor(bayF);
+      const bu = bayF - bay;
+      const br = cellRand(bay * 977 + 13);
 
-      const col = (u * 10) % 1;
-      const colEdge = Math.min(col, 1 - col);
-      const colSeam = 1 - smoothstep(0.008, 0.02, colEdge);
+      // Pilaster: a structural column standing proud at every bay joint. This
+      // is the vertical rhythm the old wall was missing entirely.
+      const pil = 1 - smoothstep(0.035, 0.055, Math.min(bu, 1 - bu));
+      const pilEdge = 1 - smoothstep(0.055, 0.07, Math.min(bu, 1 - bu));
 
-      const grunge = n.fbm2(u * 8, v * 8, 5) * 0.5 + 0.5;
-      const streak = clamp01(n.fbm2(u * 40, v * 3.2, 3) * 0.5 + 0.5);
+      const grunge = n.fbm2(u * 8, v * 8, 4) * 0.5 + 0.5;
+      // Weathering runs DOWN a wall. Streaking it along u was another reason
+      // the old surface read as abstract stripes rather than as a built thing.
+      const streak = clamp01(n.fbm2(u * 44, v * 2.6, 3) * 0.5 + 0.5);
 
-      const shade = (0.7 + ribShade * 0.4) * (0.8 + grunge * 0.4) * (1 - colSeam * 0.5);
-      let r = base.r * shade, g = base.g * shade, b = base.b * shade;
-      r = mix(r, r * 0.7, streak * 0.35);
-      g = mix(g, g * 0.7, streak * 0.35);
-      b = mix(b, b * 0.72, streak * 0.35);
+      let l = 1;            // luminance multiplier on the base wall colour
+      let rough = 0.5 + grunge * 0.3 + streak * 0.14;
+      let metal = 0.5 - grunge * 0.2;
+      let h = 0;
+      let e = 0;            // accent emissive
+      let warm = 0;         // warm emissive (service lamps)
+      let hz = 0;           // hazard paint coverage
+      let paint = 0;        // chalky stencil paint coverage
+
+      if (v < V_PLINTH) {
+        // Plinth: a heavy dark kick course, scuffed where robots scrape it.
+        l = 0.42 + grunge * 0.16;
+        h = -0.25 + smoothstep(V_PLINTH * 0.75, V_PLINTH, v) * 0.5;
+        rough += 0.15;
+        // Hazard chevrons wrap the base of the wall — the warm ring that tells
+        // you where the play area stops.
+        const s = ((u * 34 + v * 3) % 1);
+        hz = smoothstep(0.46, 0.54, s) * smoothstep(0.012, 0.03, v) *
+             smoothstep(V_PLINTH, V_PLINTH - 0.03, v);
+      } else if (v < V_GUTTER) {
+        // Main armoured plating: two courses, panel seams, bolt lines.
+        const course = v < V_MID ? 0 : 1;
+        const cv0 = course === 0 ? V_PLINTH : V_MID;
+        const cv1 = course === 0 ? V_MID : V_GUTTER;
+        const pv = (v - cv0) / (cv1 - cv0);
+        const pid = (Math.imul(bay + 1, 7919) ^ Math.imul(course + 5, 104729)) >>> 0;
+        const pr = (pid % 65536) / 65536;
+
+        // Two plates per bay per course.
+        const plateF = bu * 2, plate = Math.floor(plateF), pu = plateF - plate;
+        const dEdge = Math.min(Math.min(pu, 1 - pu) * 0.5, Math.min(pv, 1 - pv) * 0.9);
+        const groove = 1 - smoothstep(0.006, 0.016, dEdge);
+        const bevel = smoothstep(0.012, 0.05, dEdge);
+
+        l = (0.78 + grunge * 0.34) * (1 - groove * 0.72) * (0.95 + bevel * 0.1);
+        h = bevel * 0.35 - groove * 0.6 + grunge * 0.05;
+
+        // Bolt line along the top and bottom rail of each plate.
+        const bd = Math.hypot(((pu * 8) % 1 - 0.5) / 8, Math.min(pv, 1 - pv) - 0.035);
+        if (dEdge > 0.016 && bd < 0.012) {
+          const head = 1 - smoothstep(0.006, 0.012, bd);
+          h += head * 0.4;
+          l *= 1 + head * 0.2;
+          rough -= head * 0.15;
+        }
+
+        // Per-plate content: vent grille, stencilled bay number, or blank.
+        if (dEdge > 0.05) {
+          if (pr > 0.72) {
+            const lo = Math.abs(((pv * 9) % 1) - 0.5);
+            const slot = 1 - smoothstep(0.2, 0.36, lo);
+            h -= slot * 0.5;
+            l *= 1 - slot * 0.62;
+            metal += slot * 0.25;
+          } else if (pr > 0.5) {
+            const mk = stencilMark(pid, (pu - 0.3) / 0.4, (pv - 0.42) / 0.16);
+            paint = mk * 0.62;              // chalky stencil paint, not glowing
+            rough += mk * 0.3;
+            metal -= mk * 0.4;
+          }
+        }
+
+        // One service lamp per lit bay, in its own warm colour: the arena has
+        // maintenance lighting, and the warm/cool split is what stops every
+        // frame from being one temperature.
+        if (br > 0.55 && course === 1) {
+          const ld = Math.hypot((bu - 0.5) * 1.4, pv - 0.72);
+          warm = (1 - smoothstep(0.012, 0.03, ld)) * 2.2;
+        }
+      } else if (v < V_CAP) {
+        // Service gutter: a deep dark recess carrying the perimeter light rail.
+        const gv = (v - V_GUTTER) / (V_CAP - V_GUTTER);
+        l = 0.16 + grunge * 0.06;
+        h = -0.55;
+        rough += 0.1;
+        // The rail itself: thin, continuous, and the only horizontal glow line
+        // left on the wall.
+        e = (1 - smoothstep(0.1, 0.32, Math.abs(gv - 0.5))) * 1.5;
+      } else {
+        // Capping course: brighter machined coping that catches the rig light
+        // and draws a clean bright line along the top of the bowl.
+        const cvv = (v - V_CAP) / (1 - V_CAP);
+        l = (1.05 + grunge * 0.25) * (0.8 + smoothstep(0.0, 0.35, cvv) * 0.45);
+        h = 0.45 - smoothstep(0.85, 1.0, cvv) * 0.5;
+        rough -= 0.12;
+        metal += 0.15;
+      }
+
+      // Pilasters read across every storey — that is what makes them columns.
+      l *= 1 - pil * 0.5 + pilEdge * 0.12;
+      h += pilEdge * 0.22 - pil * 0.3;
+
+      // Grime pools down the wall and under every lip.
+      l *= 1 - streak * 0.22;
+
+      let r = base.r * l, g = base.g * l, b = base.b * l;
+      r = mix(r, 0.52, paint); g = mix(g, 0.54, paint); b = mix(b, 0.56, paint);
+      r = mix(r, warn.r * 0.85, hz);
+      g = mix(g, warn.g * 0.85, hz);
+      b = mix(b, warn.b * 0.85, hz);
 
       albedo[o] = clamp01(r) * 255;
       albedo[o + 1] = clamp01(g) * 255;
       albedo[o + 2] = clamp01(b) * 255;
       albedo[o + 3] = 255;
 
-      // Thin light strip riding the major ribs.
-      const strip = major * (1 - smoothstep(0.02, 0.09, ribEdge)) * 0.9;
-      emis[o] = clamp01(acc.r * strip) * 255;
-      emis[o + 1] = clamp01(acc.g * strip) * 255;
-      emis[o + 2] = clamp01(acc.b * strip) * 255;
+      emis[o] = clamp01(acc.r * e + warn.r * warm) * 255;
+      emis[o + 1] = clamp01(acc.g * e + warn.g * warm * 0.8) * 255;
+      emis[o + 2] = clamp01(acc.b * e + warn.b * warm * 0.6) * 255;
       emis[o + 3] = 255;
 
-      orm[o] = clamp01(0.35 + ribShade * 0.65) * 255;
-      orm[o + 1] = clamp01(0.42 + grunge * 0.4 + streak * 0.15) * 255;
-      orm[o + 2] = clamp01(0.62 - grunge * 0.25) * 255;
+      orm[o] = clamp01(0.9 - pil * 0.35 + h * 0.2) * 255;
+      orm[o + 1] = clamp01(rough) * 255;
+      orm[o + 2] = clamp01(metal) * 255;
       orm[o + 3] = 255;
 
-      height[i] = ribShade * 0.5 - colSeam * 0.4 + major * 0.12 + grunge * 0.06;
+      height[i] = h;
     }
   }
 

@@ -40,6 +40,14 @@ const PIPS = MATCH.roundsToWin;
 
 const BANNER_STYLES = ['fight', 'ko', 'win', 'lose', 'draw', 'timeup'];
 
+/**
+ * Motion preference is read once. Every impact cue in here has a static
+ * fallback, so honouring it is a matter of shortening or skipping WAAPI work
+ * rather than removing the information.
+ */
+const REDUCED = typeof matchMedia === 'function' &&
+  matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 // ---------------------------------------------------------------------------
 // Markup — built once, never re-parsed. No innerHTML ever runs after boot.
 // ---------------------------------------------------------------------------
@@ -50,31 +58,40 @@ function pipMarkup(n) {
   return s;
 }
 
+/**
+ * One player plate.
+ *
+ * Bar stacking order is load-bearing: the segment ticks sit *under* the fill,
+ * so the spent part of the track is textured and the remaining part is a solid
+ * block of colour. That single hard edge is what makes the bar readable at the
+ * edge of vision, which is the only way a fighting HUD is ever read.
+ */
 function plateMarkup(side) {
   const tag = side === 'l' ? 'P1' : 'P2';
   return `
   <div class="hud__plate hud__plate--${side}">
-    <div class="plate__flash"></div>
+    <div class="plate__edge"></div>
     <div class="plate__portrait">
       <span class="portrait__glyph">R</span>
       <span class="portrait__tag">${tag}</span>
       <span class="portrait__scan"></span>
     </div>
     <div class="plate__main">
-      <div class="plate__row">
+      <div class="plate__row plate__row--head">
         <span class="plate__name">ROBO</span>
         <span class="plate__class">BALANCED</span>
       </div>
-      <div class="plate__kana">ロボ</div>
       <div class="plate__bar">
         <div class="bar__track"></div>
+        <div class="bar__grid"></div>
         <div class="bar__ghost"></div>
         <div class="bar__fill"></div>
-        <div class="bar__grid"></div>
-        <div class="bar__tip"></div>
+        <div class="bar__lead"></div>
+        <div class="bar__flash"></div>
       </div>
       <div class="plate__row plate__row--foot">
         <span class="plate__hp"><b class="hp__now">1000</b><i class="hp__max">/1000</i></span>
+        <span class="plate__kana">ロボ</span>
         <span class="plate__pips">${pipMarkup(PIPS)}</span>
       </div>
     </div>
@@ -84,6 +101,7 @@ function plateMarkup(side) {
 const TEMPLATE = `
 <div class="hud__vignette"></div>
 <div class="hud__scan"></div>
+<div class="hud__scrim"></div>
 
 <div class="hud__top">
   ${plateMarkup('l')}
@@ -103,6 +121,7 @@ const TEMPLATE = `
 <div class="hud__reticle">
   <i class="ret__dot"></i>
   <i class="ret__ring"></i>
+  <i class="ret__charge"></i>
   <b class="ret__b ret__b--n"></b>
   <b class="ret__b ret__b--s"></b>
   <b class="ret__b ret__b--w"></b>
@@ -111,35 +130,57 @@ const TEMPLATE = `
 
 <div class="hud__hitmark"><i></i><i></i><i></i><i></i></div>
 
-<div class="hud__combo"><b class="combo__n">2</b><i class="combo__l">HIT CHAIN</i></div>
+<div class="hud__combo">
+  <b class="combo__n">2</b>
+  <i class="combo__x">HIT</i>
+  <i class="combo__l">CHAIN<em>連撃</em></i>
+</div>
 
 <div class="hud__gear">
   <div class="gear__charge">
-    <div class="gear__label"><b class="charge__name">VULCAN</b><i class="charge__kana">バルカン</i></div>
+    <div class="charge__head">
+      <b class="charge__name">VULCAN</b>
+      <i class="charge__kana">バルカン</i>
+    </div>
     <div class="charge__bar">
       <div class="charge__fill"></div>
       <div class="charge__grid"></div>
       <div class="charge__tip"></div>
+      <div class="charge__flare"></div>
     </div>
-    <div class="charge__ready">CHARGE READY<i>チャージ完了</i></div>
+    <div class="charge__ready"><b>CHARGE READY</b><i>チャージ完了</i></div>
   </div>
 
   <div class="gear__cds">
     <div class="cd cd--bomb">
-      <div class="cd__dial"><span class="cd__num">0</span></div>
-      <div class="cd__meta"><b class="cd__name">STANDARD</b><i class="cd__kana">スタンダード</i></div>
-      <span class="cd__slot">BOMB</span>
+      <div class="cd__dial">
+        <i class="dial__sweep"></i>
+        <i class="dial__ring"></i>
+        <span class="cd__num"></span>
+      </div>
+      <div class="cd__meta">
+        <span class="cd__slot">BOMB</span>
+        <b class="cd__name">STANDARD</b>
+        <i class="cd__kana">スタンダード</i>
+      </div>
     </div>
     <div class="cd cd--pod">
-      <div class="cd__dial"><span class="cd__num">0</span></div>
-      <div class="cd__meta"><b class="cd__name">STINGER</b><i class="cd__kana">スティンガー</i></div>
-      <span class="cd__slot">POD</span>
+      <div class="cd__dial">
+        <i class="dial__sweep"></i>
+        <i class="dial__ring"></i>
+        <span class="cd__num"></span>
+      </div>
+      <div class="cd__meta">
+        <span class="cd__slot">POD</span>
+        <b class="cd__name">STINGER</b>
+        <i class="cd__kana">スティンガー</i>
+      </div>
     </div>
   </div>
 
   <div class="gear__mob">
-    <div class="mob__row"><span class="mob__l">JUMP<i>ジャンプ</i></span><span class="mob__pips mob__pips--jump"></span></div>
-    <div class="mob__row"><span class="mob__l">DASH<i>ダッシュ</i></span><span class="mob__pips mob__pips--dash"></span></div>
+    <div class="mob__row"><span class="mob__l">JUMP</span><span class="mob__pips mob__pips--jump"></span></div>
+    <div class="mob__row"><span class="mob__l">DASH</span><span class="mob__pips mob__pips--dash"></span></div>
   </div>
 </div>
 
@@ -147,11 +188,11 @@ const TEMPLATE = `
 
 <div class="hud__banner">
   <div class="banner__slab"></div>
+  <div class="banner__bars"><i></i><i></i><i></i></div>
   <div class="banner__wrap">
     <div class="banner__main" data-text=""></div>
     <div class="banner__sub"></div>
   </div>
-  <div class="banner__bars"><i></i><i></i><i></i></div>
 </div>
 
 <div class="hud__net">
@@ -195,7 +236,8 @@ export class HUD {
     // ---- plates ----------------------------------------------------------
     this.plates = Array.from(el.querySelectorAll('.hud__plate')).map((p, i) => ({
       el: p,
-      flash: q('.plate__flash', p),
+      flash: q('.bar__flash', p),
+      edge: q('.plate__edge', p),
       glyph: q('.portrait__glyph', p),
       tag: q('.portrait__tag', p),
       name: q('.plate__name', p),
@@ -210,6 +252,7 @@ export class HUD {
         wins: -1, low: null, down: null, dead: null, local: null,
       },
       flashAnim: null,
+      edgeAnim: null,
       index: i,
     }));
 
@@ -378,10 +421,14 @@ export class HUD {
       p.cls.textContent = body.class.toUpperCase();
       p.kana.textContent = body.kana;
       p.glyph.textContent = body.name.charAt(0);
+      // The machine's own colours dress the portrait only. The bar and the
+      // pips stay on the fixed side colours (P1 blue / P2 red) so that "how
+      // much is left" is never confused with "which robo is that" — a bright
+      // body palette must not read as a fuller bar.
       const look = body.look;
-      p.el.style.setProperty('--team', hex(look.primary));
-      p.el.style.setProperty('--team-hot', hex(look.emissive));
-      p.el.style.setProperty('--team-acc', hex(look.accent));
+      p.el.style.setProperty('--body', hex(look.primary));
+      p.el.style.setProperty('--body-hot', hex(look.emissive));
+      p.el.style.setProperty('--body-acc', hex(look.accent));
     }
 
     const label = (name || body.name).toUpperCase();
@@ -591,10 +638,12 @@ export class HUD {
 
     const big = !!(opts.crit || opts.heavy);
     d.inner.textContent = String(n);
+    // Damage *you* took is red; damage you dealt is white/amber. Same glyphs,
+    // opposite meaning — the colour has to carry it.
     d.inner.className = 'dmg__t' +
       (opts.crit ? ' is-crit' : '') +
       (opts.heavy ? ' is-heavy' : '') +
-      (opts.targetIndex === 0 ? ' is-t0' : opts.targetIndex === 1 ? ' is-t1' : '');
+      (opts.targetIndex === this._s.localIndex ? ' is-self' : ' is-foe');
 
     d.x = worldPos.x; d.y = worldPos.y; d.z = worldPos.z;
     // A little screen-space scatter so a burst of hits doesn't stack into mush.
@@ -602,7 +651,7 @@ export class HUD {
     d.jy = (Math.random() - 0.5) * 22;
     d.live = true;
 
-    const life = big ? DMG_LIFE_BIG : DMG_LIFE;
+    const life = (big ? DMG_LIFE_BIG : DMG_LIFE) * (REDUCED ? 0.7 : 1);
     d.until = performance.now() + life;
     d.outer.style.opacity = '1';
 
@@ -665,17 +714,29 @@ export class HUD {
     ], { duration: big ? 420 : 260, easing: 'cubic-bezier(.2,.8,.3,1)' });
   }
 
-  /** Red edge-flash on a plate when its owner eats damage. */
+  /**
+   * Damage feedback on a plate.
+   *
+   * It flashes the *bar* and strokes the plate edge — never the plate fill.
+   * A hit is exactly the moment the player needs to read the name, the class
+   * and the remaining HP, so nothing is allowed to paint over the readout.
+   */
   _punchFlash(p) {
     if (p.flashAnim) p.flashAnim.cancel();
     p.flashAnim = p.flash.animate(
-      [{ opacity: 0.9 }, { opacity: 0 }],
-      { duration: 240, easing: 'ease-out' },
+      [{ opacity: 0.85 }, { opacity: 0 }],
+      { duration: REDUCED ? 120 : 260, easing: 'ease-out' },
+    );
+    if (p.edgeAnim) p.edgeAnim.cancel();
+    p.edgeAnim = p.edge.animate(
+      [{ opacity: 1 }, { opacity: 0 }],
+      { duration: REDUCED ? 140 : 340, easing: 'ease-out' },
     );
   }
 
   _punch(el, prev, store) {
     if (prev) prev.cancel();
+    if (REDUCED) { store(null); return; }
     store(el.animate([
       { transform: 'translate(-50%,0) scale(1.34)' },
       { transform: 'translate(-50%,0) scale(1)' },
@@ -735,7 +796,10 @@ export class HUD {
     for (const d of this._dmgPool) if (d.anim) d.anim.cancel();
     if (this._hitAnim) this._hitAnim.cancel();
     if (this._comboAnim) this._comboAnim.cancel();
-    for (const p of this.plates) if (p.flashAnim) p.flashAnim.cancel();
+    for (const p of this.plates) {
+      if (p.flashAnim) p.flashAnim.cancel();
+      if (p.edgeAnim) p.edgeAnim.cancel();
+    }
     this._dmgLive.length = 0;
     this._dmgPool.length = 0;
     this.el.remove();

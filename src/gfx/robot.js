@@ -42,13 +42,94 @@ const _previewState = {
 
 const TEAM_TINT = [0x3f8fff, 0xff4a5c];
 
-/** Frame/joint metal, picked by the body's trim so parts read as a family. */
+/**
+ * Frame/joint metal, picked by the body's trim so parts read as a family.
+ *
+ * These are deliberately near-black. The exposed armature is the only thing
+ * threaded between every pair of armour plates on the model, so it is the
+ * machine's line art: dark there means each plate ends somewhere visible. A
+ * bright chrome frame between two mid-value plates does the opposite — it
+ * welds the whole torso into one blob with a shine on it.
+ */
 const TRIM = {
-  chrome:   { color: 0x9aa4b2, rough: 0.24, metal: 1.0 },
-  gunmetal: { color: 0x3a4149, rough: 0.46, metal: 0.98 },
-  brass:    { color: 0x8d7433, rough: 0.36, metal: 1.0 },
-  obsidian: { color: 0x15171f, rough: 0.20, metal: 1.0 },
+  chrome:   { color: 0x272d36, rough: 0.34, metal: 1.0 },
+  gunmetal: { color: 0x1d2126, rough: 0.48, metal: 0.98 },
+  brass:    { color: 0x342b16, rough: 0.42, metal: 1.0 },
+  obsidian: { color: 0x0b0d12, rough: 0.26, metal: 1.0 },
 };
+
+// ---------------------------------------------------------------------------
+// Paint
+//
+// The armour skin is baked NEUTRAL (see NEUTRAL_LOOK) and every scrap of hue and
+// value on the shell comes from per-vertex paint instead. That buys three things
+// a single-texture robo cannot have:
+//
+//  1. Hard colour blocking between armour GROUPS rather than between whichever
+//     UV panels the splitter happened to land on. Head, pauldron, chest and
+//     forearm can each be a different value on purpose.
+//  2. A dark wash under and behind every hero plate, so neighbouring plates
+//     separate instead of merging into one silhouette.
+//  3. A baked top-plane / side-plane / underside ramp, which is what makes a
+//     painted model read as a solid volume even when the arena light is flat.
+//     Without it, overlapping plates at identical value read as one translucent
+//     mass — the "blue glass" failure.
+// ---------------------------------------------------------------------------
+
+/**
+ * Ceiling on baked albedo. Paint * max plane gain * max grime must stay clear of
+ * 1.0 or the key light drives the top planes into a flat clipped white and the
+ * value structure we just built disappears at the top end.
+ */
+const PAINT_GAIN = 0.80;
+const PLANE_UP = 0.26;    // top faces lift...
+const PLANE_DOWN = 0.62;  // ...undersides crush. Sides are the reference value.
+
+/** Lens/strip brightness. Above ~1.7 these stop reading as glass and bloom flat. */
+const EMIS_GAIN = 0.52;
+const FLARE_GAIN = 0.72;
+
+/**
+ * armorTexture() bakes a part's colours straight into its albedo, which leaves
+ * every plate on the machine at the same value. Feeding it a white/grey look
+ * turns it into a pure DETAIL map — panels, seams, bevels, rivets, brushed
+ * grain, wear — and hands every hue and value decision to the vertex paint,
+ * which is authored per part. One bake then serves every robo in the match, so
+ * this is also three fewer texture uploads per machine.
+ */
+const NEUTRAL_LOOK = {
+  primary: 0xe6e8ea, secondary: 0xffffff, accent: 0xc6cad0, trim: 'chrome',
+  metalness: 0.85, roughness: 0.50,
+};
+
+/** Linear-space paint swatch, pre-scaled by PAINT_GAIN. */
+function swatch(hex, mul = 1) {
+  _col.setHex(hex);
+  const k = PAINT_GAIN * mul;
+  return { r: _col.r * k, g: _col.g * k, b: _col.b * k };
+}
+
+/**
+ * Six roles is the whole vocabulary. Anything more and the machine stops having
+ * a colour scheme; anything less and there is nothing to separate groups with.
+ */
+function buildPalette(look, legColour) {
+  return {
+    hull: swatch(look.primary),
+    // Same hue, shadow value. Reads as the SAME paint in shade rather than as a
+    // second colour, which is what lets us stack three plates and still see all
+    // three edges.
+    hullLo: swatch(look.primary, 0.40),
+    light: swatch(look.secondary),
+    // Cool near-black with a trace of the hull in it, so recesses look like
+    // shadowed machinery and not like holes cut in the model.
+    dark: swatch(look.primary, 0.11),
+    accent: swatch(look.accent, 0.92),
+    leg: swatch(legColour),
+    legLo: swatch(legColour, 0.38),
+    frame: { r: PAINT_GAIN, g: PAINT_GAIN, b: PAINT_GAIN },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Geometry primitives
@@ -191,9 +272,10 @@ class Build {
     this.arc = opts.arc;
     this.rad = opts.radial;
     this.low = opts.low;
-    this.buckets = {
-      torso: [], arms: [], legs: [], frame: [], emis: [], flare: [], halo: [],
-    };
+    this.pal = opts.pal;
+    // One shell bucket: with hue carried per-vertex there is no longer any
+    // reason for torso/arms/legs to be three materials and three draw calls.
+    this.buckets = { shell: [], frame: [], emis: [], flare: [] };
   }
 
   /**
@@ -229,17 +311,49 @@ class Build {
     g.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4));
   }
 
-  _push(list, g, bone) {
+  /**
+   * Bake a paint role down to vertex colours, with two structural gradients
+   * folded in. Both are PAINT, not lighting — they stay put when the robot
+   * tumbles, exactly like a hand-painted model kit.
+   *
+   *  plane — top faces lift, undersides crush, side faces are the reference.
+   *          The arena can light the machine from anywhere; this guarantees the
+   *          chamfer between a top plate and a side plate is always a visible
+   *          value step, which is what stops stacked armour reading as glass.
+   *  grime — value falls off toward the deck. The feet anchor dark, the
+   *          shoulders carry the light, and the machine has a top and a bottom.
+   */
+  _paint(g, paint) {
+    const p = g.attributes.position;
+    const n = g.attributes.normal;
+    const c = p.count;
+    const arr = new Float32Array(c * 3);
+    for (let i = 0; i < c; i++) {
+      const ny = n.getY(i);
+      const plane = ny >= 0 ? 1 + ny * ny * PLANE_UP : 1 - ny * ny * PLANE_DOWN;
+      const k = plane * (0.68 + 0.32 * smoothstep((p.getY(i) - 0.02) / 1.2));
+      arr[i * 3] = paint.r * k;
+      arr[i * 3 + 1] = paint.g * k;
+      arr[i * 3 + 2] = paint.b * k;
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+  }
+
+  _push(list, g, bone, paint) {
     this._uv(g);
     this._skin(g, bone);
+    this._paint(g, paint);
     list.push(g);
     return g;
   }
 
-  shellT(g, bone) { return this._push(this.buckets.torso, g, bone); }
-  shellA(g, bone) { return this._push(this.buckets.arms, g, bone); }
-  shellL(g, bone) { return this._push(this.buckets.legs, g, bone); }
-  frame(g, bone) { return this._push(this.buckets.frame, g, bone); }
+  // shellT/shellA/shellL all land in the same bucket now; they stay distinct so
+  // the layout code still says which armour group a plate belongs to, and so the
+  // per-group default paint is picked for you when a call site doesn't care.
+  shellT(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.pal.hull); }
+  shellA(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.pal.hull); }
+  shellL(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.pal.leg); }
+  frame(g, bone) { return this._push(this.buckets.frame, g, bone, this.pal.frame); }
 
   _tinted(list, g, bone, hex, intensity) {
     this._uv(g);
@@ -256,18 +370,12 @@ class Build {
 
   /** Solid unlit emissive — lenses, seams, nozzle throats. Drives the bloom. */
   emis(g, bone, hex, intensity = 2.0) {
-    return this._tinted(this.buckets.emis, g, bone, hex, intensity);
+    return this._tinted(this.buckets.emis, g, bone, hex, intensity * EMIS_GAIN);
   }
 
-  /** Additive, depth-tested — thruster plumes, muzzle flash, halo rings. */
+  /** Additive, depth-tested — thruster plumes, muzzle flash. */
   flare(g, bone, hex, intensity = 1.4) {
-    return this._tinted(this.buckets.flare, g, bone, hex, intensity);
-  }
-
-  /** Fresnel shell — skipped entirely on the low tier. */
-  halo(g, bone) {
-    if (this.low) { g.dispose(); return null; }
-    return this._push(this.buckets.halo, g, bone);
+    return this._tinted(this.buckets.flare, g, bone, hex, intensity * FLARE_GAIN);
   }
 }
 
@@ -409,25 +517,29 @@ const SIL_wristZ = (P) => P.elbowFwd + P.wristFwd;
 
 function buildPelvis(B, P, C) {
   const a = B.arc, hip = P.hipY;
-  const { look, em, ac, team } = C;
+  const { look, em, ac, team, pal } = C;
 
   // Pelvic block plus a floating belt ring — the waist is where a mecha reads
   // as "assembled from parts", so it gets the most layering per square metre.
-  B.shellT(at(roundedBox(P.hipW, 0.20, P.hipD, 0.035, a), 0, hip - 0.03, 0), 'pelvis');
+  // The block itself stays black: it is the gap the skirt plates float off, and
+  // a dark gap is what tells you they are separate plates at all.
+  B.shellT(at(roundedBox(P.hipW, 0.20, P.hipD, 0.035, a), 0, hip - 0.03, 0), 'pelvis', pal.dark);
   B.frame(at(cyl(0.105, 0.115, 0.16, B.rad), 0, hip + 0.09, 0), 'pelvis');
   B.frame(at(roundedBox(P.hipW * 0.72, 0.06, P.hipD * 0.9, 0.02, a), 0, hip + 0.03, 0), 'pelvis');
 
   // Skirt armour: front, rear and two side plates, each floated off the block.
+  // The front plate is the machine's one warm note below the chest — a small
+  // saturated hit at the waist is what CRV2 used to break up a tall blue body.
   const sk = P.skirt;
   B.shellT(at(taperBox(P.hipW * 0.50, P.hipW * 0.62, 0.20 * sk, 0.06, 0.09, 0.022, a),
-    0, hip - 0.13, P.hipD * 0.46), 'pelvis');
+    0, hip - 0.13, P.hipD * 0.46), 'pelvis', pal.accent);
   B.shellT(at(taperBox(P.hipW * 0.58, P.hipW * 0.70, 0.18 * sk, 0.06, 0.09, 0.022, a),
-    0, hip - 0.12, -P.hipD * 0.46), 'pelvis');
+    0, hip - 0.12, -P.hipD * 0.46), 'pelvis', pal.hullLo);
   for (const s of [-1, 1]) {
     const g = taperBox(0.13, 0.17, 0.22 * sk, 0.13, 0.17, 0.024, a);
     g.rotateZ(s * 0.16);
     g.translate(s * (P.hipW * 0.55 + 0.02), hip - 0.12, 0);
-    B.shellT(g, 'pelvis');
+    B.shellT(g, 'pelvis', pal.hull);
   }
 
   B.emis(at(roundedBox(P.hipW * 0.30, 0.018, 0.02, 0.006, 1), 0, hip + 0.02, P.hipD * 0.52),
@@ -444,20 +556,22 @@ function buildPelvis(B, P, C) {
   for (const s of [-1, 1]) {
     B.frame(at(cyl(0.024, 0.024, 0.17, 6), s * 0.075, P.waistY - 0.02, -0.055), 'spine');
   }
-  B.shellT(at(roundedBox(P.chestW * 0.52, 0.13, P.chestD * 0.62, 0.03, a), 0, P.waistY + 0.02, 0), 'spine');
+  B.shellT(at(roundedBox(P.chestW * 0.52, 0.13, P.chestD * 0.62, 0.03, a), 0, P.waistY + 0.02, 0), 'spine', pal.dark);
   B.emis(at(ringGeo(0.088, 0.008, B.low ? 8 : 14, 4).rotateX(Math.PI / 2),
     0, P.waistY - 0.05, 0), 'spine', ac, 1.1);
 }
 
 function buildChest(B, P, C) {
   const a = B.arc;
-  const { look, em, ac, team } = C;
+  const { look, em, ac, team, pal } = C;
   const cy = P.chestY, cw = P.chestW, ch = P.chestH, cd = P.chestD;
 
-  // Core torso volume: a tapered barrel, never a plain box.
-  B.shellT(at(taperBox(cw * 0.96, cw * 0.80, ch, cd * 0.94, cd * 0.82, 0.045, a), 0, cy, 0), 'chest');
+  // Core torso volume: a tapered barrel, never a plain box. It sits in shadow
+  // value so the hero plate bolted to the front of it has something to read
+  // against — a light plate on a light body is not a plate, it is a smudge.
+  B.shellT(at(taperBox(cw * 0.96, cw * 0.80, ch, cd * 0.94, cd * 0.82, 0.045, a), 0, cy, 0), 'chest', pal.hullLo);
   // Upper back plate, floated so the shoulder yoke reads as a separate piece.
-  B.shellT(at(roundedBox(cw * 0.84, ch * 0.52, cd * 0.30, 0.03, a), 0, cy + ch * 0.20, -cd * 0.46), 'chest');
+  B.shellT(at(roundedBox(cw * 0.84, ch * 0.52, cd * 0.30, 0.03, a), 0, cy + ch * 0.20, -cd * 0.46), 'chest', pal.dark);
   // Collar / shoulder yoke.
   B.frame(at(taperBox(cw * 0.98, cw * 0.72, 0.09, cd * 0.7, cd * 0.8, 0.025, a), 0, cy + ch * 0.50, -0.01), 'chest');
 
@@ -466,7 +580,7 @@ function buildChest(B, P, C) {
     const g = taperBox(0.055, 0.10, 0.19, 0.16, 0.20, 0.02, a);
     g.rotateZ(-s * 0.22);
     g.translate(s * (cw * 0.50), cy + ch * 0.10, 0.01);
-    B.shellT(g, 'chest');
+    B.shellT(g, 'chest', pal.dark);
     if (!B.low) {
       for (let i = 0; i < 3; i++) {
         B.frame(at(roundedBox(0.03, 0.012, 0.15, 0.004, 1),
@@ -489,8 +603,8 @@ function buildChest(B, P, C) {
     case 'slab': {
       // SHELLBIT: one enormous front plate, split by a horizontal weld line,
       // with bolt columns. Reads as "armour first" from any distance.
-      B.shellT(at(roundedBox(cw * 0.88, ch * 0.86, 0.09, 0.03, a), 0, cy + 0.01, cd * 0.50), 'chest');
-      B.shellT(at(roundedBox(cw * 0.70, ch * 0.30, 0.06, 0.022, a), 0, cy + ch * 0.24, cd * 0.56), 'chest');
+      B.shellT(at(roundedBox(cw * 0.88, ch * 0.86, 0.09, 0.03, a), 0, cy + 0.01, cd * 0.50), 'chest', pal.light);
+      B.shellT(at(roundedBox(cw * 0.70, ch * 0.30, 0.06, 0.022, a), 0, cy + ch * 0.24, cd * 0.56), 'chest', pal.hull);
       B.frame(at(roundedBox(cw * 0.90, 0.028, 0.03, 0.008, 1), 0, cy - ch * 0.02, cd * 0.56), 'chest');
       for (const s of [-1, 1]) {
         for (let i = 0; i < 3; i++) {
@@ -508,13 +622,13 @@ function buildChest(B, P, C) {
       const prow = taperBox(0.10, cw * 0.70, 0.30, 0.20, 0.10, 0.02, a);
       prow.rotateX(-0.30);
       prow.translate(0, cy + 0.01, cd * 0.52);
-      B.shellT(prow, 'chest');
+      B.shellT(prow, 'chest', pal.light);
       for (const s of [-1, 1]) {
         const fin = taperBox(0.03, 0.055, 0.30, 0.06, 0.22, 0.014, a);
         fin.rotateZ(-s * 0.30);
         fin.rotateX(-0.16);
         fin.translate(s * cw * 0.44, cy + 0.03, cd * 0.36);
-        B.shellT(fin, 'chest');
+        B.shellT(fin, 'chest', pal.accent);
       }
       B.emis(at(roundedBox(0.028, 0.30, 0.014, 0.006, 1).rotateX(-0.30), 0, cy + 0.02, cd * 0.63), 'chest', em, 2.6);
       B.emis(at(ball(0.045, B.low ? 6 : 10), 0, cy + 0.15, cd * 0.55), 'core', em, 2.8);
@@ -523,10 +637,9 @@ function buildChest(B, P, C) {
     case 'reactor': {
       // GRAND ISO: the power plant is the design. Housing, iris, radial vents.
       B.frame(at(cyl(0.135, 0.145, 0.10, B.low ? 10 : 16).rotateX(Math.PI / 2), 0, cy + 0.02, cd * 0.48), 'chest');
-      B.shellT(at(ringGeo(0.155, 0.030, B.low ? 10 : 18, 5).rotateX(0), 0, cy + 0.02, cd * 0.50), 'chest');
+      B.shellT(at(ringGeo(0.155, 0.030, B.low ? 10 : 18, 5).rotateX(0), 0, cy + 0.02, cd * 0.50), 'chest', pal.light);
       B.emis(at(disc(0.115, B.low ? 10 : 18), 0, cy + 0.02, cd * 0.545), 'core', em, 3.0);
       B.emis(at(ringGeo(0.135, 0.010, B.low ? 10 : 18, 4), 0, cy + 0.02, cd * 0.53), 'core', ac, 1.8);
-      B.halo(at(ball(0.20, B.low ? 8 : 12), 0, cy + 0.02, cd * 0.44), 'core');
       if (!B.low) {
         for (let i = 0; i < 6; i++) {
           const t = (i / 6) * TAU;
@@ -540,18 +653,19 @@ function buildChest(B, P, C) {
     }
     default: {
       // RAY-01: the tournament V-crest. Two angled slabs and a lit sternum.
+      // The V is the machine's face at 32px — white slabs, black sternum
+      // between them, warm bar above. Three values inside 30cm of chest.
       for (const s of [-1, 1]) {
         const g = taperBox(0.07, 0.13, 0.28, 0.05, 0.09, 0.018, a);
         g.rotateZ(s * 0.42);
         g.rotateX(-0.10);
         g.translate(s * cw * 0.20, cy + ch * 0.12, cd * 0.52);
-        B.shellT(g, 'chest');
+        B.shellT(g, 'chest', pal.light);
       }
-      B.shellT(at(roundedBox(cw * 0.34, ch * 0.52, 0.07, 0.022, a), 0, cy - ch * 0.10, cd * 0.52), 'chest');
-      B.frame(at(roundedBox(cw * 0.52, 0.03, 0.04, 0.008, 1), 0, cy + ch * 0.34, cd * 0.50), 'chest');
+      B.shellT(at(roundedBox(cw * 0.34, ch * 0.52, 0.07, 0.022, a), 0, cy - ch * 0.10, cd * 0.52), 'chest', pal.dark);
+      B.shellT(at(roundedBox(cw * 0.52, 0.03, 0.04, 0.008, 1), 0, cy + ch * 0.34, cd * 0.50), 'chest', pal.accent);
       B.emis(at(roundedBox(0.024, ch * 0.42, 0.016, 0.006, 1), 0, cy - ch * 0.10, cd * 0.57), 'chest', em, 2.3);
       B.emis(at(ball(0.05, B.low ? 6 : 10), 0, cy + ch * 0.30, cd * 0.50), 'core', em, 2.8);
-      B.halo(at(ball(0.13, B.low ? 8 : 12), 0, cy + ch * 0.30, cd * 0.46), 'core');
       break;
     }
   }
@@ -563,11 +677,13 @@ function buildChest(B, P, C) {
 
 function buildBackpack(B, P, C) {
   const a = B.arc;
-  const { look, em, ac } = C;
+  const { look, em, ac, pal } = C;
   const cy = P.chestY, cd = P.chestD, pd = P.packD, phh = P.packH;
 
+  // The pack sits dark: it is behind the shoulder line, and anything bright back
+  // there competes with the chest for the eye in a three-quarter view.
   B.shellT(at(taperBox(P.chestW * 0.62, P.chestW * 0.74, phh, pd * 0.7, pd, 0.03, a),
-    0, cy + 0.02, -cd * 0.5 - pd * 0.5), 'pack');
+    0, cy + 0.02, -cd * 0.5 - pd * 0.5), 'pack', pal.hullLo);
   B.frame(at(roundedBox(P.chestW * 0.50, 0.05, pd * 0.5, 0.014, 1),
     0, cy + phh * 0.42, -cd * 0.5 - pd * 0.5), 'pack');
 
@@ -575,7 +691,7 @@ function buildBackpack(B, P, C) {
   for (const s of [-1, 1]) {
     const x = s * 0.14, z = -cd * 0.5 - pd;
     B.frame(at(cyl(0.075, 0.052, 0.13, B.rad).rotateX(Math.PI / 2), x, cy - 0.06, z + 0.02), 'pack');
-    B.shellT(at(cyl(0.088, 0.070, 0.06, B.rad).rotateX(Math.PI / 2), x, cy - 0.06, z + 0.08), 'pack');
+    B.shellT(at(cyl(0.088, 0.070, 0.06, B.rad).rotateX(Math.PI / 2), x, cy - 0.06, z + 0.08), 'pack', pal.dark);
     B.emis(at(disc(0.055, B.low ? 8 : 14).rotateY(Math.PI), x, cy - 0.06, z - 0.045), 'pack', em, 2.4);
 
     const plume = cyl(0.05, 0.012, 0.42, B.low ? 6 : 10, true);
@@ -591,7 +707,7 @@ function buildBackpack(B, P, C) {
         const g = roundedBox(0.045, 0.11, 0.015, 0.005, 1);
         g.rotateY(s * 0.35);
         g.translate(s * (0.055 + i * 0.055), cy + phh * 0.30, -cd * 0.5 - pd * 0.95);
-        B.shellT(g, 'pack');
+        B.shellT(g, 'pack', pal.light);
       }
     }
   }
@@ -600,17 +716,21 @@ function buildBackpack(B, P, C) {
 
 function buildHead(B, P, C) {
   const a = B.arc;
-  const { look, em, ac } = C;
+  const { look, em, ac, pal } = C;
   const hy = P.headY, r = P.headR;
 
+  // The head is the read. Every variant below paints the helmet crown in the
+  // LIGHT value and everything under the jawline dark, so there is a hard value
+  // break at the neck — that break is what makes a head a head at 32px instead
+  // of a bump on the shoulders.
   B.frame(at(cyl(0.055, 0.065, 0.09, B.rad), 0, hy - r - 0.03, 0), 'neck');
 
   switch (look.head) {
     case 'dome': {
       // SHELLBIT: an armoured dome sunk into the shoulders. Barely a head.
-      B.shellT(at(ball(r * 1.05, B.low ? 8 : 12).scale(1.15, 0.9, 1.0), 0, hy, 0), 'head');
-      B.shellT(at(taperBox(r * 2.0, r * 2.3, r * 0.55, r * 0.9, r * 1.5, 0.02, a), 0, hy - r * 0.55, r * 0.15), 'head');
-      B.frame(at(roundedBox(r * 1.9, 0.035, 0.06, 0.01, 1), 0, hy + r * 0.10, r * 0.85), 'head');
+      B.shellT(at(ball(r * 1.05, B.low ? 8 : 12).scale(1.15, 0.9, 1.0), 0, hy, 0), 'head', pal.light);
+      B.shellT(at(taperBox(r * 2.0, r * 2.3, r * 0.55, r * 0.9, r * 1.5, 0.02, a), 0, hy - r * 0.55, r * 0.15), 'head', pal.dark);
+      B.shellT(at(roundedBox(r * 1.9, 0.035, 0.06, 0.01, 1), 0, hy + r * 0.10, r * 0.85), 'head', pal.accent);
       B.emis(at(roundedBox(r * 1.30, 0.030, 0.02, 0.008, 1), 0, hy - r * 0.10, r * 0.92), 'head', em, 2.6);
       for (const s of [-1, 1]) {
         B.frame(at(cyl(0.028, 0.034, 0.05, 8).rotateZ(Math.PI / 2), s * r * 1.15, hy, 0), 'head');
@@ -619,17 +739,17 @@ function buildHead(B, P, C) {
     }
     case 'crest': {
       // AERIAL-Z: narrow face, tall swept blade. All vertical energy.
-      B.shellT(at(taperBox(r * 1.0, r * 1.5, r * 1.7, r * 1.3, r * 1.7, 0.02, a), 0, hy, 0), 'head');
+      B.shellT(at(taperBox(r * 1.0, r * 1.5, r * 1.7, r * 1.3, r * 1.7, 0.02, a), 0, hy, 0), 'head', pal.light);
       const crest = taperBox(0.012, 0.05, 0.24, 0.03, 0.16, 0.008, a);
       crest.rotateX(0.42);
       crest.translate(0, hy + r * 1.15, -0.03);
-      B.shellT(crest, 'head');
+      B.shellT(crest, 'head', pal.accent);
       for (const s of [-1, 1]) {
         const fin = taperBox(0.010, 0.028, 0.15, 0.02, 0.10, 0.006, a);
         fin.rotateZ(-s * 0.55);
         fin.rotateX(0.30);
         fin.translate(s * r * 0.75, hy + r * 0.85, -0.02);
-        B.shellT(fin, 'head');
+        B.shellT(fin, 'head', pal.dark);
         B.emis(at(roundedBox(0.035, 0.016, 0.014, 0.004, 1), s * r * 0.42, hy + r * 0.05, r * 0.95), 'head', em, 3.0);
       }
       B.frame(at(roundedBox(r * 0.9, 0.05, 0.05, 0.012, 1), 0, hy - r * 0.55, r * 0.7), 'head');
@@ -637,26 +757,28 @@ function buildHead(B, P, C) {
     }
     case 'mono': {
       // GRAND ISO: one big sensor eye, rear heat fins. Deliberately inhuman.
-      B.shellT(at(ball(r * 1.1, B.low ? 8 : 12).scale(1.0, 1.05, 1.05), 0, hy, 0), 'head');
+      B.shellT(at(ball(r * 1.1, B.low ? 8 : 12).scale(1.0, 1.05, 1.05), 0, hy, 0), 'head', pal.light);
       B.frame(at(cyl(0.062, 0.070, 0.05, B.low ? 10 : 14).rotateX(Math.PI / 2), 0, hy + r * 0.05, r * 0.95), 'head');
       B.emis(at(disc(0.052, B.low ? 10 : 16), 0, hy + r * 0.05, r * 1.16), 'head', em, 3.2);
       B.emis(at(ringGeo(0.068, 0.008, B.low ? 10 : 16, 4), 0, hy + r * 0.05, r * 1.10), 'head', ac, 1.6);
       if (!B.low) {
         for (let i = 0; i < 3; i++) {
           B.shellT(at(roundedBox(r * 1.5 - i * 0.02, 0.018, 0.05, 0.005, 1),
-            0, hy + r * 0.55 - i * 0.045, -r * 0.95), 'head');
+            0, hy + r * 0.55 - i * 0.045, -r * 0.95), 'head', pal.dark);
         }
       }
       break;
     }
     default: {
       // RAY-01 / NOCTURNE: classic wedge helmet with a wraparound visor band.
-      B.shellT(at(taperBox(r * 1.5, r * 1.85, r * 1.8, r * 1.5, r * 1.9, 0.025, a), 0, hy, 0), 'head');
+      // Light crown, black jaw, warm brow bar over the visor — read in that
+      // order from 40 metres away.
+      B.shellT(at(taperBox(r * 1.5, r * 1.85, r * 1.8, r * 1.5, r * 1.9, 0.025, a), 0, hy, 0), 'head', pal.light);
       B.frame(at(taperBox(r * 1.3, r * 1.6, r * 0.7, r * 1.2, r * 1.5, 0.015, a), 0, hy - r * 0.75, r * 0.10), 'head');
       const brow = roundedBox(r * 1.9, 0.045, 0.09, 0.012, a);
       brow.rotateX(-0.18);
       brow.translate(0, hy + r * 0.52, r * 0.80);
-      B.shellT(brow, 'head');
+      B.shellT(brow, 'head', pal.accent);
       B.emis(at(roundedBox(r * 1.55, 0.045, 0.024, 0.010, 1), 0, hy + r * 0.05, r * 0.95), 'head', em, 3.0);
       for (const s of [-1, 1]) {
         B.frame(at(cyl(0.024, 0.030, 0.055, 8).rotateZ(Math.PI / 2), s * r * 1.25, hy - r * 0.05, 0), 'head');
@@ -674,7 +796,7 @@ function buildHead(B, P, C) {
 
 function buildShoulder(B, P, C, s) {
   const a = B.arc;
-  const { look, em, ac, team } = C;
+  const { look, em, ac, team, pal } = C;
   const side = s < 0 ? 'L' : 'R';
   const clav = `clav${side}`;
   const x = s * P.shX, y = P.shY;
@@ -683,11 +805,14 @@ function buildShoulder(B, P, C, s) {
   // Deltoid frame under the pauldron so the gap has something inside it.
   B.frame(at(ball(P.armW * 0.72, B.low ? 6 : 10), x, y, 0), clav);
 
+  // Every pauldron is body in the hull colour with a LIGHT top cap. The cap is
+  // the highest horizontal plane on the machine and reads as the shoulder line;
+  // without it the pauldron dissolves into the chest, which is defect #24.
   switch (look.shoulder) {
     case 'block': {
       // SHELLBIT: rectangular blocks with vertical slats.
-      B.shellT(at(roundedBox(0.20 * sc, 0.24, 0.26, 0.035, a), x + s * 0.08, y + 0.05, 0), clav);
-      B.shellT(at(roundedBox(0.16 * sc, 0.07, 0.22, 0.02, a), x + s * 0.08, y + 0.20, 0), clav);
+      B.shellT(at(roundedBox(0.20 * sc, 0.24, 0.26, 0.035, a), x + s * 0.08, y + 0.05, 0), clav, pal.hull);
+      B.shellT(at(roundedBox(0.16 * sc, 0.07, 0.22, 0.02, a), x + s * 0.08, y + 0.20, 0), clav, pal.light);
       if (!B.low) {
         for (let i = 0; i < 3; i++) {
           B.frame(at(roundedBox(0.022, 0.16, 0.03, 0.006, 1),
@@ -703,11 +828,11 @@ function buildShoulder(B, P, C, s) {
       fin.rotateZ(-s * 0.30);
       fin.rotateX(0.36);
       fin.translate(x + s * 0.075, y + 0.06, -0.06);
-      B.shellT(fin, clav);
+      B.shellT(fin, clav, pal.hull);
       const cap = taperBox(0.09, 0.13, 0.13, 0.14, 0.19, 0.022, a);
       cap.rotateZ(-s * 0.18);
       cap.translate(x + s * 0.055, y + 0.03, 0.01);
-      B.shellT(cap, clav);
+      B.shellT(cap, clav, pal.light);
       B.emis(at(roundedBox(0.012, 0.20, 0.012, 0.004, 1).rotateX(0.36).rotateZ(-s * 0.30),
         x + s * 0.115, y + 0.07, -0.05), clav, em, 1.9);
       break;
@@ -715,14 +840,14 @@ function buildShoulder(B, P, C, s) {
     case 'vent': {
       // GRAND ISO: radiator drums. Every panel is a heatsink, so make it one.
       B.shellT(at(cyl(0.115, 0.125, 0.19, B.low ? 10 : 14).rotateZ(Math.PI / 2),
-        x + s * 0.085, y + 0.03, 0), clav);
+        x + s * 0.085, y + 0.03, 0), clav, pal.hull);
       B.frame(at(cyl(0.075, 0.075, 0.21, B.low ? 8 : 12).rotateZ(Math.PI / 2),
         x + s * 0.085, y + 0.03, 0), clav);
       if (!B.low) {
         for (let i = 0; i < 4; i++) {
           const t = (i / 4) * Math.PI * 2 + 0.4;
           B.shellT(at(roundedBox(0.19, 0.035, 0.05, 0.008, 1)
-            .rotateX(t), x + s * 0.085, y + 0.03 + Math.cos(t) * 0.115, Math.sin(t) * 0.115), clav);
+            .rotateX(t), x + s * 0.085, y + 0.03 + Math.cos(t) * 0.115, Math.sin(t) * 0.115), clav, pal.light);
         }
       }
       B.emis(at(ringGeo(0.09, 0.010, B.low ? 10 : 16, 4).rotateY(Math.PI / 2),
@@ -734,11 +859,11 @@ function buildShoulder(B, P, C, s) {
       const pau = taperBox(0.15 * sc, 0.20 * sc, 0.22, 0.17, 0.24, 0.032, a);
       pau.rotateZ(-s * 0.14);
       pau.translate(x + s * 0.075, y + 0.055, 0);
-      B.shellT(pau, clav);
+      B.shellT(pau, clav, pal.hull);
       const cap = taperBox(0.10 * sc, 0.16 * sc, 0.06, 0.12, 0.20, 0.018, a);
       cap.rotateZ(-s * 0.14);
       cap.translate(x + s * 0.085, y + 0.185, 0);
-      B.shellT(cap, clav);
+      B.shellT(cap, clav, pal.light);
       B.frame(at(roundedBox(0.05, 0.14, 0.20, 0.014, 1), x + s * 0.01, y + 0.05, 0), clav);
       B.emis(at(roundedBox(0.10, 0.018, 0.016, 0.005, 1), x + s * 0.10, y + 0.13, 0.10), clav, team, 1.7);
       if (!B.low) {
@@ -751,7 +876,7 @@ function buildShoulder(B, P, C, s) {
 
 function buildArm(B, P, C, s) {
   const a = B.arc;
-  const { em, ac } = C;
+  const { em, ac, pal } = C;
   const side = s < 0 ? 'L' : 'R';
   const x = s * P.shX;
   const eY = P.shY - P.elbowDrop, eZ = s > 0 ? P.elbowFwd : 0.04;
@@ -761,13 +886,15 @@ function buildArm(B, P, C, s) {
 
   // Upper arm: inner frame sleeve + outer armour shell, so the joint gap has
   // depth instead of showing a hole.
+  // The upper arm stays in shadow value: it lives directly under the pauldron,
+  // and matching them would fuse shoulder and arm into one lump.
   B.frame(segBox(x, P.shY, 0, eY, eZ, aw * 0.62, aw * 0.62, aw * 0.3, 1), `arm${side}`);
-  B.shellA(segBox(x, P.shY - 0.02, 0.0, eY + 0.02, eZ * 0.9, aw, aw * 1.05, 0.028, a), `arm${side}`);
-  B.shellA(segBox(x + s * aw * 0.42, P.shY - 0.04, 0.0, eY + 0.05, eZ * 0.8, aw * 0.30, aw * 0.7, 0.012, a), `arm${side}`);
+  B.shellA(segBox(x, P.shY - 0.02, 0.0, eY + 0.02, eZ * 0.9, aw, aw * 1.05, 0.028, a), `arm${side}`, pal.hullLo);
+  B.shellA(segBox(x + s * aw * 0.42, P.shY - 0.04, 0.0, eY + 0.05, eZ * 0.8, aw * 0.30, aw * 0.7, 0.012, a), `arm${side}`, pal.light);
 
   // Elbow: ball joint, guard plate, and a piston that visibly spans the joint.
   B.frame(at(ball(aw * 0.60, B.low ? 6 : 10), x, eY, eZ), `arm${side}`);
-  B.shellA(at(taperBox(aw * 0.75, aw * 1.05, aw * 0.9, aw * 0.8, aw * 1.1, 0.018, a), x, eY + 0.02, eZ), `fore${side}`);
+  B.shellA(at(taperBox(aw * 0.75, aw * 1.05, aw * 0.9, aw * 0.8, aw * 1.1, 0.018, a), x, eY + 0.02, eZ), `fore${side}`, pal.accent);
   if (!B.low) {
     B.frame(segBox(x - s * aw * 0.42, P.shY - 0.10, 0, eY + 0.02, eZ, 0.022, 0.022, 0.01, 1), `arm${side}`);
   }
@@ -775,8 +902,8 @@ function buildArm(B, P, C, s) {
     `fore${side}`, ac, 1.3);
 
   // Forearm: heavier cuff than the upper arm — top-light limbs look like sticks.
-  B.shellA(segBox(x, eY, eZ, wY, wZ, fw, fw * 1.08, 0.03, a), `fore${side}`);
-  B.shellA(segBox(x + s * fw * 0.44, eY - 0.02, eZ, wY, wZ, fw * 0.28, fw * 0.75, 0.012, a), `fore${side}`);
+  B.shellA(segBox(x, eY, eZ, wY, wZ, fw, fw * 1.08, 0.03, a), `fore${side}`, pal.hull);
+  B.shellA(segBox(x + s * fw * 0.44, eY - 0.02, eZ, wY, wZ, fw * 0.28, fw * 0.75, 0.012, a), `fore${side}`, pal.light);
   B.frame(at(cyl(fw * 0.46, fw * 0.46, 0.05, B.rad).rotateX(Math.atan2(wZ - eZ, wY - eY) + Math.PI / 2),
     x, wY, wZ), `hand${side}`);
   B.emis(at(roundedBox(0.014, 0.09, 0.014, 0.004, 1)
@@ -790,7 +917,7 @@ function buildArm(B, P, C, s) {
 
 function buildLeg(B, P, L, C, s) {
   const a = B.arc;
-  const { legs, em, ac, team } = C;
+  const { legs, em, ac, team, pal } = C;
   const side = s < 0 ? 'L' : 'R';
   const x = s * L.hipX;
   const hip = P.hipY;
@@ -799,24 +926,27 @@ function buildLeg(B, P, L, C, s) {
   const tw = L.thighW, sw = L.shinW, fw = L.footW;
   const style = legs.look.style;
 
-  // Hip ball + housing.
+  // Hip ball + housing. Hips are dark: they are the hinge between the skirt and
+  // the thigh, and the eye needs a break there or the legs read as one column.
   B.frame(at(ball(tw * 0.60, B.low ? 6 : 10), x, hip - 0.02, 0), `hip${side}`);
-  B.shellL(at(taperBox(tw * 0.9, tw * 1.15, 0.13, tw * 0.9, tw * 1.1, 0.022, a), x + s * 0.015, hip - 0.05, 0), `thigh${side}`);
+  B.shellL(at(taperBox(tw * 0.9, tw * 1.15, 0.13, tw * 0.9, tw * 1.1, 0.022, a), x + s * 0.015, hip - 0.05, 0), `thigh${side}`, pal.legLo);
 
   // Thigh.
   B.frame(segBox(x, hip - 0.02, 0, kY + 0.02, kZ, tw * 0.60, tw * 0.60, tw * 0.28, 1), `thigh${side}`);
-  B.shellL(segBox(x, hip - 0.06, 0, kY + 0.04, kZ * 0.9, tw, tw * 1.05, 0.03, a), `thigh${side}`);
+  B.shellL(segBox(x, hip - 0.06, 0, kY + 0.04, kZ * 0.9, tw, tw * 1.05, 0.03, a), `thigh${side}`, pal.leg);
   if (style === 'tank') {
     // Bolted-on outer thigh armour with a lip — pure mass reading.
-    B.shellL(segBox(x + s * tw * 0.52, hip - 0.10, 0, kY + 0.02, kZ, tw * 0.34, tw * 1.15, 0.016, a), `thigh${side}`);
-    B.shellL(segBox(x, hip - 0.08, -tw * 0.55, kY, kZ - tw * 0.5, tw * 0.85, tw * 0.28, 0.014, a), `thigh${side}`);
+    B.shellL(segBox(x + s * tw * 0.52, hip - 0.10, 0, kY + 0.02, kZ, tw * 0.34, tw * 1.15, 0.016, a), `thigh${side}`, pal.legLo);
+    B.shellL(segBox(x, hip - 0.08, -tw * 0.55, kY, kZ - tw * 0.5, tw * 0.85, tw * 0.28, 0.014, a), `thigh${side}`, pal.legLo);
   } else if (style === 'digitigrade') {
-    B.shellL(segBox(x, hip - 0.04, -tw * 0.42, kY + 0.06, kZ - tw * 0.30, tw * 0.66, tw * 0.42, 0.016, a), `thigh${side}`);
+    B.shellL(segBox(x, hip - 0.04, -tw * 0.42, kY + 0.06, kZ - tw * 0.30, tw * 0.66, tw * 0.42, 0.016, a), `thigh${side}`, pal.legLo);
   }
 
-  // Knee: joint sphere, guard, and a piston bridging thigh to shin.
+  // Knee: joint sphere, guard, and a piston bridging thigh to shin. The guard
+  // takes the accent — a warm chevron at knee height is the one thing on the
+  // lower body that survives being 40px tall in a fight frame.
   B.frame(at(ball(tw * 0.52, B.low ? 6 : 10), x, kY, kZ), `thigh${side}`);
-  B.shellL(at(taperBox(sw * 0.85, sw * 1.12, 0.13, sw * 0.9, sw * 1.15, 0.02, a), x, kY + 0.01, kZ + 0.02), `shin${side}`);
+  B.shellL(at(taperBox(sw * 0.85, sw * 1.12, 0.13, sw * 0.9, sw * 1.15, 0.02, a), x, kY + 0.01, kZ + 0.02), `shin${side}`, pal.accent);
   B.emis(at(ringGeo(tw * 0.56, 0.008, B.low ? 8 : 12, 4).rotateY(Math.PI / 2), x + s * tw * 0.1, kY, kZ),
     `shin${side}`, ac, 1.3);
   if (!B.low) {
@@ -826,10 +956,10 @@ function buildLeg(B, P, L, C, s) {
   // Shin / lower leg — the biggest style tell.
   if (style === 'hover') {
     // HOVER-V: no shin at all. A skirted housing over a turbine ring.
-    B.shellL(segBox(x, kY, kZ, aY + 0.04, aZ, sw * 1.05, sw * 1.15, 0.03, a), `shin${side}`);
-    B.shellL(at(taperBox(fw * 1.5, fw * 1.05, 0.16, fw * 1.5, fw * 1.05, 0.03, a), x, aY - 0.03, 0), `foot${side}`);
+    B.shellL(segBox(x, kY, kZ, aY + 0.04, aZ, sw * 1.05, sw * 1.15, 0.03, a), `shin${side}`, pal.leg);
+    B.shellL(at(taperBox(fw * 1.5, fw * 1.05, 0.16, fw * 1.5, fw * 1.05, 0.03, a), x, aY - 0.03, 0), `foot${side}`, pal.legLo);
     B.frame(at(cyl(fw * 0.78, fw * 0.72, 0.09, B.low ? 10 : 16), x, L.toeY + 0.05, 0), `toe${side}`);
-    B.shellL(at(ringGeo(fw * 0.80, 0.036, B.low ? 12 : 20, 5).rotateX(Math.PI / 2), x, L.toeY + 0.04, 0), `toe${side}`);
+    B.shellL(at(ringGeo(fw * 0.80, 0.036, B.low ? 12 : 20, 5).rotateX(Math.PI / 2), x, L.toeY + 0.04, 0), `toe${side}`, pal.accent);
     B.emis(at(ringGeo(fw * 0.60, 0.014, B.low ? 12 : 20, 4).rotateX(Math.PI / 2), x, L.toeY + 0.02, 0), `toe${side}`, em, 2.4);
     B.emis(at(disc(fw * 0.46, B.low ? 10 : 16).rotateX(Math.PI / 2), x, L.toeY - 0.005, 0), `toe${side}`, em, 1.6);
     const wash = cyl(fw * 0.5, fw * 0.16, 0.30, B.low ? 8 : 12, true);
@@ -841,18 +971,20 @@ function buildLeg(B, P, L, C, s) {
         const fin = taperBox(0.02, 0.05, 0.12, 0.05, 0.14, 0.008, a);
         fin.rotateZ(q * 0.5);
         fin.translate(x + q * fw * 0.9, aY - 0.04, 0);
-        B.shellL(fin, `foot${side}`);
+        B.shellL(fin, `foot${side}`, pal.legLo);
       }
     }
   } else {
+    // Shin in the leg colour with a LIGHT greave floated proud of it: two
+    // planes at two values, which is what gives the lower leg any form at all
+    // once the arena stops helping.
     B.frame(segBox(x, kY, kZ, aY, aZ, sw * 0.58, sw * 0.58, sw * 0.26, 1), `shin${side}`);
-    B.shellL(segBox(x, kY - 0.02, kZ, aY + 0.02, aZ, sw, sw * 1.08, 0.028, a), `shin${side}`);
-    // Front greave, floated proud of the shin.
-    B.shellL(segBox(x, kY - 0.04, kZ + sw * 0.55, aY + 0.04, aZ + sw * 0.5, sw * 0.68, sw * 0.30, 0.014, a), `shin${side}`);
+    B.shellL(segBox(x, kY - 0.02, kZ, aY + 0.02, aZ, sw, sw * 1.08, 0.028, a), `shin${side}`, pal.legLo);
+    B.shellL(segBox(x, kY - 0.04, kZ + sw * 0.55, aY + 0.04, aZ + sw * 0.5, sw * 0.68, sw * 0.30, 0.014, a), `shin${side}`, pal.leg);
 
     if (style === 'tank') {
       for (const q of [-1, 1]) {
-        B.shellL(segBox(x + q * sw * 0.56, kY - 0.06, kZ, aY + 0.03, aZ, sw * 0.26, sw * 1.1, 0.014, a), `shin${side}`);
+        B.shellL(segBox(x + q * sw * 0.56, kY - 0.06, kZ, aY + 0.03, aZ, sw * 0.26, sw * 1.1, 0.014, a), `shin${side}`, pal.leg);
       }
       // Quad thruster block on the calf.
       B.frame(at(roundedBox(sw * 0.95, 0.13, 0.09, 0.02, a), x, aY + 0.13, aZ - sw * 0.62), `shin${side}`);
@@ -885,19 +1017,19 @@ function buildLeg(B, P, L, C, s) {
     B.frame(at(ball(sw * 0.44, B.low ? 6 : 10), x, aY, aZ), `foot${side}`);
     if (style === 'digitigrade') {
       // Long metatarsal running forward to a single hoof-like toe.
-      B.shellL(segBox(x, aY, aZ, L.toeY + 0.03, L.toeZ, fw * 0.95, fw * 0.8, 0.018, a), `foot${side}`);
-      B.shellL(segBox(x, L.toeY + 0.02, L.toeZ, L.toeY - 0.02, L.tipZ, fw * 1.05, fw * 0.55, 0.016, a), `toe${side}`);
-      B.shellL(segBox(x, aY - 0.02, aZ - 0.02, L.toeY + 0.02, aZ - 0.09, fw * 0.7, fw * 0.5, 0.014, a), `foot${side}`);
+      B.shellL(segBox(x, aY, aZ, L.toeY + 0.03, L.toeZ, fw * 0.95, fw * 0.8, 0.018, a), `foot${side}`, pal.legLo);
+      B.shellL(segBox(x, L.toeY + 0.02, L.toeZ, L.toeY - 0.02, L.tipZ, fw * 1.05, fw * 0.55, 0.016, a), `toe${side}`, pal.leg);
+      B.shellL(segBox(x, aY - 0.02, aZ - 0.02, L.toeY + 0.02, aZ - 0.09, fw * 0.7, fw * 0.5, 0.014, a), `foot${side}`, pal.legLo);
     } else {
       const spread = style === 'tank' ? 1.0 : 0.85;
-      B.shellL(at(taperBox(fw * 0.9, fw * 1.15, 0.10, fw * 1.5, fw * 1.9, 0.02, a), x, L.toeY + 0.02, L.toeZ * 0.35), `foot${side}`);
+      B.shellL(at(taperBox(fw * 0.9, fw * 1.15, 0.10, fw * 1.5, fw * 1.9, 0.02, a), x, L.toeY + 0.02, L.toeZ * 0.35), `foot${side}`, pal.legLo);
       B.shellL(at(taperBox(fw * 1.05, fw * 0.85, 0.075, fw * 0.9, fw * 0.7, 0.016, a).rotateX(0.12),
-        x, L.toeY - 0.005, L.toeZ + 0.03), `toe${side}`);
+        x, L.toeY - 0.005, L.toeZ + 0.03), `toe${side}`, pal.leg);
       if (!B.low) {
         for (let i = -1; i <= 1; i++) {
           if (style !== 'tank' && i === 0) continue;
           B.shellL(at(taperBox(fw * 0.22, fw * 0.30, 0.05, 0.05, 0.09, 0.008, a).rotateX(0.30),
-            x + i * fw * 0.34 * spread, L.toeY - 0.015, L.tipZ - 0.02), `toe${side}`);
+            x + i * fw * 0.34 * spread, L.toeY - 0.015, L.tipZ - 0.02), `toe${side}`, pal.accent);
         }
       }
       B.frame(at(roundedBox(fw * 1.2, 0.03, fw * 1.2, 0.008, 1), x, L.toeY - 0.035, L.toeZ * 0.4), `foot${side}`);

@@ -37,22 +37,40 @@ export const ARENAS = [
       box(-5.2, 0.45, -5.7, 2.8, 0.45, 0.5, 'rail'),
       box(5.2, 0.45, 5.7, 2.8, 0.45, 0.5, 'rail'),
     ],
+    /**
+     * Every theme is built on the same four anchors, because a frame with no
+     * value structure cannot be lit out of trouble:
+     *
+     *   deck   — near-white. The largest surface on screen and the value the
+     *            robots are read against. This is the frame's WHITE.
+     *   wall   — near-black boundary structure. The frame's BLACK.
+     *   struct — mid plating for obstacles and architecture, sitting between
+     *            the two so blocks read as objects on a floor.
+     *   hazard — the warm note. Nothing else in the arena is warm, which is
+     *            exactly why it works.
+     */
     theme: {
       key: 'grid',
-      floor: 0x232c3a,
+      floor: 0x2b3442,
+      deck: 0xdfe4ea,
       floorAccent: 0x2f6bd6,
-      wall: 0x252d3a,
+      struct: 0x39424f,
+      wall: 0x11151d,
       accent: 0x4aa8ff,
       emissive: 0x59b7ff,
-      fog: 0x070a10,
-      fogDensity: 0.0085,
+      hazard: 0xffb01f,
+      crowdWarm: 0xffa03c,
+      fog: 0x05070d,
+      fogDensity: 0.0034,
       skyTop: 0x0a1424,
       skyBottom: 0x02040a,
       sunDir: [0.45, 0.78, 0.44],
-      sunColour: 0xfff0d8,
-      sunIntensity: 4.2,
+      sunColour: 0xfff2de,
+      sunIntensity: 5.8,
       rimColour: 0x2f6bd6,
       crowd: true,
+      screens: true,
+      gates: true,
       // Ambient bands of light that sweep the arena floor.
       sweep: true,
     },
@@ -78,22 +96,33 @@ export const ARENAS = [
       box(-11.4, 1.0, -1.5, 1.1, 1.0, 3.8, 'rail'),
       box(11.4, 1.0, 1.5, 1.1, 1.0, 3.8, 'rail'),
     ],
+    /**
+     * The foundry is the one warm arena, so the counter-note inverts: the fill
+     * light and the crowd lamps go cold. A hot arena rendered entirely in hot
+     * colours is just as monochrome as a cold one.
+     */
     theme: {
       key: 'foundry',
-      floor: 0x2e211b,
+      floor: 0x352a22,
+      deck: 0xd8cec1,
       floorAccent: 0xff6a1a,
-      wall: 0x33211a,
+      struct: 0x4b3b2e,
+      wall: 0x160e08,
       accent: 0xff8c2a,
       emissive: 0xff5a10,
-      fog: 0x160806,
-      fogDensity: 0.015,
+      hazard: 0xffd24a,
+      crowdWarm: 0x8fd0ff,
+      fog: 0x120705,
+      fogDensity: 0.0072,
       skyTop: 0x2a0d05,
       skyBottom: 0x0a0302,
       sunDir: [-0.4, 0.7, 0.55],
-      sunColour: 0xffb680,
-      sunIntensity: 3.6,
-      rimColour: 0xff5a10,
+      sunColour: 0xffd8b0,
+      sunIntensity: 5.2,
+      rimColour: 0x3f7fd0,
       crowd: false,
+      screens: true,
+      gates: true,
       heat: true,
       lavaGlow: true,
     },
@@ -120,20 +149,26 @@ export const ARENAS = [
     ],
     theme: {
       key: 'orbital',
-      floor: 0x1b2434,
+      floor: 0x232c3c,
+      deck: 0xd4dce6,
       floorAccent: 0x7de2ff,
-      wall: 0x1d2637,
+      struct: 0x36414f,
+      wall: 0x0b1018,
       accent: 0x7de2ff,
       emissive: 0x9df0ff,
-      fog: 0x03060d,
-      fogDensity: 0.006,
+      hazard: 0xff9a2e,
+      crowdWarm: 0xffb066,
+      fog: 0x02040a,
+      fogDensity: 0.0028,
       skyTop: 0x050b18,
       skyBottom: 0x010206,
       sunDir: [0.2, 0.5, -0.84],
-      sunColour: 0xdfeaff,
-      sunIntensity: 3.4,
-      rimColour: 0x7de2ff,
+      sunColour: 0xe8f0ff,
+      sunIntensity: 5.2,
+      rimColour: 0x3a6cc0,
       crowd: true,
+      screens: true,
+      gates: true,
       stars: true,
       planet: true,
     },

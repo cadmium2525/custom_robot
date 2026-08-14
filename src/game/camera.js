@@ -49,8 +49,10 @@ export class DuelCamera {
     this.introT = 0;
     this.mode = 'intro';
     this.timeScale = 1;
-    /** Closed-loop boom multiplier from the on-screen framing check. */
+    /** Closed-loop boom multiplier — capped, so the player never shrinks far. */
     this.fitBoost = 1;
+    /** How far ahead of the player the rig aims, to keep the opponent framed. */
+    this.lookAhead = 1;
 
     this._prevLocalPos = new THREE.Vector3();
     this._speedBlur = 0;
@@ -60,6 +62,7 @@ export class DuelCamera {
     this.introT = 0;
     this.mode = 'intro';
     this.fitBoost = 1;
+    this.lookAhead = 1;
     const r = world.robos[localIndex];
     const o = world.robos[1 - localIndex];
     this.yaw = Math.atan2(r.pos.x - o.pos.x, r.pos.z - o.pos.z);
@@ -88,29 +91,45 @@ export class DuelCamera {
 
     const separation = _a.distanceTo(_b);
 
-    // Focus sits between the two, biased toward the local player so their own
-    // robo never drifts to the edge of a phone screen. The bias relaxes toward
-    // the true midpoint as the fighters separate, or the far one falls off.
-    const bias = 0.42 + clamp((separation - 10) / 26, 0, 1) * 0.08;
-    _mid.copy(_a).lerp(_b, bias);
+    // ---- framing model -------------------------------------------------
+    //
+    // The rig used to try to fit BOTH fighters inside the frustum, pulling the
+    // boom out until they both fitted. At arena-length separations that put the
+    // camera 25m away and rendered two 1.6m robos at 3% of frame height — you
+    // could not find your own machine in a screenshot, let alone read a fight.
+    //
+    // So it no longer negotiates. The camera is anchored a fixed short distance
+    // behind the LOCAL robo, looking along the axis toward the opponent. The
+    // player is always large and always in the same place; the opponent gets
+    // smaller with range, which is just honest perspective and is exactly how
+    // the games this is modelled on staged their duels. When the opponent would
+    // leave the frame the rig pans toward them rather than retreating.
+
+    // Horizontal axis from the local robo toward its opponent.
+    let ax = _b.x - _a.x;
+    let az = _b.z - _a.z;
+    const axl = Math.hypot(ax, az);
+    if (axl > 1e-4) { ax /= axl; az /= axl; } else { ax = 0; az = 1; }
+    const axisYaw = Math.atan2(-ax, -az);   // yaw of "behind the player"
 
     if (world.phase === PHASE.INTRO) {
+      _mid.copy(_a).lerp(_b, 0.5);
       this._updateIntro(world, _mid, separation, dt, time);
     } else {
       this.mode = 'duel';
-      // Look down the axis between the fighters, from behind the local robo.
-      const axisYaw = Math.atan2(_a.x - _b.x, _a.z - _b.z);
       // Approach rather than snap, so a fast strafe swings the camera smoothly.
-      this.yaw = approachAngle(this.yaw, axisYaw, Math.min(1, dt * 3.4) * Math.abs(angleDelta(this.yaw, axisYaw)) + dt * 0.6);
+      this.yaw = approachAngle(
+        this.yaw, axisYaw,
+        Math.min(1, dt * 3.4) * Math.abs(angleDelta(this.yaw, axisYaw)) + dt * 0.6
+      );
 
-      // Frame both fighters at a readable size. The robots are 1.6m tall, so
-      // every extra metre of pull-back costs a lot of legibility — this stays
-      // deliberately tight and lets the elevation do the work of showing the
-      // deck they're fighting on.
-      const wantDist = clamp(7.4 + separation * 0.38, 8.4, 15);
-      const wantHeight = clamp(2.6 + separation * 0.10 + Math.max(_a.y, _b.y) * 0.5, 2.6, 6.8);
-      this.distance = damp(this.distance, wantDist, 3.2, dt);
-      this.height = damp(this.height, wantHeight, 3.6, dt);
+      // Short and nearly constant: this is what holds the player at a readable
+      // ~20-25% of frame height. Range only nudges it.
+      const near = Math.min(separation, 22);
+      const wantDist = 5.9 + near * 0.055;
+      const wantHeight = 2.35 + near * 0.035 + Math.max(_a.y, _b.y) * 0.38;
+      this.distance = damp(this.distance, wantDist, 4.5, dt);
+      this.height = damp(this.height, wantHeight, 4.0, dt);
     }
 
     const yaw = this.yaw + this.yawOffset;
@@ -118,34 +137,36 @@ export class DuelCamera {
     this.yawOffset = damp(this.yawOffset, 0, 0.9, dt);
     this.pitch = damp(this.pitch, 0.1, 0.7, dt);
 
-    // Elevation comes from `height`; `pitch` is only the player's tilt nudge, so
-    // the two don't compound into a top-down view.
     const boom = this.distance * this.fitBoost;
-    const rawX = _mid.x + Math.sin(yaw) * boom;
-    const rawZ = _mid.z + Math.cos(yaw) * boom;
+    const rawX = _a.x + Math.sin(yaw) * boom;
+    const rawZ = _a.z + Math.cos(yaw) * boom;
 
     // Keep the camera inside the arena shell.
     const bd = this.arena.bounds;
-    const cx = clamp(rawX, -bd.hx + 1.2, bd.hx - 1.2);
-    const cz = clamp(rawZ, -bd.hz + 1.2, bd.hz - 1.2);
+    const cx = clamp(rawX, -bd.hx + 1.0, bd.hx - 1.0);
+    const cz = clamp(rawZ, -bd.hz + 1.0, bd.hz - 1.0);
 
-    // A fighter backed into a corner would otherwise end up BEHIND the lens:
-    // the rig wants to pull back, the wall says no, and the clamp shoves the
-    // camera past them. Trade the pull-back we couldn't take for elevation —
-    // a boom arm rising instead of retreating — so both robos stay in frame.
+    // Backed into a corner the boom can't extend, so it rises instead — the
+    // player stays framed rather than ending up behind the lens.
     const lost = Math.hypot(rawX - cx, rawZ - cz);
 
     _desired.set(
       cx,
-      _mid.y + this.height + this.pitch * boom + lost * 0.95,
+      _a.y + this.height + this.pitch * boom + lost * 0.8,
       cz
     );
-    _desired.y = clamp(_desired.y, 1.4, bd.ceil - 0.8);
+    _desired.y = clamp(_desired.y, 1.2, bd.ceil - 0.8);
 
-    _look.copy(_mid);
-    _look.y += 1.0 + Math.min(1.5, separation * 0.03);
+    // Aim ahead of the player toward the opponent, so the local robo sits low
+    // and forward in frame with the fight laid out in front of it.
+    const ahead = clamp(separation * 0.42, 2.2, 9) * this.lookAhead;
+    _look.set(
+      _a.x + ax * ahead,
+      _a.y + 1.05 + Math.min(1.6, separation * 0.045) + (_b.y - _a.y) * 0.3,
+      _a.z + az * ahead
+    );
 
-    const posLambda = this.mode === 'intro' ? 6.5 : 7.5;
+    const posLambda = this.mode === 'intro' ? 6.5 : 8.5;
     this.smoothPos.x = damp(this.smoothPos.x, _desired.x, posLambda, dt);
     this.smoothPos.y = damp(this.smoothPos.y, _desired.y, posLambda * 0.85, dt);
     this.smoothPos.z = damp(this.smoothPos.z, _desired.z, posLambda, dt);
@@ -176,24 +197,21 @@ export class DuelCamera {
     }
     cam.updateMatrixWorld();
 
-    // ---- closed-loop framing check -------------------------------------
-    // Everything above is a good estimate, but estimates lose fighters:
-    // clamped positions, a lagging yaw and a changing FOV all conspire. So
-    // measure where the two robos actually land on screen and feed the error
-    // back into the boom length. Being measured rather than predicted is what
-    // makes this hold up when someone dashes into a corner.
+    // ---- closed-loop opponent-visibility check --------------------------
+    // Measure where the opponent actually lands on screen. If they are leaving
+    // frame, PAN toward them (lookAhead) before considering any pull-back, and
+    // cap the pull-back hard — losing the opponent for a moment is recoverable,
+    // rendering both fighters as specks is not.
     if (this.mode === 'duel') {
-      let worst = 0;
-      for (let i = 0; i < 2; i++) {
-        _fit.set(interp[i].pos.x, interp[i].pos.y + 0.9, interp[i].pos.z).project(cam);
-        // Behind the camera projects to a mirrored point; treat it as fully out.
-        if (_fit.z > 1) { worst = 2; break; }
-        worst = Math.max(worst, Math.abs(_fit.x), Math.abs(_fit.y));
-      }
-      // 0.78 leaves a margin so nobody fights from behind the HUD plates.
-      const want = clamp(this.fitBoost * (worst / 0.78), 1, 2.4);
-      // Widen quickly (a lost opponent is a lost round), recover slowly.
-      this.fitBoost = damp(this.fitBoost, want, want > this.fitBoost ? 9 : 1.1, dt);
+      _fit.set(_b.x, _b.y + 0.9, _b.z).project(cam);
+      const off = _fit.z > 1 ? 2 : Math.max(Math.abs(_fit.x), Math.abs(_fit.y));
+
+      const wantAhead = clamp(this.lookAhead * (off / 0.72), 1, 2.0);
+      this.lookAhead = damp(this.lookAhead, wantAhead, wantAhead > this.lookAhead ? 7 : 1.4, dt);
+
+      // Only after panning is maxed do we give up any of the player's scale.
+      const needBoom = this.lookAhead > 1.85 ? clamp(off / 0.72, 1, 1.35) : 1;
+      this.fitBoost = damp(this.fitBoost, needBoom, needBoom > this.fitBoost ? 5 : 1.1, dt);
     }
   }
 

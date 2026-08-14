@@ -135,6 +135,18 @@ function h(tag, cls, html) {
 /** English label with the kana beneath it — the house lockup. */
 const bi = (en, kana) => `<b>${en}</b><i>${kana}</i>`;
 
+/**
+ * The house mark: an arena hexagon with a machine's visor inside it. Drawn
+ * inline because the whole product ships with no external assets — and because
+ * a generic gradient hexagon carried none of this game's identity.
+ */
+const MARK = `<svg class="mark__svg" viewBox="0 0 52 56" aria-hidden="true" focusable="false">
+  <path class="mk__hex" d="M26 2 48 14.5v27L26 54 4 41.5v-27z"/>
+  <path class="mk__inner" d="M26 11 40 19v18l-14 8-14-8V19z"/>
+  <rect class="mk__crest" x="24" y="14" width="4" height="7"/>
+  <rect class="mk__visor" x="17" y="25" width="18" height="6"/>
+</svg>`;
+
 const hex = (n) => `#${(n >>> 0).toString(16).padStart(6, '0')}`;
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);

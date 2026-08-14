@@ -153,6 +153,10 @@ export function additive(color, opts = {}) {
     depthWrite: false,
     depthTest: opts.depthTest ?? true,
     side: opts.side ?? THREE.DoubleSide,
+    // Vertex colours let every practical light in the arena — block rims, gate
+    // glows, lamp lenses, beacons — share one merged mesh and still carry its
+    // own colour. One draw call for the whole lighting story.
+    vertexColors: opts.vertexColors ?? false,
     toneMapped: false,
     fog: false,
   });
@@ -306,11 +310,15 @@ export function bakeEnvironment(renderer, theme, size = 256) {
   const sky = new THREE.Mesh(new THREE.SphereGeometry(10, 32, 24), makeSkyMaterial(theme));
   scene.add(sky);
 
-  // Ground bounce: metals look wrong without something below the horizon.
+  // Ground bounce: metals look wrong without something below the horizon, and
+  // the thing below the horizon is now a near-white deck, so it has to be the
+  // deck colour. Reflecting a dark floor that no longer exists was quietly
+  // dragging every metal surface in the arena down toward grey.
   const bounce = new THREE.Mesh(
     new THREE.SphereGeometry(9.5, 24, 12, 0, Math.PI * 2, Math.PI * 0.52, Math.PI * 0.48),
     new THREE.MeshBasicMaterial({
-      color: new THREE.Color(theme.floorAccent).multiplyScalar(0.16).add(new THREE.Color(theme.floor)),
+      color: new THREE.Color(theme.deck ?? theme.floor).multiplyScalar(0.55)
+        .lerp(new THREE.Color(theme.floorAccent), 0.12),
       side: THREE.BackSide,
       toneMapped: false,
       fog: false,
