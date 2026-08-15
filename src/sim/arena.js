@@ -41,9 +41,16 @@ export const ARENAS = [
      * Every theme is built on the same four anchors, because a frame with no
      * value structure cannot be lit out of trouble:
      *
-     *   deck   — near-white. The largest surface on screen and the value the
-     *            robots are read against. This is the frame's WHITE.
-     *   wall   — near-black boundary structure. The frame's BLACK.
+     *   deck   — the largest surface on screen and the value the robots are
+     *            read against. It is the frame's LIGHT, which is not the same
+     *            thing as the frame's WHITE: a 5.8-intensity key on a pale
+     *            albedo lands the deck at 200+ and there is nowhere left to put
+     *            a highlight. Authored so the LIT deck sits mid-band and the
+     *            things that are supposed to be bright — rims, hazard paint,
+     *            muzzle flash, tracers — are the only bright things.
+     *   wall   — low boundary structure. Darker than the deck by a clear step,
+     *            but not a void: a surround with no detail in it is 25% of the
+     *            frame reading as a hole.
      *   struct — mid plating for obstacles and architecture, sitting between
      *            the two so blocks read as objects on a floor.
      *   hazard — the warm note. Nothing else in the arena is warm, which is
@@ -52,7 +59,7 @@ export const ARENAS = [
     theme: {
       key: 'grid',
       floor: 0x2b3442,
-      deck: 0x787e86,
+      deck: 0x5c6068,
       floorAccent: 0x2f6bd6,
       struct: 0x39424f,
       wall: 0x232a35,
@@ -104,7 +111,7 @@ export const ARENAS = [
     theme: {
       key: 'foundry',
       floor: 0x352a22,
-      deck: 0xd8cec1,
+      deck: 0x7a6f62,
       floorAccent: 0xff6a1a,
       struct: 0x4b3b2e,
       wall: 0x160e08,
@@ -150,7 +157,7 @@ export const ARENAS = [
     theme: {
       key: 'orbital',
       floor: 0x232c3c,
-      deck: 0xd4dce6,
+      deck: 0x646c78,
       floorAccent: 0x7de2ff,
       struct: 0x36414f,
       wall: 0x0b1018,
