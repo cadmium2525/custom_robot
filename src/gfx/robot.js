@@ -2139,7 +2139,14 @@ export class RoboModel {
       u.uHitFlash.value = hit * hit * 0.85;
       u.uCharge.value = this.chargeAmt * (robo.chargeReady ? 1 : 0.55);
       u.uEnergy.value = 0.03 + heat * 0.10 + invuln * 0.22;
-      u.uRimStrength.value = 0.10 + invuln * 0.65 + hit * 0.5;
+      // The 0.10 idle floor here was the mitigation for defect #5 back when the
+      // rim was pow(fres, k) — a ramp that covered half of every plate, so the
+      // only way to stop it reading as tinted glass was to turn it almost off.
+      // The rim is a narrow edge-biased smoothstep band now, which is a contour
+      // and not a wash, so it can carry real strength: that is the whole point
+      // of having changed its shape. Leaving it at 0.10 kept the fix for #5 and
+      // threw away what the fix was FOR, which is the outline in #24.
+      u.uRimStrength.value = 0.58 + invuln * 0.45 + hit * 0.5;
     }
     this.matFlare.opacity = clamp01(0.18 + heat * 0.55);
 

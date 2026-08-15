@@ -136,9 +136,18 @@ export function armorTexture(look, size = 512, seedOffset = 0) {
       const seam = 1 - smoothstep(gap, gap * 2.6, edge);      // dark groove
       const bevel = smoothstep(gap * 1.4, gap * 6.5, edge);   // lit lip
 
-      // Per-panel tonal variation keeps large surfaces from looking flat.
+      // Per-panel tonal variation, sorted into three deliberate tiers rather
+      // than jittered around one. The old +-10% wobble is invisible at the size
+      // a robot actually occupies in a fight — measured at 28-118px tall — and
+      // it is most of why the shell read as a single mushy mass. A real machine
+      // has recessed plates in shadow and proud plates catching the key, and
+      // those internal value breaks are what the eye reads the shape from when
+      // the outline itself is only a few dozen pixels across. Spreading the
+      // panels across a wide range also means that whatever value the
+      // background happens to be, some of the robot still separates from it.
       const pv = ((p.id * 2654435761) >>> 0) / 4294967296;
-      const tint = 0.9 + pv * 0.2;
+      const tier = pv < 0.28 ? 0.58 : (pv > 0.79 ? 1.30 : 0.95);
+      const tint = tier * (0.95 + (((p.id * 40503) >>> 0) % 97) / 97 * 0.10);
 
       // Brushed grain, anisotropic along the longer panel axis.
       const grainDir = p.w >= p.h ? n.simplex2(u * 260, v * 12) : n.simplex2(u * 12, v * 260);

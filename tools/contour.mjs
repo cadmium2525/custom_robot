@@ -62,6 +62,9 @@ const BASE = flag('base', 'http://127.0.0.1:4241/');
 const TIER = Number(flag('tier', 3));
 const TICKS = Number(flag('ticks', 420));
 const ARENA = flag('arena', 'grid');
+// startMatch defaults its seed to Math.random(), so without pinning this every
+// run measures a different fight and nothing can be compared to anything.
+const SEED = Number(flag('seed', 1234567));
 const KEEP = !!flag('keep');
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
@@ -117,6 +120,30 @@ const STENCIL_FN = `(on) => {
     v.scene.background = v.__bg; v.scene.fog = v.__fog;
     v.__swap = null; v.__hidden = null;
   }
+}`;
+
+/**
+ * Drive the camera rig to its steady state by hand.
+ *
+ * Without this the tool is useless for A/B work: the rig smooths toward its
+ * target using the real frame delta, and under software GL that delta is
+ * whatever the last frame happened to cost, so two runs of the same seed frame
+ * the fight from visibly different places. Robot heights swung between 28px and
+ * 146px across runs, which swamps any change being measured. The sim itself is
+ * deterministic, so once it is frozen the rig converges to one pose — this just
+ * runs it there on a fixed 1/60 delta with nothing else moving.
+ */
+const SETTLE_FN = `(n) => {
+  const g = window.__game;
+  if (!g.rig || !g.world || !g.view) return false;
+  let t = (g.engine.clock && g.engine.clock.elapsed) || 0;
+  for (let i = 0; i < n; i++) {
+    const views = g.view.prepare(1);
+    g.rig.update(g.world, views, g.localIndex, 1 / 60, t);
+    t += 1 / 60;
+  }
+  g.view.update(0, 1, t);
+  return true;
 }`;
 
 /** Suppress every effect so a beam across the outline cannot be mistaken for it. */
@@ -291,21 +318,27 @@ const bar = (pct, width = 28) => {
   await page.evaluate((t) => { const q = window.__game.engine.quality; q.auto = false; q.setTier(t); }, TIER);
   await page.waitForTimeout(400);
 
-  await page.evaluate((id) => {
+  // Freeze on the SAME line that starts the match. Any wall-clock that elapses
+  // with the engine live is sim ticks the demo AI has already played, and how
+  // many of those there are depends on how busy the machine was — which is the
+  // whole of the nondeterminism. The sim is deterministic from tick 0, so the
+  // only way to get the same frame twice is to never let it run free at all.
+  await page.evaluate(({ id, seed }) => {
     const g = window.__game;
-    g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: id, loadouts: g.loadouts });
+    g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: id, loadouts: g.loadouts, seed });
     g.setDemo(true);
-  }, ARENA);
-  await page.waitForTimeout(1000);
-  await page.evaluate((n) => window.__game.fastForward(Math.max(0, n - 40)), TICKS);
-  for (let i = 0; i < 10; i++) {
-    await page.evaluate(() => window.__game.fastForward(4));
-    await page.waitForTimeout(260);
-  }
-
-  // Freeze everything, then kill the effects, so N and H differ by the shell
-  // and nothing else whatsoever.
-  await page.evaluate(() => { window.__game.engine.paused = true; });
+    g.engine.paused = true;
+  }, { id: ARENA, seed: SEED });
+  await page.waitForTimeout(1200);
+  await page.evaluate((n) => window.__game.fastForward(n), TICKS);
+  const st = await page.evaluate(() => {
+    const w = window.__game.world;
+    const r = (v) => Math.round(v * 100) / 100;
+    return { tick: w.tick, a: [r(w.robos[0].pos.x), r(w.robos[0].pos.z)], b: [r(w.robos[1].pos.x), r(w.robos[1].pos.z)] };
+  });
+  console.log(`  sim state: tick=${st.tick} p1=${st.a} p2=${st.b}`);
+  const settled = await page.evaluate(`(${SETTLE_FN})(240)`);
+  if (!settled) throw new Error('camera rig unavailable — cannot pin the frame');
   await page.evaluate(`(${VFX_OFF_FN})()`);
   for (const id of ['ui-layer', 'hud-layer', 'splash']) {
     await page.evaluate((i) => { const el = document.getElementById(i); if (el) el.style.display = 'none'; }, id);

@@ -439,11 +439,14 @@ async function boot(browser) {
 
 async function runMatch(browser, name) {
   const { context, page, errors } = await boot(browser);
-  await page.evaluate((id) => {
+  // A fixed seed, because startMatch defaults to Math.random() and every run
+  // otherwise measures a different fight. That is what made small changes look
+  // like noise and noise look like changes.
+  await page.evaluate(({ id, seed }) => {
     const g = window.__game;
-    g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: id, loadouts: g.loadouts });
+    g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: id, loadouts: g.loadouts, seed });
     g.setDemo(true);
-  }, ARENA_OF[name] || 'grid');
+  }, { id: ARENA_OF[name] || 'grid', seed: 1234567 });
   await page.waitForTimeout(1000);
   await page.evaluate((n) => window.__game.fastForward(Math.max(0, n - 40)), TICKS);
   for (let i = 0; i < 10; i++) {
