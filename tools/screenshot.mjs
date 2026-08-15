@@ -463,16 +463,23 @@ async function capture(browser, name, opts = {}) {
     return path.join(OUT_DIR, `${opts.prefix || ''}${name}${dev}${tag ? `-${tag}` : ''}.png`);
   };
 
+  // Playwright's 30s default is a desktop-GPU assumption. Compositing a
+  // 1600x900 WebGL frame under SwiftShader on a box that is also running
+  // three other capture jobs routinely takes longer than that, and losing a
+  // six-minute capture on the very last call is the most expensive way to
+  // find out. The failure this guards against is slowness, not a hang.
+  const SHOT_TIMEOUT = 120000;
+
   const files = [];
   if (!clips.length) {
     const f = nameFor('');
-    await page.screenshot({ path: f });
+    await page.screenshot({ path: f, timeout: SHOT_TIMEOUT });
     files.push(f);
   } else {
     // All crops come off the same settled frame — no re-boot per region.
     for (const c of clips) {
       const f = nameFor(c.tag);
-      await page.screenshot({ path: f, clip: c.rect });
+      await page.screenshot({ path: f, clip: c.rect, timeout: SHOT_TIMEOUT });
       files.push(f);
     }
   }

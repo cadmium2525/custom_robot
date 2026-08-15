@@ -830,8 +830,15 @@
 
 /* ---- title ---- */
 
-.title { justify-content: center; }
-.logo { margin-bottom: clamp(20px, 5vh, 46px); }
+/* `.title` is the screen's only child, so it has to become the flex column
+   itself — as a plain block, `justify-content` did nothing and the footer's
+   `margin-top: auto` had no free space to absorb, which stranded the build
+   stamp and the key hints in the middle of the frame with a rule cutting
+   across it at 62% height. Two auto margins: the free space splits evenly
+   above the logo and above the footer, so the lockup sits in the optical
+   centre of the space it owns and the footer pins to the bottom edge. */
+.title { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.logo { margin-top: auto; margin-bottom: clamp(20px, 5vh, 46px); }
 .logo__mark { display: flex; align-items: center; gap: clamp(12px, 2vw, 22px); }
 .logo__eyebrow {
   display: flex; align-items: baseline; gap: 10px;

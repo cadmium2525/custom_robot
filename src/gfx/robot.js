@@ -124,13 +124,18 @@ function buildPalette(look, legColour) {
   // A near-black floor mixed into every shadow role. Without it a body whose
   // primary is already dark (NOCTURNE) has no shadow value left to give, and its
   // recesses go to literal zero, which reads as a hole rather than as shade.
+  //
+  // The floor is deliberately a visible near-black (~RGB 32) rather than a
+  // mathematical one. The garage backdrop is itself near-black, so a shadow role
+  // mixed down to 4/255 does not read as shade there — it reads as a hole
+  // punched through the machine, and the arms and weapon simply stop existing.
   const shade = (hex, mul) => {
     _col.setHex(hex);
     const k = PAINT_GAIN * mul;
     return {
-      r: _col.r * k + 0.010 * PAINT_GAIN,
-      g: _col.g * k + 0.013 * PAINT_GAIN,
-      b: _col.b * k + 0.020 * PAINT_GAIN,
+      r: _col.r * k + 0.018 * PAINT_GAIN,
+      g: _col.g * k + 0.022 * PAINT_GAIN,
+      b: _col.b * k + 0.034 * PAINT_GAIN,
     };
   };
   return {
@@ -138,17 +143,28 @@ function buildPalette(look, legColour) {
     // Same hue, shadow value. Reads as the SAME paint in shade rather than as a
     // second colour, which is what lets us stack three plates and still see all
     // three edges.
-    hullLo: shade(look.primary, 0.34),
+    //
+    // Half the hull value, not a third: this role carries the upper arms, the
+    // forearm cuffs, the rear skirt and the whole backpack — masses, not
+    // creases. Painted at 0.34 they read as holes between the pauldron and the
+    // gun on a dark backdrop, which cost the machine both arms in silhouette.
+    hullLo: shade(look.primary, 0.52),
     light: swatch(look.secondary),
     // Cool near-black with a trace of the hull in it, so recesses look like
-    // shadowed machinery and not like holes cut in the model.
-    dark: shade(look.primary, 0.07),
+    // shadowed machinery and not like holes cut in the model. This is the one
+    // role that stays genuinely dark — it is the model's line art.
+    dark: shade(look.primary, 0.09),
     accent: swatch(look.accent, 0.95),
     leg: swatch(legColour),
-    legLo: shade(legColour, 0.30),
-    // Weapons and hardware are hardware: a neutral dark grey that belongs to no
-    // part's colour scheme, so the gun never merges into the arm it hangs off.
-    gunmetal: shade(0x9aa6b4, 0.16),
+    // Legs stand on a near-white arena deck, so their mass value stays lower
+    // than the arms': dark enough to hold an edge against the floor, light
+    // enough to be a leg rather than a gap under the skirt.
+    legLo: shade(legColour, 0.40),
+    // Weapons and hardware are hardware: a neutral mid grey that belongs to no
+    // part's colour scheme, so the gun never merges into the arm it hangs off —
+    // and never merges into the background either. At 0.16 the vulcan read as a
+    // black circle where the machine's right hand should be.
+    gunmetal: shade(0x9aa6b4, 0.34),
     frame: { r: PAINT_GAIN, g: PAINT_GAIN, b: PAINT_GAIN },
   };
 }
@@ -2086,6 +2102,26 @@ export class RoboPreview {
     this._make(loadout);
   }
 
+  /**
+   * Keep the machine's feet on the menu's floor plane.
+   *
+   * The garage frames the hero by sliding this whole group around to line it up
+   * with the layout's preview slot — currently about 0.4 m down. The menu's
+   * floor furniture (pedestal, rim ring, backdrop grid) does not move with it,
+   * so the machine ends up standing 0.4 m BELOW the plinth it is supposed to be
+   * standing on: the pedestal's opaque top face then cuts the model off at the
+   * knees, and the service pad and contact shadow are buried underneath it.
+   * That is what defect #15 looks like in the current build — not a robot
+   * floating over a void but a robot sunk into one.
+   *
+   * Cancelling only the downward part of the framing offset puts the feet, the
+   * pad and the shadow back on y = 0 and leaves the horizontal framing alone.
+   */
+  _floorLift() {
+    const y = this.group.position.y;
+    return y < 0 ? -y : 0;
+  }
+
   update(dt, time) {
     this.t += dt;
     const s = _previewState;
@@ -2099,6 +2135,13 @@ export class RoboPreview {
     s.boostHeat = 0.02 + Math.max(0, Math.sin(this.t * 0.55)) * 0.05;
     s.stepPhase = 0;
     this.model.update(s, dt, time);
+
+    // After update(), because RoboModel.update() writes group.position from the
+    // sim state every frame. Applied here rather than through _previewState.pos
+    // so the contact shadow still sees altitude 0 and stays a contact shadow.
+    const lift = this._floorLift();
+    this.model.group.position.y += lift;
+    if (this.pad) this.pad.position.y = lift + 0.002;
   }
 
   setQuality(settings) {
