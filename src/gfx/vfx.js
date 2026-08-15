@@ -571,7 +571,15 @@ attribute vec4 aLife;     // birth, life, scale0, scale1
 attribute vec4 aTint;     // rgb + kind
 attribute vec4 aMotion;   // local drift per second + seed
 uniform float uTime;
-uniform float uMode;
+// uMode is read by BOTH stages, and GLSL ES requires a uniform declared in both
+// to carry the same precision in both. The fragment stage is mediump, the
+// vertex stage defaults to highp, so leaving this unqualified linked a program
+// that failed VALIDATE_STATUS — and a program that fails validation is not
+// required to draw anything. That is the actual reason the "explosion" in every
+// capture was a couple of sparks: the fireballs, the shockwaves, the flare
+// cards and the scorch decals all share this one program, so all four pools
+// were silently dropping out together.
+uniform mediump float uMode;
 uniform float uEase;
 varying float vT;
 varying vec4 vTint;
