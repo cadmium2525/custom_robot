@@ -52,10 +52,10 @@ export const ARENAS = [
     theme: {
       key: 'grid',
       floor: 0x2b3442,
-      deck: 0xdfe4ea,
+      deck: 0x787e86,
       floorAccent: 0x2f6bd6,
       struct: 0x39424f,
-      wall: 0x11151d,
+      wall: 0x232a35,
       accent: 0x4aa8ff,
       emissive: 0x59b7ff,
       hazard: 0xffb01f,

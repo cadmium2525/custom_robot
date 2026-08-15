@@ -53,8 +53,10 @@ export function pbr(maps, opts = {}) {
 
 const RIM_PARS = /* glsl */`
 uniform vec3  uRimColor;
-uniform float uRimPower;
+uniform float uRimEdge;
+uniform float uRimSoft;
 uniform float uRimStrength;
+uniform float uRimWash;
 uniform vec3  uTeamColor;
 uniform float uEnergy;
 uniform float uHitFlash;
@@ -71,9 +73,22 @@ const RIM_VERT = /* glsl */`
 `;
 
 const RIM_FRAG = /* glsl */`
+  vec3 nWorldX = normalize(vWorldNormalX);
   vec3 viewDirX = normalize(cameraPosition - vWorldPosX);
-  float fres = 1.0 - clamp(dot(normalize(vWorldNormalX), viewDirX), 0.0, 1.0);
-  float rim = pow(fres, uRimPower) * uRimStrength;
+  float fres = 1.0 - clamp(dot(nWorldX, viewDirX), 0.0, 1.0);
+
+  // A rim is a LIGHT CATCHING AN EDGE, so it has to have an edge of its own.
+  // pow(fres, k) is a smooth ramp that covers half of every plate on the model
+  // and reads as tinted glass — that is defect #5, and no amount of turning it
+  // down fixes it, because turning it down just makes a dimmer glass. A
+  // smoothstep band only covers the last few degrees before the silhouette, so
+  // it reads as a contour catching a light. Same uniform, opposite result.
+  float rim = smoothstep(uRimEdge, min(uRimEdge + uRimSoft, 1.0), fres);
+
+  // Biased to the upper and outer edges. A rim that wraps the underside as
+  // hard as the shoulders is an ambient wash with no direction in it, and the
+  // eye reads directionless brightness on a curved surface as translucency.
+  rim *= 0.26 + 0.74 * clamp(nWorldX.y * 0.85 + 0.50, 0.0, 1.0);
 
   // Energy veins: a slow band travelling up the body, masked to creases.
   float band = sin(vWorldPosX.y * 5.5 - uTime * 2.4) * 0.5 + 0.5;
@@ -83,7 +98,11 @@ const RIM_FRAG = /* glsl */`
   // Charge tell: whole shell breathes toward the team colour.
   float pulse = (sin(uTime * 22.0) * 0.5 + 0.5) * uCharge;
 
-  gl_FragColor.rgb += uRimColor * rim;
+  gl_FragColor.rgb += uRimColor * rim * uRimStrength;
+  // The soft fresnel is kept, at zero by default, purely as an EVENT channel:
+  // invulnerability and the charge tell want the whole shell to glow, and that
+  // is the one time the machine is allowed to look like energy.
+  gl_FragColor.rgb += uTeamColor * pow(fres, 2.5) * uRimWash;
   gl_FragColor.rgb += energy;
   gl_FragColor.rgb += uTeamColor * pulse * 0.85;
   gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.6, 0.9, 0.85), uHitFlash);

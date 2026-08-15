@@ -255,6 +255,58 @@ function taperBox(wTop, wBot, h, dTop, dBot, r, arc) {
   return g;
 }
 
+/**
+ * Averaged ("welded") vertex normals, returned as a loose Float32Array.
+ *
+ * These are not for lighting — the shell wants its hard face normals, or every
+ * chamfer turns to mush. They exist for the OUTLINE hull, which extrudes the
+ * shell along its normals: extruding a hard-edged box along per-face normals
+ * tears the hull open at every corner and the outline arrives as a dashed line
+ * with a notch at each edge. Averaging the normals of coincident vertices seals
+ * it, which is the whole trick to putting an outline on machined geometry.
+ *
+ * Run per PRIMITIVE, before the merge, so two unrelated plates that happen to
+ * touch keep their own outlines instead of fusing into one blob.
+ *
+ * The key packs a 0.5 mm lattice (±4 m) into one exactly-representable double,
+ * which is a good deal faster than string keys on ~15k vertices at boot.
+ */
+const WELD_Q = 2048, WELD_HALF = 8192, WELD_SPAN = 16384;
+
+function weldedNormals(g) {
+  const p = g.attributes.position;
+  const n = g.attributes.normal;
+  const c = p.count;
+  const out = new Float32Array(c * 3);
+  if (!n) return out;
+
+  const sums = new Map();
+  const keys = new Float64Array(c);
+  for (let i = 0; i < c; i++) {
+    const qx = Math.round(p.getX(i) * WELD_Q) + WELD_HALF;
+    const qy = Math.round(p.getY(i) * WELD_Q) + WELD_HALF;
+    const qz = Math.round(p.getZ(i) * WELD_Q) + WELD_HALF;
+    const k = (qx * WELD_SPAN + qy) * WELD_SPAN + qz;
+    keys[i] = k;
+    let s = sums.get(k);
+    if (!s) { s = [0, 0, 0]; sums.set(k, s); }
+    s[0] += n.getX(i); s[1] += n.getY(i); s[2] += n.getZ(i);
+  }
+
+  for (let i = 0; i < c; i++) {
+    const s = sums.get(keys[i]);
+    const l = Math.sqrt(s[0] * s[0] + s[1] * s[1] + s[2] * s[2]);
+    // A vertex whose neighbours cancel out — the two faces of a paper-thin
+    // plate — has no meaningful average, so it keeps its own normal.
+    if (l > 1e-3) {
+      out[i * 3] = s[0] / l; out[i * 3 + 1] = s[1] / l; out[i * 3 + 2] = s[2] / l;
+    } else {
+      out[i * 3] = n.getX(i); out[i * 3 + 1] = n.getY(i); out[i * 3 + 2] = n.getZ(i);
+    }
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // Rig — bones are declared by their REST WORLD transform, which keeps the
 // layout table readable. Rest rotations are pure-X so the local conversion is
@@ -391,6 +443,12 @@ class Build {
     this._uv(g);
     this._skin(g, bone);
     this._paint(g, paint);
+    // Only the shell carries an outline, so only the shell pays for the welded
+    // normals. The frame is already the model's darkest value — drawing a dark
+    // line around it would describe nothing.
+    if (list === this.buckets.shell) {
+      g.setAttribute('nweld', new THREE.BufferAttribute(weldedNormals(g), 3));
+    }
     list.push(g);
     return g;
   }
@@ -1331,6 +1389,112 @@ function buildPod(B, P, C) {
 const at = (g, x, y, z) => { g.translate(x, y, z); return g; };
 
 // ---------------------------------------------------------------------------
+// Outline hull
+//
+// Defect #24 — "mushy silhouette" — is not a shading problem, it is a problem
+// of the robot and the background meeting at an edge that has no value break in
+// it. Shading cannot fix that on its own, because the background changes: the
+// arena has a light deck AND dark walls in the same frame, so any single body
+// value merges with one of them somewhere along the outline.
+//
+// The answer the whole toy-robot genre uses is to stop leaving it to chance and
+// draw the contour: a back-faced copy of the shell, pushed out along its welded
+// normals, in near-black. Combined with the shell's hard rim light (which lands
+// on the opposite, lit side of the same edges) every silhouette edge on the
+// machine now carries a dark line, a bright line, or both — and that survives
+// any background.
+//
+// The push is done in CLIP space, scaled by w, so the line is a constant width
+// in SCREEN space. That is the property that matters: 2 px on a 700 px garage
+// hero is a fine drawn contour, and the same 2 px on a 40 px robot in a wide
+// arena shot is 5% of its height, which is exactly the help it needs there.
+// A world-space extrusion would have given the opposite of that on both ends.
+// ---------------------------------------------------------------------------
+
+/** NDC half-height units. ~1.9 px at 900p, and the same fraction on a phone. */
+const OUTLINE_WIDTH = 0.0044;
+
+const OUTLINE_PARS = /* glsl */`
+uniform float uOutlineWidth;
+`;
+
+const OUTLINE_VERT = /* glsl */`
+  {
+    vec3 nOut = normalize(transformedNormal);
+    #ifdef FLIP_SIDED
+      // BackSide flips transformedNormal, and we want the OUTWARD direction.
+      nOut = -nOut;
+    #endif
+    vec2 d = (projectionMatrix * vec4(nOut, 0.0)).xy;
+    float dl = length(d);
+    if (dl > 1e-5) {
+      // x is squeezed by the aspect ratio so the contour is the same weight on
+      // the sides as on the top; P00/P11 is exactly height/width.
+      float ax = projectionMatrix[0][0] / projectionMatrix[1][1];
+      gl_Position.xy += (d / dl) * vec2(ax, 1.0) * uOutlineWidth * gl_Position.w;
+    }
+  }
+`;
+
+/**
+ * A geometry that IS the shell — same buffers, same skinning, zero extra VRAM —
+ * but wearing the welded normals so the extrusion has no gaps. Everything the
+ * outline does not read (uv, uv1, vertex colour) is simply left off.
+ */
+function outlineGeometry(src) {
+  const g = new THREE.BufferGeometry();
+  if (src.index) g.setIndex(src.index);
+  g.setAttribute('position', src.attributes.position);
+  g.setAttribute('normal', src.attributes.nweld || src.attributes.normal);
+  if (src.attributes.skinIndex) g.setAttribute('skinIndex', src.attributes.skinIndex);
+  if (src.attributes.skinWeight) g.setAttribute('skinWeight', src.attributes.skinWeight);
+  g.boundingSphere = src.boundingSphere ? src.boundingSphere.clone() : null;
+  return g;
+}
+
+/**
+ * Contour colour: near-black carrying a trace of the body's own hue.
+ *
+ * A pure 0x000000 line around a coloured machine reads as a sticker cut out and
+ * pasted onto the arena, and it also has nowhere to go on NOCTURNE, whose paint
+ * is already near-black. Keeping ~10% of the primary means the contour is
+ * always darker than the plate it borders, on every body in the roster.
+ */
+function outlineHex(look) {
+  _col.setHex(look.primary ?? 0x101318);
+  _col.multiplyScalar(0.045);
+  _col.r += 0.004; _col.g += 0.005; _col.b += 0.009;
+  return _col.getHex();
+}
+
+/**
+ * @param hex  Contour colour, from outlineHex().
+ */
+function outlineMaterial(hex) {
+  const m = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(hex),
+    side: THREE.BackSide,
+    // The contour is drawn where the hull pokes past the real surface, so its
+    // depth is the far surface's — a hair behind the near one at the exact
+    // silhouette. The offset keeps that hair from flickering.
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 2,
+    dithering: true,
+  });
+  const u = { uOutlineWidth: { value: OUTLINE_WIDTH } };
+  m.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, u);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>\n${OUTLINE_PARS}`)
+      .replace('#include <project_vertex>', `#include <project_vertex>\n${OUTLINE_VERT}`);
+  };
+  m.userData.u = u;
+  m.customProgramCacheKey = () => 'roboOutline';
+  return m;
+}
+
+// ---------------------------------------------------------------------------
 // Ground contact
 //
 // Two pieces of floor live here rather than in the stage, because they belong
@@ -1651,10 +1815,24 @@ export class RoboModel {
 
     // Four draw calls for the entire machine: painted shell, dark frame, lit
     // emissives, additive plumes.
-    mk(B.buckets.shell, this.matShell);
+    const shellMesh = mk(B.buckets.shell, this.matShell);
     mk(B.buckets.frame, this.matFrame);
     mk(B.buckets.emis, this.matEmis, { noShadow: true, order: 1 });
     mk(B.buckets.flare, this.matFlare, { noShadow: true, order: 3 });
+
+    // Fifth: the contour. Shares every buffer with the shell, so it costs one
+    // draw call and no memory. Drawn FIRST so the shell's own front faces land
+    // on top of it and the line only survives where it pokes past the machine.
+    this.matOutline = outlineMaterial(outlineHex(look));
+    if (shellMesh) {
+      const om = new THREE.SkinnedMesh(outlineGeometry(shellMesh.geometry), this.matOutline);
+      om.castShadow = false;
+      om.receiveShadow = false;
+      om.renderOrder = -1;
+      this.outline = om;
+      this.group.add(om);
+      this.meshes.push(om);
+    }
 
     for (const m of this.meshes) m.bind(this.skeleton, m.matrixWorld);
 
@@ -1710,7 +1888,8 @@ export class RoboModel {
       this.group.remove(this.shadow);
       this.shadow = null;
     }
-    for (const m of [this.matShell, this.matFrame, this.matEmis, this.matFlare]) {
+    this.outline = null;
+    for (const m of [this.matShell, this.matFrame, this.matEmis, this.matFlare, this.matOutline]) {
       m?.dispose();
     }
     this.skeleton?.dispose?.();
@@ -2012,6 +2191,9 @@ export class RoboModel {
     const shadows = !!settings.shadows;
     for (const m of this.meshes) {
       if (m.material === this.matEmis || m.material === this.matFlare) continue;
+      // The contour is a drawing on top of the machine, not part of it: casting
+      // from the expanded hull would fatten every shadow the robot throws.
+      if (m.material === this.matOutline) continue;
       m.castShadow = shadows;
       m.receiveShadow = shadows;
     }

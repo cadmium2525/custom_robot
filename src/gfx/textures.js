@@ -1009,7 +1009,12 @@ export function wallTexture(theme, size = 512) {
 
       let l = 1;            // luminance multiplier on the base wall colour
       let rough = 0.5 + grunge * 0.3 + streak * 0.14;
-      let metal = 0.5 - grunge * 0.2;
+      // Painted plating, not bare steel. A metal has no diffuse term at all —
+      // it can only ever be as bright as what it reflects, and what this wall
+      // reflects is a near-black sky. Half-metal boundary plating is precisely
+      // why the surround measured as a void rather than as an unlit surface;
+      // a mostly-dielectric coat lets the fill and bounce actually land on it.
+      let metal = 0.18 - grunge * 0.08;
       let h = 0;
       let e = 0;            // accent emissive
       let warm = 0;         // warm emissive (service lamps)

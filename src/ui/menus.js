@@ -259,6 +259,8 @@ export class Menus {
       this._keysOn = true;
     }
 
+    this._announce(true);
+
     // Focus after the screen is painted so scroll containers are laid out.
     requestAnimationFrame(() => {
       if (this._cur !== screen) return;
@@ -279,6 +281,18 @@ export class Menus {
       window.removeEventListener('keydown', this._onKeyDown, true);
       this._keysOn = false;
     }
+    this._announce(false);
+  }
+
+  /**
+   * Tell the rest of the interface whether a screen is covering the arena.
+   * The touch layer listens: its buttons must not sit under the pause menu,
+   * and a menu is the one thing that can appear while a match is still live.
+   */
+  _announce(open) {
+    if (open === this._announced) return;
+    this._announced = open;
+    window.dispatchEvent(new CustomEvent('crv2:menu', { detail: { open } }));
   }
 
   _ensure(id) {

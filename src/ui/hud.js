@@ -793,6 +793,10 @@ export class HUD {
   setVisible(v) {
     this._visible = !!v;
     this.el.classList.toggle('is-hidden', !v);
+    // The touch layer is a sibling, not a child, so it cannot read this. It
+    // needs to know because a thumb cluster over the title screen is worse
+    // than no thumb cluster at all.
+    window.dispatchEvent(new CustomEvent('crv2:hud', { detail: { visible: this._visible } }));
   }
 
   dispose() {

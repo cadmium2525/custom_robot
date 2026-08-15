@@ -1355,7 +1355,21 @@
    TOUCH CONTROLS
    ========================================================================= */
 
-.crv2-touch { z-index: 15; }
+/* Geometry lives in one place. The cluster is laid out from the bottom-right
+   corner outwards because that is where the thumb is anchored, and every offset
+   below is measured from that corner in --tb units so the whole arrangement
+   scales as one object on a short screen.
+
+   Measured at 390x844 (iPhone 12): the cluster spans x 218-378, which leaves a
+   39px gutter to the stick zone's 179px edge. The previous layout reached
+   x=144, i.e. 35px *inside* the left thumb's territory, and sat squarely on top
+   of the weapon readout. */
+.crv2-touch {
+  z-index: 15;
+  --tb: 62px;          /* satellite diameter */
+  --tb-fire: 88px;     /* FIRE, deliberately the biggest thing on screen */
+  --tb-gap: 8px;
+}
 .crv2-touch.is-hidden { display: none; }
 
 .tc__zone { position: absolute; top: 0; bottom: 0; pointer-events: auto; touch-action: none; }
@@ -1373,6 +1387,20 @@
   pointer-events: none;
 }
 .tc__stick.is-on { opacity: 1; }
+/* Resting mark. A floating stick that is invisible until touched asks the
+   player to guess that the left half of the screen does anything at all — so
+   the ring parks at the thumb's home position, dimmed, whenever it is idle.
+   Positioned with left/bottom rather than the translate, which means the
+   inline --x/--y the drag handler writes must be *removed*, not overwritten:
+   an inline custom property beats every rule in this file. */
+.tc__stick.is-idle {
+  left: calc(30px + var(--safe-l));
+  top: auto;
+  bottom: calc(46px + var(--safe-b));
+  margin: 0;
+  transform: none;
+  opacity: .32;
+}
 .stick__ring {
   position: absolute; inset: 0;
   border: 2px solid rgba(140, 200, 255, .4);
@@ -1390,43 +1418,61 @@
 
 .tc__pad {
   position: absolute;
-  right: calc(14px + var(--safe-r));
-  bottom: calc(18px + var(--safe-b));
-  width: 232px; height: 216px;
+  right: calc(12px + var(--safe-r));
+  bottom: calc(16px + var(--safe-b));
+  width: calc(var(--tb-fire) + var(--tb-gap) + var(--tb));
+  height: calc(3 * var(--tb) + 2 * var(--tb-gap));
   pointer-events: none;
 }
 
 .tb {
   position: absolute;
-  width: 68px; height: 68px;
+  width: var(--tb); height: var(--tb);
   border-radius: 50%;
   pointer-events: auto;
   touch-action: none;
   display: grid; place-content: center;
-  background: radial-gradient(circle at 40% 34%, rgba(30, 62, 100, .85), rgba(8, 14, 24, .82));
-  box-shadow: inset 0 0 0 1px rgba(140, 200, 255, .36), 0 4px 18px rgba(0, 0, 0, .5);
+  /* Solid enough to read over a near-white arena floor. A translucent chip on
+     a bright deck is a smudge, and the deck is getting brighter. */
+  background: radial-gradient(circle at 40% 34%, rgba(34, 70, 112, .94), rgba(5, 10, 18, .92));
+  box-shadow: inset 0 0 0 1.5px rgba(150, 208, 255, .5), 0 3px 16px rgba(0, 0, 0, .6);
   transition: transform .09s var(--ease), background .09s var(--ease), box-shadow .09s var(--ease);
 }
-.tb__l { font-size: 10px; font-weight: 800; letter-spacing: .08em; text-align: center; }
-.tb__k { font-size: 6px; letter-spacing: .06em; color: var(--ink-faint); text-align: center; margin-top: 1px; }
-.tb.is-down { transform: scale(.9); background: radial-gradient(circle at 40% 34%, rgba(120, 200, 255, .9), rgba(20, 60, 110, .9)); box-shadow: inset 0 0 0 1px #bfe4ff, 0 0 26px rgba(89, 183, 255, .7); }
+.tb__l { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
+.tb__k { font-size: 7px; letter-spacing: .04em; color: var(--ink-dim); text-align: center; margin-top: 1px; }
+.tb.is-down { transform: scale(.92); background: radial-gradient(circle at 40% 34%, rgba(150, 216, 255, .96), rgba(24, 74, 130, .94)); box-shadow: inset 0 0 0 1.5px #d6efff, 0 0 26px rgba(89, 183, 255, .8); }
+.tb.is-down .tb__l, .tb.is-down .tb__k { color: #04121f; text-shadow: none; }
 
-/* Layout: FIRE big and low-right where the thumb rests. */
-.tb--fire { right: 0; bottom: 0; width: 92px; height: 92px; }
-.tb--fire .tb__l { font-size: 12px; }
-.tb--bomb { right: 84px; bottom: 26px; }
-.tb--pod { right: 140px; bottom: 92px; }
-.tb--jump { right: 8px; bottom: 100px; }
-.tb--dash { right: 74px; bottom: 132px; width: 60px; height: 60px; }
+/* FIRE anchors the corner; the rest sit on a ring around it, each pair kept
+   at least --tb-gap apart so a thumb cannot catch two at once. */
+.tb--fire {
+  right: 0; bottom: 0;
+  width: var(--tb-fire); height: var(--tb-fire);
+  background: radial-gradient(circle at 40% 34%, rgba(52, 104, 158, .95), rgba(6, 14, 26, .94));
+  box-shadow: inset 0 0 0 2px rgba(170, 220, 255, .62), 0 4px 20px rgba(0, 0, 0, .62);
+}
+.tb--fire .tb__l { font-size: 14px; letter-spacing: .1em; }
+.tb--fire .tb__k { font-size: 8px; }
+.tb--bomb { right: calc(var(--tb-fire) + var(--tb-gap)); bottom: 0; }
+.tb--pod  { right: calc(var(--tb-fire) + var(--tb-gap)); bottom: calc(var(--tb) + 10px); }
+.tb--jump { right: 8px; bottom: calc(var(--tb-fire) + 10px); }
+.tb--dash { right: calc(var(--tb) + 16px); bottom: calc(var(--tb-fire) + var(--tb) + 20px); }
+
+/* Slot colour-coding, so the cluster is read by shape and hue rather than by
+   stopping to read five words mid-fight. */
+.tb--bomb { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--acc-2) 62%, transparent), 0 3px 16px rgba(0, 0, 0, .6); }
+.tb--bomb .tb__l { color: #ffb877; }
+.tb--pod { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--acc-3) 62%, transparent), 0 3px 16px rgba(0, 0, 0, .6); }
+.tb--pod .tb__l { color: #d6a6ff; }
 
 .tb--fire { --c: 0; }
 .tb__ring {
-  position: absolute; inset: -4px;
+  position: absolute; inset: -5px;
   border-radius: 50%;
   background: conic-gradient(var(--warn) calc(var(--c, 0) * 360deg), transparent 0);
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
-  opacity: .9;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+  opacity: .95;
   pointer-events: none;
 }
 .tb.is-ready .tb__ring { animation: readyBlink .4s steps(2) infinite; }
@@ -1434,20 +1480,22 @@
 
 .crv2-touch.lay--lefty .tc__zone--move { left: auto; right: 0; }
 .crv2-touch.lay--lefty .tc__zone--look { right: auto; left: 0; }
-.crv2-touch.lay--lefty .tc__pad { right: auto; left: calc(14px + var(--safe-l)); transform: scaleX(-1); }
+.crv2-touch.lay--lefty .tc__stick.is-idle { left: auto; right: calc(30px + var(--safe-r)); }
+.crv2-touch.lay--lefty .tc__pad { right: auto; left: calc(12px + var(--safe-l)); transform: scaleX(-1); }
 .crv2-touch.lay--lefty .tb { transform: scaleX(-1); }
-.crv2-touch.lay--lefty .tb.is-down { transform: scaleX(-1) scale(.9); }
-.crv2-touch.lay--compact .tc__pad { transform: scale(.82); transform-origin: bottom right; }
+.crv2-touch.lay--lefty .tb.is-down { transform: scaleX(-1) scale(.92); }
+.crv2-touch.lay--compact { --tb: 54px; --tb-fire: 76px; }
+.crv2-touch.lay--compact .tc__pad { width: 140px; height: 180px; }
 
-/* Sits below the top plates, not on top of the P2 readout. */
+/* Clear of the top plates and of the centre clock, in both orientations. */
 .tc__pause {
   position: absolute;
-  top: calc(96px + var(--safe-t));
-  right: calc(14px + var(--safe-r));
-  width: 44px; height: 44px;
+  top: calc(84px + var(--safe-t));
+  right: calc(12px + var(--safe-r));
+  width: 46px; height: 46px;
   display: grid; place-content: center; gap: 4px; grid-auto-flow: column;
   pointer-events: auto;
-  background: rgba(4, 8, 16, .78);
+  background: rgba(4, 8, 16, .86);
   box-shadow: inset 0 0 0 1px var(--line);
   clip-path: var(--clip-s);
 }

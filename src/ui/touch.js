@@ -8,12 +8,40 @@
  *
  * Everything is DOM. The only per-frame work is `apply()`, which reads cached
  * numbers — no layout reads, no allocation.
+ *
+ * ---------------------------------------------------------------------------
+ * Mounting, and the bug that made this whole file dead code
+ * ---------------------------------------------------------------------------
+ * The layer used to arm itself from a `pointerdown` on its own move/look zones.
+ * Those zones live inside a root that starts at `display: none` (`is-hidden`),
+ * and a `display: none` subtree is not hit-tested — so the wake listener could
+ * never fire, and the controls could never appear on any phone, ever. Verified
+ * headless at 390x844: after a real touch, `active` was still false and the
+ * computed display was still `none`.
+ *
+ * Arming is therefore two independent paths that both work while hidden:
+ *   1. A capture-phase `touchstart` on `window`, which fires regardless of what
+ *      is or is not painted.
+ *   2. Media query. On a device whose primary pointer is a finger the controls
+ *      come up with the match, before the player has touched anything — you
+ *      cannot ask someone to guess that a hidden button is there.
+ * A keypress or a real mouse press disarms again, so a desktop that happens to
+ * have a touchscreen does not get a thumb cluster over its arena.
+ *
+ * Visibility is gated on the match being live: the HUD and the menu layer each
+ * announce themselves on `window`, and the pad stays down over the title, the
+ * garage and the pause menu.
  */
 
 import { BTN } from '../sim/input.js';
 
 const STICK_RADIUS = 58;      // px of travel before the stick saturates
 const DEAD = 0.16;
+
+/** True where the primary pointer is a finger — phones and tablets, not a
+ *  laptop that merely has a touchscreen bolted on. */
+const COARSE = typeof matchMedia === 'function' &&
+  matchMedia('(pointer: coarse) and (hover: none)').matches;
 
 /** Which bit each action button drives. */
 const BUTTONS = [
@@ -27,9 +55,13 @@ const BUTTONS = [
 export class TouchControls {
   constructor(root) {
     this.root = root;
-    this._active = false;
+    this._active = COARSE;
     this.visible = true;
     this.layout = 'default';
+    // A match has to be running for the pad to mean anything. Both flags are
+    // fed by events the HUD and the menu layer publish on `window`.
+    this._hudUp = false;
+    this._menuUp = true;
 
     this.moveX = 0;
     this.moveZ = 0;
@@ -51,7 +83,7 @@ export class TouchControls {
     this.el.innerHTML = `
       <div class="tc__zone tc__zone--move"></div>
       <div class="tc__zone tc__zone--look"></div>
-      <div class="tc__stick">
+      <div class="tc__stick is-idle">
         <div class="stick__ring"></div>
         <div class="stick__nub"></div>
       </div>
@@ -87,7 +119,62 @@ export class TouchControls {
   _wake() {
     if (this._active) return;
     this._active = true;
-    if (this.visible) this.el.classList.remove('is-hidden');
+    this._sync();
+  }
+
+  /** A real keypress or mouse press means this player is not on a phone. */
+  _sleep() {
+    if (!this._active) return;
+    this._active = false;
+    this._release();
+    this._sync();
+  }
+
+  /**
+   * One place decides whether the pad is on screen, because four independent
+   * conditions have to agree: the device is being driven by a finger, the layer
+   * has not been switched off in settings, a match is running, and no menu is
+   * covering it. Anything else and a FIRE button ends up floating over the
+   * title screen or over the pause menu.
+   */
+  _sync() {
+    const show = this._active && this.visible && this._hudUp && !this._menuUp;
+    if (show === this._shown) return;
+    this._shown = show;
+    this.el.classList.toggle('is-hidden', !show);
+    // The HUD is a sibling layer, so it cannot see this class. Publishing it on
+    // the root element lets the stylesheet move the weapon readout off the
+    // bottom-left, which is exactly where the left thumb lives.
+    document.documentElement.classList.toggle('crv2-touch-on', show);
+    if (!show) this._release();
+  }
+
+  /** Drop every latched input. Called whenever the layer stops being live. */
+  _release() {
+    this.buttons = 0;
+    this.moveX = 0;
+    this.moveZ = 0;
+    this.lookDX = 0;
+    this.lookDY = 0;
+    this._stickId = -1;
+    this._lookId = -1;
+    this._held.clear();
+    this._pressed.clear();
+    for (const el of this.btnEls.values()) el.classList.remove('is-down');
+    this._park();
+  }
+
+  /**
+   * Send the stick back to its resting mark. Clearing the inline custom
+   * properties is what hands it back to the stylesheet — an inline `--x` beats
+   * any rule, so the idle rule cannot place the ring until these are gone.
+   */
+  _park() {
+    this.nub.style.transform = 'translate(0px, 0px)';
+    this.stick.style.removeProperty('--x');
+    this.stick.style.removeProperty('--y');
+    this.stick.classList.remove('is-on');
+    this.stick.classList.add('is-idle');
   }
 
   _bind() {
@@ -96,9 +183,11 @@ export class TouchControls {
     // --- movement stick ---------------------------------------------------
     this.moveZone.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'mouse') return;
+      if (this._stickId >= 0) return;     // second finger, not a new stick
       e.preventDefault();
       this._wake();
       this._stickId = e.pointerId;
+      this.stick.classList.remove('is-idle');
       this._originX = e.clientX;
       this._originY = e.clientY;
       this.stick.style.setProperty('--x', `${e.clientX}px`);
@@ -143,12 +232,14 @@ export class TouchControls {
       this._stickId = -1;
       this.moveX = 0;
       this.moveZ = 0;
-      this.nub.style.transform = 'translate(0px, 0px)';
-      this.stick.classList.remove('is-on');
+      this._park();
     };
     this.moveZone.addEventListener('pointerup', endStick);
     this.moveZone.addEventListener('pointercancel', endStick);
-    this.moveZone.addEventListener('pointerleave', endStick);
+    // No `pointerleave`: the zone captures the pointer, and a drag that crosses
+    // into the right-hand half must keep steering rather than dropping the
+    // stick out from under a thumb that is still down.
+    this.moveZone.addEventListener('lostpointercapture', endStick);
 
     // --- look drag --------------------------------------------------------
     this.lookZone.addEventListener('pointerdown', (e) => {
@@ -212,14 +303,31 @@ export class TouchControls {
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Escape' }));
     }, opts);
 
-    // Any real keyboard/mouse use hides the touch layer again.
-    this._onKey = () => { if (this._active) this.setVisible(false); };
+    // --- arming -----------------------------------------------------------
+    // On `window`, in the capture phase, because everything below it may be
+    // `display: none` at the moment the first touch lands — which is precisely
+    // the state this listener exists to get us out of.
+    this._onTouch = () => this._wake();
+    window.addEventListener('touchstart', this._onTouch, { passive: true, capture: true });
+
+    // A keypress or a real mouse press means a desk, not a phone.
+    this._onKey = () => this._sleep();
+    this._onMouse = (e) => { if (e.pointerType === 'mouse') this._sleep(); };
     window.addEventListener('keydown', this._onKey);
+    window.addEventListener('pointerdown', this._onMouse, { capture: true });
+
+    // --- match gating -----------------------------------------------------
+    this._onHud = (e) => { this._hudUp = !!e.detail?.visible; this._sync(); };
+    this._onMenu = (e) => { this._menuUp = !!e.detail?.open; this._sync(); };
+    window.addEventListener('crv2:hud', this._onHud);
+    window.addEventListener('crv2:menu', this._onMenu);
+
+    this._sync();
   }
 
   /** Merge the current touch state into an InputFrame-shaped object. */
   apply(out) {
-    if (!this._active || !this.visible) return out;
+    if (!this._shown) return out;
     out.moveX += this.moveX;
     out.moveZ += this.moveZ;
     out.buttons |= this.buttons;
@@ -235,17 +343,8 @@ export class TouchControls {
   }
 
   setVisible(v) {
-    this.visible = v;
-    this.el.classList.toggle('is-hidden', !v || !this._active);
-    if (!v) {
-      // Never leave a button latched when the layer is pulled away.
-      this.buttons = 0;
-      this.moveX = 0;
-      this.moveZ = 0;
-      this._held.clear();
-      this._pressed.clear();
-      for (const el of this.btnEls.values()) el.classList.remove('is-down');
-    }
+    this.visible = !!v;
+    this._sync();
   }
 
   setLayout(name) {
@@ -266,6 +365,11 @@ export class TouchControls {
 
   dispose() {
     window.removeEventListener('keydown', this._onKey);
+    window.removeEventListener('touchstart', this._onTouch, { capture: true });
+    window.removeEventListener('pointerdown', this._onMouse, { capture: true });
+    window.removeEventListener('crv2:hud', this._onHud);
+    window.removeEventListener('crv2:menu', this._onMenu);
+    document.documentElement.classList.remove('crv2-touch-on');
     this.el.remove();
   }
 }

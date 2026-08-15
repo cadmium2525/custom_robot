@@ -343,8 +343,8 @@ export class PostFX {
       shockCenter: { value: new THREE.Vector2(0.5, 0.5) },
       shockRadius: { value: 0 },
       saturation: { value: 1.16 },
-      contrast: { value: 0.5 },
-      blackPoint: { value: 0.042 },
+      contrast: { value: 0.22 },
+      blackPoint: { value: 0.005 },
       // No lift. A positive lift is a milk pump: it raises the floor of every
       // channel across the whole frame, which is exactly the "nothing is black"
       // failure the arena rebuild is trying to fix.
