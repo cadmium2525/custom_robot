@@ -25,6 +25,10 @@
   --ink:        #eaf2fd;
   --ink-dim:    #93aac8;
   --ink-faint:  #5d7796;
+  /* --ink-dim composited at 85% over the UI ground. The kana reset used to
+     reach that tone with `opacity: .85`, which also landed on every <i> used
+     as a graphic — see the reset below. Baked into a colour, it cannot leak. */
+  --ink-kana:   #7e92ad;
 
   --bg-0:       #02040a;
   --bg-1:       #070b13;
@@ -102,9 +106,18 @@
 }
 .crv2-ui :where(kbd) { font: inherit; letter-spacing: inherit; }
 
-/* The bilingual lockup: English over kana, everywhere. */
+/* The bilingual lockup: English over kana, everywhere.
+   No `opacity` here, deliberately. This reset exists for the kana sub-label,
+   but `<i>` is also the markup for a dozen purely graphical parts — the
+   crosshair dot and ring, the round-win pips, the cooldown dial sweep, the hit
+   marker strokes, the mobility pips, the garage stat fills. Those set their own
+   background and never set `opacity`, so a blanket `opacity: .85` was the one
+   declaration they could not out-specify, and it dimmed every one of them by
+   15%. The crosshair — the element the eye is locked to — was the worst hit.
+   The kana tone is carried by --ink-kana instead, which a component can
+   override and which cannot reach anything that only wanted a shape. */
 .crv2-ui :where(b) { font-weight: 750; letter-spacing: .1em; }
-.crv2-ui :where(i) { font-weight: 500; font-size: .68em; letter-spacing: .18em; color: var(--ink-dim); opacity: .85; }
+.crv2-ui :where(i) { font-weight: 500; font-size: .68em; letter-spacing: .18em; color: var(--ink-kana); }
 
 /* =========================================================================
    HUD
@@ -372,7 +385,10 @@
 .gear__charge {
   width: min(30vw, 240px);
   padding: 6px 11px 7px;
-  background: rgba(3, 7, 14, .8);
+  /* .92, not .8. At .8 the arena's yellow hazard stripes bled through and the
+     plate went olive, taking the 8px kana with it. The cluster has to hold its
+     own value over the brightest floor in the game, not just over a dark one. */
+  background: rgba(3, 7, 14, .92);
   box-shadow: inset 0 0 0 1px var(--line);
   clip-path: var(--clip-s);
 }
@@ -425,7 +441,7 @@
   --c: var(--acc-2);
   display: flex; align-items: center; gap: 8px;
   padding: 6px 11px 6px 7px;
-  background: rgba(3, 7, 14, .8);
+  background: rgba(3, 7, 14, .92);
   box-shadow: inset 0 0 0 1px var(--line);
   clip-path: var(--clip-s);
 }
