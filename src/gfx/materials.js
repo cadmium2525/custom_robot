@@ -124,7 +124,16 @@ export function roboShell(maps, look, teamColor, opts = {}) {
 
   const u = {
     uRimColor: { value: new THREE.Color(look.emissive ?? 0x88ccff) },
-    uRimPower: { value: opts.rimPower ?? 4.0 },
+    // uRimEdge/uRimSoft/uRimWash are READ by RIM_FRAG. They were declared in the
+    // shader but never supplied here, so WebGL left all three at 0 and the band
+    // evaluated as smoothstep(0.0, 0.0, fres) — edge0 == edge1, a divide by zero
+    // that clamps to 1.0 for every fragment. The "narrow contour band" was in
+    // fact a full-body additive wash of the emissive colour: defect #5 exactly,
+    // and most of why the machine photographed as a pale smudge. Supplying them
+    // is the whole fix; the GLSL was already right.
+    uRimEdge: { value: opts.rimEdge ?? 0.72 },
+    uRimSoft: { value: opts.rimSoft ?? 0.24 },
+    uRimWash: { value: opts.rimWash ?? 0.0 },
     uRimStrength: { value: opts.rimStrength ?? 0.22 },
     uTeamColor: { value: new THREE.Color(teamColor) },
     uEnergy: { value: opts.energy ?? 0.10 },
