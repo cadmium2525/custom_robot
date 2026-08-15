@@ -26,6 +26,15 @@
  *   node tools/vfxsheet.mjs --effect tracer --out shots/sheet-tracer.png
  *   node tools/vfxsheet.mjs --effect probe          # DOM/canvas luminance probe
  *
+ * Flags:
+ *   --effect  explosion | ko | tracer | impact | probe
+ *   --ages    "0,40,110"  only these ages, in ms — a three-tile sheet is under
+ *             a minute where the full twelve is four, which is the difference
+ *             between tuning an effect and guessing at it
+ *   --nowide  skip the full-frame staging shot (costs about three tiles)
+ *   --zoom    crop side in CSS px (default 560)
+ *   --keep    also write every tile to shots/frames/
+ *
  * Output is a single labelled grid PNG, plus the individual frames when
  * `--keep` is passed.
  */
@@ -72,7 +81,12 @@ const LOCKSTEP = { tracer: true };
 
 async function frames(page, n) {
   if (n <= 0) return;
-  const target = await page.evaluate((k) => window.__game.engine.clock.frame + k, n);
+  // If the page did go away under us, say so here rather than three calls later
+  // with a bare "cannot read properties of undefined".
+  const target = await page.evaluate((k) => {
+    if (!window.__game) throw new Error('window.__game is gone — the page reloaded mid-run');
+    return window.__game.engine.clock.frame + k;
+  }, n);
   await page.waitForFunction(
     (t) => window.__game.engine.clock.frame >= t,
     target,
@@ -80,10 +94,46 @@ async function frames(page, n) {
   );
 }
 
-/** Freeze the sim, the camera and the effect clock. */
+/**
+ * Freeze the sim, the camera, the grade and the effect clock.
+ *
+ * `engine.paused` only stops the fixed step. `onRender` still runs on every
+ * rendered frame, and three things in it move on their own: the camera rig
+ * damps toward its framing target, the grade uniforms (exposure, saturation,
+ * vignette) damp toward theirs, and the hit flash decays. A twelve-tile walk
+ * takes hundreds of rendered frames under software GL, so without this the
+ * sheet is a slow dolly with a slow exposure ramp laid over it and no two
+ * tiles are comparable — which defeats the entire point of holding the age.
+ *
+ * So the rig is nailed shut and the grade is written straight to the value it
+ * was converging on. After this the only thing in the frame that can change is
+ * the number written into `clock.elapsed`.
+ */
 const freeze = (page) => page.evaluate(() => {
-  window.__game.engine.paused = true;
-  return window.__game.engine.clock.elapsed;
+  const g = window.__game;
+  g.engine.paused = true;
+
+  if (!g.rig.__frozen) {
+    g.rig.__frozen = true;
+    g.rig.update = () => {};
+    g.rig.addShake = () => {};
+    g.rig.speedBlur = 0;
+  }
+
+  const u = g.engine.postfx.uniforms;
+  const me = g.world?.robos?.[g.localIndex];
+  const low = me ? me.hp / me.maxHp < 0.25 : false;
+  u.exposure.value = low ? 1.18 : 1.35;
+  u.saturation.value = low ? 0.9 : 1.16;
+  u.vignette.value = low ? 0.58 : 0.34;
+  u.hitFlash.value = 0;
+  u.radialBlur.value = 0;
+  u.shockwave.value = 0;
+  g.flash = 0;
+  g.shockTimer = 0;
+  g.hitstop = 0;
+
+  return g.engine.clock.elapsed;
 });
 
 /** Write an absolute effect-clock time and render one frame at it. */
@@ -94,6 +144,29 @@ async function scrubTo(page, seconds) {
 
 async function boot(browser) {
   const context = await browser.newContext({ viewport: VP, deviceScaleFactor: 1 });
+
+  // A full walk takes minutes. Anyone else saving a file anywhere in the repo
+  // makes the dev server broadcast a reload, and a reload lands mid-walk and
+  // takes `window.__game` with it — the run dies with "cannot read properties
+  // of undefined" after eight good tiles. The page only needs the modules it
+  // loaded at boot, so the HMR socket is refused and the page is pinned to the
+  // code it started with.
+  await context.addInitScript(() => {
+    const Real = window.WebSocket;
+    const isVite = (p) => (Array.isArray(p) ? p.includes('vite-hmr') : p === 'vite-hmr');
+    window.WebSocket = new Proxy(Real, {
+      construct(target, args) {
+        if (!isVite(args[1])) return new target(...args);
+        return {
+          readyState: 3, url: String(args[0]), protocol: '',
+          send() {}, close() {},
+          addEventListener() {}, removeEventListener() {},
+          set onopen(_) {}, set onclose(_) {}, set onerror(_) {}, set onmessage(_) {},
+        };
+      },
+    });
+  });
+
   const page = await context.newPage();
   // Software GL renders a tier-3 frame in seconds, and page.screenshot() waits
   // for a stable frame — the 30s default fires long before the compositor has
@@ -125,8 +198,11 @@ async function enterMatch(page, ticks = 380) {
   });
   await frames(page, 2);
   await page.evaluate((n) => window.__game.fastForward(n), ticks);
-  // A few real frames so trails, camera damping and the interpolator settle.
-  await frames(page, 6);
+  // Real frames so trails, camera damping and the interpolator settle. The rig
+  // is exponential and `fastForward` teleports the fight a long way from where
+  // the camera was last pointed, so it needs a run-up: freeze it mid-swing and
+  // the sheet is shot from a place the game would never actually frame from.
+  await frames(page, 18);
 }
 
 /**
@@ -339,7 +415,13 @@ async function runLifetime(browser, effect) {
     if (!scr.behind) centre = scr;
   }
 
-  const ages = AGES[effect] || AGES.explosion;
+  // `--ages 0,40,110` cuts the walk down to the tiles a given change actually
+  // touches. Twelve tiles is ~4 minutes under software GL; three is under one,
+  // and that difference is the difference between tuning a fireball and
+  // guessing at it.
+  const ages = AGES_ARG
+    ? String(AGES_ARG).split(',').map((v) => Number(v.trim())).filter((v) => Number.isFinite(v))
+    : (AGES[effect] || AGES.explosion);
   const tiles = [];
   let rect = cropRect(centre, ZOOM);   // camera is frozen: one crop for all
   let ticks = 0;
@@ -394,12 +476,16 @@ async function runLifetime(browser, effect) {
   });
 
   // One wide frame at the effect's most violent moment, for staging context.
-  await mkdir('shots', { recursive: true });
-  // Rewinding a lockstep effect would put the clock and the sim out of step, so
-  // those keep the state the walk ended on.
-  if (!LOCKSTEP[effect]) await scrubTo(page, t0 + (PEAK[effect] ?? 0.11));
-  const wide = await page.screenshot({ timeout: 180000 });
-  await writeFile(`shots/sheet-${effect}-wide.png`, wide);
+  // It is a full 1600x900 shot and costs as much as three tiles, so `--nowide`
+  // drops it while iterating.
+  if (!NOWIDE) {
+    await mkdir('shots', { recursive: true });
+    // Rewinding a lockstep effect would put the clock and the sim out of step,
+    // so those keep the state the walk ended on.
+    if (!LOCKSTEP[effect]) await scrubTo(page, t0 + (PEAK[effect] ?? 0.11));
+    const wide = await page.screenshot({ timeout: 180000 });
+    await writeFile(`shots/sheet-${effect}-wide.png`, wide);
+  }
 
   await context.close();
   return { tiles, stats, errors };
