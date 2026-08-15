@@ -804,33 +804,87 @@ class ShellPool {
 // Projectile bodies
 // ---------------------------------------------------------------------------
 
+/**
+ * The bolt used to be a stretched octahedron shaded by its facing ratio. An
+ * octahedron at detail 0 has eight *flat* facets, so the facing ratio is
+ * constant across each one: every round rendered as three or four uniform
+ * slabs with no interior structure at all. That is the "soft lozenge with no
+ * hot centre" — it was not a tuning problem, the geometry could not express a
+ * core.
+ *
+ * It is now a quad billboarded about its own velocity axis, with the core, the
+ * sheath and the taper all built analytically from the UV. Two triangles, the
+ * same single instanced draw call, and every pixel of the profile is authored.
+ */
 const BOLT_VERT = /* glsl */`
 varying vec3 vTint;
-varying vec3 vNv;
-varying float vNose;
+varying vec2 vUv;
 void main() {
   vTint = instanceColor;
-  vec4 mv = modelViewMatrix * instanceMatrix * vec4(position, 1.0);
-  vNv = normalize((modelViewMatrix * instanceMatrix * vec4(normal, 0.0)).xyz);
-  // The bolt geometry is stretched along +Z and the instance is rotated onto the
-  // velocity, so local Z is literally "how far toward the nose".
-  vNose = smoothstep(-2.4, 2.4, position.z);
-  gl_Position = projectionMatrix * mv;
+  vUv = uv;
+
+  // The CPU still hands us the same instance matrix it always did: column 2 is
+  // the round's direction scaled by its length, column 0 carries the width, and
+  // column 3 is the centre. We rebuild the quad in view space from those rather
+  // than transforming the vertex directly, because a flat quad left in world
+  // space would edge on to the lens and vanish at exactly the angles a duel
+  // spends most of its time at.
+  vec4 centre = modelViewMatrix * instanceMatrix[3];
+  vec3 axis   = (modelViewMatrix * vec4(instanceMatrix[2].xyz, 0.0)).xyz;
+  float halfW = length((modelViewMatrix * vec4(instanceMatrix[0].xyz, 0.0)).xyz);
+
+  // Billboard about the velocity axis, not about the view axis. The side vector
+  // is perpendicular to both the trajectory and the line of sight, so the round
+  // always presents its full width to the camera while its nose keeps pointing
+  // exactly where it is actually going. Degenerate only when you are looking
+  // straight down the barrel, where the round covers a pixel anyway.
+  vec3 along = normalize(axis);
+  vec3 side  = cross(along, normalize(centre.xyz));
+  float sl   = length(side);
+  side = sl > 1e-4 ? side / sl : normalize(cross(along, vec3(0.0, 1.0, 0.0) + vec3(1e-3)));
+
+  // position.y spans the length in local units, position.x the half-width, so
+  // multiplying straight through by the instance columns reproduces the world
+  // dimensions the old solid had — the silhouette changes, the sizing does not.
+  vec3 p = centre.xyz + axis * position.y + side * (position.x * halfW);
+  gl_Position = projectionMatrix * vec4(p, 1.0);
 }`;
 
 const BOLT_FRAG = /* glsl */`
 precision mediump float;
 varying vec3 vTint;
-varying vec3 vNv;
-varying float vNose;
+varying vec2 vUv;
 void main() {
-  // Facing ratio gives a free hot centre: the middle of the silhouette points
-  // at the lens, the edges fall away to the part colour. Nose brighter than
-  // tail, so a still frame still says which way the round is going.
-  float face = pow(abs(normalize(vNv).z), 2.0);
-  vec3 col = vTint * (0.5 + vNose * 0.6)
-           + vec3(1.0, 0.96, 0.9) * face * (1.3 + vNose * 2.0);
-  gl_FragColor = vec4(col, 0.38 + face * 0.62);
+  // u: 0 at the tail, 1 at the nose (the quad's +Y is the velocity axis).
+  // v: -1..1 across the round.
+  float u = vUv.y;
+  float v = (vUv.x - 0.5) * 2.0;
+
+  // Dart silhouette. Full width behind the shoulder, pinched to a point at the
+  // tail and rounded off over the last of the nose, so the shape alone says
+  // which way the round is travelling.
+  float hw = (0.08 + 0.92 * smoothstep(0.0, 0.58, u))
+           * (1.0 - smoothstep(0.82, 1.0, u) * 0.94);
+  float q = v / max(hw, 1e-3);
+  float q2 = q * q;
+
+  // Two nested profiles: a spine about a tenth of the width that is white-hot
+  // and well over 1.0 so bloom picks it up as a line rather than a blob, and a
+  // wider sheath carrying the part's colour.
+  float core   = exp(-q2 * 52.0);
+  float sheath = exp(-q2 * 3.4);
+
+  // Everything ramps toward the nose. A tracer that is uniformly bright end to
+  // end is a smear; one with a hot head and a cooling tail is a projectile.
+  float lead = 0.18 + 0.82 * smoothstep(0.05, 0.92, u);
+  float head = exp(-pow((u - 0.86) / 0.24, 2.0));
+
+  vec3 col = vec3(3.4, 3.15, 2.85) * core * (0.85 + head * 1.5)
+           + vTint * sheath * lead;
+  float a = clamp(core * 1.1 + sheath * 0.62, 0.0, 1.0) * lead;
+
+  if (a <= 0.004) discard;
+  gl_FragColor = vec4(col, a);
 }`;
 
 const _v = new THREE.Vector3();
@@ -915,15 +969,22 @@ export class VFX {
     this._buildDecals();
 
     // --- dynamic explosion lights ----------------------------------------
+    // Driven off the effect clock, not off dt. A blast light that decays per
+    // frame is a different light at 30fps and at 144fps, and it is invisible in
+    // a frozen capture; keyed to `time` it matches the fireball it belongs to.
     this.lights = [];
-    this.lightTimers = [];
+    this.lightBirth = [];
+    this.lightLife = [];
+    this.lightPeak = [];
     const lightCount = settings.lights >= 4 ? 3 : 1;
     for (let i = 0; i < lightCount; i++) {
       const l = new THREE.PointLight(0xffaa55, 0, 26, 2);
       l.visible = false;
       scene.add(l);
       this.lights.push(l);
-      this.lightTimers.push(0);
+      this.lightBirth.push(0);
+      this.lightLife.push(0);
+      this.lightPeak.push(0);
     }
     this.lightCursor = 0;
 
@@ -947,10 +1008,12 @@ export class VFX {
   _buildProjectileMeshes() {
     const cap = 128;
 
-    // Bullets: a stretched octahedron reads as a bolt from every angle and
-    // costs 8 triangles.
-    const boltGeo = new THREE.OctahedronGeometry(1, 0);
-    boltGeo.scale(1, 1, 2.4);
+    // Bullets: two triangles, oriented about the trajectory in the vertex
+    // shader. Scaled here so local +X spans the half-width and local +Y spans
+    // the length in the same units the old solid used, which keeps every gun's
+    // `look.width` / `look.len` tuning meaning what it meant before.
+    const boltGeo = new THREE.PlaneGeometry(1, 1);
+    boltGeo.scale(2.0, 4.8, 1);
     this.bolts = new THREE.InstancedMesh(
       boltGeo,
       new THREE.ShaderMaterial({
@@ -958,6 +1021,9 @@ export class VFX {
         fragmentShader: BOLT_FRAG,
         uniforms: {},
         transparent: true, blending: THREE.AdditiveBlending,
+        // The quad is re-oriented in view space, so its winding flips depending
+        // on which side of the trajectory the camera is standing. Cull nothing.
+        side: THREE.DoubleSide,
         depthWrite: false, toneMapped: false, fog: false,
       }),
       cap
@@ -1357,10 +1423,12 @@ export class VFX {
     const l = this.lights[li];
     l.position.set(x, y + 0.45, z);
     l.color.setRGB(1.0, 0.6, 0.26);
-    l.intensity = 190 * scale;
     l.distance = R * 9;
     l.visible = true;
-    this.lightTimers[li] = 0.55;
+    this.lightBirth[li] = t;
+    this.lightLife[li] = 0.55;
+    this.lightPeak[li] = 260 * scale;
+    l.intensity = this.lightPeak[li];
 
     const prox = this._proximity(x, y, z);
     const mag = scale * prox * 0.8;
@@ -1804,19 +1872,22 @@ export class VFX {
     this.flares.flush(time);
     this.decals.flush(time);
 
-    // Explosion lights decay fast — a lingering one looks like a bug.
+    // Explosion lights decay fast — a lingering one looks like a bug. Keyed to
+    // the effect clock so the falloff is the same curve at any frame rate, and
+    // so it holds still when a capture freezes time.
     for (let i = 0; i < this.lights.length; i++) {
-      if (this.lightTimers[i] <= 0) continue;
-      this.lightTimers[i] -= dt;
+      if (this.lightLife[i] <= 0) continue;
       const l = this.lights[i];
-      if (this.lightTimers[i] <= 0) {
+      const age = time - this.lightBirth[i];
+      if (age < 0 || age >= this.lightLife[i]) {
+        this.lightLife[i] = 0;
         l.visible = false;
         l.intensity = 0;
       } else {
         // Slow enough that the blast actually lands on the geometry for a few
         // frames. The old 9/s decay meant the light was gone before the fireball
         // had finished expanding, so nothing in the arena ever showed the flash.
-        l.intensity *= Math.exp(-dt * 5.0);
+        l.intensity = this.lightPeak[i] * Math.exp(-age * 5.0);
       }
     }
   }
@@ -1851,7 +1922,11 @@ export class VFX {
     this.bolts.count = 0;
     this.bombs.count = 0;
     this.pods.count = 0;
-    for (const l of this.lights) { l.visible = false; l.intensity = 0; }
+    for (let i = 0; i < this.lights.length; i++) {
+      this.lightLife[i] = 0;
+      this.lights[i].visible = false;
+      this.lights[i].intensity = 0;
+    }
   }
 
   dispose() {

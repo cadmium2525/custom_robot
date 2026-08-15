@@ -4,19 +4,23 @@
  *
  * Why this exists, and why it is not just a flag on screenshot.mjs:
  *
- * The engine clamps `dt` to one tick whenever a frame takes longer than 250ms
- * (`engine.js:_loop`), which under software GL is *every* frame. `clock.elapsed`
- * — the clock every effect ages against — therefore advances exactly 1/60 s per
- * **rendered frame**, no matter how much wall time passed. So the usual
- * "trigger it, `waitForTimeout(260)`, screenshot" pattern does not photograph a
- * detonation 260ms old. It photographs one that is 16ms old, if it has even
- * been ignited yet. Every explosion capture in `shots/` is the same 16ms frame,
- * which is why the reviewer kept seeing a formless blob: the fireball has had
- * one frame to exist.
+ * `clock.elapsed` — the clock every effect ages against — advances by whatever
+ * the last frame really took, clamped to one tick only when that exceeds 250ms.
+ * Under software GL that clamp fires on big viewports and does not fire on
+ * small ones, so effect age per rendered frame is neither 16.7ms nor wall time;
+ * it is unpredictable. Worse, `page.screenshot()` takes *seconds* here and the
+ * render loop keeps running throughout, so a shot taken right after "advance
+ * one frame" is actually of some unknowable later moment. That is why every
+ * explosion capture in `shots/` looked like a different random instant with no
+ * fireball in it — not because the fireball was missing.
  *
- * This harness waits on `engine.clock.frame` instead. One frame == 16.67ms of
- * effect age, exactly and deterministically, so a requested age converts to an
- * integer frame count and a whole lifetime can be walked in one run.
+ * So this harness does not race the clock, it owns it: `engine.paused` freezes
+ * the sim, the camera and `clock.elapsed`, and the age of the effect is then
+ * *written* directly into `clock.elapsed` before each capture. Everything in
+ * vfx.js is integrated on the GPU from (birth, life) against that one uniform,
+ * so a written time is an exact age, held perfectly still for as long as the
+ * screenshot needs. A whole lifetime gets walked in one run, from one blast,
+ * with the camera nailed down so the crop stays on it.
  *
  *   node tools/vfxsheet.mjs --base http://127.0.0.1:4203/ --tier 3
  *   node tools/vfxsheet.mjs --effect tracer --out shots/sheet-tracer.png
@@ -48,15 +52,19 @@ const OUT = flag('out', `shots/sheet-${EFFECT}.png`);
 const VP = { width: 1600, height: 900 };
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
-/** Ages in ms. Converted to frame counts at 1/60s per rendered frame. */
+/** Ages in ms, written straight into the effect clock. */
 const AGES = {
-  explosion: [0, 17, 33, 67, 117, 183, 267, 383, 533, 750, 1050, 1500],
+  explosion: [0, 17, 40, 70, 110, 165, 240, 340, 470, 650, 950, 1400],
   ko: [0, 33, 100, 200, 350, 550, 800, 1100, 1500, 2000, 2600, 3200],
   tracer: [0, 17, 33, 50, 67, 83, 100, 133, 167, 217, 283, 350],
   impact: [0, 17, 33, 50, 67, 100, 133, 183, 250, 350, 500, 700],
 };
 
-const msToFrames = (ms) => Math.round((ms / 1000) * 60);
+/** Age, in seconds, the wide staging frame is taken at. */
+const PEAK = { explosion: 0.11, ko: 0.20, tracer: 0.08, impact: 0.05 };
+
+/** Effects whose subject is a live projectile: step the sim alongside the clock. */
+const LOCKSTEP = { tracer: true };
 
 // ---------------------------------------------------------------------------
 
@@ -68,6 +76,18 @@ async function frames(page, n) {
     target,
     { timeout: 240000, polling: 30 }
   );
+}
+
+/** Freeze the sim, the camera and the effect clock. */
+const freeze = (page) => page.evaluate(() => {
+  window.__game.engine.paused = true;
+  return window.__game.engine.clock.elapsed;
+});
+
+/** Write an absolute effect-clock time and render one frame at it. */
+async function scrubTo(page, seconds) {
+  await page.evaluate((t) => { window.__game.engine.clock.elapsed = t; }, seconds);
+  await frames(page, 1);
 }
 
 async function boot(browser) {
@@ -265,6 +285,14 @@ async function runLifetime(browser, effect) {
   const { context, page, errors } = await boot(browser);
   await enterMatch(page);
 
+  // Freeze everything before anything is ignited: from here on the only thing
+  // that moves is the number written into clock.elapsed.
+  const t0 = await freeze(page);
+  // Wipe the firefight already in flight so the sheet shows this effect and not
+  // a hundred stale tracers. The wide shot at the end keeps the staging read.
+  await page.evaluate(() => window.__game.view.vfx.clear());
+  await frames(page, 1);
+
   let centre = { x: VP.width / 2, y: VP.height / 2 };
   let world = null;
 
@@ -287,10 +315,19 @@ async function runLifetime(browser, effect) {
       return p;
     });
   } else if (effect === 'tracer') {
-    // Fire a charged lance round across the arena and follow it.
+    // Fire one round from robo 0 straight at robo 1 and walk alongside it.
     world = await page.evaluate(() => {
       const g = window.__game;
-      const a = g.world.robos[0];
+      const w = g.world;
+      const a = w.robos[0], b = w.robos[1];
+      a.aimYaw = Math.atan2(b.pos.x - a.pos.x, b.pos.z - a.pos.z);
+      a.aimPitch = 0;
+      a.gunCd = 0; a.burstLeft = 0;
+      w.fireGun(a, w.loadouts[0], true);
+      // world.step() clears the event buffer at the top, so a round fired from
+      // outside a step has to be handed to the view now or the muzzle flash is
+      // gone before anything renders.
+      g.view.endStep();
       return { x: a.pos.x, y: a.pos.y + 1.2, z: a.pos.z };
     });
   }
@@ -302,14 +339,31 @@ async function runLifetime(browser, effect) {
 
   const ages = AGES[effect] || AGES.explosion;
   const tiles = [];
-  let done = 0;
+  let rect = cropRect(centre, ZOOM);   // camera is frozen: one crop for all
+  let ticks = 0;
 
   for (const ms of ages) {
-    const want = msToFrames(ms);
-    await frames(page, want - done);
-    done = want;
+    // A live projectile only moves when the sim moves, so the tracer sheet
+    // steps the world in lockstep with the clock — one tick per 1/60s of age —
+    // and re-crops onto the round each tile. Everything else is pure effect age
+    // against a dead-still world.
+    if (LOCKSTEP[effect]) {
+      const want = Math.round((ms / 1000) * 60);
+      if (want > ticks) await page.evaluate((n) => window.__game.fastForward(n), want - ticks);
+      ticks = want;
+    }
+    await scrubTo(page, t0 + ms / 1000);
+    if (LOCKSTEP[effect]) {
+      const live = await page.evaluate(() => {
+        const p = window.__game.world.proj.find((q) => q.alive && q.kind === 0);
+        return p ? { x: p.pos.x, y: p.pos.y, z: p.pos.z } : null;
+      });
+      if (live) {
+        const scr = await projectPoint(page, live);
+        if (!scr.behind) rect = cropRect(scr, ZOOM);
+      }
+    }
 
-    const rect = cropRect(centre, ZOOM);
     const buf = await page.screenshot({ clip: rect, timeout: 180000 });
     const m = await analyze(page, buf);
     tiles.push({
@@ -317,7 +371,7 @@ async function runLifetime(browser, effect) {
       label: `${ms}ms`,
       note: `max ${m.max} · >200 ${m.pctOver200}% · warm ${m.pctWarm}%`,
     });
-    console.log(`  ${String(ms).padStart(5)}ms  frame+${String(want).padStart(3)}  ` +
+    console.log(`  ${String(ms).padStart(5)}ms  ` +
       `max=${String(m.max).padStart(3)} mean=${String(m.mean).padStart(3)} ` +
       `>200=${String(m.pctOver200).padStart(6)}% >128=${String(m.pctOver128).padStart(6)}% warm=${m.pctWarm}%`);
 
@@ -339,6 +393,9 @@ async function runLifetime(browser, effect) {
 
   // One wide frame at the effect's most violent moment, for staging context.
   await mkdir('shots', { recursive: true });
+  // Rewinding a lockstep effect would put the clock and the sim out of step, so
+  // those keep the state the walk ended on.
+  if (!LOCKSTEP[effect]) await scrubTo(page, t0 + (PEAK[effect] ?? 0.11));
   const wide = await page.screenshot({ timeout: 180000 });
   await writeFile(`shots/sheet-${effect}-wide.png`, wide);
 
