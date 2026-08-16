@@ -448,11 +448,37 @@ async function runMatch(browser, name) {
     g.setDemo(true);
   }, { id: ARENA_OF[name] || 'grid', seed: 1234567 });
   await page.waitForTimeout(1000);
-  await page.evaluate((n) => window.__game.fastForward(Math.max(0, n - 40)), TICKS);
-  for (let i = 0; i < 10; i++) {
-    await page.evaluate(() => window.__game.fastForward(4));
-    await page.waitForTimeout(260);
-  }
+
+  // Deterministic advance. Three things had to be closed before capture A was
+  // repeatable at all: the match seed (above), the engine running free between
+  // slices so the demo AI played a load-dependent number of ticks, and
+  // `fastForward` advancing the sim without advancing `engine.clock.elapsed` —
+  // the clock every effect ages against — so the effects in frame A were
+  // whatever the screenshot's own latency made them. The camera rig is then
+  // settled on a fixed delta, and onRender detached, because `paused` gates
+  // only the sim: the engine keeps calling onRender with the real wall-clock
+  // delta, so the view went on integrating throughout a multi-second capture.
+  await page.evaluate((n) => {
+    const g = window.__game;
+    const TICK = 1 / 60;
+    g.engine.paused = true;
+    for (let i = 0; i < n; i++) {
+      g.fastForward(1);
+      if (g.engine.clock) g.engine.clock.elapsed += TICK;
+    }
+    if (g.rig && g.world && g.view) {
+      let t = (g.engine.clock && g.engine.clock.elapsed) || 0;
+      for (let i = 0; i < 240; i++) {
+        const views = g.view.prepare(1);
+        g.rig.update(g.world, views, g.localIndex, TICK, t);
+        t += TICK;
+      }
+      g.view.update(0, 1, t);
+    }
+    g.engine.onRender = null;
+    if (g.engine.quality) g.engine.quality.auto = false;
+  }, TICKS);
+  await page.waitForTimeout(500);
 
   const probes = await page.evaluate(PROBE_FN);
 

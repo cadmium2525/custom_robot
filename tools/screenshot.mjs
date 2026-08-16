@@ -208,7 +208,7 @@ const SCENARIOS = {
     setup: async (page) => {
       await page.evaluate(() => {
         const g = window.__game;
-        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'grid', loadouts: g.loadouts });
+        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'grid', loadouts: g.loadouts, seed: 1234567 });
         g.setDemo(true);
       });
     },
@@ -225,7 +225,7 @@ const SCENARIOS = {
     setup: async (page, opts) => {
       await page.evaluate((o) => {
         const g = window.__game;
-        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: o.arenaId || 'grid', loadouts: g.loadouts });
+        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: o.arenaId || 'grid', loadouts: g.loadouts, seed: 1234567 });
         g.setDemo(true);
       }, opts);
     },
@@ -238,7 +238,7 @@ const SCENARIOS = {
     setup: async (page, opts) => {
       await page.evaluate((o) => {
         const g = window.__game;
-        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: o.arenaId || 'grid', loadouts: g.loadouts });
+        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: o.arenaId || 'grid', loadouts: g.loadouts, seed: 1234567 });
         g.setDemo(true);
       }, opts);
     },
@@ -269,7 +269,7 @@ const SCENARIOS = {
     setup: async (page) => {
       await page.evaluate(() => {
         const g = window.__game;
-        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'foundry', loadouts: g.loadouts });
+        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'foundry', loadouts: g.loadouts, seed: 1234567 });
         g.setDemo(true);
       });
     },
@@ -281,7 +281,7 @@ const SCENARIOS = {
     setup: async (page) => {
       await page.evaluate(() => {
         const g = window.__game;
-        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'orbital', loadouts: g.loadouts });
+        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'orbital', loadouts: g.loadouts, seed: 1234567 });
         g.setDemo(true);
       });
     },
@@ -296,7 +296,7 @@ const SCENARIOS = {
     setup: async (page, opts) => {
       await page.evaluate((o) => {
         const g = window.__game;
-        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: o.arenaId || 'grid', loadouts: g.loadouts });
+        g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: o.arenaId || 'grid', loadouts: g.loadouts, seed: 1234567 });
         g.setDemo(true);
       }, opts);
     },
@@ -422,17 +422,59 @@ async function capture(browser, name, opts = {}) {
 
   // Software GL renders at a few fps here, so drive the sim directly rather
   // than hoping enough real time elapses.
+  //
+  // This used to bulk-advance and then hand the last stretch over in ten slices
+  // with real frames in between, to let per-frame systems settle at something
+  // like 60fps. It also made every capture unrepeatable, which cost this project
+  // more than the settling was worth: two runs of the same command produced two
+  // different fights, so no before/after comparison meant anything. Three
+  // separate sources had to be closed.
+  //
+  //   1. The match seed defaulted to Math.random() (fixed at the startMatch
+  //      calls above).
+  //   2. The engine ran free between slices, so the demo AI played however many
+  //      ticks the machine had time for. It is paused here first.
+  //   3. `fastForward` advances the sim but NOT `engine.clock.elapsed`, which is
+  //      what every effect ages against. Births during a paused fast-forward all
+  //      got stamped with a clock that only moves on wall time, so the effects
+  //      in the frame were whatever the screenshot's own latency made them. The
+  //      clock is now stepped in lockstep with the sim, one tick at a time.
+  //
+  // The camera rig is then driven to its steady state on a fixed delta, since it
+  // smooths using the real frame delta and under software GL that is whatever
+  // the last frame happened to cost.
   const ticks = Number(opts.ticks ?? scenario.ticks ?? 0);
   if (ticks > 0) {
-    // Bulk-advance to an interesting point in the round...
-    await page.evaluate((n) => window.__game.fastForward(Math.max(0, n - 40)), ticks);
-    // ...then hand the last stretch over in small slices with real frames in
-    // between, so per-frame systems (trails, particle spawn timing, camera
-    // damping) settle the way they would at 60fps instead of being sampled once.
-    for (let i = 0; i < 10; i++) {
-      await page.evaluate(() => window.__game.fastForward(4));
-      await page.waitForTimeout(260);
-    }
+    await page.evaluate((n) => {
+      const g = window.__game;
+      const TICK = 1 / 60;
+      g.engine.paused = true;
+      for (let i = 0; i < n; i++) {
+        g.fastForward(1);
+        if (g.engine.clock) g.engine.clock.elapsed += TICK;
+      }
+      if (g.rig && g.world && g.view) {
+        let t = (g.engine.clock && g.engine.clock.elapsed) || 0;
+        for (let i = 0; i < 240; i++) {
+          const views = g.view.prepare(1);
+          g.rig.update(g.world, views, g.localIndex, TICK, t);
+          t += TICK;
+        }
+        g.view.update(0, 1, t);
+      }
+
+      // `paused` only gates the sim: the engine still calls onRender every frame
+      // with the REAL wall-clock delta, so the view kept integrating throughout
+      // the multi-second software-GL screenshot and no two captures matched.
+      // Detaching it leaves the scene exactly as settled above, with postfx
+      // still drawing it against the frozen clock.
+      g.engine.onRender = null;
+      // Auto-quality samples frame time and can resize the render target
+      // mid-capture, which changes the image for reasons that have nothing to
+      // do with the art.
+      if (g.engine.quality) g.engine.quality.auto = false;
+    }, ticks);
+    await page.waitForTimeout(500);
   }
 
   if (scenario.beforeShot) await scenario.beforeShot(page);
