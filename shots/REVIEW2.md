@@ -1,34 +1,88 @@
 # HOLOSSEUM — Art Direction Gate Review, Round 2
 
-Reviewing commit `a1fdf34`. Baseline is `shots/REVIEW.md`.
+Reviewing commit `10621f2`. Baseline is `shots/REVIEW.md`. Entries marked with a date of
+`a1fdf34` were verified by the previous critic against that commit and are not re-litigated
+unless a builder has since touched the code they cover.
 
-**STATUS: IN PROGRESS.** `PENDING` means not yet verified in this round — it is not a pass.
+**STATUS: COMPLETE.**
 
-**VERDICT: PENDING**
+**VERDICT: NO. See the bottom of this file.**
 
 ---
 
 ## How this round was captured
 
-`tools/screenshot.mjs` **did not get the determinism fix.** The seed/freeze work in `a1fdf34`
-landed in `measure.mjs` and `contour.mjs` only; `screenshot.mjs`'s `fight` scenario still calls
-`startMatch(...)` with no `seed`, and `src/main.js:298` still does
-`const matchSeed = seed ?? ((Math.random() * 0xffffffff) >>> 0)`. Two runs of the identical
-command five minutes apart (`c3a-fight.png`, `c3b-fight.png`) produced two different fights —
-different HP (956/843 vs 980/817), different camera, different arena corner. **Any claim in this
-round or any future round that rests on a `screenshot.mjs` fight frame is unrepeatable.**
+### The `a1fdf34` capture problem, and what `10621f2` actually fixed
 
-So this review's fight evidence comes from `tools/cap2.mjs` (written for this pass, in the critic
-worktree only, uncommitted): pins `seed=1234567`, sets `engine.paused = true` on the same line
-that starts the match, fast-forwards a fixed 420 ticks, then settles the camera rig on a fixed
-1/60 delta. Sim state reproduces exactly (`tick=420 p1=-1.93,8.02 p2=9.52,-1.77` every run).
-The **rendered** frame still drifts: two runs at that identical sim/camera state differ on
-26.1% of pixels by more than 8 levels, max delta 220 — the VFX clock still advances on wall time
-during the settle window. Verdict: sim and camera are deterministic, **pixels are not**, unless
-VFX are suppressed (which is why `contour.mjs` is stable and `measure.mjs` capture A is not).
+The previous pass could not use `tools/screenshot.mjs` at all: its `fight` scenario started an
+unseeded match, so two runs were two different fights. `10621f2` closed that — fixed seed, engine
+paused before the tick loop, `clock.elapsed` stepped in lockstep with the sim, `onRender` detached
+after settling, auto-quality pinned. **Independently verified here:** two `screenshot.mjs --shots
+fight --tier 3` runs back to back differ on **0.41%** of pixels (`m1-fight.png` vs `m2-fight.png`,
+`tools/pxdiff.mjs`, threshold 8). That is good enough to review from, and `cap2.mjs` is retired.
 
-Captures referenced: `d1-fight.png` / `d2-fight.png` (cap2, tier 3), `contour-n.png` /
-`contour-mask.png` (contour meter, VFX+DOM off), `c3a-title.png`, `c3a-garage.png`.
+Residual, minor: `capture()` still does `await page.waitForTimeout(settle * 1000)` *before* the
+tick loop sets `engine.paused = true`, so the engine free-runs for one second of wall clock first.
+Under software GL that is only one to three sim ticks (the fixed-step accumulator clamps a long
+frame to a single tick), which is why the diff is 0.41% and not 40% — but it is 0.41% at a max
+channel delta of **124**, i.e. a handful of pixels are completely different, not slightly. Moving
+`paused = true` onto the `startMatch` line, the way `contour.mjs` already does it, would take it
+to zero.
+
+### The fix did not reach `contour.mjs`, which is the tool that measures the #1 blocker
+
+`10621f2` patched `screenshot.mjs` and `measure.mjs`. It did not patch `contour.mjs`. That tool
+freezes the sim on the `startMatch` line and hand-settles the rig on a fixed 1/60 delta — and then
+never detaches `engine.onRender`. `paused` gates only the fixed step; `main.js:112` still calls
+`_render(dt, alpha, time)` on every rendered frame with the real wall-clock delta, and `_render`
+damps the camera rig and the grade. Between the settle and the shutter there are two 700 ms waits
+and a multi-second software-GL screenshot, so the rig keeps sliding by an amount that depends on
+how loaded the box is.
+
+Measured, two runs of unmodified `contour.mjs` at `10621f2`, same seed, minutes apart:
+
+```
+                      robot px   ROBOT 1 size   R1 invisible   OVERALL clean
+  run 1 (light load)    12962     104x206         59.8%           11.8%
+  run 2 (heavy load)    13497     109x209         66.7%            6.9%
+```
+
+Identical sim state printed by both (`tick=420 p1=-1.93,8.02 p2=9.52,-1.77`). Same seed, same
+commit, same code — **a 7-point spread on the headline number and a 5-point spread on "clean"**,
+which is wider than any single round's improvement. Every #24 figure in this project's history,
+including the previous critic's, carries that error bar.
+
+Adding the two lines `screenshot.mjs` already has —
+
+```js
+window.__game.engine.onRender = null;
+window.__game.engine.quality.auto = false;
+```
+
+— immediately after `SETTLE_FN` runs makes it repeatable. This review's #24 numbers are from that
+patched tool (critic worktree only, uncommitted; the patch is four lines and carries the comment
+explaining it). **A builder must land this before the next round or #24 cannot be tracked.**
+
+Captures referenced: `m1-fight.png` / `m2-fight.png` (screenshot.mjs, tier 3, 1600x900),
+`contour-n.png` / `contour-mask.png` (patched contour meter, VFX+DOM off), `p-touch-iphone12.png`,
+`x-sheet-*.png` (vfxsheet), `z-*.png` (1:1 and magnified crops, `tools/crop.mjs`).
+
+### The honest baseline is darker and bluer than the commit log claims
+
+`#2` (flat haze) is still a genuine FIX — the frame has real blacks and real whites now. But the
+numbers that were used to argue it were measured on frames lit by whatever effects happened to be
+mid-flight, and they were inflated. The repeatable baseline for `grid` as shipped is:
+
+```
+  inBand20_55 32.1%   below10pct 41.3%   above90pct 0.2%
+  DECK median 95.0    WALL median 27.2
+  warmPct 6.0%   coolPct 41.4%   saturatedPct 47.8%
+```
+
+`below10pct` is **41.3%**, not the 27.6% previously claimed: two fifths of the frame is essentially
+black. Warm coverage is **6%**, not 19%. The arena did not become well-lit, it became *contrasty* —
+a small bright deck in a large black room. That is a different thing, and it is most of why the
+opponent cannot be seen (#24, #1).
 
 ---
 
