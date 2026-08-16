@@ -153,8 +153,13 @@
   left: calc(20px + var(--safe-l));
   right: calc(20px + var(--safe-r));
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  gap: clamp(10px, 2vw, 30px);
+  /* minmax(0, 1fr), not 1fr. A bare `1fr` track floors at min-content, and the
+     plate's min-content is a nowrap name plus a class tag plus a 5-digit HP
+     readout — 438px of it at 390x844, in a 370px row. The right plate ran 58px
+     off the side of an iPhone 12 and took the opponent's max HP with it.
+     Measured; see `.plate__name` for the ellipsis that backs this up. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: clamp(6px, 2vw, 30px);
   align-items: start;
 }
 
@@ -229,7 +234,12 @@
 .plate__row { display: flex; align-items: baseline; gap: 8px; }
 .hud__plate--r .plate__row { flex-direction: row-reverse; }
 .plate__row--head { margin-bottom: 5px; }
-.plate__name { font-weight: 800; font-size: clamp(12px, 2.4vw, 16px); letter-spacing: .12em; white-space: nowrap; }
+/* Last-resort valve for the shrinkable track above: a long name gives up
+   characters rather than pushing the HP numerals off the screen. */
+.plate__name {
+  font-weight: 800; font-size: clamp(12px, 2.4vw, 16px); letter-spacing: .12em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
 .plate__class {
   font-size: 8px; letter-spacing: .2em; font-weight: 700;
   color: #061019;
@@ -587,6 +597,9 @@
   display: grid; place-items: center;
   opacity: 0;
   pointer-events: none;
+  /* The slab and rule bars deliberately overhang by 9vw each side; without this
+     they push the layer's scroll width 144px past a 390px phone. */
+  overflow: hidden;
 }
 .hud__banner.is-on { opacity: 1; }
 .banner__wrap { position: relative; text-align: center; }
@@ -1368,7 +1381,7 @@
   z-index: 15;
   --tb: 62px;          /* satellite diameter */
   --tb-fire: 88px;     /* FIRE, deliberately the biggest thing on screen */
-  --tb-gap: 8px;
+  --tb-gap: 10px;      /* 62 + 10 = 72px centre spacing, > a 70px thumb pad */
 }
 .crv2-touch.is-hidden { display: none; }
 
@@ -1399,7 +1412,7 @@
   bottom: calc(46px + var(--safe-b));
   margin: 0;
   transform: none;
-  opacity: .32;
+  opacity: .38;
 }
 .stick__ring {
   position: absolute; inset: 0;
@@ -1438,8 +1451,10 @@
   box-shadow: inset 0 0 0 1.5px rgba(150, 208, 255, .5), 0 3px 16px rgba(0, 0, 0, .6);
   transition: transform .09s var(--ease), background .09s var(--ease), box-shadow .09s var(--ease);
 }
-.tb__l { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
-.tb__k { font-size: 7px; letter-spacing: .04em; color: var(--ink-dim); text-align: center; margin-top: 1px; }
+/* 12/9, not 11/7. These are read at arm's length on a phone held in two hands,
+   over a moving arena; 7px kana on a 62px chip was decoration, not a label. */
+.tb__l { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
+.tb__k { font-size: 9px; letter-spacing: .02em; color: var(--ink-dim); text-align: center; margin-top: 1px; }
 .tb.is-down { transform: scale(.92); background: radial-gradient(circle at 40% 34%, rgba(150, 216, 255, .96), rgba(24, 74, 130, .94)); box-shadow: inset 0 0 0 1.5px #d6efff, 0 0 26px rgba(89, 183, 255, .8); }
 .tb.is-down .tb__l, .tb.is-down .tb__k { color: #04121f; text-shadow: none; }
 
@@ -1451,12 +1466,18 @@
   background: radial-gradient(circle at 40% 34%, rgba(52, 104, 158, .95), rgba(6, 14, 26, .94));
   box-shadow: inset 0 0 0 2px rgba(170, 220, 255, .62), 0 4px 20px rgba(0, 0, 0, .62);
 }
-.tb--fire .tb__l { font-size: 14px; letter-spacing: .1em; }
-.tb--fire .tb__k { font-size: 8px; }
+.tb--fire .tb__l { font-size: 15px; letter-spacing: .1em; }
+.tb--fire .tb__k { font-size: 10px; }
+/* Slot order is reach order, and reach order is use order. Measured from FIRE's
+   centre at 390x844: BOMB 86px, DASH 103px, JUMP 92px, POD 146px. DASH and POD
+   used to be the other way round, which put boost — pressed several times a
+   second — on the single furthest reach in the cluster (170px, past the top of
+   a comfortable thumb arc) and a once-a-cooldown pod launcher next to the
+   trigger. Every pair is >= 72px centre-to-centre so a thumb cannot catch two. */
 .tb--bomb { right: calc(var(--tb-fire) + var(--tb-gap)); bottom: 0; }
-.tb--pod  { right: calc(var(--tb-fire) + var(--tb-gap)); bottom: calc(var(--tb) + 10px); }
+.tb--dash { right: calc(var(--tb-fire) + var(--tb-gap)); bottom: calc(var(--tb) + 10px); }
 .tb--jump { right: 8px; bottom: calc(var(--tb-fire) + 10px); }
-.tb--dash { right: calc(var(--tb) + 16px); bottom: calc(var(--tb-fire) + var(--tb) + 20px); }
+.tb--pod  { right: calc(var(--tb) + 16px); bottom: calc(var(--tb-fire) + var(--tb) - 6px); }
 
 /* Slot colour-coding, so the cluster is read by shape and hue rather than by
    stopping to read five words mid-fight. */
@@ -1501,6 +1522,46 @@
 }
 .tc__pause i { width: 4px; height: 15px; background: var(--ink); opacity: 1; }
 
+/* -------------------------------------------------------------------------
+   What the pad displaces
+   -------------------------------------------------------------------------
+   `touch.js` publishes `.crv2-touch-on` on <html> whenever the pad is live, so
+   the HUD — a sibling layer that cannot see the pad's own classes — can get out
+   of the way. Until now nothing in this file listened, and the hook was dead
+   code with a comment describing a fix that had never been written.
+
+   What it has to fix, measured at 390x844 with iPhone 12 insets: the left
+   thumb's resting mark (`.tc__stick.is-idle`) occupies x30-162 / y632-764 and
+   `.hud__gear` occupied x10-213 / y667-800. That is a 132x97px overlap with the
+   ring alone, and a thumb is wider than the ring — so on a phone the weapon
+   name, the ammo bar, both cooldown dials and the jump/dash pips all sat under
+   the hand that was steering. Every one of them is a glanceable readout, which
+   means every one of them was worthless.
+
+   They move to the top-left, directly under the P1 plate: one "your machine"
+   column — portrait, name, HP, weapon, cooldowns, mobility — reading top-down
+   in the corner of the eye, and nothing a thumb ever covers. */
+.crv2-touch-on .hud__gear {
+  top: calc(78px + var(--safe-t));
+  bottom: auto;
+  left: calc(10px + var(--safe-l));
+  width: min(56vw, 280px);
+  max-width: none;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.crv2-touch-on .gear__charge { width: auto; }
+.crv2-touch-on .gear__cds { gap: 6px; }
+.crv2-touch-on .cd { flex: 1; min-width: 0; padding: 5px 7px 5px 5px; gap: 6px; }
+.crv2-touch-on .cd__dial { width: 26px; height: 26px; }
+.crv2-touch-on .cd__kana { display: none; }
+/* Jump and dash charges are the whole of a robo's mobility budget, and on a
+   phone they are also the two buttons the player is mashing. They were hidden
+   everywhere except portrait, so a landscape phone flew blind. */
+.crv2-touch-on .gear__mob { display: flex; gap: 14px; }
+.crv2-touch-on .mob__row { margin-top: 0; }
+
 /* =========================================================================
    Responsive
    ========================================================================= */
@@ -1526,11 +1587,33 @@
   .foot__hint { order: 3; flex-basis: 100%; }
 
   .hud__top { top: calc(8px + var(--safe-t)); left: calc(10px + var(--safe-l)); right: calc(10px + var(--safe-r)); gap: 6px; }
-  .hud__plate { padding: 6px 8px 6px 6px; gap: 7px; }
-  .hud__plate--r { padding: 6px 6px 6px 8px; }
+  /* Every number below is doing the same job: fitting two plates and a clock
+     into 370px. The row overflowed by 68px before, and the right plate — with
+     the opponent's max HP on it — hung 58px off the side of the phone. */
+  .hud__plate { padding: 5px 6px 5px 5px; gap: 5px; }
+  .hud__plate--r { padding: 5px 5px 5px 6px; }
   .plate__bar { height: 12px; }
   .plate__kana { display: none; }
-  .plate__class { padding: 1px 4px; font-size: 7px; }
+  /* The class tag is a third of the plate and it never changes during a
+     match — it belongs in the garage, not in the phone HUD's critical row. */
+  .plate__class { display: none; }
+  .plate__portrait { width: 30px; }
+  .portrait__glyph { font-size: 15px; }
+  .portrait__tag { font-size: 6px; bottom: 1px; }
+  .plate__row--head { margin-bottom: 3px; }
+  .plate__row--foot { margin-top: 4px; gap: 5px; }
+  .hp__now { font-size: 16px; }
+  .hp__max { font-size: 8px; }
+  .plate__pips { gap: 3px; }
+  .pip { width: 9px; height: 5px; }
+  /* Centre column: keep ROUND on one line. At 94px it wrapped and the kana
+     ran vertically down the side, which read as a rendering fault. */
+  .hud__centre { min-width: 0; }
+  .centre__round { padding: 2px 6px; gap: 5px; white-space: nowrap; }
+  .round__n { font-size: 10px; letter-spacing: .2em; }
+  .round__k { display: none; }
+  .clock__v { font-size: 26px; }
+  .centre__rule { width: 70px; margin-top: 5px; }
   .hud__scrim { height: 150px; }
   .hud__gear {
     left: calc(10px + var(--safe-l));
@@ -1554,9 +1637,34 @@
 
 /* Landscape phones: the HUD has to stay out of the thumbs' way. */
 @media (max-height: 460px) {
-  .hud__gear { bottom: calc(8px + var(--safe-b)); left: calc(10px + var(--safe-l)); width: min(40vw, 280px); }
+  .hud__gear {
+    bottom: calc(8px + var(--safe-b)); left: calc(10px + var(--safe-l));
+    width: min(40vw, 280px);
+    /* Row layout at 280px wide overflowed itself by 77px at 844x390 — the two
+       cooldown chips ran 77px past their own container's right edge. */
+    flex-direction: column; align-items: stretch; gap: 6px;
+  }
+  .gear__charge { width: auto; }
+  .crv2-touch-on .hud__gear { top: calc(104px + var(--safe-t)); bottom: auto; width: min(36vw, 260px); }
+
+  /* 220px of scrim is 56% of a 390px-tall screen. */
+  .hud__scrim { height: 130px; }
+
+  /* Pause was centred at the top — squarely on top of the round label and the
+     match clock, which is the one number nobody can afford to lose. It goes
+     back to the corner, and the top row gives up the width to let it. */
+  .tc__pause { top: calc(6px + var(--safe-t)); right: calc(10px + var(--safe-r)); left: auto; margin-left: 0; }
+  .crv2-touch-on .hud__top { right: calc(68px + var(--safe-r)); }
+
+  /* 11vw of an 844px-wide frame is a 93px cap, which threw "ROUND 1" across
+     the whole screen and into the DASH button. Scale off the short axis. */
+  .banner__main { font-size: clamp(30px, 12vh, 62px); }
+  .banner__sub { font-size: 11px; letter-spacing: .34em; margin-top: 5px; }
+
   .tc__pad { transform: scale(.86); transform-origin: bottom right; }
-  .tc__pause { top: calc(8px + var(--safe-t)); right: auto; left: 50%; margin-left: -22px; }
+  /* A landscape grip puts the thumb in the very corner, not a third of the way
+     up the side; and this clears the relocated gear column. */
+  .tc__stick.is-idle { bottom: calc(12px + var(--safe-b)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
