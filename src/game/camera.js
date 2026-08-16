@@ -20,6 +20,8 @@ const _mid = new THREE.Vector3();
 const _desired = new THREE.Vector3();
 const _look = new THREE.Vector3();
 const _fit = new THREE.Vector3();
+const _fit2 = new THREE.Vector3();
+const _anchor = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 
 export class DuelCamera {
@@ -53,6 +55,14 @@ export class DuelCamera {
     this.fitBoost = 1;
     /** How far ahead of the player the rig aims, to keep the opponent framed. */
     this.lookAhead = 1;
+    /**
+     * How far the orbit anchor slides from the player toward the midpoint.
+     * Pulling the camera BACK to fit both fighters shrinks both of them, which
+     * is the mistake this rig was written to undo. Sliding the anchor instead
+     * closes distance on the opponent while giving up the player's scale only
+     * slowly, because the two move in opposite directions by the same amount.
+     */
+    this.anchorBias = 0;
 
     this._prevLocalPos = new THREE.Vector3();
     this._speedBlur = 0;
@@ -63,6 +73,7 @@ export class DuelCamera {
     this.mode = 'intro';
     this.fitBoost = 1;
     this.lookAhead = 1;
+    this.anchorBias = 0;
     const r = world.robos[localIndex];
     const o = world.robos[1 - localIndex];
     this.yaw = Math.atan2(r.pos.x - o.pos.x, r.pos.z - o.pos.z);
@@ -112,8 +123,9 @@ export class DuelCamera {
     if (axl > 1e-4) { ax /= axl; az /= axl; } else { ax = 0; az = 1; }
     const axisYaw = Math.atan2(-ax, -az);   // yaw of "behind the player"
 
+    _mid.copy(_a).lerp(_b, 0.5);
+
     if (world.phase === PHASE.INTRO) {
-      _mid.copy(_a).lerp(_b, 0.5);
       this._updateIntro(world, _mid, separation, dt, time);
     } else {
       this.mode = 'duel';
@@ -137,9 +149,19 @@ export class DuelCamera {
     this.yawOffset = damp(this.yawOffset, 0, 0.9, dt);
     this.pitch = damp(this.pitch, 0.1, 0.7, dt);
 
+    // Orbit a point slid from the player toward the midpoint. At anchorBias 0
+    // this is exactly the old player-anchored rig; as it opens up, the camera
+    // closes on the opponent by the same distance it gives up on the player,
+    // which is what lets a distant opponent grow without the fight retreating.
+    _anchor.set(
+      _a.x + (_mid.x - _a.x) * this.anchorBias,
+      _a.y,
+      _a.z + (_mid.z - _a.z) * this.anchorBias
+    );
+
     const boom = this.distance * this.fitBoost;
-    const rawX = _a.x + Math.sin(yaw) * boom;
-    const rawZ = _a.z + Math.cos(yaw) * boom;
+    const rawX = _anchor.x + Math.sin(yaw) * boom;
+    const rawZ = _anchor.z + Math.cos(yaw) * boom;
 
     // Keep the camera inside the arena shell.
     const bd = this.arena.bounds;
@@ -212,6 +234,33 @@ export class DuelCamera {
       // Only after panning is maxed do we give up any of the player's scale.
       const needBoom = this.lookAhead > 1.85 ? clamp(off / 0.72, 1, 1.35) : 1;
       this.fitBoost = damp(this.fitBoost, needBoom, needBoom > this.fitBoost ? 5 : 1.1, dt);
+
+      // ---- opponent SCALE, not just opponent presence ---------------------
+      // The loop above only ever asked whether the opponent was inside the
+      // frame, and an opponent can sit comfortably inside it while being far
+      // too small to fight: measured at 7.3% of frame height against the
+      // player's 23.2%. So measure the height they actually subtend, by
+      // projecting their feet and their head, and treat anything under the
+      // floor as a framing failure in its own right.
+      _fit.set(_b.x, _b.y, _b.z).project(cam);
+      _fit2.set(_b.x, _b.y + 1.62, _b.z).project(cam);
+      const behind = _fit.z > 1 || _fit2.z > 1;
+      // NDC spans 2 units across the frame, so half the NDC delta is the
+      // fraction of frame height.
+      const seen = behind ? 1 : Math.abs(_fit2.y - _fit.y) * 0.5;
+
+      // Custom Robo keeps both machines readable; below about an eighth of the
+      // frame the opponent stops being a fighter and becomes a target dot.
+      const FLOOR = 0.12;
+      // Square-rooted, because a linear response to the deficit is nearly no
+      // response where it matters: an opponent at 7.8% against a 12% floor is
+      // only a 35% shortfall, and 35% of the cap moved the anchor about a metre
+      // out of fifteen, which is invisible.
+      const deficit = clamp((FLOOR - seen) / FLOOR, 0, 1);
+      const wantBias = behind ? 0 : Math.sqrt(deficit) * 0.62;
+      // Open up briskly when the opponent is too small, close slowly, so a
+      // fighter dashing in and out does not pump the camera.
+      this.anchorBias = damp(this.anchorBias, wantBias, wantBias > this.anchorBias ? 2.2 : 0.8, dt);
     }
   }
 
