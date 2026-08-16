@@ -57,6 +57,8 @@ uniform float uRimEdge;
 uniform float uRimSoft;
 uniform float uRimStrength;
 uniform float uRimWash;
+uniform vec3  uFillUp;
+uniform vec3  uFillDown;
 uniform vec3  uTeamColor;
 uniform float uEnergy;
 uniform float uHitFlash;
@@ -67,9 +69,90 @@ varying vec3 vWorldNormalX;
 varying vec3 vWorldPosX;
 `;
 
+/**
+ * The SMOOTH ("welded") normal, which the shell geometry already carries for the
+ * outline hull. This is vertex-shader-only, so it cannot live in RIM_PARS.
+ */
+const RIM_PARS_VERT = /* glsl */`
+attribute vec3 nweld;
+vec3 rimNormalX;
+`;
+
+/**
+ * Pick the normal the RIM is measured against — and it must NOT be the shading
+ * normal.
+ *
+ * This is the whole of why five rounds of rim tuning did nothing for the
+ * silhouette. `fres = 1 - dot(n, view)` only reaches 1.0 at the contour if n
+ * turns smoothly through it, and the shell is machined boxes with hard face
+ * normals: on a plate facing the camera the front face sits at fres ~= 0.05 and
+ * its 45-degree chamfer at fres ~= 0.29, both far below a 0.72 band, while the
+ * side face that WOULD pass the test is seen edge-on and covers roughly no
+ * pixels at all. So the band fired on nothing you could see, at any strength.
+ *
+ * The welded normals fix it exactly: averaged across coincident vertices they
+ * sweep continuously from the face normal to the silhouette, so fres hits 1.0
+ * precisely where the machine ends. Lighting keeps the hard normals — a rim
+ * measured smooth and a surface shaded flat is what a drawn contour on a
+ * machined shape actually is.
+ */
+const RIM_NORMAL_VERT = /* glsl */`
+  rimNormalX = objectNormal;
+  {
+    // A mesh built without the attribute reads (0,0,0); fall back rather than
+    // normalizing a zero vector and painting the shell with NaN.
+    vec3 nwX = nweld;
+    if (dot(nwX, nwX) > 1e-6) {
+      #ifdef USE_SKINNING
+        mat4 rimSkinX = mat4(0.0);
+        rimSkinX += skinWeight.x * boneMatX;
+        rimSkinX += skinWeight.y * boneMatY;
+        rimSkinX += skinWeight.z * boneMatZ;
+        rimSkinX += skinWeight.w * boneMatW;
+        rimSkinX = bindMatrixInverse * rimSkinX * bindMatrix;
+        nwX = (rimSkinX * vec4(nwX, 0.0)).xyz;
+      #endif
+      rimNormalX = nwX;
+    }
+  }
+`;
+
 const RIM_VERT = /* glsl */`
-  vWorldNormalX = normalize(mat3(modelMatrix) * objectNormal);
+  vWorldNormalX = normalize(mat3(modelMatrix) * rimNormalX);
   vWorldPosX = (modelMatrix * vec4(transformed, 1.0)).xyz;
+`;
+
+/**
+ * Shadow fill: a hemispheric term that only fires where the machine is actually
+ * receiving nothing.
+ *
+ * Why it exists: measured, the far robot's body sat at luminance 5/255 against
+ * a background of 2. It was standing where the key light does not reach, and no
+ * edge treatment rescues a machine that is receiving no light — 68% of its
+ * contour was invisible.
+ *
+ * Why it is gated on how lit the fragment already is, rather than being a plain
+ * ambient: the arena deck measures 88/255 and the near robot's body 78, so the
+ * two are already within ten levels of each other. An unconditional fill lifts
+ * the near robot straight ONTO the deck's value and trades one robot's
+ * legibility for the other's. Weighting it by what the direct lights failed to
+ * deliver keeps it out of the key entirely — it is a bounce card, not exposure.
+ *
+ * It is added to the INDIRECT diffuse, so it is a light and not a paint job: it
+ * is multiplied by the albedo, every value break the panel bake and the vertex
+ * paint built survives it, and it lands before <aomap_fragment> so the seams
+ * and creases stay dark. Up and down are separate colours because a uniform
+ * ambient is the flattest possible light and would buy visibility by throwing
+ * the machine's volume away.
+ */
+const FILL_FRAG = /* glsl */`
+  {
+    const vec3 lumaX = vec3(0.2126, 0.7152, 0.0722);
+    float litX = dot(reflectedLight.directDiffuse + reflectedLight.indirectDiffuse, lumaX);
+    float needX = 1.0 - smoothstep(0.0, 0.075, litX);
+    float upX = normalize(vWorldNormalX).y * 0.5 + 0.5;
+    reflectedLight.indirectDiffuse += diffuseColor.rgb * mix(uFillDown, uFillUp, upX) * needX;
+  }
 `;
 
 const RIM_FRAG = /* glsl */`
@@ -83,6 +166,17 @@ const RIM_FRAG = /* glsl */`
   // down fixes it, because turning it down just makes a dimmer glass. A
   // smoothstep band only covers the last few degrees before the silhouette, so
   // it reads as a contour catching a light. Same uniform, opposite result.
+  //
+  // The band's WIDTH has to be read together with which normal feeds it. On the
+  // hard face normals this used to run on, "the last few degrees before the
+  // silhouette" was a set of polygons that are edge-on to the camera and cover
+  // no pixels, so the band was invisible however hard it was driven. On the
+  // welded normals it is a genuine ring, but a ring whose width is set by the
+  // chamfer radius — 0.02-0.045 m, under a pixel on a robot 40 px tall. Measured
+  // at 0.72/0.24 the contour got WORSE than the broken version (54.6% -> 65.8%
+  // invisible), because a correct rim nobody can see loses to an incorrect one
+  // that at least lit whole side faces. So the band is opened up to cover the
+  // outer part of the turn rather than the last sliver of it.
   float rim = smoothstep(uRimEdge, min(uRimEdge + uRimSoft, 1.0), fres);
 
   // Biased to the upper and outer edges. A rim that wraps the underside as
@@ -122,8 +216,16 @@ export function roboShell(maps, look, teamColor, opts = {}) {
     normalScale: opts.normalScale ?? 1.0,
   });
 
+  // A rim light is a LIGHT, so it is mostly the colour of the source and only
+  // slightly the colour of the paint. It also has to buy LUMINANCE: a fully
+  // saturated blue contributes 0.07 of it, so a pure team-blue rim on a blue
+  // machine is a hue change at the contour and not a value step — which is the
+  // only thing the eye reads a silhouette from. Pulled two thirds to white it
+  // still says "this robot is the blue one" and actually separates.
+  const rimCol = new THREE.Color(look.emissive ?? 0x88ccff).lerp(new THREE.Color(0xffffff), 0.62);
+
   const u = {
-    uRimColor: { value: new THREE.Color(look.emissive ?? 0x88ccff) },
+    uRimColor: { value: rimCol },
     // uRimEdge/uRimSoft/uRimWash are READ by RIM_FRAG. They were declared in the
     // shader but never supplied here, so WebGL left all three at 0 and the band
     // evaluated as smoothstep(0.0, 0.0, fres) — edge0 == edge1, a divide by zero
@@ -131,10 +233,12 @@ export function roboShell(maps, look, teamColor, opts = {}) {
     // fact a full-body additive wash of the emissive colour: defect #5 exactly,
     // and most of why the machine photographed as a pale smudge. Supplying them
     // is the whole fix; the GLSL was already right.
-    uRimEdge: { value: opts.rimEdge ?? 0.72 },
-    uRimSoft: { value: opts.rimSoft ?? 0.24 },
+    uRimEdge: { value: opts.rimEdge ?? 0.40 },
+    uRimSoft: { value: opts.rimSoft ?? 0.60 },
     uRimWash: { value: opts.rimWash ?? 0.0 },
     uRimStrength: { value: opts.rimStrength ?? 0.22 },
+    uFillUp: { value: new THREE.Color(opts.fillUp ?? 0x000000) },
+    uFillDown: { value: new THREE.Color(opts.fillDown ?? 0x000000) },
     uTeamColor: { value: new THREE.Color(teamColor) },
     uEnergy: { value: opts.energy ?? 0.10 },
     uHitFlash: { value: 0 },
@@ -146,7 +250,9 @@ export function roboShell(maps, look, teamColor, opts = {}) {
   mat.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, u);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', `#include <common>\n${RIM_PARS}`)
+      .replace('#include <common>', `#include <common>\n${RIM_PARS}\n${RIM_PARS_VERT}`)
+      // Must run AFTER skinbase_vertex, which is what builds boneMatX..W.
+      .replace('#include <skinnormal_vertex>', `#include <skinnormal_vertex>\n${RIM_NORMAL_VERT}`)
       .replace('#include <worldpos_vertex>', `#include <worldpos_vertex>\n${RIM_VERT}`);
     // worldpos_vertex only exists when shadows/env need it; make sure we hook
     // something that is always present too.
@@ -158,6 +264,7 @@ export function roboShell(maps, look, teamColor, opts = {}) {
     }
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\n${RIM_PARS}`)
+      .replace('#include <lights_fragment_end>', `#include <lights_fragment_end>\n${FILL_FRAG}`)
       .replace('#include <dithering_fragment>', `${RIM_FRAG}\n#include <dithering_fragment>`);
     mat.userData.shader = shader;
   };

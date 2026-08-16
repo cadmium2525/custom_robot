@@ -385,12 +385,20 @@ async function runLifetime(browser, effect) {
       return p;
     });
   } else if (effect === 'impact') {
+    // Both impact reads at once, because they are different code paths and the
+    // ring only exists on one of them: an armour hit on the robo's chest (flash
+    // card, no ring) and a deck hit a little in front of it (ring + scorch).
+    // The crop is centred between the two so one tile judges both.
     world = await page.evaluate(() => {
       const g = window.__game;
       const r = g.world.robos[1];
       const p = { x: r.pos.x, y: r.pos.y + 1.2, z: r.pos.z };
       g.view.vfx._hit({ x: p.x, y: p.y, z: p.z, nx: 0, ny: 1, nz: 0, heavy: true, surface: false });
-      return p;
+      g.view.vfx._hit({
+        x: r.pos.x + 1.6, y: 0.02, z: r.pos.z + 1.0,
+        nx: 0, ny: 1, nz: 0, heavy: true, surface: true,
+      });
+      return { x: r.pos.x + 0.8, y: r.pos.y + 0.6, z: r.pos.z + 0.5 };
     });
   } else if (effect === 'tracer') {
     // Fire one round from robo 0 straight at robo 1 and walk alongside it.

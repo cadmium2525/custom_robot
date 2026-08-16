@@ -566,10 +566,12 @@ const SHELL_RING = 1;
 const SHELL_CARD = 2;
 const SHELL_SOOT = 3;
 
+const SHELL_SMOKE_KIND = 2;
+
 const SHELL_VERT = /* glsl */`
 attribute vec4 aLife;     // birth, life, scale0, scale1
 attribute vec4 aTint;     // rgb + kind
-attribute vec4 aMotion;   // local drift per second + seed
+attribute vec4 aMotion;   // launch velocity + seed
 uniform float uTime;
 // uMode is read by BOTH stages, and GLSL ES requires a uniform declared in both
 // to carry the same precision in both. The fragment stage is mediump, the
@@ -581,12 +583,14 @@ uniform float uTime;
 // were silently dropping out together.
 uniform mediump float uMode;
 uniform float uEase;
-varying float vT;
+uniform float uDrag;      // exponential decay on aMotion
 varying vec4 vTint;
 varying vec2 vUv;
 varying vec3 vLocal;
-varying float vRim;
-varying float vSeed;
+// Packed rather than four separate varyings: this program already carries a
+// vec4, a vec3 and a vec2, and the ES 2.0 floor is eight varying *vectors*.
+// x: normalised age  y: face-on ratio  z: seed  w: edge-on ratio
+varying vec4 vMeta;
 
 float hash13(vec3 p) {
   p = fract(p * 0.1031);
@@ -610,7 +614,7 @@ void main() {
   float t = age / max(aLife.y, 1e-4);
   if (age < 0.0 || t > 1.0) {
     gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
-    vT = 2.0;
+    vMeta = vec4(2.0, 0.0, 0.0, 0.0);
     return;
   }
   // Fast out, slow settle — the classic detonation curve.
@@ -624,45 +628,62 @@ void main() {
     // a cluster of billows rather than a balloon, and let the lobes deepen as it
     // cools — that growth is what sells a mass of burning gas expanding.
     float n1 = vnoise(position * 1.7 + aMotion.w);
-    float n2 = vnoise(position * 4.3 - aMotion.w * 1.7);
-    float lump = (n1 - 0.5) * 0.9 + (n2 - 0.5) * 0.42;
-    p *= 1.0 + lump * (0.24 + t * 0.66);
+    float n2 = vnoise(position * 4.6 - aMotion.w * 1.7);
+    float lump = (n1 - 0.5) * 0.95 + (n2 - 0.5) * 0.46;
+    p *= 1.0 + lump * (0.26 + t * 0.90);
+
+    // Buoyancy. The cap climbs and the base necks in behind it, so a mass that
+    // starts as a ball has become a rising, stalked column by the end of its
+    // life. This is the difference between an explosion and one shape fading:
+    // the silhouette has to change, not just get dimmer.
+    float rise = t * t;
+    p.y += rise * (0.45 + 0.55 * vLocal.y) * 0.95;
+    p.xz *= 1.0 - 0.34 * rise * smoothstep(0.4, -0.8, vLocal.y);
   }
   p *= s;
-  p += aMotion.xyz * age;
+
+  // Thrown, then stalling. Integrated the same way the particle batch does it,
+  // so a lobe leaves the core fast and is left hanging where the blast put it
+  // rather than sliding outward forever at its launch speed.
+  float dk = max(uDrag, 1e-3);
+  p += aMotion.xyz * ((1.0 - exp(-dk * age)) / dk);
 
   vec4 mv = modelViewMatrix * instanceMatrix * vec4(p, 1.0);
   vec3 nv = normalize((modelViewMatrix * instanceMatrix * vec4(vLocal, 0.0)).xyz);
-  vRim = abs(nv.z);
+  vec3 eye = normalize(mv.xyz);
   vUv = uv;
-  vT = t;
   vTint = aTint;
-  vSeed = aMotion.w;
+  // y is 1 looking straight *at* the surface (long path through a solid ball),
+  // w is 1 looking *along* it (long path through a thin shell). A fireball
+  // wants the first, a shock front the second.
+  vMeta = vec4(t, abs(nv.z), aMotion.w, 1.0 - abs(dot(nv, eye)));
   gl_Position = projectionMatrix * mv;
 }`;
 
 const SHELL_FRAG = /* glsl */`
 precision mediump float;
-varying float vT;
 varying vec4 vTint;
 varying vec2 vUv;
 varying vec3 vLocal;
-varying float vRim;
-varying float vSeed;
+varying vec4 vMeta;
 uniform sampler2D uMap;
-uniform float uUseMap;
-uniform float uMode;
+uniform mediump float uMode;
 
-// Fire ramp, in linear light. Everything from ORANGE up is over 1.0 so it
-// clears the bloom threshold; SMOKE and EMBER stay under it so the tail of the
-// fireball cools *out* of the glow instead of staying lit forever.
-const vec3 C_SMOKE  = vec3(0.055, 0.048, 0.046);
-const vec3 C_EMBER  = vec3(0.90, 0.16, 0.03);
-const vec3 C_ORANGE = vec3(2.30, 0.66, 0.07);
-const vec3 C_YELLOW = vec3(3.30, 2.00, 0.42);
-const vec3 C_WHITE  = vec3(4.40, 3.80, 3.00);
+// The fire ramp, in linear light. EMBER and up clear the bloom threshold (1.04)
+// so the burning part of the blast has real HDR headroom to glow with; SOOT and
+// CHAR sit an order of magnitude below it, which is what lets the same mass cool
+// *out* of the bloom into a dark opaque lump instead of staying a lamp forever.
+const vec3 C_SOOT   = vec3(0.028, 0.025, 0.024);
+const vec3 C_CHAR   = vec3(0.34, 0.11, 0.05);
+const vec3 C_EMBER  = vec3(1.15, 0.20, 0.03);
+const vec3 C_ORANGE = vec3(2.70, 0.76, 0.07);
+const vec3 C_YELLOW = vec3(3.90, 2.25, 0.40);
+const vec3 C_WHITE  = vec3(5.80, 5.05, 4.20);
 
 void main() {
+  float vT  = vMeta.x;
+  float rim = vMeta.y;      // 1 face-on, 0 at the silhouette
+  float edg = vMeta.w;      // 1 looking along the shell, 0 straight through it
   if (vT > 1.0 || vT < 0.0) discard;
   float fade = 1.0 - vT;
   vec3 col = vTint.rgb;
@@ -671,61 +692,119 @@ void main() {
   if (uMode > 2.5) {
     // Scorch marks are burnt material, not light: they must never brighten the
     // floor, and they linger rather than flash.
-    a = smoothstep(0.0, 0.06, vT) * pow(fade, 0.8) * 0.5;
+    a = smoothstep(0.0, 0.04, vT) * pow(fade, 0.7) * 0.6;
     vec4 tx = texture2D(uMap, vUv);
     col *= tx.rgb;
     a *= tx.a;
   } else if (uMode > 1.5) {
     // Billboard flash card. The hot phase is deliberately short — held any
     // longer and a nearby blast just reads as a white screen once bloom has it.
-    col = mix(vec3(2.6, 2.3, 1.9) * col, col, smoothstep(0.0, 0.3, vT));
-    col *= 0.4 + fade * 1.1;
-    a = pow(fade, 1.7);
+    col = mix(vec3(2.2, 1.9, 1.6) * col, col, smoothstep(0.0, 0.35, vT));
+    col *= 0.35 + fade * 1.2;
+    a = pow(fade, 2.0);
     vec4 tx = texture2D(uMap, vUv);
     col *= tx.rgb;
     a *= tx.a;
   } else if (uMode > 0.5) {
-    // Shock ring: a thin bright front that races outward through the geometry
-    // while the geometry itself expands. Kind 1 pins the band instead, for the
-    // charge tell that collapses inward.
+    // Shock front. A pressure wave that reads is a thin, sharp, decelerating
+    // leading edge — not a ring of paint lying on the floor. Three parts:
+    //
+    //  * the front itself, tinted well over 1.0 so bloom has something to catch;
+    //  * a sheen term, so it is brightest where the line of sight runs *along*
+    //    the shell and nearly gone across the near and far lips. A ring of even
+    //    brightness all the way round is exactly what reads as a donut;
+    //  * a dark compression lip immediately behind the front. It carries alpha
+    //    but almost no colour, so under the over-blend it *darkens* whatever it
+    //    crosses. That is the cheap stand-in for refraction, and it is what
+    //    makes the front look like a discontinuity in the air rather than a
+    //    decal — you can see the deck bend around it.
+    //
+    // Kind 1 pins the band and drops both the sheen and the lip: it is the
+    // charge tell, billboarded at the camera, where an edge-on term would put
+    // it out altogether.
+    float pinned = vTint.w > 0.5 ? 1.0 : 0.0;
     float r = length(vUv - 0.5) * 2.0;
-    float centre = vTint.w > 0.5 ? 0.80 : mix(0.5, 0.95, vT);
-    float hw = vTint.w > 0.5 ? 0.12 : mix(0.30, 0.07, vT);
-    float band = exp(-pow((r - centre) / hw, 2.0));
-    float fill = (1.0 - smoothstep(centre - hw, centre + hw * 0.3, r)) * 0.16 * fade;
-    a = (band + fill) * pow(fade, 1.3);
-    col = col * (0.4 + band * 1.5) + vec3(1.0, 0.95, 0.88) * pow(band, 3.0) * fade * 1.3;
+    float centre = mix(mix(0.60, 0.92, sqrt(vT)), 0.80, pinned);
+    float hw     = mix(mix(0.045, 0.105, vT), 0.13, pinned);
+    float d = (r - centre) / hw;
+    float front = exp(-d * d);
+    float sheen = mix(0.26 + 0.74 * edg, 1.0, pinned);
+    float dl = (r - (centre - hw * 2.6)) / (hw * 2.0);
+    float lip = exp(-dl * dl) * (1.0 - pinned);
+
+    col = vTint.rgb * front * (0.5 + sheen * 1.5)
+        + vec3(1.0, 0.94, 0.86) * pow(front, 3.0) * sheen * 2.4;
+    col *= fade;
+    a = clamp(front * (0.28 + 0.72 * sheen) * 0.95 + lip * 0.24 * sheen, 0.0, 1.0)
+      * pow(fade, 1.15) * mix(1.0, 0.42, pinned);
   } else {
-    // Fireball. Two turbulence taps drive a temperature field that cools with
-    // age; the ramp then carries it white -> yellow -> orange -> ember -> smoke.
-    // The colour break-up is the whole point: an even ball of white is a puff of
-    // steam, a broken one with cool pockets is an explosion.
-    float cs = cos(vSeed), sn = sin(vSeed);
+    // Turbulence, sampled in a rotated frame that drifts as the mass burns, so
+    // no two blasts break up the same way and each one churns while it lives.
+    float cs = cos(vMeta.z), sn = sin(vMeta.z);
     vec2 nuv = vec2(vLocal.x * cs - vLocal.z * sn, vLocal.x * sn + vLocal.z * cs) * 0.42;
-    nuv += vec2(vLocal.y * 0.28, -vT * 0.16);
+    nuv += vec2(vLocal.y * 0.30, -vT * 0.20);
     float t1 = texture2D(uMap, nuv).r;
-    float t2 = texture2D(uMap, nuv * 2.7 + vec2(0.37, 0.11)).g;
-    float turb = t1 * 0.68 + t2 * 0.32;
+    float t2 = texture2D(uMap, nuv * 2.9 + vec2(0.37, 0.11)).g;
+    float turb = t1 * 0.64 + t2 * 0.36;
 
-    float heat = clamp((1.0 - vT * 0.85) * (0.30 + turb * 1.30) - vT * 0.42, 0.0, 1.2);
-    if (vTint.w < 0.5) heat = max(heat, 1.15 * pow(fade, 0.5));   // smooth flash core
+    if (vTint.w > 1.5) {
+      // Smoke phase. No fire ramp at all: soot, lit from underneath by what is
+      // left of the fire, eroded hard by the same turbulence so it stays a
+      // ragged mass. Kept dark and kept to the fireball's own footprint on
+      // purpose — pale smoke big enough to cover the fight is not atmosphere,
+      // it is an occlusion bug, and it flatters a histogram while hiding the
+      // one thing the frame is about.
+      float bite = mix(0.30, 0.95, vT);
+      float d2 = smoothstep(bite, bite + 0.24, turb);
+      float under = smoothstep(0.25, -0.70, vLocal.y) * pow(fade, 2.2);
+      col = mix(C_SOOT, C_CHAR * 1.5, under) * (0.7 + turb * 0.6);
+      a = d2 * (0.26 + 0.34 * rim)
+        * smoothstep(0.0, 0.14, vT) * smoothstep(1.0, 0.5, vT);
+    } else {
+      // Density and temperature are two different fields, and separating them is
+      // the whole trick.
+      //
+      // Density is *mass*: it decides what the blast hides. It is eaten away
+      // from the outside in as the ball burns out, so the silhouette tears into
+      // separate billows instead of one shape dissolving uniformly.
+      //
+      // Temperature only decides colour, and it falls fastest at the silhouette
+      // and with age. That is what puts white in the middle, yellow and orange
+      // around it, deep red at the rim and soot on the outside — a gradient
+      // across the ball at every instant, not one ramp played back over time.
+      float bite = mix(0.06, 0.88, vT * vT);
+      float dens = smoothstep(bite, bite + 0.28, turb + fade * 0.26);
+      float heat = clamp((turb * 1.15 + 0.30) * pow(fade, 1.30) * (0.45 + 0.85 * rim), 0.0, 1.4);
+      if (vTint.w < 0.5) {
+        // The detonation core: a smooth white-hot ball with no break-up at all,
+        // over before the eye can resolve it.
+        heat = 1.32 * pow(fade, 0.4);
+        dens = smoothstep(0.02, 0.50, rim);
+      }
+      col = mix(C_SOOT, C_CHAR, smoothstep(0.02, 0.16, heat));
+      col = mix(col, C_EMBER, smoothstep(0.14, 0.36, heat));
+      col = mix(col, C_ORANGE, smoothstep(0.34, 0.58, heat));
+      col = mix(col, C_YELLOW, smoothstep(0.58, 0.86, heat));
+      col = mix(col, C_WHITE, smoothstep(0.88, 1.16, heat));
+      col *= mix(vec3(1.0), vTint.rgb, 0.28);
 
-    col = mix(C_SMOKE, C_EMBER, smoothstep(0.02, 0.24, heat));
-    col = mix(col, C_ORANGE, smoothstep(0.22, 0.50, heat));
-    col = mix(col, C_YELLOW, smoothstep(0.50, 0.78, heat));
-    col = mix(col, C_WHITE, smoothstep(0.80, 1.06, heat));
-    col *= mix(vec3(1.0), vTint.rgb, 0.35);
-
-    a = smoothstep(0.03, 0.30, heat) * pow(fade, 0.7) * 0.62;
-    a *= 0.30 + 0.70 * smoothstep(0.0, 0.5, vRim);
+      a = clamp(dens * (0.5 + 0.5 * rim) * smoothstep(1.0, 0.70, vT), 0.0, 0.94);
+    }
   }
 
   if (a <= 0.004) discard;
-  gl_FragColor = vec4(col, a);
+  // Premultiplied. Alpha is coverage and colour is emission, and keeping them
+  // independent is what lets one shader be both a lamp and a solid: a wisp with
+  // a=0.05 and col=5.0 blooms without hiding anything behind it, while burnt
+  // gas with a=0.8 and col=0.03 is a hole in the frame. An all-additive blast
+  // can only ever be a glow, and a glow has no mass.
+  gl_FragColor = vec4(col * a, a);
 }`;
 
 class ShellPool {
-  constructor(geometry, capacity, map = null, { renderOrder = 7, mode = SHELL_FIREBALL, ease = 2.6 } = {}) {
+  constructor(geometry, capacity, map = null, {
+    renderOrder = 7, mode = SHELL_FIREBALL, ease = 2.6, drag = 0, over = false,
+  } = {}) {
     this.capacity = capacity;
     this.cursor = 0;
     this.life = new Float32Array(capacity * 4);
@@ -746,13 +825,19 @@ class ShellPool {
       uniforms: {
         uTime: { value: 0 },
         uMap: { value: map },
-        uUseMap: { value: map ? 1 : 0 },
         uMode: { value: mode },
         uEase: { value: ease },
+        uDrag: { value: drag },
       },
       transparent: true,
       depthWrite: false,
-      blending: THREE.AdditiveBlending,
+      // The fragment stage always emits premultiplied colour, which makes the
+      // two blend modes below the *same* maths with one term switched off:
+      // additive is (ONE, ONE) and over is (ONE, ONE_MINUS_SRC_ALPHA). A pool
+      // that can occlude is therefore one boolean away from one that can only
+      // add, and nothing else in the shader has to know which it is.
+      premultipliedAlpha: true,
+      blending: over ? THREE.NormalBlending : THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       toneMapped: false,
       fog: false,
@@ -955,15 +1040,20 @@ export class VFX {
     scene.add(this.trails.mesh);
 
     // --- expanding shells -------------------------------------------------
+    // `over` is what gives the blast mass: burning gas is dense, and dense
+    // things hide what is behind them. `drag` lets a lobe be thrown off the core
+    // and stall rather than slide outward at a constant rate forever.
     const sphere = new THREE.IcosahedronGeometry(1, settings.bloomQuality >= 2 ? 3 : 2);
-    this.fireballs = new ShellPool(sphere, 48, this.tex.turb, { mode: SHELL_FIREBALL, ease: 2.2 });
+    this.fireballs = new ShellPool(sphere, 48, this.tex.turb,
+      { mode: SHELL_FIREBALL, ease: 2.2, drag: 2.6, over: true });
     scene.add(this.fireballs.mesh);
 
     // Nearly a disc: the visible ring is a travelling band inside the geometry,
     // so the front can start tight in the middle and race out to the rim.
     const ring = new THREE.RingGeometry(0.2, 1.0, 56, 1);
     ring.rotateX(-Math.PI / 2);
-    this.shockwaves = new ShellPool(ring, 24, null, { renderOrder: 8, mode: SHELL_RING, ease: 3.0 });
+    this.shockwaves = new ShellPool(ring, 24, null,
+      { renderOrder: 8, mode: SHELL_RING, ease: 3.4, over: true });
     scene.add(this.shockwaves.mesh);
 
     const flareQuad = new THREE.PlaneGeometry(1, 1);
@@ -1080,8 +1170,8 @@ export class VFX {
   _buildDecals() {
     const cap = this.settings.decals;
     const geo = new THREE.PlaneGeometry(1, 1);
-    this.decals = new ShellPool(geo, cap, this.sp.smoke, { renderOrder: 3, mode: SHELL_SOOT, ease: 1.4 });
-    this.decals.material.blending = THREE.NormalBlending;
+    this.decals = new ShellPool(geo, cap, this.sp.smoke,
+      { renderOrder: 3, mode: SHELL_SOOT, ease: 1.4, over: true });
     this.decals.material.depthWrite = false;
     this.decals.mesh.renderOrder = 3;
     this.scene.add(this.decals.mesh);
@@ -1299,15 +1389,21 @@ export class VFX {
    * A detonation in legible stages, because "one bright ball" is a puff of
    * steam. In order of what the eye catches:
    *
-   *   0-80ms    flash — rayed card plus a smooth white core, over before you
-   *             can focus on it, but it is what makes the hit feel *hard*
-   *   0-700ms   fireball — a cluster of turbulent billows cooling through
-   *             white → yellow → orange → ember, rising as they cool
-   *   0-350ms   shock — a thin bright front racing out along the deck
+   *   0-50ms    flash — a rayed card and a smooth white-hot core, over before
+   *             you can focus on it, but it is what makes the hit feel *hard*
+   *   0-700ms   fireball — dense turbulent billows thrown off the core and
+   *             stalling, white-hot in the middle and soot at the rim, tearing
+   *             open and rising as they burn out
+   *   0-260ms   shock — a thin bright front racing out along the deck with the
+   *             deck visibly compressed behind it
    *   50ms-1.3s dust wave — pale, fast, flat, hugging the floor
-   *   100ms-3s  smoke column — dark, slow, rising: the opposite read to dust
+   *   250ms-2s  smoke — dark, ragged, rising off what is left of the fire
    *   0-1.5s    debris — sparks and chunks on sim gravity, arcing and falling
    *   0-550ms   light — the blast throws real light onto the arena
+   *
+   * The one thing every stage shares is that it is integrated on the GPU from
+   * (birth, life) against the effect clock, so the whole sequence is exact at
+   * any frame rate and holds still when a capture writes an age into it.
    *
    * Positional args rather than an event object: this is called from event
    * handling, where allocating anything at all is off the table.
@@ -1325,86 +1421,114 @@ export class VFX {
     const hr = _rgb[0], hg = _rgb[1], hb = _rgb[2];
 
     // --- 1. flash ---------------------------------------------------------
+    // Two frames and small. The old card lived 100ms and grew to four radii of
+    // near-white, which bloom then smeared over the entire arena: the blast
+    // washed out the very value structure it was supposed to be punching a hole
+    // in, and the fireball behind it was invisible until the card had gone.
     _v.set(x, y, z);
-    this.flares.spawn(x, y, z, this._faceCamera(_v), t, 0.1,
-      R * 0.3, R * 2.0, 5.4, 4.7, 3.7);
-    this.fireballs.spawn(x, y, z, null, t, 0.14, R * 0.05, R * 0.66,
-      1.0, 0.95, 0.86, 0);
+    this.flares.spawn(x, y, z, this._faceCamera(_v), t, 0.055,
+      R * 0.22, R * 0.95, 6.6, 5.7, 4.6);
+    this.fireballs.spawn(x, y, z, null, t, 0.09, R * 0.10, R * 0.46,
+      1.0, 0.96, 0.90, 0);
 
     // --- 2. fireball cluster ---------------------------------------------
-    this.fireballs.spawn(x, y + R * 0.05, z, null, t, 0.66, R * 0.16, R * 0.82,
-      hr, hg, hb, 1, 0, R * 0.22, 0);
-    const billows = Math.round(5 * (s > 0.5 ? 1 : 0.6));
+    this.fireballs.spawn(x, y + R * 0.04, z, null, t, 0.62, R * 0.13, R * 0.60,
+      hr, hg, hb, 1, 0, R * 0.16, 0);
+    const billows = Math.round((s > 0.5 ? 7 : 4));
     for (let i = 0; i < billows; i++) {
-      const a = (i / billows) * 6.283 + vfxRng.f() * 0.9;
-      const el = vfxRng.f() * 0.9 - 0.15;
-      const ca = Math.cos(a) * Math.cos(el), sa = Math.sin(a) * Math.cos(el);
-      const rad = R * (0.2 + vfxRng.f() * 0.28);
+      const a = (i / billows) * 6.283 + vfxRng.f() * 0.8;
+      const el = vfxRng.f() * 1.0 - 0.22;
+      const ce = Math.cos(el);
+      const ca = Math.cos(a) * ce, sa = Math.sin(a) * ce, ea = Math.sin(el);
+      const rad = R * (0.10 + vfxRng.f() * 0.22);
+      // Thrown outward with a real velocity spread and a drag term, so the
+      // cluster blows apart fast and then hangs: the outline at 60ms, at 200ms
+      // and at 500ms are three different shapes.
+      const sp = R * (1.5 + vfxRng.f() * 2.1);
       this.fireballs.spawn(
-        x + ca * rad, y + Math.sin(el) * rad * 0.7 + R * 0.05, z + sa * rad, null,
-        t + i * 0.028, 0.5 + vfxRng.f() * 0.36, R * 0.1, R * (0.36 + vfxRng.f() * 0.2),
+        x + ca * rad, y + ea * rad * 0.8 + R * 0.04, z + sa * rad, null,
+        t + i * 0.016, 0.46 + vfxRng.f() * 0.40, R * 0.09, R * (0.26 + vfxRng.f() * 0.17),
         hr, hg, hb, 1,
-        ca * R * 0.5, R * (0.35 + vfxRng.f() * 0.5), sa * R * 0.5
+        ca * sp, ea * sp + R * 0.55, sa * sp
       );
     }
 
     // --- 3. shock front ---------------------------------------------------
+    // One front, not a family of them. Short, hot, and strongly decelerating.
     if (grounded) {
-      this.shockwaves.spawn(x, deck, z, null, t, 0.19, R * 0.45, R * 2.1,
-        3.8, 2.9, 1.8, 0);
-      this.shockwaves.spawn(x, deck, z, null, t + 0.035, 0.3, R * 0.8, R * 3.3,
-        1.7, 1.15, 0.7, 0);
+      this.shockwaves.spawn(x, deck, z, null, t, 0.26, R * 0.5, R * 2.6,
+        5.2, 4.0, 2.6, 0);
     } else {
-      this.shockwaves.spawn(x, y, z, null, t, 0.16, R * 0.4, R * 1.9,
-        3.2, 2.4, 1.6, 0);
+      this.shockwaves.spawn(x, y, z, null, t, 0.22, R * 0.45, R * 2.2,
+        4.6, 3.5, 2.3, 0);
     }
 
     // --- 4. ground-hugging dust wave -------------------------------------
     // Pale, flat and fast, with enough drag that it piles up at the end of its
     // run. Deliberately a different colour, speed and direction from the smoke
-    // column so the two never read as one grey mass.
+    // so the two never read as one grey mass.
     if (grounded) {
-      const dustN = Math.round(16 * s * scale);
+      const dustN = Math.round(18 * s * scale);
       for (let i = 0; i < dustN; i++) {
         const a = (i / dustN) * 6.283 + vfxRng.s() * 0.5;
         const ca = Math.cos(a), sa = Math.sin(a);
-        const sp = R * (2.4 + vfxRng.f() * 1.6);
+        const sp = R * (2.6 + vfxRng.f() * 1.8);
         this.smoke.spawn(
           x + ca * R * 0.25, deck + 0.06 + vfxRng.f() * 0.2, z + sa * R * 0.25,
           ca * sp, 0.35 + vfxRng.f() * 0.55, sa * sp,
-          t + vfxRng.f() * 0.05, 1.0 + vfxRng.f() * 0.7, R * (0.09 + vfxRng.f() * 0.05),
-          1.0, 0.88, 0.74, -0.22, 2.8, 2
+          t + vfxRng.f() * 0.05, 0.9 + vfxRng.f() * 0.6, R * (0.11 + vfxRng.f() * 0.06),
+          0.92, 0.80, 0.66, -0.22, 3.0, 2
         );
       }
     }
 
-    // --- 5. smoke column --------------------------------------------------
-    const smokeN = Math.round(10 * s * scale);
+    // --- 5. smoke ---------------------------------------------------------
+    // Volumes rather than a cloud of billboards, because the fireball has to
+    // hand off to something with the same silhouette or the blast visibly
+    // changes species halfway through. Three of them, dark, no bigger than the
+    // fire that made them, and eroded to rags by the shader.
+    const smokeShells = s > 0.5 ? 3 : 2;
+    for (let i = 0; i < smokeShells; i++) {
+      const a = vfxRng.f() * 6.283;
+      const rad = R * (0.05 + vfxRng.f() * 0.22);
+      this.fireballs.spawn(
+        x + Math.cos(a) * rad, y + R * 0.10, z + Math.sin(a) * rad, null,
+        t + 0.24 + i * 0.10, 1.5 + vfxRng.f() * 0.7,
+        R * 0.30, R * (0.62 + vfxRng.f() * 0.24),
+        1.0, 0.92, 0.86, SHELL_SMOKE_KIND,
+        Math.cos(a) * R * 0.22, R * (0.9 + vfxRng.f() * 0.5), Math.sin(a) * R * 0.22
+      );
+    }
+    const smokeN = Math.round(6 * s * scale);
     for (let i = 0; i < smokeN; i++) {
       const a = vfxRng.f() * 6.283;
-      const rad = vfxRng.f() * R * 0.35;
+      const rad = vfxRng.f() * R * 0.3;
       this.smoke.spawn(
         x + Math.cos(a) * rad, y + vfxRng.f() * R * 0.4, z + Math.sin(a) * rad,
-        Math.cos(a) * 1.3, 2.6 + vfxRng.f() * 2.4, Math.sin(a) * 1.3,
-        t + 0.05 + vfxRng.f() * 0.3, 1.7 + vfxRng.f() * 1.2, R * (0.12 + vfxRng.f() * 0.08),
-        0.17, 0.155, 0.15, -0.5, 1.1, 2
+        Math.cos(a) * 1.1, 2.4 + vfxRng.f() * 2.2, Math.sin(a) * 1.1,
+        t + 0.25 + vfxRng.f() * 0.35, 1.6 + vfxRng.f() * 1.0, R * (0.10 + vfxRng.f() * 0.07),
+        0.13, 0.12, 0.115, -0.5, 1.1, 2
       );
     }
 
     // --- 6. debris --------------------------------------------------------
     // Gravity 26 is the sim's own constant, so the arcs match how a knocked-down
     // robo falls. Low drag keeps them ballistic instead of floaty.
-    const sparkN = Math.round(66 * s * scale);
+    const sparkN = Math.round(72 * s * scale);
     for (let i = 0; i < sparkN; i++) {
       const a = vfxRng.f() * 6.283;
       const el = vfxRng.f() * 1.5 - 0.15;
       const ce = Math.cos(el);
-      const sp = R * (1.5 + vfxRng.f() * 3.6);
+      // A wide speed spread is what makes debris read as thrown rather than
+      // released: the fast tail outruns the fireball and is visible against the
+      // deck while the slow bulk is still inside the fire.
+      const fast = vfxRng.f();
+      const sp = R * (1.4 + fast * fast * 6.0);
       const heat = 0.55 + vfxRng.f() * 0.8;
       this.sparks.spawn(
         x, y, z,
         Math.cos(a) * ce * sp, Math.sin(el) * sp + 4.5, Math.sin(a) * ce * sp,
-        t, 0.5 + vfxRng.f() * 1.0, 0.04 + vfxRng.f() * 0.06,
+        t, 0.45 + vfxRng.f() * 1.0, 0.035 + vfxRng.f() * 0.055,
         3.6 * heat, 2.1 * heat * heat, 0.7 * heat * heat * heat,
         26, 0.22, 0
       );
@@ -1430,19 +1554,19 @@ export class VFX {
     this.lightCursor++;
     const l = this.lights[li];
     l.position.set(x, y + 0.45, z);
-    l.color.setRGB(1.0, 0.6, 0.26);
+    l.color.setRGB(1.0, 0.58, 0.24);
     l.distance = R * 9;
     l.visible = true;
     this.lightBirth[li] = t;
     this.lightLife[li] = 0.55;
-    this.lightPeak[li] = 260 * scale;
+    this.lightPeak[li] = 300 * scale;
     l.intensity = this.lightPeak[li];
 
     const prox = this._proximity(x, y, z);
     const mag = scale * prox * 0.8;
     this._addShake(vfxRng.s() * mag, vfxRng.s() * mag * 0.8, vfxRng.s() * mag, vfxRng.s() * mag * 0.05);
 
-    if (grounded) this._decal(x, 0.001, z, 0, 1, 0, R * 0.9);
+    if (grounded) this._decal(x, 0.001, z, 0, 1, 0, R * 1.15);
   }
 
   _wallHit(ev) {
@@ -1930,6 +2054,14 @@ export class VFX {
     this.bolts.count = 0;
     this.bombs.count = 0;
     this.pods.count = 0;
+    // The per-frame impact allowance is only ever reset at the top of
+    // `handleEvents`, and that is only reached on a tick that produced events.
+    // Leave it set and the first impacts after a wipe are silently swallowed —
+    // which is exactly what happened to every `--effect impact` capture ever
+    // taken: the harness clears, calls `_hit` directly with the sim paused, and
+    // the budget was still saturated from the firefight before the freeze.
+    this._impactBudget = 0;
+    this._thrusterAccum[0] = this._thrusterAccum[1] = 0;
     for (let i = 0; i < this.lights.length; i++) {
       this.lightLife[i] = 0;
       this.lights[i].visible = false;

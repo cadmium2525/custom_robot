@@ -145,8 +145,20 @@ export function armorTexture(look, size = 512, seedOffset = 0) {
       // the outline itself is only a few dozen pixels across. Spreading the
       // panels across a wide range also means that whatever value the
       // background happens to be, some of the robot still separates from it.
+      //
+      // The tiers are far apart and the MIDDLE one is deliberately the smallest
+      // share of the model. Measured against a deck at 88/255, the shell's value
+      // histogram ran p25=61 p50=78 p75=97 — half the machine sat inside twelve
+      // levels of the exact value it was standing on, which is the whole of why
+      // half its contour measured invisible. What matters is not the width of
+      // the range (that was already 5..175) but where the MASS is: a body piled
+      // up around one value merges with any background near it, and a body split
+      // into a dark family and a light family has most of its area in the clear
+      // whatever it happens to be in front of. So the darks go genuinely dark —
+      // 12x the old dark:light ratio in linear — and the mid tier is narrowed to
+      // the smallest of the three.
       const pv = ((p.id * 2654435761) >>> 0) / 4294967296;
-      const tier = pv < 0.28 ? 0.58 : (pv > 0.79 ? 1.30 : 0.95);
+      const tier = pv < 0.34 ? 0.38 : (pv > 0.74 ? 1.19 : 0.90);
       const tint = tier * (0.95 + (((p.id * 40503) >>> 0) % 97) / 97 * 0.10);
 
       // Brushed grain, anisotropic along the longer panel axis.
@@ -647,13 +659,32 @@ function galleryBase(size) {
       const stepShade = smoothstep(0.0, 0.45, rv);
 
       const grime = n.fbm2(u * 12, v * 12, 3) * 0.5 + 0.5;
-      let l = 0.055 + grime * 0.05;
-      l *= 1 - gapU * 0.7;
-      l *= 0.45 + stepShade * 0.55;
 
-      albedo[o] = clamp01(l * 0.9) * 255;
-      albedo[o + 1] = clamp01(l * 0.95) * 255;
-      albedo[o + 2] = clamp01(l * 1.15) * 255;
+      // Arena throw. All of this bowl's light lives at deck level — the rig, the
+      // perimeter rail, the gate throats — so the front rows are washed and the
+      // bank falls away into the roof behind them. v = 0 is the rail edge and
+      // v = 1 is the back of the rake, so the falloff runs straight up the tile.
+      //
+      // This ramp is the whole reason the gallery can carry value at all. A flat
+      // lift would put 25% of the frame at one mid grey, which is the exact
+      // failure mode this arena keeps being accused of; a ramp reads as a lit
+      // room receding from the fight, and it costs nothing.
+      const thro = 0.14 + 0.86 / (1 + v * v * 9);
+
+      let l = (0.05 + grime * 0.045) + thro * 0.235;
+      // Local contrast goes UP as the base value goes up, otherwise the rows
+      // stop reading as rows the moment they stop being black.
+      l *= 1 - gapU * 0.78;
+      l *= 0.34 + stepShade * 0.66;
+
+      // Warm at the rail, cool at the roof. The front rows sit in the deck's
+      // bounce and the warm service lighting; the back rows only ever see sky.
+      // One surface, two temperatures — which is what stops a quarter of the
+      // frame being a single flat blue.
+      const warmth = thro * thro;
+      albedo[o] = clamp01(l * (0.84 + warmth * 0.52)) * 255;
+      albedo[o + 1] = clamp01(l * (0.92 + warmth * 0.20)) * 255;
+      albedo[o + 2] = clamp01(l * (1.18 - warmth * 0.44)) * 255;
       albedo[o + 3] = 255;
 
       orm[o] = clamp01(0.35 + stepShade * 0.5 - gapU * 0.3) * 255;
@@ -712,15 +743,21 @@ function galleryEmissive(theme, size) {
       let er = 0, eg = 0, eb = 0;
       if (sr > 0.90 && su > 0.2 && su < 0.8 && rv > 0.25 && rv < 0.75) {
         const dot = (1 - smoothstep(0.12, 0.3, Math.hypot(su - 0.5, (rv - 0.5) * 1.4)));
-        const warmOne = sr > 0.975;
+        // Half the bank warm, half the arena accent. A crowd lit in one colour
+        // is a light rig, not a crowd, and this band sits directly above the
+        // deck where the frame most needs a second temperature.
+        const warmOne = sr > 0.95;
         const c = warmOne ? warm : acc;
         const amp = dot * (warmOne ? 1.5 : 1.1);
         er = c.r * amp; eg = c.g * amp; eb = c.b * amp;
       }
       // Aisle strip lighting every eighth seat column: guides the eye around
-      // the bowl and gives the tiers a legible rhythm.
+      // the bowl and gives the tiers a legible rhythm. Alternating temperature
+      // so the rhythm is a colour beat as well as a value one.
       if (Math.abs((seatF / 8) % 1 - 0.5) > 0.482) {
-        er += acc.r * 0.5; eg += acc.g * 0.5; eb += acc.b * 0.5;
+        const aisleWarm = (Math.floor(seatF / 8) & 1) === 1;
+        const c = aisleWarm ? warm : acc;
+        er += c.r * 0.5; eg += c.g * 0.5; eb += c.b * 0.5;
       }
 
       emis[o] = clamp01(er) * 255;
