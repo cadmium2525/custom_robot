@@ -75,6 +75,13 @@ export const ARENAS = [
       sunColour: 0xfff2de,
       sunIntensity: 3.4,
       rimColour: 0x2f6bd6,
+      // The two lights that describe everything the sun does not reach. Warm on
+      // purpose and warm in the grid specifically: this arena measured 41% cool
+      // coverage against 6% warm, so the only way the cool read is a decision
+      // rather than a tint is if there is something hot for it to be cool
+      // against — and the shadow side of the architecture is where that lives.
+      bounceColour: 0xffa63a,
+      groundBounce: 0x54402c,
       crowd: true,
       screens: true,
       gates: true,
@@ -127,6 +134,11 @@ export const ARENAS = [
       sunColour: 0xffd8b0,
       sunIntensity: 3.2,
       rimColour: 0x3f7fd0,
+      // Inverted, like the fill above it: in the one hot arena the counter-kick
+      // and the ground ambient go cold, so a block's shadow side is the coolest
+      // thing in frame instead of one more orange plane among orange planes.
+      bounceColour: 0x5c9ad8,
+      groundBounce: 0x2e4054,
       crowd: false,
       screens: true,
       gates: true,
@@ -173,6 +185,10 @@ export const ARENAS = [
       sunColour: 0xe8f0ff,
       sunIntensity: 3.2,
       rimColour: 0x3a6cc0,
+      // Coldest arena of the three, so its counter-kick is the warmest — a
+      // sodium service light bouncing off the ring's own deck.
+      bounceColour: 0xff9a4a,
+      groundBounce: 0x4b3826,
       crowd: true,
       screens: true,
       gates: true,

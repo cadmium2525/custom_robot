@@ -43,10 +43,10 @@ import { Noise } from './noise.js';
  */
 const KIND_TINT = {
   dais: 1.0,
-  block: 0.82,
-  pillar: 0.66,
-  rail: 0.88,
-  wallblock: 0.6,
+  block: 0.94,
+  pillar: 0.82,
+  rail: 0.94,
+  wallblock: 0.72,
 };
 
 /** Structure plating tiles once per this many metres, on every surface. */
@@ -112,7 +112,7 @@ function boxFaceUV(g, scale = STRUCT_TILE) {
  * sits INTO the floor instead of hovering over it. Light-top / dark-side is the
  * oldest trick in prop painting and it is what turns a greybox into an object.
  */
-function boxFaceTint(g, hy, tint, { top = 1.9, side = 0.62, under = 0.2 } = {}) {
+function boxFaceTint(g, hy, tint, { top = 1.9, side = 1.15, under = 0.34 } = {}) {
   const pos = g.attributes.position;
   const c = new Float32Array(pos.count * 3);
   for (let i = 0; i < pos.count; i++) {
@@ -121,8 +121,14 @@ function boxFaceTint(g, hy, tint, { top = 1.9, side = 0.62, under = 0.2 } = {}) 
     if (face === 2) t = top;
     else if (face === 3) t = under;
     else {
-      const k = (pos.getY(i) + hy) / Math.max(1e-4, hy * 2);   // 0 base .. 1 top
-      t = side * (0.42 + 0.58 * k);
+      // 0 base .. 1 top. The base is darker than the cap so the form sits INTO
+      // the deck, but it is a gradient, not a cliff: at the old 0.42 floor the
+      // side planes of a block measured a median of 2/255 — a shape with no
+      // information in it at all, which is a hole in the frame however correct
+      // the lit-top/dark-side theory behind it was. Blocks are still a full
+      // stop and a half below their own cap.
+      const k = (pos.getY(i) + hy) / Math.max(1e-4, hy * 2);
+      t = side * (0.68 + 0.32 * k);
     }
     t *= tint;
     c[i * 3] = t; c[i * 3 + 1] = t; c[i * 3 + 2] = t;
@@ -614,7 +620,7 @@ export class Stage {
       const capZ = Math.max(0.12, b.hz - inset - 0.22);
       const cap = new THREE.BoxGeometry(capX * 2, 0.09, capZ * 2);
       boxFaceUV(cap, STRUCT_TILE);
-      boxFaceTint(cap, 0.045, (KIND_TINT[b.kind] ?? 1) * 1.12, { top: 1.9, side: 0.35, under: 0.2 });
+      boxFaceTint(cap, 0.045, (KIND_TINT[b.kind] ?? 1) * 1.12, { top: 1.9, side: 0.62, under: 0.3 });
       cap.rotateY(b.yaw || 0);
       cap.translate(b.x, b.top + 0.03, b.z);
       solids.push(cap);
@@ -639,8 +645,15 @@ export class Stage {
       // Contact darkening on the deck. Even with shadow maps on, a block needs
       // an ambient occlusion pool to stop reading as a decal — and at LOW tier
       // this is the only shadow there is.
-      const pad = 0.55;
-      const dec = new THREE.PlaneGeometry((b.hx + pad) * 2.15, (b.hz + pad) * 2.15);
+      //
+      // Sized as CONTACT, not as shadow. At 0.55 m of pad and a 2.15x blow-up a
+      // 2.6 m block laid a 8 m smudge over the deck, measured at a median of 16
+      // against a deck of 95 — four times the footprint of the block and darker
+      // than the real cast shadow beside it, which is exactly how an AO pool
+      // ends up impersonating the lighting. Tight and shallow now: it darkens
+      // the joint and stops.
+      const pad = 0.24;
+      const dec = new THREE.PlaneGeometry((b.hx + pad) * 1.5, (b.hz + pad) * 1.5);
       dec.rotateX(-Math.PI / 2);
       dec.rotateY(b.yaw || 0);
       dec.translate(b.x, 0.016, b.z);
@@ -759,7 +772,7 @@ export class Stage {
         map: sp.shadow,
         color: 0x000000,
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.34,
         depthWrite: false,
         toneMapped: false,
         fog: false,
@@ -797,8 +810,17 @@ export class Stage {
       key.shadow.normalBias = 0.022;
       // Tight penumbra. A soft shadow on a dark floor is invisible; a crisp
       // shadow on a bright deck is the contact cue the whole scene was missing.
-      key.shadow.radius = 1.2;
-      key.shadow.intensity = 1.0;
+      // 1.2 was tight enough that the 2048 map's stair-stepping was visible on
+      // the long diagonal edge a block throws across the deck.
+      key.shadow.radius = 2.2;
+      // NOT 1.0. At full intensity the key is the only meaningful light on the
+      // deck, so a shadow removes ~90% of the value and the deck drops from 95
+      // to single digits: the shadow stops being shade and becomes a hole cut
+      // in the floor, and every pixel of it lands in the crushed-black mass.
+      // At 0.86 the shadowed deck still falls a long way — this is a hard-light
+      // arena, not an overcast one — but it keeps enough value to read as the
+      // same floor in shade, which is the whole point of casting it.
+      key.shadow.intensity = 0.86;
     }
     this.group.add(key, key.target);
     this.lights.key = key;
@@ -811,16 +833,34 @@ export class Stage {
     this.group.add(fill);
     this.lights.fill = fill;
 
-    // Warm bounce off the deck. Grazing, low, and warm regardless of how cool
-    // the arena is, so undersides and shadow planes pick up a hot edge instead
-    // of going the same blue as everything else.
-    const bounce = new THREE.DirectionalLight(t.hazard ?? 0xffb01f, t.sunIntensity * 0.1);
-    bounce.position.set(-t.sunDir[0] * 10, -6, -t.sunDir[2] * 10);
+    // Warm counter-kick off the deck, and the most important light in the rig
+    // after the key.
+    //
+    // It used to sit at y = -6, i.e. UNDER the floor, so the only surfaces it
+    // could reach were undersides nobody ever sees; the four side planes of
+    // every block that face away from the sun were lit by nothing at all and
+    // measured a median of 2/255. A block is not a silhouette, it is an object,
+    // and an object needs a second read on its shadow side.
+    //
+    // So: low over the deck from the anti-sun quadrant, warm, and grazing. Its
+    // elevation is the whole trick — at 0.16 of the way up it lands 0.16 on the
+    // deck (which is already the brightest thing in frame and does not want the
+    // help) and up to 0.69 on a vertical plane, so it separates the sides from
+    // the floor instead of flattening them together. Warm because everything
+    // else here is blue: the shadow side of a block is now the one place in the
+    // arena where the accent colour is doing structural work rather than trim.
+    const bounce = new THREE.DirectionalLight(t.bounceColour ?? t.hazard ?? 0xffb01f, t.sunIntensity * 0.30);
+    bounce.position.set(-t.sunDir[0] * 26, 2.7, -t.sunDir[2] * 26);
     this.group.add(bounce);
     this.lights.bounce = bounce;
 
-    // Sky/ground ambient, kept low: this is the term that lifts blacks.
-    const hemi = new THREE.HemisphereLight(t.skyTop, t.wall, 0.4);
+    // Sky/ground ambient. The ground half is warm and carries most of the
+    // weight: a hemisphere's ground term barely touches an up-facing plane
+    // (the deck reads almost pure sky) and lands at full half-strength on every
+    // vertical face, which is exactly the distribution the frame needs. This is
+    // the term that lifts blacks, so it is still rationed — but rationed is not
+    // the same as absent, and 0.4 of two near-black colours was absent.
+    const hemi = new THREE.HemisphereLight(t.skyTop, t.groundBounce ?? 0x4a3524, 0.95);
     this.group.add(hemi);
     this.lights.hemi = hemi;
 

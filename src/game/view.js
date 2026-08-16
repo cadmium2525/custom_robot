@@ -80,7 +80,21 @@ export class GameView {
           // Multiply, not alpha-over: a contact shadow should darken whatever
           // surface it lands on rather than paint grey on top of it, which is
           // what let the previous version wash out under the exposure grade.
+          //
+          // `premultipliedAlpha` is NOT optional here, and its absence is why
+          // defect #14 said nothing casts a shadow. three's WebGLState has no
+          // straight-alpha form of MultiplyBlending: it hits
+          //   error('MultiplyBlending requires material.premultipliedAlpha = true')
+          // and breaks out of the switch WITHOUT issuing a gl.blendFunc, so the
+          // blob was drawn with whatever blend state the previous transparent
+          // object happened to leave bound — usually additive or normal, either
+          // of which composites a pure-black sprite to nothing at all.
+          // With the flag set the state machine emits
+          //   blendFuncSeparate(DST_COLOR, ONE_MINUS_SRC_ALPHA, ZERO, ONE)
+          // i.e. dst * (1 - a) for a black source, which is the honest multiply
+          // the comment above always claimed.
           blending: THREE.MultiplyBlending,
+          premultipliedAlpha: true,
           color: 0x000000,
           toneMapped: false,
           fog: false,
