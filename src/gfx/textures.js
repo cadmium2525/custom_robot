@@ -758,7 +758,16 @@ function galleryBase(size) {
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const u = x / size, v = y / size;
+      // Same flipY correction as the wall, and it has to match galleryEmissive
+      // below texel for texel or the crowd lights come off the seats. ringStrip
+      // puts UV v = 0 on loop A — the rail edge — and v = 1 on loop B, the back
+      // of the rake; the canvas uploads flipped, so UV v = 1 - y/size. Taken
+      // raw, the arena throw below ran backwards: the front rows sitting in the
+      // deck's own bounce were painted onto the ROOF, and the cold, near-black
+      // back rows were painted along the rail, directly above the cornice. That
+      // is a bowl lit from the ceiling down, which is the one direction this
+      // arena has no light coming from.
+      const u = x / size, v = 1 - y / size;
       const i = y * size + x;
       const o = i * 4;
 
@@ -784,7 +793,23 @@ function galleryBase(size) {
       // room receding from the fight, and it costs nothing.
       const thro = 0.14 + 0.86 / (1 + v * v * 9);
 
-      let l = (0.05 + grime * 0.045) + thro * 0.235;
+      // 0.235 was tuned while the ramp was upside down, so it was only ever
+      // judged on the DARK tail: the band above the cornice — the only part of
+      // the rake the camera actually sees, the rest being hidden behind the
+      // jumbotron — was sampling thro 0.23-0.32. Turning the ramp the right way
+      // up hands that same band thro 0.55-1.0, which is 2.7x the radiance it was
+      // authored at. The gallery went over the 1.04 bloom threshold along the
+      // full width of the frame, and with a six-mip Kawase pyramid a lit band up
+      // there does not stay up there: it bled down the whole image, lifting the
+      // deck the robots are read against from 81.1 to 85.6 and taking ROBOT 1's
+      // invisible contour from 4.0% to 8.9%.
+      //
+      // 0.086 puts the VISIBLE band back at the radiance it was actually tuned
+      // to, and the correction is then free — the ramp still runs the right way,
+      // so the rows at the rail sit in the deck's bounce and the bank still
+      // falls away into the roof, which is also what makes the warm/cool split
+      // below land warm at the rail instead of warm at the ceiling.
+      let l = (0.05 + grime * 0.045) + thro * 0.086;
       // Local contrast goes UP as the base value goes up, otherwise the rows
       // stop reading as rows the moment they stop being black.
       l *= 1 - gapU * 0.78;
@@ -841,7 +866,10 @@ function galleryEmissive(theme, size) {
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const u = x / size, v = y / size;
+      // Must match galleryBase's v exactly — see the note there. These two maps
+      // index the same seat lattice, so a flip applied to one and not the other
+      // would light the gaps between the rows instead of the seats in them.
+      const u = x / size, v = 1 - y / size;
       const o = (y * size + x) * 4;
 
       const rowF = v * GALLERY_ROWS, row = Math.floor(rowF), rv = rowF - row;
