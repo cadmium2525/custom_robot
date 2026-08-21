@@ -133,6 +133,13 @@ const freeze = (page) => page.evaluate(() => {
   g.shockTimer = 0;
   g.hitstop = 0;
 
+  // Pin the effect clock to a fixed absolute value. Nothing downstream needs it
+  // to be the real elapsed time — every effect ages against `uTime - birth` —
+  // and pinning it means every birth time, every uniform and every animated
+  // grade term in the sheet is the same number on every run instead of being
+  // offset by however long the browser took to boot.
+  g.engine.clock.elapsed = 1000;
+
   return g.engine.clock.elapsed;
 });
 
@@ -190,19 +197,55 @@ async function boot(browser) {
   return { context, page, errors };
 }
 
+/**
+ * `startMatch` defaults its seed to `Math.random()`. Without one pinned here the
+ * 380 ticks below are a different fight every run: the robots end up somewhere
+ * else, the blast is ignited at their midpoint, and the crop lands on a
+ * different piece of arena — so two sheets taken minutes apart are not of the
+ * same shot and cannot be compared. Same fixed value the other capture tools
+ * use.
+ */
+const MATCH_SEED = 0x5eed1234;
+
+/** Seed for the effects layer's own jitter. See `VFX.seedJitter`. */
+const VFX_SEED = 0x0b1a5701;
+
 async function enterMatch(page, ticks = 380) {
-  await page.evaluate(() => {
+  await page.evaluate((seed) => {
     const g = window.__game;
-    g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'grid', loadouts: g.loadouts });
+    g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'grid', loadouts: g.loadouts, seed });
     g.setDemo(true);
-  });
+  }, MATCH_SEED);
   await frames(page, 2);
+  // Freeze the fixed step here, not in `freeze()` further down. Between the two
+  // there are several rendered frames, and a rendered frame under software GL is
+  // worth anywhere from one to fifteen sim ticks (`acc += dt` with dt clamped
+  // only above 250 ms) — so the fight kept moving by a load-dependent amount
+  // after the fast-forward, the blast is ignited at the two robots' midpoint,
+  // and the sheet was of a different moment and a different crop every run.
+  await page.evaluate(() => { window.__game.engine.paused = true; });
   await page.evaluate((n) => window.__game.fastForward(n), ticks);
-  // Real frames so trails, camera damping and the interpolator settle. The rig
-  // is exponential and `fastForward` teleports the fight a long way from where
-  // the camera was last pointed, so it needs a run-up: freeze it mid-swing and
-  // the sheet is shot from a place the game would never actually frame from.
-  await frames(page, 18);
+  // The rig has to catch up before the freeze: `fastForward` teleports the fight
+  // a long way from wherever the camera was last pointed, and freezing it
+  // mid-swing shoots the sheet from a place the game would never frame from.
+  //
+  // It is settled by hand on a fixed 1/60 delta rather than by rendering real
+  // frames, because a real frame damps by the *wall-clock* delta and a software
+  // GL frame is worth anywhere between 50 ms and half a second depending on how
+  // loaded the box is. Four seconds of fixed-step damping converges the
+  // exponential to float precision from any starting pose, so the camera lands
+  // in exactly the same place on every run — which is the whole point of a
+  // before/after sheet.
+  await page.evaluate((n) => {
+    const g = window.__game;
+    let t = 0;
+    for (let i = 0; i < n; i++) {
+      g.rig.update(g.world, g.view.prepare(1), g.localIndex, 1 / 60, t);
+      t += 1 / 60;
+    }
+    g.view.update(0, 1, g.engine.clock.elapsed);
+  }, 240);
+  await frames(page, 2);
 }
 
 /**
@@ -368,7 +411,15 @@ async function runLifetime(browser, effect) {
   const t0 = await freeze(page);
   // Wipe the firefight already in flight so the sheet shows this effect and not
   // a hundred stale tracers. The wide shot at the end keeps the staging read.
-  await page.evaluate(() => window.__game.view.vfx.clear());
+  // ...and reseed the jitter, so the lobes, the spark cone and the debris
+  // spread are the same on every run. The firefight before the freeze has
+  // already pulled an unknown number of values out of `vfxRng`, so seeding at
+  // boot would not be enough — it has to happen here, right before the spawn.
+  await page.evaluate((seed) => {
+    const v = window.__game.view.vfx;
+    v.clear();
+    v.seedJitter(seed);
+  }, VFX_SEED);
   await frames(page, 1);
 
   let centre = { x: VP.width / 2, y: VP.height / 2 };

@@ -1136,8 +1136,13 @@ export function wallTexture(theme, size = 512) {
             const lo = Math.abs(((pv * 9) % 1) - 0.5);
             const slot = 1 - smoothstep(0.2, 0.36, lo);
             h -= slot * 0.5;
-            l *= 1 - slot * 0.62;
-            metal += slot * 0.25;
+            // A louvre slot is a shadow between two blades, and it was reading
+            // as a black bar: 0.62 off the albedo AND a quarter more metalness
+            // (which removes the diffuse term outright) on a wall that is
+            // already the darkest surface in the arena. The normal map does most
+            // of the work of selling a louvre anyway.
+            l *= 1 - slot * 0.46;
+            metal += slot * 0.1;
           } else if (pr > 0.5) {
             const mk = stencilMark(pid, (pu - 0.3) / 0.4, (pv - 0.42) / 0.16);
             paint = mk * 0.62;              // chalky stencil paint, not glowing
@@ -1155,8 +1160,11 @@ export function wallTexture(theme, size = 512) {
         }
       } else if (v < V_CAP) {
         // Service gutter: a deep dark recess carrying the perimeter light rail.
+        // At 0.16 of an albedo that is itself dark this course was a black
+        // stripe with a glowing line in it, running the full width of the top
+        // of every frame. A recess is a value step, not a hole.
         const gv = (v - V_GUTTER) / (V_CAP - V_GUTTER);
-        l = 0.16 + grunge * 0.06;
+        l = 0.3 + grunge * 0.1;
         h = -0.55;
         rough += 0.1;
         // The rail itself: thin, continuous, and the only horizontal glow line

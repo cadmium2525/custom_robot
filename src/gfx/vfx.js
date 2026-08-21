@@ -21,7 +21,7 @@ import { Noise } from './noise.js';
 import { EV, PK } from '../sim/constants.js';
 import { GUNS, BOMBS, PODS } from '../sim/parts.js';
 import { MAX_PROJ } from '../sim/world.js';
-import { vfxRng, clamp } from '../core/mathx.js';
+import { vfxRng, clamp, Rng } from '../core/mathx.js';
 
 // ---------------------------------------------------------------------------
 // Local sprite set
@@ -2037,6 +2037,23 @@ export class VFX {
     for (let i = 0; i < this.lights.length; i++) {
       this.lights[i].visible = this.lights[i].visible && settings.lights >= 4;
     }
+  }
+
+  /**
+   * Reseed the visual-jitter RNG.
+   *
+   * `vfxRng` is seeded from `Math.random()` at module load, and that is right
+   * for play: two grenades landing in the same crater should not break up into
+   * the same seven billows. It is fatal for measurement. Every capture of an
+   * explosion is therefore of a *different* explosion, so a sheet shot before a
+   * change and a sheet shot after it differ by the change plus a fresh set of
+   * random lobes, and no per-frame number on them is attributable to anything.
+   *
+   * Capture harnesses call this immediately before igniting. Nothing in
+   * gameplay calls it, so play keeps its variety.
+   */
+  seedJitter(seed) {
+    vfxRng.load(new Rng((seed >>> 0) || 1).save());
   }
 
   clear() {

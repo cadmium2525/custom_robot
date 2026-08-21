@@ -389,10 +389,14 @@ export class Stage {
     ), 1.5));                                     // lit top plane of the beam
     this._struct.push(flatTint(ringStrip(
       rectLoop(outHx, outHz, h), rectLoop(outHx, outHz, h - corniceH), STRUCT_TILE
-    ), 0.5));
+    ), 0.62));
+    // Shadowed soffit under the beam. Dark, because it faces down and away from
+    // everything — but a soffit in shade is still a soffit, and at 0.28 of an
+    // already dark tint this face measured 0/255 across the whole top of the
+    // frame. "Shadow side" has to mean a lower value, not an absence.
     this._struct.push(flatTint(ringStrip(
       rectLoop(outHx, outHz, h - corniceH), rectLoop(b.hx + 0.25, b.hz + 0.25, h - corniceH - 0.35), STRUCT_TILE
-    ), 0.28));                                    // shadowed soffit under the beam
+    ), 0.46));
 
     // --- Spectator galleries ------------------------------------------------
     // A raked bank of seats is the single best scale reference available: the
@@ -461,7 +465,7 @@ export class Stage {
       this._struct.push(flatTint(ringStrip(
         rectLoop(sHx + 0.3, sHz + 0.3, screenBase - 0.35),
         rectLoop(sHx + 0.3, sHz + 0.3, screenBase), STRUCT_TILE
-      ), 0.4));
+      ), 0.55));
       this._struct.push(flatTint(ringStrip(
         rectLoop(sHx + 0.3, sHz + 0.3, screenBase + screenH),
         rectLoop(sHx + 0.3, sHz + 0.3, screenBase + screenH + 0.5), STRUCT_TILE
@@ -495,7 +499,7 @@ export class Stage {
       const inHx = b.hx + 3.0, inHz = b.hz + 3.0;
       this._struct.push(flatTint(ringStrip(
         rectLoop(inHx, inHz, ry), rectLoop(sHx, sHz, ry + 1.1), STRUCT_TILE
-      ), 0.34));
+      ), 0.5));
       this._struct.push(flatTint(ringStrip(
         rectLoop(inHx, inHz, ry - 0.7), rectLoop(inHx, inHz, ry), STRUCT_TILE
       ), 0.9));
@@ -675,11 +679,19 @@ export class Stage {
 
       const merged = mergeGeometries(solids);
       ensureAOChannel(merged);
+      // Same argument as the architecture batch: the shared plating bake is
+      // authored at metalness 0.5-0.7, so a block's four side planes — which
+      // face away from the key by definition, that is what a side plane is —
+      // had no diffuse term to receive the bounce with and measured a median of
+      // 11/255 against a cap at 65. The lit-top/dark-side discipline survives
+      // (the envMap's bright half is BELOW the horizon, so it lifts sides and
+      // leaves caps alone), it just stops being lit-top/no-side.
       const mat = pbr(stex, {
         color: this.theme.struct ?? this.theme.wall,
         emissive: this.theme.accent,
         emissiveIntensity: 1.4,
-        envMapIntensity: 0.22,
+        metalness: 0.44,
+        envMapIntensity: 0.6,
         normalScale: 1.35,
       });
       mat.envMap = this.envMap;
