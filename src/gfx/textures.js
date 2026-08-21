@@ -1022,6 +1022,21 @@ export function hazardTexture(size = 64) {
  * Two bays per tile, hashed differently, so the repeat period is 2 bays and the
  * wall never reads as a single stamped module.
  */
+/**
+ * Peak amplitude of the perimeter wash, in the 0..1 sRGB space the emissive map
+ * is written in. 0.15 lands about 0.023 of linear radiance through the wall
+ * material's 1.15 emissive intensity — roughly half of what the wall returns
+ * from the rig, so the elevation reads as a lit surface without the wash
+ * becoming the only thing describing it.
+ */
+const WALL_WASH = 0.15;
+/**
+ * A sodium service lamp is orange; a grey wall lit by one is a desaturated
+ * amber, not a sheet of orange paint. Saturated warmth belongs to the hazard
+ * chevrons and the gate throat, which are small and are meant to be hot.
+ */
+const WASH_TINT = { r: 1.0, g: 0.80, b: 0.52 };
+
 export function wallTexture(theme, size = 512) {
   const key = `wall:${theme.key}:${size}`;
   if (cache.has(key)) return cache.get(key);
@@ -1164,6 +1179,29 @@ export function wallTexture(theme, size = 512) {
       // Grime pools down the wall and under every lip.
       l *= 1 - streak * 0.22;
 
+      // Perimeter wash.
+      //
+      // The service rail in the gutter is a real light source bolted to a real
+      // wall, and a real one throws DOWN the surface it is mounted on. Three of
+      // the four boundary walls face away from the key, so without this the
+      // only light they ever see is a bounce term; the elevation measured
+      // 90-100% below the black threshold and all the plating detail baked
+      // above was invisible.
+      //
+      // It goes in the emissive channel rather than the albedo for two reasons.
+      // A wash is light, not paint, so it must not scale with whatever the rig
+      // happens to be doing; and it lands only on this surface, so it cannot
+      // lift the deck the machines are read against — which raising ambient or
+      // the hemisphere would.
+      //
+      // Modulated by `l`, so every groove, vent slot and pilaster shadow the
+      // plating bake authored above stays dark inside it. A flat lift here
+      // would trade one featureless band for a brighter featureless band, and
+      // that is the failure this arena keeps being accused of.
+      const wash = WALL_WASH * clamp01(l) *
+        (v < V_GUTTER ? 0.18 + 0.82 * smoothstep(0.05, 0.72, v)
+                      : 0.62 * (1 - smoothstep(V_GUTTER, 1.0, v)));
+
       let r = base.r * l, g = base.g * l, b = base.b * l;
       r = mix(r, 0.52, paint); g = mix(g, 0.54, paint); b = mix(b, 0.56, paint);
       r = mix(r, warn.r * 0.85, hz);
@@ -1175,9 +1213,9 @@ export function wallTexture(theme, size = 512) {
       albedo[o + 2] = clamp01(b) * 255;
       albedo[o + 3] = 255;
 
-      emis[o] = clamp01(acc.r * e + warn.r * warm) * 255;
-      emis[o + 1] = clamp01(acc.g * e + warn.g * warm * 0.8) * 255;
-      emis[o + 2] = clamp01(acc.b * e + warn.b * warm * 0.6) * 255;
+      emis[o] = clamp01(acc.r * e + warn.r * warm + wash * WASH_TINT.r) * 255;
+      emis[o + 1] = clamp01(acc.g * e + warn.g * warm * 0.8 + wash * WASH_TINT.g) * 255;
+      emis[o + 2] = clamp01(acc.b * e + warn.b * warm * 0.6 + wash * WASH_TINT.b) * 255;
       emis[o + 3] = 255;
 
       orm[o] = clamp01(0.9 - pil * 0.35 + h * 0.2) * 255;

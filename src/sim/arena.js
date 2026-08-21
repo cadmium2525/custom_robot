@@ -61,12 +61,21 @@ export const ARENAS = [
       floor: 0x2b3442,
       deck: 0x5c6068,
       floorAccent: 0x2f6bd6,
-      struct: 0x39424f,
+      // The shell of the building is warm graphite, and that is the whole
+      // reason the arena's blues are allowed to be blue.
+      //
+      // A frame measured 41% cool coverage against 6% warm, which is not a cool
+      // arena, it is a tinted one — a blue cast has nothing to be a cast
+      // AGAINST. So the deck stays a neutral bright dielectric, the rim strips
+      // and the sky stay cold, and the built structure that surrounds both goes
+      // warm. Same luminance as the blue-grey it replaces to a fraction of a
+      // percent; only the hue moves.
+      struct: 0x4b4136,
       // A boundary wall at 0x232a35 has a linear albedo of 0.021 — it returns
       // two percent of everything that lands on it, so no rig can light it and
       // the surround measured 90%+ below the black threshold. Doubled, and it
       // is still less than half the deck.
-      wall: 0x333a45,
+      wall: 0x413a30,
       accent: 0x4aa8ff,
       emissive: 0x59b7ff,
       hazard: 0xffb01f,
