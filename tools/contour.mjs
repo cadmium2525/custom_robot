@@ -143,6 +143,18 @@ const SETTLE_FN = `(n) => {
     t += 1 / 60;
   }
   g.view.update(0, 1, t);
+
+  // Settling by hand is not enough on its own. \`paused\` gates only the fixed
+  // step; the engine still calls onRender every frame with the REAL wall-clock
+  // delta, and that damps the camera rig and the grade. Between this settle and
+  // the shutter there are two 700ms waits and a multi-second software-GL
+  // screenshot, so the rig kept sliding by an amount that depended on how loaded
+  // the machine was. Two runs at the same seed and commit differed by 7 points
+  // on the headline "invisible contour" figure — wider than any single round's
+  // improvement, which means every #24 number measured before this line existed
+  // carries that error bar.
+  g.engine.onRender = null;
+  if (g.engine.quality) g.engine.quality.auto = false;
   return true;
 }`;
 
