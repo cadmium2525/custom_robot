@@ -526,14 +526,25 @@
    Every stroke carries a black keyline. This sits over a bright arena floor
    half the time; white-on-nothing disappears. */
 
+/* Fail-visible, and that is the whole point of writing it this way.
+   The reticle used to default to `opacity: 0` and be switched on by an
+   `is-fight` class that `HUD.update()` writes. `update()` is only ever called
+   from the render callback, so anything that stops the render callback — the
+   capture harness detaching `engine.onRender` after a fast-forward, a stalled
+   frame loop, an early frame before the first update lands — leaves an arena
+   shooter with no crosshair and no error anywhere. A widget the player aims
+   with must be on unless something actively says otherwise, so the default is
+   now `1` and the only thing that hides it is the class set at round/match
+   end. The HUD root carries `is-hidden` outside a match, so this cannot leak
+   onto the menus. */
 .hud__reticle {
   position: absolute; left: 50%; top: 50%;
   width: 44px; height: 44px;
   transform: translate(-50%, -50%);
-  opacity: 0;
+  opacity: 1;
   transition: opacity .3s var(--ease);
 }
-.crv2-hud.is-fight .hud__reticle { opacity: 1; }
+.crv2-hud.is-over .hud__reticle { opacity: 0; }
 .ret__dot {
   position: absolute; left: 50%; top: 50%;
   width: 4px; height: 4px; margin: -2px;

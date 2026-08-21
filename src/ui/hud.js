@@ -387,6 +387,14 @@ export class HUD {
     if (world.phase !== s.phase) {
       s.phase = world.phase;
       this.el.classList.toggle('is-fight', world.phase === PHASE.FIGHT);
+      // `is-over` hides the reticle; `is-fight` no longer reveals it. Aiming
+      // furniture defaults to on and is taken away at the end of a round —
+      // see the note on .hud__reticle. Anything that stops this method being
+      // called then leaves the crosshair up rather than deleting it.
+      this.el.classList.toggle(
+        'is-over',
+        world.phase === PHASE.ROUND_END || world.phase === PHASE.MATCH_END,
+      );
     }
 
     // ---- local loadout gear ---------------------------------------------
