@@ -169,11 +169,21 @@
 
 /* Ground for the top readout. Four stops instead of two: a linear ramp to
    transparent bands visibly against a flat scene, and the review caught the
-   seam it left at y≈100. */
+   seam it left at y≈100.
+
+   The height carries `--safe-t` because this is the one top-anchored element in
+   the file that was NOT written in terms of it, and the first capture ever taken
+   with the insets forced (390x844, --safe-t: 47px) found what that costs: every
+   widget the scrim exists to sit under moves down by the notch, and the ramp
+   does not follow. The gear column ended at y=248 against a scrim that finished
+   at 158, so its bottom third — the BOMB/POD row and the mobility pips — sat on
+   bare arena while the top two thirds sat on the ramp. Adding the inset keeps
+   the geometry the ramp was tuned against, and on a device with no notch
+   `--safe-t` is 0 and this is character-for-character the old value. */
 .hud__scrim {
   position: absolute;
   left: 0; right: 0; top: 0;
-  height: 220px;
+  height: calc(220px + var(--safe-t));
   background: linear-gradient(180deg,
     rgba(2, 4, 9, .88) 0%,
     rgba(2, 4, 9, .72) 22%,
@@ -712,8 +722,15 @@
 
 /* ---- combo ---- */
 
+/* `top` is a percentage of the frame plus the top inset, and the inset is not
+   decoration. At 390x844 with no notch the gear column ends at y=201 and the
+   chain counter starts at y=203 — two pixels of clearance, which is the whole
+   budget. Force `--safe-t: 47px` and the column ends at 248 while a percentage
+   of the viewport does not move at all, so the counter is drawn 45px INSIDE the
+   BOMB/POD row. Every other top-anchored widget in this file already carries the
+   inset; this one was written as a fraction and missed it. */
 .hud__combo {
-  position: absolute; left: 50%; top: 24%;
+  position: absolute; left: 50%; top: calc(24% + var(--safe-t));
   transform: translateX(-50%);
   text-align: center;
   opacity: 0;
@@ -1702,10 +1719,21 @@
   gap: 6px;
 }
 .crv2-touch-on .gear__charge { width: auto; }
-.crv2-touch-on .gear__cds { gap: 6px; }
-.crv2-touch-on .cd { flex: 1; min-width: 0; padding: 5px 7px 5px 5px; gap: 6px; }
-.crv2-touch-on .cd__dial { width: 26px; height: 26px; }
-.crv2-touch-on .cd__kana { display: none; }
+/* P2: "BOMB and POD are drawn twice, in two different visual languages" — ring
+   gauges in the HUD column and circular buttons in the thumb cluster, one
+   screen, two widgets, the same two things. The half of that pair the player is
+   actually looking at is the button, because the thumb is already on it; the
+   half that carried the state was the chip in the opposite corner. `crv2:gear`
+   now drives the ring on each button (see HUD._publishGear and
+   TouchControls.setGear), so the duplicate comes out.
+   Scoped to `.crv2-touch-on`, which touch.js toggles in lockstep with the pad's
+   own visibility — the moment the buttons go away, over the pause menu or on a
+   phone driven by a gamepad, the chips come back and nothing is lost. What the
+   chip had and the button does not is the equipped part's NAME, and on a
+   portrait phone that was already `display: none` (see the phone block) because
+   it does not fit; the seconds-remaining number goes with it, which the ring
+   states continuously and the chip only ever stated once a second. */
+.crv2-touch-on .gear__cds { display: none; }
 /* Jump and dash charges are the whole of a robo's mobility budget, and on a
    phone they are also the two buttons the player is mashing. They were hidden
    everywhere except portrait, so a landscape phone flew blind. */
@@ -1778,7 +1806,7 @@
      of cutting across it, and because it still reaches zero it degrades to a
      normal top scrim the moment the stage grows a ceiling. */
   .hud__scrim {
-    height: 158px;
+    height: calc(158px + var(--safe-t));
     background: linear-gradient(180deg,
       rgba(2, 4, 9, .94) 0%,
       rgba(2, 4, 9, .88) 30%,
@@ -1820,7 +1848,7 @@
   .crv2-touch-on .hud__gear { top: calc(104px + var(--safe-t)); bottom: auto; width: min(36vw, 260px); }
 
   /* 220px of scrim is 56% of a 390px-tall screen. */
-  .hud__scrim { height: 130px; }
+  .hud__scrim { height: calc(130px + var(--safe-t)); }
 
   /* Pause was centred at the top — squarely on top of the round label and the
      match clock, which is the one number nobody can afford to lose. It goes
