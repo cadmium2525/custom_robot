@@ -1,12 +1,18 @@
-# HOLOSSEUM — Art Direction Gate Review, Round 2
+# HOLOSSEUM — Art Direction Gate Review
 
-Reviewing commit `10621f2`. Baseline is `shots/REVIEW.md`. Entries marked with a date of
-`a1fdf34` were verified by the previous critic against that commit and are not re-litigated
-unless a builder has since touched the code they cover.
+Rolling document. Round 2 reviewed `10621f2`; **round 4 (this pass) reviews `35d0e66`** and
+re-verifies every entry a builder has touched since. Entries still carrying a round-2 verdict were
+checked against `10621f2` and are not re-litigated unless the code under them moved.
 
-**STATUS: COMPLETE.**
+**STATUS: COMPLETE at `35d0e66`.** All sections filled, including the blind comparison and the
+verdict, both of which had been PENDING through three rounds.
 
-**VERDICT: NO. See the bottom of this file.**
+**VERDICT: NO — but for the first time the reason is a single, named, tractable problem rather than
+a list. See the bottom of this file.**
+
+*Correction to the round-2 header: it read "STATUS: COMPLETE / VERDICT: NO" while the verdict
+section at the bottom of the same file read PENDING. The header was aspirational. It has been
+rewritten to match what the document actually contains.*
 
 ---
 
@@ -304,14 +310,88 @@ capture path does not use it.
    fighting.
 3. **#14 — nothing casts a shadow.** The robots are decals on a floor; this is also half of why
    #24 fails.
-4. PENDING — VFX (#4/#7/#10/#32), pending the effect sheet.
-5. PENDING
+4. **VFX as a group — #4 explosion, #7 shockwaves, #10 tracers, #32 flares.** Ranked as one item
+   because they fail as one: every effect in this build is a *soft, desaturated, additive smudge*,
+   and the reference's effects are hard-edged saturated shapes with white cores. An arena fighter
+   is 40% effects by screen time. Whatever the silhouette does, a frame with a grey donut in it
+   loses the blind test on its own.
+5. **#5's residual — the emissive trim is brighter than every surface it bounds.** `matEmis` is
+   `MeshBasicMaterial` + `toneMapped:false`, so panel-edge lines sit at 120-180 while the plates
+   they describe sit at 15-40 on the title/garage rig. The machine reads as a cage of glowing wires
+   around dark voids. This is the same failure as item 1 seen from the inside: the *lines* are
+   winning the value hierarchy instead of the *forms*. Fixing it is a prerequisite for the
+   "saturated light toy" read, not a polish item after it.
+
+*This ranking is superseded by the re-ranked list in the VERDICT section at the bottom, which is
+written against `35d0e66` after re-verification. The list above is preserved as the round-2 view.*
 
 ---
 
 ## Blind comparison against a real CRV2 frame
 
-PENDING
+**This is the acceptance criterion, so it is stated plainly: shown our frame and a real Custom Robo
+V2 frame side by side and unlabelled, a person picks the CRV2 frame. We do not pass yet.**
+
+### Method, and its one honest limitation
+
+There is no CRV2 capture in this repository — `find` over the tree returns nothing, and the review
+harness has no reference plate. The comparison below is therefore against the reference *as
+described*, feature by feature, not against a pixel file. Every claim about our frame is measured
+or read at 1:1 from `shots/fight.png` (1600x900, tier 3, captured at `35d0e66`) plus `c5-r1-1x.png`
+(the player at true 1:1) and `c5-r2-4x.png` (the opponent at 4x). Every claim about CRV2 is a
+structural one — where the subjects sit, what carries the contrast, what carries the detail — not a
+claim about a specific screenshot, so it does not depend on which frame you pick.
+
+**A builder should drop one real CRV2 frame into the repo.** Three rounds of reviews have argued
+about a reference nobody can point at. It is the cheapest possible fix to this whole process.
+
+### What a CRV2 frame does, structurally
+
+1. **The two robots are the brightest, most saturated things on screen.** They are toys — flat-lit,
+   near-primary reds, blues, yellows, whites — and they sit on a stage that is deliberately duller
+   and darker than they are.
+2. **The stage is quieter than the subjects.** The floor is patterned, but it is *low-contrast*
+   patterning. Nothing on the floor clips to white. Nothing on the floor out-details a robot.
+3. **Both machines are legible at once.** The camera frames the *pair*. You always know what your
+   opponent is and roughly what it is doing.
+4. **Very few, very large forms per machine.** A CRV2 robot reads as four or five chunky masses.
+   You can describe its silhouette from memory after one frame.
+5. **The effects are enormous, hard-edged and saturated** — fat coloured bolts with white cores,
+   flat expanding rings, star bursts. They are drawn, not simulated.
+
+### What our frame does
+
+1. **Inverted.** Our player machine (`c5-r1-1x.png`) is dark navy and slate, values roughly 40-70,
+   standing on a deck whose plates run 110-140 and whose cyan rim rails clip near 255. The single
+   most saturated, brightest object in the frame is a *light rail on the floor*. The second is a
+   hazard chevron. The machines are the third and fourth. Measured, not asserted: the contour meter
+   reports ROBOT 1's body at 84.5 against a background of 96 — **the deck is brighter than the
+   robot standing on it.**
+2. **Inverted.** The louvred wall panels, the crate faces and the deck plating carry more legible
+   texture per square inch than either machine does. Four brown crates occupy more of the eye's
+   attention than the fight does.
+3. **Failed.** ROBOT 2 is 42x79px, 8.8% of frame height. At 1:1 you can tell it is a robot and
+   nothing else. `c5-r2-4x.png` had to be magnified 4x before its shape could be described at all.
+4. **Failed.** At true 1:1 the player's torso is a mosaic of eight or nine small blue and orange
+   rectangles; the shoulders read as two pale blocks. There is no four-or-five-mass read. This is
+   the one place ours is objectively *more* detailed than the reference and objectively *worse* for
+   it.
+5. Deferred to the VFX entries (#4/#7/#10/#32) below.
+
+### Where ours actually wins
+
+It should be said, because it is the reason this project is close rather than hopeless. Our frame
+has genuinely better craft than the reference in three places: the arena is a **built place** with
+real architecture, scale reference and a light plan (#12, and it is very good); the HUD typography
+and gauge design are better than any N64 HUD ever was (#6, #11, #22); and the material work on the
+crates and deck is a level of finish CRV2 never attempted. If the machines were cast correctly,
+this frame would beat the reference.
+
+### The verdict of the blind test, in one sentence
+
+A person shown both frames unlabelled picks CRV2, and picks it in under a second, because in the
+CRV2 frame their eye lands on two robots and in ours it lands on a cyan floor rail — **we have
+built an excellent stage and then painted the actors the colour of the scenery.**
 
 ---
 
