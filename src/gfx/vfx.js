@@ -2203,8 +2203,13 @@ export class VFX {
     this.smoke.material.uniforms.uPixelRatio.value = pr;
     this.energy.material.uniforms.uPixelRatio.value = pr;
     // Streak alignment happens in NDC, so it needs the frame's aspect to know
-    // which way "along the velocity" actually points on screen.
-    this.sparks.material.uniforms.uAspect.value = this.camera?.aspect || 16 / 9;
+    // which way "along the velocity" actually points on screen. Both aligned
+    // batches need it: on a phone held upright the difference between the real
+    // aspect and the 16/9 the uniform is initialised to is enough to swing a
+    // plume noticeably off its own flight path.
+    const asp = this.camera?.aspect || 16 / 9;
+    this.sparks.material.uniforms.uAspect.value = asp;
+    this.energy.material.uniforms.uAspect.value = asp;
 
     this.sparks.flush(time);
     this.smoke.flush(time);
