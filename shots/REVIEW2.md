@@ -1,9 +1,12 @@
 # HOLOSSEUM — Art Direction Gate Review
 
 Rolling document. Round 2 reviewed `10621f2`; round 4 reviewed `35d0e66`; **round 5 (this pass)
-reviews `b28ff8c`** and re-runs the blind comparison, which is the acceptance criterion.
+opened at `b28ff8c` and closes at `da3253a`**, and re-runs the blind comparison, which is the
+acceptance criterion.
 
-**STATUS: COMPLETE at `b28ff8c`.** Blind comparison re-scored, verdict re-issued.
+**STATUS: IN PROGRESS — the blind comparison is being re-scored at `da3253a`. The header will read
+COMPLETE only when the VERDICT section at the bottom of this file says something other than
+PENDING, and it is the section, not this line, that decides.**
 
 **VERDICT: see the VERDICT section at the bottom of this file, which is the only place a verdict is
 recorded. This header deliberately does not restate it — the last two rounds both shipped a header
