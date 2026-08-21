@@ -134,7 +134,18 @@ export const ARENAS = [
       deck: 0x7a6f62,
       floorAccent: 0xff6a1a,
       struct: 0x4b3b2e,
-      wall: 0x2e2119,
+      // Same arithmetic that condemned the grid's wall, run on this one: an
+      // 0x2e2119 boundary has a linear albedo of 0.017, so it returns under two
+      // percent of everything that reaches it and no rig can light it — the
+      // foundry measured 38% of the frame below the black threshold with a wall
+      // median of 25 against a deck of 96.
+      //
+      // Lifted 2.6x, and lifted COLD. The foundry measured 78% warm coverage
+      // against 1% cool, and the boundary is a quarter of the frame: making it
+      // one more orange plane is what "monochrome" means. Blued dark steel under
+      // the mercury wash is the counter-note this theme's own comment asks for
+      // and never got.
+      wall: 0x383c4a,
       accent: 0xff8c2a,
       emissive: 0xff5a10,
       hazard: 0xffd24a,
@@ -185,7 +196,16 @@ export const ARENAS = [
       deck: 0x646c78,
       floorAccent: 0x7de2ff,
       struct: 0x36414f,
-      wall: 0x1d242f,
+      // 0x1d242f is a linear albedo of 0.017 — the same unlightable surface the
+      // grid was rebuilt to get rid of, left in place here. Orbital measured a
+      // wall median of 29 and 33% of the frame below the black threshold.
+      //
+      // Lifted 2.7x and taken warm, for the reason the grid's was: this arena
+      // measured 51% cool coverage against 2.7% warm, and a blue cast with
+      // nothing to be cast against is not cool, it is tinted. The shell of the
+      // ring is painted steel under sodium service lamps; the cyan belongs to
+      // the rails and the deck.
+      wall: 0x443b2f,
       accent: 0x7de2ff,
       emissive: 0x9df0ff,
       hazard: 0xff9a2e,

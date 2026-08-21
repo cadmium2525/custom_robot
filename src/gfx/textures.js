@@ -1035,7 +1035,39 @@ const WALL_WASH = 0.15;
  * amber, not a sheet of orange paint. Saturated warmth belongs to the hazard
  * chevrons and the gate throat, which are small and are meant to be hot.
  */
-const WASH_TINT = { r: 1.0, g: 0.80, b: 0.52 };
+const WASH_TINT_DEFAULT = { r: 1.0, g: 0.80, b: 0.52 };
+/** Luminance the wash is held at, whatever colour it is tinted. */
+const WASH_LUMA = 0.2126 * WASH_TINT_DEFAULT.r + 0.7152 * WASH_TINT_DEFAULT.g
+                + 0.0722 * WASH_TINT_DEFAULT.b;
+
+/**
+ * What temperature the perimeter wash is, per arena.
+ *
+ * The wash was hard-coded amber, which is right for two of the three arenas and
+ * exactly wrong for the third: the foundry measured 78% warm coverage against
+ * 1% cool, and the boundary wall — a quarter of the frame — was one more orange
+ * plane painting orange light onto orange plating. An arena does not become
+ * warm by having nothing cool in it, it becomes monochrome.
+ *
+ * So the maintenance lamps take the arena's COUNTER temperature, which every
+ * theme already declares as `bounceColour` (the colour of the light that
+ * describes whatever the key does not reach). Grid and orbital keep an amber
+ * wash because that is what their counter-note already was; the foundry's goes
+ * mercury-blue, which is also what the real fixture in a hot mill is.
+ *
+ * Held at the amber tint's luminance whatever the hue, and pulled back toward
+ * white by `toWhite`, because a wall seen through a lamp is not a wall painted
+ * in the lamp's colour — a fully saturated tint would swap one monochrome for
+ * another. The spill desaturates hard; the lens itself barely at all.
+ */
+function washTint(theme, toWhite) {
+  const c = hex(theme.washColour ?? theme.bounceColour ?? 0xffcc85);
+  const m = (v) => v * (1 - toWhite) + toWhite;
+  const r = m(c.r), g = m(c.g), b = m(c.b);
+  const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const k = l > 1e-4 ? WASH_LUMA / l : 1;
+  return { r: Math.min(1, r * k), g: Math.min(1, g * k), b: Math.min(1, b * k) };
+}
 
 export function wallTexture(theme, size = 512) {
   const key = `wall:${theme.key}:${size}`;
@@ -1045,6 +1077,11 @@ export function wallTexture(theme, size = 512) {
   const base = hex(theme.wall);
   const acc = hex(theme.accent);
   const warn = hex(theme.hazard ?? 0xf5b21e);
+  // Spill on the plating, and the lens of the fixture throwing it. Same lamp,
+  // so the same colour: a warm bulb over a blue pool of its own light is the
+  // kind of detail that reads as "nobody looked at this".
+  const WASH_TINT = washTint(theme, 0.40);
+  const LAMP_TINT = washTint(theme, 0.08);
 
   const albedo = new Uint8ClampedArray(size * size * 4);
   const orm = new Uint8ClampedArray(size * size * 4);
@@ -1221,9 +1258,9 @@ export function wallTexture(theme, size = 512) {
       albedo[o + 2] = clamp01(b) * 255;
       albedo[o + 3] = 255;
 
-      emis[o] = clamp01(acc.r * e + warn.r * warm + wash * WASH_TINT.r) * 255;
-      emis[o + 1] = clamp01(acc.g * e + warn.g * warm * 0.8 + wash * WASH_TINT.g) * 255;
-      emis[o + 2] = clamp01(acc.b * e + warn.b * warm * 0.6 + wash * WASH_TINT.b) * 255;
+      emis[o] = clamp01(acc.r * e + LAMP_TINT.r * warm + wash * WASH_TINT.r) * 255;
+      emis[o + 1] = clamp01(acc.g * e + LAMP_TINT.g * warm + wash * WASH_TINT.g) * 255;
+      emis[o + 2] = clamp01(acc.b * e + LAMP_TINT.b * warm + wash * WASH_TINT.b) * 255;
       emis[o + 3] = 255;
 
       orm[o] = clamp01(0.9 - pil * 0.35 + h * 0.2) * 255;

@@ -1099,6 +1099,14 @@ export class VFX {
     // Rate limiting: identical impacts inside one frame collapse into one.
     this._impactBudget = 0;
     this._thrusterAccum = [0, 0];
+
+    // Last frame's delta, kept so emitters that are *called* per frame can
+    // still emit per second. `thruster()` is invoked from `view.update` before
+    // `vfx.update` runs, so it reads the previous frame's value; that is one
+    // frame of lag on a rate, which is invisible, and it is the difference
+    // between a plume that is the same length at 30fps and at 144fps and one
+    // that is not.
+    this.frameDt = 1 / 60;
   }
 
   // -------------------------------------------------------------------------
@@ -1786,8 +1794,13 @@ export class VFX {
 
   thruster(index, pos, dx, dy, dz, intensity, teamColor) {
     // Emit on a budget rather than every frame — the visual difference is nil
-    // and the buffer traffic is halved.
-    this._thrusterAccum[index] += intensity * 0.9;
+    // and the buffer traffic is halved. The budget accrues per *second*, not
+    // per frame: `+= intensity * 0.9` made the plume twice as dense at 120fps
+    // as at 60, and — because a spawn draws six values out of `vfxRng` — it
+    // also made every downstream random effect depend on how many frames had
+    // been drawn, which is why two capture runs of the same frozen blast were
+    // two different blasts.
+    this._thrusterAccum[index] += intensity * 54 * this.frameDt;
     if (this._thrusterAccum[index] < 1) return;
     this._thrusterAccum[index] -= 1;
 
@@ -1987,6 +2000,9 @@ export class VFX {
   update(dt, time, camera) {
     this.time = time;
     if (camera) this.camera = camera;
+    // Clamped: a tab that was backgrounded hands back a delta of seconds, and
+    // an emitter that believes it would dump a whole plume in one frame.
+    this.frameDt = dt > 0 ? Math.min(dt, 1 / 15) : 0;
 
     const pr = 1;
     this.sparks.material.uniforms.uPixelRatio.value = pr;

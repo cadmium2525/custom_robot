@@ -2329,7 +2329,66 @@ export class RoboPreview {
     this.loadout = loadout;
     this.model = new RoboModel(loadout, this.teamColor, this.settings, this.envMap);
     this.model.preview = true;
+    this._lightForMenu();
     this.group.add(this.model.group);
+  }
+
+  /**
+   * Re-light the shell for a room that does not exist (defect #5, residual).
+   *
+   * The same machine, the same materials, the same emissive strips: measured on
+   * the pinned frames it comes out at body mean 87 in the arena and MEDIAN 32 in
+   * the garage, with most of the model's area between 8 and 40. The trim strips
+   * are MeshBasicMaterial with toneMapped off, so they are identical in both
+   * places — which means they sit under the plates they bound in the arena and
+   * over them here. That asymmetry is the whole of the residual complaint, and
+   * it is why the answer is to bring the plates up rather than the lines down.
+   *
+   * The plates are down because the menu has no arena. In a match the machine
+   * stands on a near-white deck between lit walls and every downward and
+   * away-facing plate is carried by bounce; on the title screen it stands on a
+   * 1.4 m pad in a black void, so the key is the only light in the frame and
+   * everything it does not touch receives nothing at all.
+   *
+   * The shell's bounce card is exactly the stand-in for a missing room: it is
+   * added to the INDIRECT diffuse and multiplied by the albedo, so the panel
+   * bake, the vertex paint and the AO all survive it and no value relationship
+   * the paint established is disturbed — the whole ladder just moves up. Up and
+   * down stay different colours and stay far apart so the machine keeps a top
+   * and a bottom; this is a bigger room, not an ambient wash.
+   *
+   * Scoped to RoboPreview on purpose. Setting these numbers on RoboModel would
+   * double-light the arena machines, which already read.
+   */
+  _lightForMenu() {
+    const u = this.model.matShell?.userData?.u;
+    if (u) {
+      // setRGB and not setHex, deliberately: a hex is capped at 1.0 per channel
+      // and 1.0 is not enough. Swept live against the title frame, the shell's
+      // response to this card is strongly sublinear — ACES is already
+      // compressing the lit faces — so the arena's 0x74889f (0.18 linear) buys
+      // the plates about four levels here. It takes an order of magnitude more
+      // to move the machine's body from a median of 37 to 60, and there is
+      // nothing unphysical about that number: it is the irradiance of a room,
+      // and the arena gets the same amount from its deck and walls for free.
+      u.uFillUp.value.setRGB(1.70, 1.90, 2.20);
+      u.uFillDown.value.setRGB(0.55, 0.45, 0.52);
+      // The DARK kicker comes down as the base goes up. It exists to rescue a
+      // machine standing where no light reaches; stacked on top of a card this
+      // size it would close the gap between the shadow side and the lit side
+      // and the model would lose its form. Measured, the torso's lower quartile
+      // stays at 20 while its median goes to 60 — the recesses stay recesses.
+      u.uFillDark.value = 0.70;
+    }
+    // The garage's environment is a small dark studio probe, so the shell can
+    // afford more of it than it can under an arena sky. Still well under 1:
+    // armour is dielectric here (see armorTexture) and a hot env on a dielectric
+    // is a haze over the paint, not a highlight on it.
+    this.model.matShell.envMapIntensity = 0.9;
+    // The frame is the model's line art and stays near-black by design, but at
+    // 0.55 in a room with no light in it the joints between plates go to a flat
+    // 4/255 and the line art stops being a line and becomes a hole.
+    if (this.model.matFrame) this.model.matFrame.envMapIntensity = 0.95;
   }
 
   setLoadout(loadout) {
