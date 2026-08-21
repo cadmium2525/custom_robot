@@ -403,16 +403,19 @@ function cropRect(centre, side) {
  * back black. The screenshot is decoded back inside the page instead, which is
  * the one place with an image decoder.
  */
-async function analyze(page, buf) {
-  return page.evaluate(async (b64) => {
+async function analyze(page, buf, rect = null) {
+  return page.evaluate(async ([b64, r]) => {
     const bin = atob(b64);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
-    const c = new OffscreenCanvas(bmp.width, bmp.height);
+    // Held before the close below: an ImageBitmap reports 0x0 once it has been
+    // closed, and the difference against the plate is measured after that.
+    const bw = bmp.width, bh = bmp.height;
+    const c = new OffscreenCanvas(bw, bh);
     const g = c.getContext('2d');
     g.drawImage(bmp, 0, 0);
-    const d = g.getImageData(0, 0, bmp.width, bmp.height).data;
+    const d = g.getImageData(0, 0, bw, bh).data;
     let max = 0, sum = 0, over200 = 0, over128 = 0, warm = 0, n = 0;
     for (let i = 0; i < d.length; i += 4) {
       const lum = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
@@ -424,13 +427,68 @@ async function analyze(page, buf) {
       n++;
     }
     bmp.close();
+
+    // --- how much of the arena has the effect painted over? ----------------
+    // The one question no statistic in this tool could answer, and the one an
+    // explosion is most often rejected for. Everything but the effect is frozen
+    // — same tick, same camera, same DOM — so a plain difference against the
+    // plate captured before ignition IS the effect's footprint, exactly, with
+    // no segmentation and no thresholding of absolute brightness.
+    //
+    //   cover  the effect changed this pixel at all: its true screen area,
+    //          bloom halo and light spill included, which is the honest
+    //          measure of how much of the fight it is standing in front of
+    //   hide   it changed it by more than a glaze (24 levels): the part the
+    //          player genuinely cannot see through
+    //   lift   mean signed change. Positive is glare added to the frame; a
+    //          mass with real soot in it should go NEGATIVE in its late life,
+    //          because burnt gas is a hole, not a lamp.
+    let cover = null, hide = null, lift = null;
+    const plate = self.__vfxPlate;
+    if (plate && r) {
+      const p = plate.getImageData(r.x, r.y, bw, bh).data;
+      let cov = 0, hid = 0, dsum = 0;
+      for (let i = 0; i < d.length; i += 4) {
+        const a = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+        const b = 0.2126 * p[i] + 0.7152 * p[i + 1] + 0.0722 * p[i + 2];
+        const dl = a - b;
+        dsum += dl;
+        const chroma = Math.abs(d[i] - p[i]) + Math.abs(d[i + 1] - p[i + 1]) + Math.abs(d[i + 2] - p[i + 2]);
+        if (Math.abs(dl) > 6 || chroma > 18) cov++;
+        if (Math.abs(dl) > 24 || chroma > 60) hid++;
+      }
+      cover = +(100 * cov / n).toFixed(1);
+      hide = +(100 * hid / n).toFixed(1);
+      lift = +(dsum / n).toFixed(1);
+    }
+
     return {
       max: Math.round(max),
       mean: Math.round(sum / n),
       pctOver200: +(100 * over200 / n).toFixed(2),
       pctOver128: +(100 * over128 / n).toFixed(2),
       pctWarm: +(100 * warm / n).toFixed(2),
+      cover, hide, lift,
     };
+  }, [buf.toString('base64'), rect]);
+}
+
+/**
+ * Capture the arena with the effect not yet fired and keep it in the page, so
+ * every tile can be differenced against it. Called after the freeze and after
+ * `vfx.clear()`, so the plate is the same still frame every tile is shot from.
+ */
+async function capturePlate(page) {
+  const buf = await page.screenshot({ timeout: 180000 });
+  await page.evaluate(async (b64) => {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+    const c = new OffscreenCanvas(bmp.width, bmp.height);
+    self.__vfxPlate = c.getContext('2d', { willReadFrequently: true });
+    self.__vfxPlate.drawImage(bmp, 0, 0);
+    bmp.close();
   }, buf.toString('base64'));
 }
 
@@ -515,6 +573,12 @@ async function runLifetime(browser, effect) {
     v.seedJitter(seed);
   }, VFX_SEED);
   await frames(page, 1);
+
+  // The arena with nothing detonating in it, kept in the page for every tile to
+  // be differenced against. It has to be taken here — after the freeze, after
+  // the clear, before the spawn — because that is the only moment at which the
+  // frame is identical to the tiles in every respect except the effect itself.
+  await capturePlate(page);
 
   let centre = { x: VP.width / 2, y: VP.height / 2 };
   let world = null;
@@ -602,15 +666,19 @@ async function runLifetime(browser, effect) {
     }
 
     const buf = await page.screenshot({ clip: rect, timeout: 180000 });
-    const m = await analyze(page, buf);
+    const m = await analyze(page, buf, rect);
+    const covTxt = m.cover === null ? ''
+      : ` cover ${m.cover}% · hide ${m.hide}%`;
     tiles.push({
       b64: buf.toString('base64'),
       label: `${ms}ms`,
-      note: `max ${m.max} · >200 ${m.pctOver200}% · warm ${m.pctWarm}%`,
+      note: `max ${m.max} · >200 ${m.pctOver200}% · warm ${m.pctWarm}%${covTxt}`,
     });
     console.log(`  ${String(ms).padStart(5)}ms  ` +
       `max=${String(m.max).padStart(3)} mean=${String(m.mean).padStart(3)} ` +
-      `>200=${String(m.pctOver200).padStart(6)}% >128=${String(m.pctOver128).padStart(6)}% warm=${m.pctWarm}%`);
+      `>200=${String(m.pctOver200).padStart(6)}% >128=${String(m.pctOver128).padStart(6)}% warm=${String(m.pctWarm).padStart(5)}%` +
+      (m.cover === null ? ''
+        : `  cover=${String(m.cover).padStart(5)}% hide=${String(m.hide).padStart(5)}% lift=${String(m.lift).padStart(6)}`));
 
     if (KEEP) {
       await mkdir('shots/frames', { recursive: true });
