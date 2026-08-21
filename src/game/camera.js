@@ -63,6 +63,8 @@ export class DuelCamera {
      * slowly, because the two move in opposite directions by the same amount.
      */
     this.anchorBias = 0;
+    /** Metres the aim point is dropped to keep the player off the bottom edge. */
+    this.aimDrop = 0;
 
     this._prevLocalPos = new THREE.Vector3();
     this._speedBlur = 0;
@@ -74,6 +76,7 @@ export class DuelCamera {
     this.fitBoost = 1;
     this.lookAhead = 1;
     this.anchorBias = 0;
+    this.aimDrop = 0;
     const r = world.robos[localIndex];
     const o = world.robos[1 - localIndex];
     this.yaw = Math.atan2(r.pos.x - o.pos.x, r.pos.z - o.pos.z);
@@ -181,10 +184,15 @@ export class DuelCamera {
 
     // Aim ahead of the player toward the opponent, so the local robo sits low
     // and forward in frame with the fight laid out in front of it.
-    const ahead = clamp(separation * 0.42, 2.2, 9) * this.lookAhead;
+    // Sliding the anchor toward the midpoint already carries the aim toward the
+    // opponent, so the full look-ahead on top of it double-counts and pushes the
+    // player off the bottom of the frame — measured clipping at the frame edge,
+    // a 175x118 box where the machine is taller than it is wide. Back the
+    // look-ahead off by whatever the anchor has taken over.
+    const ahead = clamp(separation * 0.42, 2.2, 9) * this.lookAhead * (1 - this.anchorBias * 0.8);
     _look.set(
       _a.x + ax * ahead,
-      _a.y + 1.05 + Math.min(1.6, separation * 0.045) + (_b.y - _a.y) * 0.3,
+      _a.y + 1.05 + Math.min(1.6, separation * 0.045) + (_b.y - _a.y) * 0.3 - this.aimDrop,
       _a.z + az * ahead
     );
 
@@ -258,6 +266,19 @@ export class DuelCamera {
       // out of fifteen, which is invisible.
       const deficit = clamp((FLOOR - seen) / FLOOR, 0, 1);
       const wantBias = behind ? 0 : Math.sqrt(deficit) * 0.62;
+
+      // ---- and keep the PLAYER on screen while doing it -------------------
+      // Everything above pushes the aim toward the opponent, and the player sits
+      // behind that aim point, so the two corrections stack into the player
+      // falling off the bottom edge — measured as a 170x118 mask flush against
+      // y=900, a machine wider than it is tall because the legs were gone.
+      // Dropping the aim point rotates the camera down, which moves the subject
+      // UP the frame, so this recovers the player without giving back any of the
+      // opponent's size.
+      _fit2.set(_a.x, _a.y, _a.z).project(cam);
+      const lowness = _fit2.z > 1 ? 0 : clamp((-0.78 - _fit2.y) / 0.3, 0, 1);
+      const wantDrop = lowness * 1.7;
+      this.aimDrop = damp(this.aimDrop, wantDrop, wantDrop > this.aimDrop ? 6 : 2.5, dt);
       // Open up briskly when the opponent is too small, close slowly, so a
       // fighter dashing in and out does not pump the camera.
       this.anchorBias = damp(this.anchorBias, wantBias, wantBias > this.anchorBias ? 2.2 : 0.8, dt);
