@@ -773,7 +773,19 @@
    MENUS
    ========================================================================= */
 
-.crv2-ui.crv2-menus { pointer-events: none; }
+/* The menus read at a different distance from the HUD and need a different
+   floor. --ink-faint is the tertiary label tone — part classes ("Balanced",
+   "Heavy"), the LIVERY / PERFORMANCE / VS EQUIPPED / PRESETS heads, the rail
+   numerals, the compare legend. At the shared #5d7796 it measures 4.2:1 on the
+   garage's near-black panels, at 8px, on the one screen in the game whose
+   entire job is reading numbers — which is why the round-4 note called the
+   garage the least legible screen in the build. Lifted here to 7.1:1, and
+   here only: the HUD's faint labels sit over a moving arena and are supposed
+   to stay quiet, and N6 wants the HUD receding, not advancing. */
+.crv2-ui.crv2-menus {
+  pointer-events: none;
+  --ink-faint: #8ba0be;
+}
 
 /* Screens are built once and kept in the DOM; only `is-on` is mounted. */
 .crv2-ui .screen {
@@ -1152,20 +1164,6 @@
   position: absolute; top: 6px; left: 26px;
   font-size: 9px; font-weight: 800; letter-spacing: .3em; color: var(--acc);
 }
-.stage__eq { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
-.chip {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-  min-width: 0;
-  padding: 6px 10px;
-  background: rgba(10, 16, 26, .7);
-  box-shadow: inset 0 0 0 1px var(--line);
-  clip-path: var(--clip-s);
-  transition: box-shadow .16s var(--ease);
-}
-.chip:hover, .chip:focus-visible { box-shadow: inset 0 0 0 1px var(--acc); outline: none; }
-.chip__c { font-size: 7px; letter-spacing: .2em; color: var(--ink-faint); }
-.chip__n { font-size: 9px; font-weight: 700; letter-spacing: .08em; color: var(--acc); max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
 .garage__info {
   display: flex; flex-direction: column; min-height: 0;
   padding: 14px;

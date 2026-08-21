@@ -641,11 +641,20 @@ export class Menus {
         <span class="st__bar"><i class="st__a"></i><i class="st__b"></i></span>
       </div>`).join('');
 
-    const eqChips = CATEGORIES.map((c) => `
-      <button class="chip" data-nav data-jump="${c.key}">
-        <span class="chip__c">${c.label}</span>
-        <span class="chip__n">--</span>
-      </button>`).join('');
+    /* N2. The stage column used to end in a `.stage__eq` row of five chips —
+       BODY / GUN / BOMB / POD / LEGS with the equipped part under each. Two
+       rounds of trying to move it out of the way missed the point: the model
+       is not laid out by this document. `Game._renderPreview` reads the
+       slot's rect, maps its CENTRE into a world offset and renders the machine
+       at a fixed world size, so the machine is roughly 675px tall whatever the
+       hole is, and it overhangs the 586px slot by about 100px at the feet.
+       Nothing in normal flow below the stage view can avoid it, and shrinking
+       the slot only drags the model down with it.
+       So the row is gone. Every one of those five chips was a second copy of a
+       `.rail__b` on the left — same category, same equipped part name, same
+       action (select that category) — printed in 7px --ink-faint over the one
+       object on the screen the player came to look at. The rail keeps the
+       reading; the stage column keeps the machine. */
 
     el.innerHTML = `
       ${stepHeader('02', 'GARAGE', 'ガレージ')}
@@ -682,7 +691,6 @@ export class Menus {
             <div class="stage__corner stage__corner--br"></div>
             <div class="stage__tag">P1</div>
           </div>
-          <div class="stage__eq">${eqChips}</div>
         </section>
 
         <section class="garage__info">
@@ -717,7 +725,6 @@ export class Menus {
       lists: new Map(),
       rows: new Map(),
       rail: new Map(),
-      chips: new Map(),
       statRows: Array.from(el.querySelectorAll('.st')).map((r) => ({
         el: r,
         en: r.querySelector('.st__l b'),
@@ -742,7 +749,6 @@ export class Menus {
     for (const l of el.querySelectorAll('.list')) s.lists.set(l.dataset.cat, l);
     for (const r of el.querySelectorAll('.row')) s.rows.set(`${r.dataset.cat}:${r.dataset.part}`, r);
     for (const r of el.querySelectorAll('.rail__b')) s.rail.set(r.dataset.cat, r);
-    for (const c of el.querySelectorAll('[data-jump]')) s.chips.set(c.dataset.jump, c);
 
     // ---- behaviour -------------------------------------------------------
     const cat = (key) => CATEGORIES.find((c) => c.key === key);
@@ -767,8 +773,6 @@ export class Menus {
           if (row) row.classList.toggle('is-eq', p.id === eq);
         }
         const part = c.map.get(eq) || c.list[0];
-        const chip = s.chips.get(c.key);
-        if (chip) chip.querySelector('.chip__n').textContent = part.name;
         const railEq = s.rail.get(c.key)?.querySelector('.rail__eq');
         if (railEq) railEq.textContent = part.name;
       }
@@ -851,13 +855,6 @@ export class Menus {
     el.addEventListener('click', (e) => {
       const railB = e.target.closest('[data-cat].rail__b');
       if (railB) { setCat(railB.dataset.cat); return; }
-
-      const jump = e.target.closest('[data-jump]');
-      if (jump) {
-        setCat(jump.dataset.jump);
-        this._focus(s.rail.get(jump.dataset.jump));
-        return;
-      }
 
       const row = e.target.closest('.row');
       if (row) { equip(row.dataset.cat, row.dataset.part); return; }
