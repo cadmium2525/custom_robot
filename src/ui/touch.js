@@ -322,6 +322,12 @@ export class TouchControls {
     window.addEventListener('crv2:hud', this._onHud);
     window.addEventListener('crv2:menu', this._onMenu);
 
+    // --- gear state -------------------------------------------------------
+    // The HUD publishes charge and the two cooldowns here; see HUD._publishGear.
+    this._rings = { fire: -1, bomb: -1, pod: -1 };
+    this._onGear = (e) => this.setGear(e.detail);
+    window.addEventListener('crv2:gear', this._onGear);
+
     this._sync();
   }
 
@@ -353,14 +359,37 @@ export class TouchControls {
     this.el.classList.add(`lay--${this.layout}`);
   }
 
+  /**
+   * Draw charge and the two cooldowns on the buttons that fire them.
+   *
+   * This is the answer to "BOMB and POD are drawn twice, in two different
+   * visual languages": they were ring gauges in the top-left HUD column AND
+   * buttons in the bottom-right cluster, and only the copy 40mm from the
+   * player's eye-line carried any state. The thumb is on the button, so the
+   * state goes on the button, and the duplicate chips come out of the touch
+   * layout in ui.css.
+   */
+  setGear(g) {
+    if (!g) return;
+    this._ring('fire', g.fire, g.fireReady);
+    this._ring('bomb', g.bomb, g.bombReady);
+    this._ring('pod', g.pod, g.podReady);
+  }
+
+  _ring(key, t, ready) {
+    const el = this.btnEls.get(key);
+    if (!el) return;
+    const v = t < 0 ? 0 : t > 1 ? 1 : (t || 0);
+    if (this._rings[key] !== v) {
+      this._rings[key] = v;
+      el.style.setProperty('--c', v.toFixed(3));
+    }
+    el.classList.toggle('is-ready', !!ready);
+  }
+
   /** Visual feedback for the charge ring on the FIRE button (0..1). */
   setCharge(t) {
-    const el = this.btnEls.get('fire');
-    if (!el) return;
-    if (this._lastCharge === t) return;
-    this._lastCharge = t;
-    el.style.setProperty('--c', t.toFixed(3));
-    el.classList.toggle('is-ready', t >= 1);
+    this._ring('fire', t, t >= 1);
   }
 
   dispose() {
@@ -369,6 +398,7 @@ export class TouchControls {
     window.removeEventListener('pointerdown', this._onMouse, { capture: true });
     window.removeEventListener('crv2:hud', this._onHud);
     window.removeEventListener('crv2:menu', this._onMenu);
+    window.removeEventListener('crv2:gear', this._onGear);
     document.documentElement.classList.remove('crv2-touch-on');
     this.el.remove();
   }

@@ -308,6 +308,7 @@ export class HUD {
       bombCd: -1, podCd: -1, bombNum: -1, podNum: -1,
       jumps: -1, dashes: -1, jumpMax: -1, dashMax: -1,
       combo: 0, phase: -1, localIndex: -1, lowHp: null, netKey: '', debug: null,
+      gearKey: '',
     };
 
     // ---- damage-number pool ---------------------------------------------
@@ -541,6 +542,10 @@ export class HUD {
     this._updateCd(this.cd.bomb, r.bombCd, ld.bomb, 'bomb');
     this._updateCd(this.cd.pod, r.podCd, ld.pod, 'pod');
 
+    // The same three quantities, republished for the touch layer, which draws
+    // them on the buttons the thumb is already on. See _publishGear.
+    this._publishGear(cFrac, ready, s.bombCd, r.bombCd <= 0, s.podCd, r.podCd <= 0);
+
     // ---- mobility pips ---------------------------------------------------
     const legs = ld.legs;
     if (legs.id !== s.legsId) {
@@ -562,6 +567,35 @@ export class HUD {
       const kids = this.mobDash.children;
       for (let i = 0; i < kids.length; i++) kids[i].classList.toggle('is-on', i < r.airDashesLeft);
     }
+  }
+
+  /**
+   * Republish charge and the two cooldowns on `crv2:gear`, the same window
+   * channel `crv2:hud` already uses to talk to the touch layer.
+   *
+   * On a phone the BOMB and POD cooldowns were drawn twice — as ring gauges in
+   * the top-left column and as buttons in the thumb cluster — and only the
+   * copy the player is NOT looking at carried the state. Their buttons have had
+   * a `.tb__ring` in the markup all along; nothing ever fed it, and neither did
+   * anything feed FIRE's, because `setCharge()` has no caller in the build. So
+   * the ring furniture was dead on all three.
+   *
+   * Quantised to 1/32 before comparing: a draining dial changes every frame and
+   * a 62px ring cannot show a thirty-second of a turn, so this dispatches on
+   * the order of once every few frames instead of sixty times a second.
+   */
+  _publishGear(charge, chargeReady, bomb, bombReady, pod, podReady) {
+    const q = (v) => Math.round(clamp01(v) * 32);
+    const key = `${q(charge)}${chargeReady ? 'R' : ''}|${q(bomb)}${bombReady ? 'R' : ''}|${q(pod)}${podReady ? 'R' : ''}`;
+    if (key === this._s.gearKey) return;
+    this._s.gearKey = key;
+    window.dispatchEvent(new CustomEvent('crv2:gear', {
+      detail: {
+        fire: clamp01(charge), fireReady: !!chargeReady,
+        bomb: clamp01(bomb), bombReady: !!bombReady,
+        pod: clamp01(pod), podReady: !!podReady,
+      },
+    }));
   }
 
   _updateCd(slot, cd, part, key) {

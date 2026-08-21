@@ -678,18 +678,30 @@ void main() {
     // Push the surface in and out along two octaves of noise so the fireball is
     // a cluster of billows rather than a balloon, and let the lobes deepen as it
     // cools — that growth is what sells a mass of burning gas expanding.
+    float smoky = step(1.5, aTint.w);
     float n1 = vnoise(position * 1.7 + aMotion.w);
     float n2 = vnoise(position * 4.6 - aMotion.w * 1.7);
     float lump = (n1 - 0.5) * 0.95 + (n2 - 0.5) * 0.46;
-    p *= 1.0 + lump * (0.26 + t * 0.90);
+    // Fire tears itself open as it burns, so its lobes go on deepening to the
+    // end. Smoke does not, and running the same curve on it displaced the
+    // sphere by more than its own radius by mid-life — on an icosahedron this
+    // coarse that is not billowing, it is a handful of flat triangular panels,
+    // and the late blast was visibly a low-poly rock. The smoke's break-up is
+    // the fragment stage's erosion, which is per-pixel and cannot facet.
+    p *= 1.0 + lump * mix(0.26 + t * 0.90, 0.30 + t * 0.30, smoky);
 
     // Buoyancy. The cap climbs and the base necks in behind it, so a mass that
     // starts as a ball has become a rising, stalked column by the end of its
     // life. This is the difference between an explosion and one shape fading:
     // the silhouette has to change, not just get dimmer.
+    //
+    // Pushed harder on the smoke than on the fire, for a reason that is about
+    // composition rather than physics: a fight happens at deck level, so a mass
+    // that leaves upward is a mass that has stopped standing in front of the
+    // machines. Rising is how the smoke gives the frame back.
     float rise = t * t;
-    p.y += rise * (0.45 + 0.55 * vLocal.y) * 0.95;
-    p.xz *= 1.0 - 0.34 * rise * smoothstep(0.4, -0.8, vLocal.y);
+    p.y += rise * (0.45 + 0.55 * vLocal.y) * mix(0.95, 1.70, smoky);
+    p.xz *= 1.0 - mix(0.34, 0.58, smoky) * rise * smoothstep(0.4, -0.8, vLocal.y);
   }
   p *= s;
 
@@ -710,7 +722,16 @@ void main() {
   float edge = 1.0 - abs(dot(nv, eye));
   float meta = aMotion.w;
 
-  if (uMode > 0.5 && uMode < 1.5) {
+  if (uMode < 0.5) {
+    // The fireball pool is the one mode that never asks how edge-on it is
+    // being viewed — a ball of burning gas wants the face-on ratio, which is
+    // vMeta.y — so this slot carries the shell's absolute age in seconds
+    // instead. The smoke needs it: how brightly the fire is still lighting the
+    // smoke from underneath is a question about the *fire's* clock, and every
+    // other quantity in the fragment stage is normalised against the smoke's
+    // own two-second life.
+    edge = age;
+  } else if (uMode > 0.5 && uMode < 1.5) {
     // A shock ring is not a sphere, and measuring it like one is what made it a
     // donut. The thing that has to look edge-on is the *wall* of compressed air
     // standing on the ring — its normal is the ring's own radial, and its long
@@ -768,7 +789,10 @@ const vec3 C_WHITE  = vec3(5.80, 5.05, 4.20);
 void main() {
   float vT  = vMeta.x;
   float rim = vMeta.y;      // 1 face-on, 0 at the silhouette
-  float edg = vMeta.w;      // 1 looking along the shell, 0 straight through it
+  // 1 looking along the shell, 0 straight through it — except in the fireball
+  // mode, which has no use for it and carries the shell's age in seconds there
+  // instead. See the note in the vertex stage.
+  float edg = vMeta.w;
   if (vT > 1.0 || vT < 0.0) discard;
   float fade = 1.0 - vT;
   vec3 col = vTint.rgb;
@@ -886,26 +910,40 @@ void main() {
       // also flatters a mid-tone histogram while hiding the one thing the frame
       // is about, which is how an earlier version of this scored better and
       // looked considerably worse.
-      // The erosion has to bite from early, not just at the end. Held off until
-      // the last quarter of its life, this mass stayed a smooth solid dome for
-      // most of a second — and a smooth solid dome the size of the fight, warm
-      // enough to read as a mid-tone, is not mass, it is the occlusion bug an
-      // earlier version of this file was rejected for. Rising with pow(vT,0.85)
-      // it is solid while the fireball is handing over to it, which is when the
-      // blast needs the weight, and torn to rags by the time it would otherwise
-      // start covering things.
-      float bite = mix(0.10, 1.05, pow(vT, 0.85));
-      float d2 = smoothstep(bite, bite + 0.20, turb + 0.12);
-      // Underlighting dies with the cube of the remaining life for the same
-      // reason: it is the fire shining up into the smoke, and once the fire is
-      // out a warm cast on the smoke is a warm cast on the frame.
-      float under = smoothstep(0.20, -0.75, vLocal.y) * pow(fade, 3.0);
+      // The erosion has to bite from the *first* frame of the smoke, not from
+      // its last quarter. Measured on the contact sheet, the previous curve
+      // left the mass at its greatest screen area — 53.4% of the crop, more
+      // than the fireball ever reached — at 470ms, when it was no longer fire
+      // and the frame was supposed to be handing back to the fight. Opening at
+      // 0.34 instead of 0.10 means the mass is torn from the moment it appears:
+      // solid enough in its billows to be a hole in the frame, already full of
+      // gaps between them.
+      //
+      // Curve is pow(vT, 0.55) rather than 0.85 so the tearing front-loads.
+      float bite = mix(0.34, 1.18, pow(vT, 0.55));
+      float d2 = smoothstep(bite, bite + 0.17, turb + 0.12);
+      // Underlighting is the fire shining up into the smoke, so it has to die
+      // with the fire and not with the smoke. It went out on pow(fade, 3.0) of
+      // the *smoke's* two-second life, i.e. it was still at a third of full
+      // strength most of a second after the last flame — which is why the late
+      // mass came back rust-orange and 42% of the crop measured "warm" at
+      // 650ms. It is now keyed to the shell's age in SECONDS -- edg carries it
+      // in this mode -- with a 0.28s time constant, so it tracks the fire's
+      // clock and not the smoke's, and the tint is halved on top of that.
+      // (No backticks in this file's GLSL: it is a template literal, and a
+      // stray one in a comment has broken the build twice.)
+      float lit = exp(-edg * 3.6);
+      float under = smoothstep(0.10, -0.80, vLocal.y) * lit;
       float over  = smoothstep(-0.25, 0.85, vLocal.y);
       col = C_SOOT
           + vec3(0.018, 0.020, 0.025) * over * (0.55 + turb * 0.85)
-          + C_CHAR * 0.85 * under * (0.5 + turb * 0.7);
-      a = d2 * (0.32 + 0.60 * rim)
-        * smoothstep(0.0, 0.10, vT) * smoothstep(1.0, 0.55, vT);
+          + C_CHAR * 0.42 * under * (0.5 + turb * 0.7);
+      // Weight early, gone early. The hold used to run to 55% of a 2.4s life —
+      // 1.3 seconds of arena under a translucent warm sheet. The blast gets its
+      // mass during the handoff, which is the only moment it is needed, and the
+      // frame is given back well before the next exchange.
+      a = d2 * (0.34 + 0.58 * rim)
+        * smoothstep(0.0, 0.08, vT) * smoothstep(0.82, 0.30, vT);
     } else {
       // Density and temperature are two different fields, and separating them is
       // the whole trick.
@@ -1663,6 +1701,21 @@ export class VFX {
     // Pale, flat and fast, with enough drag that it piles up at the end of its
     // run. Deliberately a different colour, speed and direction from the smoke
     // so the two never read as one grey mass.
+    //
+    // The colour is the important number here and it was five times too high.
+    // These particles are unlit and `toneMapped: false`, so the value written
+    // is very nearly the value that lands: 0.92 linear encodes to sRGB 247, and
+    // eighteen overlapping sprites of near-white beige at a=0.62 is precisely
+    // the "large pale smoke dome covering the fight" an earlier version of this
+    // effect was rejected for. It scored *better* on the arena's value-band
+    // metric while doing it, because a big mid-tone flatters a histogram.
+    //
+    // A blast on a deck that measures 81 cannot throw up dust that measures
+    // 247. At 0.17 linear it encodes to about 113 — a pale wave that reads
+    // against the deck without ever competing with the machines standing on it,
+    // and it is now neutral rather than beige, so it cannot be mistaken for a
+    // second fireball. What sells a ground wave is that it is fast, flat and
+    // going somewhere, not that it is bright.
     if (grounded) {
       const dustN = Math.round(18 * s * scale);
       for (let i = 0; i < dustN; i++) {
@@ -1672,8 +1725,8 @@ export class VFX {
         this.smoke.spawn(
           x + ca * R * 0.25, deck + 0.06 + vfxRng.f() * 0.2, z + sa * R * 0.25,
           ca * sp, 0.35 + vfxRng.f() * 0.55, sa * sp,
-          t + vfxRng.f() * 0.05, 0.9 + vfxRng.f() * 0.6, R * (0.11 + vfxRng.f() * 0.06),
-          0.92, 0.80, 0.66, -0.22, 3.0, 2
+          t + vfxRng.f() * 0.05, 0.62 + vfxRng.f() * 0.42, R * (0.10 + vfxRng.f() * 0.05),
+          0.175, 0.170, 0.168, -0.22, 3.0, 2
         );
       }
     }
@@ -1683,16 +1736,28 @@ export class VFX {
     // hand off to something with the same silhouette or the blast visibly
     // changes species halfway through. Three of them, dark, no bigger than the
     // fire that made them, and eroded to rags by the shader.
+    //
+    // Sized DOWN from where it was, and this is the whole of the fix for the
+    // late life. The shells used to reach R*0.70..0.96 each, so three of them
+    // offset by up to R*0.27 covered more of the screen than the fireball ever
+    // had: measured on the contact sheet, the mass hit its greatest area —
+    // 53.4% of the crop against the fireball's 48.6% — at 470ms, and was still
+    // painting a third of it at 950ms. An explosion whose largest moment is
+    // after the fire has gone out is not an explosion, it is a curtain.
+    //
+    // They also rise harder and die sooner. What the smoke is *for* is the
+    // silhouette change — ball becomes rising stalked column — and it can only
+    // do that by leaving, which is the same thing as giving the fight back.
     const smokeShells = s > 0.5 ? 3 : 2;
     for (let i = 0; i < smokeShells; i++) {
       const a = vfxRng.f() * 6.283;
-      const rad = R * (0.05 + vfxRng.f() * 0.22);
+      const rad = R * (0.04 + vfxRng.f() * 0.16);
       this.fireballs.spawn(
         x + Math.cos(a) * rad, y + R * 0.10, z + Math.sin(a) * rad, null,
-        t + 0.22 + i * 0.09, 1.6 + vfxRng.f() * 0.8,
-        R * 0.32, R * (0.70 + vfxRng.f() * 0.26),
+        t + 0.17 + i * 0.075, 1.15 + vfxRng.f() * 0.5,
+        R * 0.30, R * (0.46 + vfxRng.f() * 0.16),
         1.0, 0.92, 0.86, SHELL_SMOKE_KIND,
-        Math.cos(a) * R * 0.20, R * (1.15 + vfxRng.f() * 0.6), Math.sin(a) * R * 0.20
+        Math.cos(a) * R * 0.14, R * (1.8 + vfxRng.f() * 0.9), Math.sin(a) * R * 0.14
       );
     }
     const smokeN = Math.round(6 * s * scale);

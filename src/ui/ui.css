@@ -1623,18 +1623,31 @@
 .tb--pod { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--acc-3) 62%, transparent), 0 3px 16px rgba(0, 0, 0, .6); }
 .tb--pod .tb__l { color: #d6a6ff; }
 
-.tb--fire { --c: 0; }
+/* Every button has carried a `.tb__ring` in its markup since the layer was
+   written and nothing has ever fed one: `setCharge()` has no caller in this
+   build, and the three non-FIRE rings were switched off in CSS besides. The HUD
+   now publishes charge and both cooldowns on `crv2:gear`, so the ring is live
+   on the three buttons that have a state — and BOMB/POD stop being drawn twice
+   in two different visual languages, once as a thumb button with no state and
+   once as a ring gauge in the opposite corner of the screen. The ring takes
+   each slot's own colour, so the cluster is still read by hue. */
+.tb { --c: 0; --rc: var(--warn); }
+.tb--bomb { --rc: var(--acc-2); }
+.tb--pod  { --rc: var(--acc-3); }
 .tb__ring {
   position: absolute; inset: -5px;
   border-radius: 50%;
-  background: conic-gradient(var(--warn) calc(var(--c, 0) * 360deg), transparent 0);
+  background: conic-gradient(var(--rc) calc(var(--c, 0) * 360deg), transparent 0);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
   opacity: .95;
   pointer-events: none;
 }
-.tb.is-ready .tb__ring { animation: readyBlink .4s steps(2) infinite; }
-.tb:not(.tb--fire) .tb__ring { display: none; }
+/* Only the charge blinks. BOMB and POD are ready most of a round, and two
+   permanently-strobing rings under the thumb is a fault light, not feedback. */
+.tb--fire.is-ready .tb__ring { animation: readyBlink .4s steps(2) infinite; }
+.tb--bomb.is-ready, .tb--pod.is-ready { box-shadow: inset 0 0 0 1.5px var(--rc), 0 3px 16px rgba(0, 0, 0, .6); }
+.tb--jump .tb__ring, .tb--dash .tb__ring { display: none; }
 
 .crv2-touch.lay--lefty .tc__zone--move { left: auto; right: 0; }
 .crv2-touch.lay--lefty .tc__zone--look { right: auto; left: 0; }
