@@ -40,6 +40,35 @@ not reproduce — I get **11.1% on both runs**. The real figure is better than t
 this is noted rather than held against anyone; it most likely predates the stage-warmth commits
 that changed what R2 stands in front of.
 
+### `measure.mjs` is still load-dependent — the bug `10621f2` claimed to close
+
+`contour.mjs` is fixed. `measure.mjs` is not. Two successful runs at `35d0e66`, same seed, same
+arena, minutes apart, differ like this on capture A (as shipped):
+
+```
+                        p50    below10pct   warmPct   coolPct   inBand20_55
+  run 1 (box loaded)    3.9      86.0%       1.4%     10.2%       6.0%
+  run 2 (box idle)     63.3      18.6%       9.9%     39.8%      52.8%
+```
+
+**A 67-point spread on `below10pct`.** Run 1 ran last in a chain of five capture jobs; run 2 ran
+first on an idle box. The saved frame from run 2 is correct — I checked it independently with my
+own histogram (`hist5.mjs`) and got p50 57.2 against measure's 63.3, the difference being the DOM
+layer. Run 1's frame is a near-black one, i.e. a partially-initialised stage: `stage build ms`
+reports **1166ms** of texture and light construction, and `boot()` waits 400ms then 1000ms before
+capturing. Under load that is not enough. This is the same class of bug the round-3 critic found in
+`contour.mjs`, in the tool `10621f2`'s commit message says it fixed.
+
+**Consequence, and it is not small: every arena-warmth number any stage agent has tuned against
+could have come from either column.** Do not tune against `measure.mjs` until it waits on a real
+readiness signal instead of a fixed timeout. Everything below uses run 2 plus my own independent
+histograms of the frames measure itself saved.
+
+*I nearly published the opposite finding.* My first read was of a `meas-fight.png` left in the
+worktree by an earlier session, which showed a different camera and a white deck; it was a stale
+file, not a broken tool. Recording it because the next reviewer will hit the same trap: **these
+tools overwrite fixed filenames, and `ls --time-style=+%H:%M` hides the date.**
+
 *Captures this round:* `contour-n.png` / `contour-mask.png` (contour meter, `--keep`),
 `c5-*.png` (screenshot.mjs at `--base http://127.0.0.1:4220/custom_robot/`), plus 1:1 and
 magnified crops. **Harness note for the next builder:** `screenshot.mjs` defaults `--base` to
@@ -104,6 +133,46 @@ explaining it). **A builder must land this before the next round or #24 cannot b
 Captures referenced: `m1-fight.png` / `m2-fight.png` (screenshot.mjs, tier 3, 1600x900),
 `contour-n.png` / `contour-mask.png` (patched contour meter, VFX+DOM off), `p-touch-iphone12.png`,
 `x-sheet-*.png` (vfxsheet), `z-*.png` (1:1 and magnified crops, `tools/crop.mjs`).
+
+### Arena warmth — the stage got warm; the frame did not, and the VFX are why
+
+The round handed me a specific question: warmPct was 6.0% against 41.4% cool, a stage agent has
+been warming the shell, does it now read as a deliberate cool rather than a blue tint over
+everything? Re-measured at `35d0e66` on the good run, and cross-checked with my own histogram:
+
+```
+                                             warmPct   coolPct   inBand20_55   below10
+  round 2, stage's own values                  6.0%     41.4%       32.1%       41.3%
+  round 4, stage's own values (measure C)     25.5%      7.9%       45.2%       32.2%
+  round 4, same, my own histogram             64.4%      7.8%       44.9%          —
+  round 4, AS SHIPPED (measure A)              9.9%     39.8%       52.8%       18.6%
+  round 4, as shipped, my own histogram       16.9%     56.2%       28.0%          —
+```
+
+**The stage-warmth work is real and it landed.** Warm and cool have swapped places in the shell:
+6.0/41.4 has become 25.5/7.9. By eye on `contour-n.png` it is unmistakable — warm brown louvred
+wall panels, a hot lit entry gate at frame left, warm crowd lights in the stands, played against
+cyan deck rails and blue block trim. That is a deliberate warm/cool scheme, not a tint. Credit.
+
+**But the frame the player sees is still cool-dominant, and the stage is no longer the cause.**
+Measure's own two saved frames from a single run, differing only in whether VFX are drawn, put it
+beyond argument — I ran my histogram over both:
+
+```
+  meas-fight-bare.png  (VFX off)   warm 38.9%   cool 25.6%
+  meas-fight.png       (VFX on)    warm 16.9%   cool 56.2%
+```
+
+Same 3D frame, same camera, same tick. Turning the effects on **more than halves the warm coverage
+and more than doubles the cool.** Measure's internal A-vs-C comparison agrees (25.5/7.9 becomes
+9.9/39.8). So the "blue tint over everything" the last three rounds have been chasing is still
+being applied — it has simply moved from the stage to the effects layer. Whatever is doing it
+(a full-screen additive pass on the cyan tracers is the obvious suspect; `.hud__scan` is a
+full-viewport `overlay`-blended layer at opacity 1 and worth ruling out too) is repainting an arena
+somebody has spent three rounds warming.
+
+**Verdict on arena warmth: FIXED at the stage, NOT FIXED at the frame.** Fix it in the VFX layer,
+and do not let anyone warm the shell any further to compensate — the shell is correct now.
 
 ### The honest baseline is darker and bluer than the commit log claims
 
@@ -301,7 +370,28 @@ outer edge is a hard-edged ellipse against pure black, so it is a disc in a void
 room; (c) **new collision** — in `g-feet.png` the BOMB/POD/LEGS loadout chips are drawn *over the
 robot's shins*, at 2x you can see "STANDARD" sitting on the model's left leg.
 
-**16. Right HUD plate flush to screen edge; left plate is not.** — **IMPROVED BUT NOT FIXED.**
+**16. Right HUD plate flush to screen edge; left plate is not.** — **ROUND 4 (`35d0e66`): FIXED.**
+Measured rather than eyeballed. `rule.mjs` scans `c5-fight.png` for the coloured top rule on each
+plate and reports:
+
+```
+  blue rule   y=14-15   x20..412     392px long   left margin 20px
+  red  rule   y=14-15   x1188..1579  392px long   right margin 21px
+```
+
+Same y, same length to the pixel, margins 20 vs 21 on a 1600px frame — a one-pixel difference that
+is odd-width rounding, not a design error. The round-2 complaint (red hairline at y≈3 bleeding to
+x=1600 against blue at y≈10 stopping at 415) is completely gone, and with it the "stray magenta
+hairline". The plates mirror.
+
+*Residual, cosmetic, do not spend a round on it:* the P1 and P2 corner badges are **identical
+rather than mirrored** — both cut the top-right corner large and the bottom-left corner small
+(`c5-badgeL.png`, `c5-badgeR.png` at 6x). Everything else on the two plates mirrors properly,
+including the diagonal cut on the depleting end of each HP bar, so the badges are the one element
+that repeats instead of reflecting. The round's stated defect — 16px corners against 8px — is
+fixed; the cuts are now the same size on both.
+
+*Superseded round-2 entry:*
 `f-hud.png` at 1:1: the ACE plate's top rule is a red hairline at y≈3 that runs to x=1600 with zero
 right margin, while P1's top rule is a blue hairline at y≈10 that stops at x≈415. Two plates that
 should mirror each other differ in both their y position and whether they bleed. The "stray magenta
@@ -329,9 +419,22 @@ panel is gone from solo play.
 block, a warm lit gate at frame left, warm crowd lights in the stands, orange BOMB ring in the HUD.
 There is a warm note in the 3D scene at three different scales.
 
-**22. Crosshair is invisible.** — **FIXED.**
-`d1-fight.png` at (800, 450): a white-cored reticle with an orange ring and four tick marks, with
-its own dark outline so it survives over both the bright deck and the dark wall.
+**22. Crosshair is invisible.** — **ROUND 4 (`35d0e66`): REGRESSED. There is no crosshair at all.**
+Round 2 verified a white-cored reticle with an orange ring and four ticks at (800,450). At
+`35d0e66` it is gone. I looked for it rather than assuming: `c5-ret.png` is a 4x crop of
+(720-880, 370-530), i.e. ±80px around dead centre — empty. `c5-ret-wide.png` widens that to a 2x
+crop of (560-1050, 250-650), 480x400 of frame centre — **no reticle anywhere in it.** Same
+`fight` scenario, same `setDemo(true)`, same seed as the round-2 capture that had one.
+
+For contrast, a `meas-fight.png` left in the worktree by an earlier session, from an older commit,
+*does* show the reticle at exactly (800,450) under the same setup — so this is a regression between
+that commit and this one, not a scenario artefact.
+
+**An arena shooter with no crosshair is not shippable**, and this is the kind of defect that gets
+marked FIXED once and then never re-checked. Whoever touched the HUD layer between rounds should
+diff it. *Severity: promoted to MAJOR.*
+
+*Superseded round-2 entry:*
 
 **23. Top HUD scrim has a hard banding edge.** — **FIXED.**
 `f-hud.png`: the full-width darkening gradient is gone; each plate carries its own dark backing
@@ -434,6 +537,38 @@ across the robot's shins. New since the pad landed.
 fractions.
 
 **N4. The ammo bar and the health bar are the same widget.** See #3 residual.
+
+**N6. The value and detail hierarchy is inverted — the stage out-reads the machines.**
+*New at round 4, and it is the finding of this review.* Every individual defect on the list above
+is now fixed or close to it, and the frame still loses the blind test, because the thing that was
+never on the list is the relationship between the subjects and the set. Measured on `c5-fight.png`
+and `contour-n.png`:
+
+- **Brightness.** ROBOT 1's body reads **84.5**; the deck immediately behind it reads **96**. The
+  player character is darker than the floor. The brightest, most saturated, longest-line objects in
+  the frame are the **cyan deck rails**, which clip near 255 and run right through the composition.
+  The hazard chevrons are second. The machines are third and fourth.
+- **Detail.** At true 1:1 (`c5-r1-1x.png`) the player's torso is a mosaic of eight or nine small
+  blue and orange rectangles and the shoulders read as two pale blocks — there is no four-or-five-
+  mass read. The louvred wall panels, the crate faces and the deck plating all carry more legible
+  texture per square inch than either machine.
+- **Consequence.** The eye lands on the floor. #24's outline pass is what stops the machines
+  disappearing entirely, and it is doing that job alone.
+
+This is one art decision, not a defect list: **the machines must become the lightest, most
+saturated, simplest-massed objects on screen, and the deck must give up the top of the value range
+to them.** Concretely — bring the plate values up until the body sits above the deck rather than
+below it, drop the cyan rails out of the clipping range, and reduce the number of distinct panel
+tones per machine. #5's residual (emissive edge lines at 120-180 bounding plates at 15-40) is the
+same problem seen from the inside and should be fixed in the same pass.
+*Severity: BLOCKING, and it is the only thing left on that list.*
+
+**N7. Ordnance renders as untextured primitives.** `c5-oct.png` (6x) and `c5-ret-wide.png` (2x):
+the projectiles/pods are bare flat-shaded **octahedra** in green and cyan, hard facets visible, no
+texture, no trail, no glow. They appear in every fight frame — three of them in `c5-fight.png`
+alone. Against crates that carry panel lines, rivets, wear and an emissive trim, these are the
+least-finished objects in the game and they read as placeholder geometry that was never replaced.
+*Severity: MAJOR. Cheap to fix and highly visible.*
 
 **N5. Rendered frames are not reproducible even with a pinned seed and a frozen sim.** 26.1% of
 pixels differ by >8 levels between two runs at an identical sim state, because the effect clock
