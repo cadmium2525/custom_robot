@@ -305,7 +305,19 @@ screen and the CR·V2 clone-label is gone.
 
 **10. Beams and tracers have no core and no shape.** — PENDING
 
-**11. Garage stat bars look broken.** — **FIXED.**
+**11. Garage stat bars look broken.** — **FIXED (round 2), and still fixed at `35d0e66`.**
+`c5-garage.png`: ARMOUR 1000, SPEED 8.2, AIR CONTROL 0.62, MASS 1.00, POISE 1.00 each have a
+proportional fill on a dark track, label and numeral share a line, and the "—" sits under a
+"VS EQUIPPED" column head.
+*New defect found while checking it — the garage screen is far too dark.* At 1:1 the part-list
+secondary labels ("Balanced", "Heavy", "Speed", "Technical", "Assassin"), the "LIVERY 塗装",
+"PERFORMANCE 性能" and "VS EQUIPPED" headers, and the chip category labels are all dim grey on
+near-black and sit well under any reasonable contrast floor. This is not a capture artefact:
+`c5-title.png` was taken in the same run with the same settle and its menu rows are crisp white.
+The garage is the screen where a player reads numbers, and it is the least legible screen in the
+build. *Severity: MAJOR.*
+
+*Round-2 entry:*
 `c3a-garage.png` right panel: every bar now has a proportional fill on a dark track (ARMOUR ~95%,
 SPEED ~92%, AIR CONTROL ~70%, MASS ~72%, POISE ~55%). The stack order is corrected — label and
 numeral on one line, bar beneath. The unexplained "—" now sits under a "VS EQUIPPED" column header,
@@ -363,7 +375,33 @@ touching. `g-feet.png` shows the same in the garage — a `contactShadowMaterial
 `castShadow` is set on the merged shell meshes at all. A blob shadow alone would recover most of
 this, and it is the cheapest available fix for both #14 and #24's grounding problem.
 
-**15. Title and garage robots float on a 1px ellipse in a void.** — **IMPROVED BUT NOT FIXED.**
+**15. Title and garage robots float on a 1px ellipse in a void.** — **ROUND 4 (`35d0e66`):
+(a) FIXED, (b) IMPROVED, (c) NOT FIXED.**
+(a) **The contact shadow is there now.** `c5-title.png` shows a soft dark pool under and slightly
+left of the machine's feet on the pad, consistent with the rig's key direction. `514051f` reached
+the menu rigs. The machine touches the ground.
+(b) The pad's outer edge is still a hard-terminating ellipse, but it now sits in a soft floor glow
+rather than pure black, so it reads more as a lit circle in a dark room than a disc in a void.
+Partial.
+(c) **The chip/model collision is unchanged** — see N2.
+
+**A note on the menu rigs that matters more than this entry.** The title screen is the one place in
+this build where the machine is unambiguously the subject, and probing it explains N6 precisely.
+Same robot, two screens:
+
+```
+                  robot body   its background   ratio
+  c5-title.png       49.1           10.9        4.5 : 1   robot dominates
+  c5-fight.png       76.5           92.8        0.8 : 1   background dominates
+```
+
+The machine is in fact **lit more brightly in the arena** (76.5) than on the title screen (49.1).
+It is not under-lit and it does not need repainting. **The deck is over-lit relative to it.** The
+title screen proves the model, the materials and the outline all work when the ground gives up the
+top of the value range. That makes the cheapest fix for N6 "take the deck and the rails down",
+not "re-cast the robots" — and it preserves the arena work, which is the best thing in the build.
+
+*Superseded round-2 entry:*
 There is now a real lit pad with a rim ring (`c3a-title.png`, `c3a-garage.png`). Three things stop
 it landing: (a) no contact shadow, so the machine still does not touch — see #14; (b) the pad's
 outer edge is a hard-edged ellipse against pure black, so it is a disc in a void rather than a
@@ -530,13 +568,33 @@ Passing a fixed `seed` and setting `engine.paused = true` on the `startMatch` li
 lines already in `contour.mjs` — would close it.
 *Severity: BLOCKING for the review process itself.*
 
-**N2. Garage loadout chips overlap the model.** `g-feet.png`: the BOMB / POD / LEGS chips are drawn
-across the robot's shins. New since the pad landed.
+**N2. Garage loadout chips overlap the model.** — **ROUND 4 (`35d0e66`): NOT FIXED.**
+`c5-garage-chips.png` (3x on (600-1020, 740-840) of `c5-garage.png`): the BODY / GUN / BOMB / POD /
+LEGS chip row is still drawn straight across the model's feet and lower shins. "STANDARD" and
+"STINGER" sit on top of the machine's boots. The round reported this as addressed; it is not.
+*Also visible in the same crop, and worse:* the chips' own category labels (BODY, GUN, BOMB, POD,
+LEGS) are dark grey on near-black and are effectively illegible — see the garage-contrast note
+under #11.
 
-**N3. The two HP bars are not comparable.** See #3 residual — P1 blue, P2 red at identical health
-fractions.
+**N3. The two HP bars are not comparable.** — **ROUND 4: FIXED at full health; UNVERIFIED below
+it.** In `c5-fight.png` and `c5-explosion.png` both bars are the **same green** at 1000/1000 and
+860/860, so the round-2 complaint — a healthy opponent reading as dying because its bar is red — no
+longer applies at the state I could capture. **I could not get a partial-health frame**: every
+scenario in `screenshot.mjs` freezes at a tick where both machines are untouched. That is a gap in
+the harness, not a pass: if the bars are green at full and team-coloured below it, the defect is
+merely hidden at the one state anyone photographs. **A builder should add a scenario that freezes
+at, say, 60%/85% health, and a reviewer should then re-check this.** Do not mark N3 closed until
+someone has seen that frame.
 
-**N4. The ammo bar and the health bar are the same widget.** See #3 residual.
+**N4. The ammo bar and the health bar are the same widget.** — **ROUND 4: FIXED in form.**
+`c5-gear.png` (2x): the VULCAN meter is now **eight discrete segments on a dark track**, which is
+unmistakably a different widget from the continuous green health fill. The two quantities no longer
+speak the same visual language. Good fix.
+*Residual:* in every frame I captured all eight segments are **empty**, and an empty segmented
+gauge is visually identical to a gauge that was never wired up. Whether the value is correct (the
+player has been firing for 6.3s of sim, so it may well be) is beside the point — the empty state
+needs styling that reads as "spent" rather than "absent". Compare the BOMB and POD rings beside it,
+which are unmistakably alive.
 
 **N6. The value and detail hierarchy is inverted — the stage out-reads the machines.**
 *New at round 4, and it is the finding of this review.* Every individual defect on the list above
