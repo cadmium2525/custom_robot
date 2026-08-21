@@ -1199,7 +1199,34 @@ export function wallTexture(theme, size = 512) {
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const u = x / size, v = y / size;
+      // v is HEIGHT UP THE WALL, and it has to be derived, not taken.
+      //
+      // Every storey below is authored bottom-up: plinth at v=0, capping course
+      // at v=1. But `y` is a canvas ROW, row 0 is the TOP of the canvas, and the
+      // texture is uploaded with the default flipY — so UV v = 1 - y/size. Taking
+      // v = y/size therefore built the whole wall upside down, and it had been
+      // that way for every review round:
+      //
+      //   - The service gutter and its light rail — authored at v≈0.83, high on
+      //     the wall, where a perimeter fixture belongs — came out at ANKLE
+      //     height, sitting directly on top of the kerb strip. The two together
+      //     are the thick saturated cyan band at the foot of every wall, and
+      //     "the eye lands on a floor rail before it lands on either machine"
+      //     was a literal description of a rail that was, in fact, on the floor.
+      //   - The capping course — bright machined coping, authored to draw a
+      //     clean lit line along the TOP of the bowl — drew it along the bottom
+      //     instead, which is the near-white line under the cyan one.
+      //   - The plinth — a heavy DARK kick course, "scuffed where robots scrape
+      //     it", with the hazard chevrons that mark where the play area stops —
+      //     was pinned to the ceiling, darkening the one part of the wall that
+      //     is furthest from every light and hanging warning paint in mid-air.
+      //   - The perimeter wash ramps up towards the gutter that throws it, so
+      //     inverted it washed the floor line brightest and left the top of the
+      //     wall — the part that measured below the black threshold, the part
+      //     the wash was added to rescue — with the least light of all.
+      //
+      // One subtraction puts all four back the way they are written.
+      const u = x / size, v = 1 - y / size;
       const i = y * size + x;
       const o = i * 4;
 
