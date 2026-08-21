@@ -58,6 +58,17 @@
   --clip-s:     polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
   --clip-m:     polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
   --clip-r:     polygon(16px 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%, 0 16px);
+  /* Mirror of --clip-s, corner for corner. --clip-r is the mirror of --clip-m
+     (16px) and using it opposite a --clip-s plate is what made the two HUD
+     plates cut 8px on one side and 16px on the other, so their top rules came
+     out 8px different in length. Anything that has a left-hand twin uses this. */
+  --clip-sr:    polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+
+  /* Health is a quantity, not an identity. Both plates read it in the same two
+     colours so a full opponent bar cannot look like a dying one; team identity
+     is carried by the portrait, the top rule and the round pips instead. */
+  --hp-ok:      #46dd8b;
+  --hp-low:     #ff4d63;
 
   --safe-t:     env(safe-area-inset-top, 0px);
   --safe-b:     env(safe-area-inset-bottom, 0px);
@@ -182,6 +193,7 @@
   border-top: 2px solid var(--team);
   clip-path: var(--clip-s);
   transition: filter .25s var(--ease);
+  --hp-c: var(--hp-ok);
 }
 .hud__plate--l { --team: var(--p1); --team-dim: var(--p1-dim); justify-self: start; }
 .hud__plate--r {
@@ -190,7 +202,7 @@
   flex-direction: row-reverse;
   text-align: right;
   background: linear-gradient(255deg, rgba(3, 6, 12, .93), rgba(3, 6, 12, .8) 62%, rgba(3, 6, 12, .58));
-  clip-path: var(--clip-r);
+  clip-path: var(--clip-sr);
   padding: 9px 9px 9px 13px;
 }
 .hud__plate.is-dead { filter: grayscale(1) brightness(.55); }
@@ -286,9 +298,9 @@
 
 .bar__fill {
   background: linear-gradient(180deg,
-    color-mix(in srgb, var(--team) 62%, #ffffff) 0%,
-    var(--team) 38%,
-    color-mix(in srgb, var(--team) 70%, #000000) 100%);
+    color-mix(in srgb, var(--hp-c) 62%, #ffffff) 0%,
+    var(--hp-c) 38%,
+    color-mix(in srgb, var(--hp-c) 70%, #000000) 100%);
 }
 
 /* Leading edge. Full-width box translated by a share of its own width, so the
@@ -318,8 +330,9 @@
 }
 .hud__plate--r .bar__flash { transform-origin: right center; }
 
+.hud__plate.is-low { --hp-c: var(--hp-low); }
 .hud__plate.is-low .bar__fill { animation: hpPulse .7s ease-in-out infinite; }
-.hud__plate.is-low .hp__now { color: #ff8093; }
+.hud__plate.is-low .hp__now { color: var(--hp-low); }
 @keyframes hpPulse { 50% { filter: brightness(1.55) saturate(1.2); } }
 
 .plate__row--foot { margin-top: 6px; }
@@ -412,10 +425,17 @@
   clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
   overflow: hidden;
 }
+/* Cut into eight discrete cells rather than ticked with hairlines. Health and
+   ammo were two different quantities drawn as the same widget — one continuous
+   bar each, same weight, 750px apart — so the pair could be misread at a
+   glance. Health is continuous because it IS continuous; ammo is countable, and
+   drawing it as cells says so. The dividers are the plate's own background
+   rather than a light tick, so they cut the fill instead of decorating it. */
 .charge__grid {
   position: absolute; inset: 0;
+  z-index: 2;
   background: repeating-linear-gradient(90deg,
-    transparent 0 calc(12.5% - 1px), rgba(134, 178, 228, .26) calc(12.5% - 1px) 12.5%);
+    transparent 0 calc(12.5% - 3px), rgba(3, 7, 14, .92) calc(12.5% - 3px) 12.5%);
 }
 .charge__fill {
   position: absolute; inset: 0;
