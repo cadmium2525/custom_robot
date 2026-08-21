@@ -90,6 +90,49 @@ function streakSprite() {
   });
 }
 
+/**
+ * Plume / energy sprite, long axis on +X, leading edge at +u like the streak.
+ *
+ * It exists to replace the shared `sprites().glow` blob on the `energy` batch,
+ * and the reason is worth recording. That sprite is a wide, low-alpha disc whose
+ * *own texel colour* runs white at the centre to (0.35, 0.60, 1.00) at half
+ * radius and only reaches zero at the very corner of the quad. The batch shader
+ * multiplies texel colour into the particle tint, so every thruster particle,
+ * dash line and pod glow laid a saturated blue skirt across whatever it covered
+ * — whatever colour the effect had actually asked for. Two idling machines keep
+ * dozens of them alive at all times and the batch is additive, so the sum is a
+ * broad, permanent, low-value cool wash. That is the measured mechanism behind
+ * the review's finding that turning the effects on halves the arena's warm
+ * coverage and doubles its cool: the wash is the effects layer repainting a
+ * stage three rounds have spent warming.
+ *
+ * This one is neutral white, so the tint alone decides hue; its energy is
+ * concentrated in a nucleus a tenth of the quad across; and it carries a tail
+ * rather than a halo, which the batch then rotates onto the particle's own
+ * screen-space velocity. A jet particle that points where it is going is a jet.
+ * A soft circle with no structure is dirt on the lens at any brightness, which
+ * is the whole of defect #32.
+ */
+function plumeSprite() {
+  return paint(128, (u, v, d, o) => {
+    // Nucleus: small enough that even a 96px point sprite gives it ~10px, which
+    // is what makes it read as a source rather than as a patch of light.
+    const core = Math.exp(-((u * u) / 0.0040 + (v * v) / 0.0026));
+    // Body: still compact — gone by ~0.22 of the quad.
+    const body = Math.exp(-((u * u) / 0.030 + (v * v) / 0.014)) * 0.62;
+    // Tail, behind the direction of travel.
+    const tail = g2(u + 0.26, 0.30) * g2(v, 0.052) * 0.5;
+    let a = Math.min(1, core + body + tail);
+    // Hard support cut. Whatever the profile does, nothing may survive past two
+    // thirds of the quad: an unbounded skirt of near-zero alpha is exactly what
+    // deposits a film over the whole frame once a few dozen of them overlap.
+    const e = Math.sqrt((u / 0.66) * (u / 0.66) + (v / 0.46) * (v / 0.46));
+    a *= 1 - clamp((e - 0.72) / 0.28, 0, 1);
+    d[o] = 255; d[o + 1] = 255; d[o + 2] = 255;
+    d[o + 3] = a * 255;
+  });
+}
+
 /** Tiling fbm used as the fireball's turbulence lookup. Raw values, no encode. */
 function turbulenceSprite() {
   const n = new Noise(0x9e13);
@@ -1020,6 +1063,7 @@ export class VFX {
     this.tex = {
       flash: flashSprite(),
       streak: streakSprite(),
+      plume: plumeSprite(),
       turb: turbulenceSprite(),
     };
 
@@ -1031,8 +1075,12 @@ export class VFX {
       { additive: true, sizeScale: 1.35, maxSize: 120, align: true });
     this.smoke = new ParticleBatch(Math.round(budget * 0.28), this.sp.smoke,
       { additive: false, opacity: 0.62, renderOrder: 4, maxSize: 150 });
-    this.energy = new ParticleBatch(Math.round(budget * 0.22), this.sp.glow,
-      { additive: true, sizeScale: 1.0, maxSize: 96 });
+    // `maxSize` halved along with the sprite change: the cap is what a single
+    // plume particle is allowed to cover when it drifts near the lens, and 96px
+    // of additive blue at a=0.3 is a quarter of the screen height of haze from
+    // one particle.
+    this.energy = new ParticleBatch(Math.round(budget * 0.22), this.tex.plume,
+      { additive: true, sizeScale: 1.0, maxSize: 52, align: true });
     scene.add(this.smoke.points, this.sparks.points, this.energy.points);
 
     // --- trails -----------------------------------------------------------
@@ -1806,7 +1854,16 @@ export class VFX {
 
     const l = Math.hypot(dx, dy, dz) || 1;
     dx /= l; dy /= l; dz /= l;
-    hot(teamColor, 1.6 + intensity * 1.4, _rgb);
+    // Squared, and starting well under the bloom threshold (1.04). The old
+    // `1.6 + intensity * 1.4` put a *walking* machine's exhaust above it, so the
+    // plume bloomed continuously — and a permanently blooming light source on
+    // each robot is one of the first things the eye finds in a still frame with
+    // nothing detonating, which is the thing the effects layer is not allowed to
+    // be. Now idle and walking exhaust is a dim ember that stays inside the
+    // frame's own value range, and only a real boost (intensity approaching the
+    // 1.6 a dash produces) clears the threshold and glows. The dynamic range
+    // between drifting and burning is much larger for it.
+    hot(teamColor, 0.55 + intensity * intensity * 1.35, _rgb);
     const sp = 2.5 + intensity * 4;
 
     this.energy.spawn(
