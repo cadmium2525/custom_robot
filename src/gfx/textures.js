@@ -93,9 +93,27 @@ export function armorTexture(look, size = 512, seedOffset = 0) {
   const height = new Float32Array(size * size);
 
   // Panel layout: recursive-ish splits produce believable plate boundaries.
+  //
+  // HOW MANY PANELS, and why the answer is "fewer than feels right".
+  //
+  // This bake tiles across the whole machine in model space (see robot.js's
+  // planar _uv at UV_SCALE 0.78), so one tile spans ~1.28 m — most of a robo.
+  // At depth 4 with a 0.09 floor that is up to sixteen plates over the entire
+  // body, which sounds sparse and photographs as a mosaic: measured at true
+  // 1:1 the player's torso came back as eight or nine small rectangles in
+  // different values, and the far machine at 42x79 px was a field of noise
+  // with a robot-shaped edge round it. It is the one place this build is
+  // objectively MORE detailed than the reference it is chasing and objectively
+  // worse for it — a toy robot reads as four or five chunky masses, and every
+  // extra value break inside a mass is competing with the masses.
+  //
+  // Depth 3 with a 0.14 floor gives five to seven plates per tile, i.e. roughly
+  // one or two across a torso and one down a thigh. The lines that remain are
+  // fewer and land on real divisions, which is what the eye can still use at
+  // eleven pixels per panel on the distant machine.
   const panels = [];
   const split = (x, y, w, h, depth) => {
-    if (depth <= 0 || w < 0.09 || h < 0.09) {
+    if (depth <= 0 || w < 0.14 || h < 0.14) {
       panels.push({ x, y, w, h, id: panels.length });
       return;
     }
@@ -109,7 +127,7 @@ export function armorTexture(look, size = 512, seedOffset = 0) {
       split(x, y + h * t, w, h * (1 - t), depth - 1);
     }
   };
-  split(0, 0, 1, 1, 4);
+  split(0, 0, 1, 1, 3);
 
   const panelAt = (u, v) => {
     for (let i = 0; i < panels.length; i++) {
@@ -119,7 +137,12 @@ export function armorTexture(look, size = 512, seedOffset = 0) {
     return panels[0];
   };
 
-  const gap = 0.0055;
+  // Wider groove to go with the larger plates. Fewer lines have to be more
+  // legible lines or the shell loses its machined read altogether: at 0.0070 a
+  // seam is ~1.4 px with a ~3.7 px shaded shoulder on the near machine, which
+  // survives the mip chain, where the old sub-pixel groove averaged away into a
+  // general grey haze and cost the body value for nothing.
+  const gap = 0.0070;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -158,16 +181,32 @@ export function armorTexture(look, size = 512, seedOffset = 0) {
       // The silhouette is the OUTLINE's job (see robot.js), and the outline only
       // works on a body that is lighter than the line drawn around it. So the
       // texture's job here is narrowed back to what a bake is actually good at:
-      // saying that this plate and its neighbour are different plates. A ~1.8x
-      // linear spread does that at 40px and leaves the machine's mass up where a
-      // painted toy's mass belongs.
+      // saying that this plate and its neighbour are different plates.
+      //
+      // And that is now ALL it does. The tiers are pulled in to a ~1.18x linear
+      // spread, because value structure on a robo belongs to the vertex paint,
+      // which is authored per ARMOUR GROUP — head, pauldron, chest, thigh — and
+      // therefore lands on the machine's actual masses. This grid does not know
+      // where a mass begins; it is a world-aligned tiling, so every value break
+      // it makes cuts a mass in half at an arbitrary place. A 1.5x spread across
+      // six plates was reading as a patchwork sprayed over the model rather than
+      // as panels on it. At 1.18x the plates still separate under a raking key
+      // and stop competing with the paint for the eye.
+      //
+      // Note what this is NOT: it is not a retreat to the old +-10% wobble. The
+      // tiers still exist, they are still deliberate, and the low tier comes UP
+      // rather than the high tier coming down, so the change also hands the
+      // machine back a few levels of body value.
       const pv = ((p.id * 2654435761) >>> 0) / 4294967296;
-      const tier = pv < 0.34 ? 0.74 : (pv > 0.74 ? 1.12 : 0.93);
-      const tint = tier * (0.95 + (((p.id * 40503) >>> 0) % 97) / 97 * 0.10);
+      const tier = pv < 0.34 ? 0.90 : (pv > 0.74 ? 1.06 : 0.98);
+      const tint = tier * (0.97 + (((p.id * 40503) >>> 0) % 97) / 97 * 0.06);
 
-      // Brushed grain, anisotropic along the longer panel axis.
+      // Brushed grain, anisotropic along the longer panel axis. Halved: at the
+      // 40-100 px a machine actually occupies this is not grain, it is a
+      // per-texel dither on top of the paint, and it is the first thing to turn
+      // to crawling noise once the robot moves.
       const grainDir = p.w >= p.h ? n.simplex2(u * 260, v * 12) : n.simplex2(u * 12, v * 260);
-      const grain = grainDir * 0.05;
+      const grain = grainDir * 0.026;
 
       // Broad mottling + micro speckle.
       const macro = n.fbm2(u * 5.5, v * 5.5, 4) * 0.5 + 0.5;
@@ -194,8 +233,11 @@ export function armorTexture(look, size = 512, seedOffset = 0) {
       const shade = tint * (0.86 + macro * 0.2) * (1 - seam * 0.72) * (0.94 + bevel * 0.09) + grain;
       r *= shade; g *= shade; b *= shade;
 
-      // Scuffed metal shows through as a desaturated bright.
-      const scuff = wear * 0.35 * micro;
+      // Scuffed metal shows through as a desaturated bright. Held down: `wear`
+      // covers the outer third of every plate, so this term was quietly washing
+      // the chroma out of a wide band around each panel — and the machine is
+      // supposed to be the most saturated thing in the frame.
+      const scuff = wear * 0.20 * micro;
       r = mix(r, 0.72, scuff); g = mix(g, 0.74, scuff); b = mix(b, 0.78, scuff);
 
       albedo[o] = clamp01(r) * 255;
