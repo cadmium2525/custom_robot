@@ -501,9 +501,22 @@
 .charge__head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .charge__name { font-size: 11px; letter-spacing: .24em; color: var(--ink); }
 .charge__kana { font-size: 8px; letter-spacing: .16em; color: var(--ink-faint); }
+/* The eight cells are painted into the TRACK, not just cut out of the fill.
+   At rest --charge is 0 — which is the honest resting state of a charge meter,
+   the player is not holding fire — and the widget was then a dark box with the
+   1px border chopped into eight pairs of dashes by the divider layer. An empty
+   segmented gauge that shows no cells is indistinguishable from a gauge that
+   was never wired up, which is exactly what the round-4 note said about it,
+   sitting next to two cooldown rings that are unmistakably alive. Lighting the
+   empty cells gives it eight countable slots at rest, so charging reads as
+   filling something rather than as a widget switching on. */
 .charge__bar {
   position: relative; height: 10px; margin-top: 5px;
-  background: linear-gradient(180deg, #000206, #060d18);
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(96, 158, 224, .17) 0 calc(12.5% - 3px),
+      transparent calc(12.5% - 3px) 12.5%),
+    linear-gradient(180deg, #000206, #060d18);
   box-shadow: inset 0 0 0 1px rgba(120, 168, 224, .2);
   clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
   overflow: hidden;
@@ -583,8 +596,20 @@
 
 .gear__label { display: none; }
 
-/* Mobile-only jump/dash pip readout. */
-.gear__mob { display: none; }
+/* Mobile-only jump/dash pip readout.
+   It carries the plate even though it is `display: none` on desktop, because
+   both of the rules that reveal it are phone rules and both revealed it BARE.
+   On an iPhone 12 in portrait "JUMP ●● DASH ●●" was the one element on the
+   screen with no ground under it, sitting directly on the arena's clear colour
+   while every widget above and below it had a backing box. A readout that
+   floats does not read as part of the instrument — it reads as debug text. */
+.gear__mob {
+  display: none;
+  padding: 5px 11px 6px;
+  background: rgba(3, 7, 14, .92);
+  box-shadow: inset 0 0 0 1px var(--line);
+  clip-path: var(--clip-s);
+}
 .mob__row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
 .mob__l { font-size: 8px; letter-spacing: .2em; color: var(--ink-faint); width: 34px; }
 .mob__pips { display: flex; gap: 3px; }
@@ -1726,7 +1751,29 @@
   .round__k { display: none; }
   .clock__v { font-size: 26px; }
   .centre__rule { width: 70px; margin-top: 5px; }
-  .hud__scrim { height: 150px; }
+  /* Portrait phones get a heavier ramp as well as a shorter one, and the reason
+     is a stage defect the HUD is standing in the middle of. A 19.5:9 portrait
+     frame has a much taller vertical FOV than the 16:9 desktop frame, so it
+     looks straight over the arena and out into the clear colour: on an iPhone
+     12 the top ~145px is empty, flat, saturated blue, terminating in a razor
+     horizon, and it measures as the most saturated region of the whole phone
+     frame. The 3D fix is somebody else's, but that band is ALREADY where the
+     phone HUD lives — the relocated gear column runs from y=78 to y=190 in it —
+     and the HUD was treating it as sky rather than as its own ground: two
+     plates and a bare pip row floating on a blue field. At this ramp the band
+     reads as the instrument's ground, the horizon dies inside the tail instead
+     of cutting across it, and because it still reaches zero it degrades to a
+     normal top scrim the moment the stage grows a ceiling. */
+  .hud__scrim {
+    height: 158px;
+    background: linear-gradient(180deg,
+      rgba(2, 4, 9, .94) 0%,
+      rgba(2, 4, 9, .88) 30%,
+      rgba(2, 4, 9, .72) 55%,
+      rgba(2, 4, 9, .44) 76%,
+      rgba(2, 4, 9, .16) 91%,
+      rgba(2, 4, 9, 0) 100%);
+  }
   .hud__gear {
     left: calc(10px + var(--safe-l));
     bottom: calc(10px + var(--safe-b));
