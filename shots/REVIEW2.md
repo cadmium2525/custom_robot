@@ -16,6 +16,38 @@ rewritten to match what the document actually contains.*
 
 ---
 
+## Round 4 (`35d0e66`) — the harness is finally repeatable
+
+`a2ea5e8` landed the `onRender`/`quality.auto` detach in `contour.mjs`. **Verified, and it is the
+single most important commit of this round**, because until now no #24 number in this project's
+history could be compared to any other #24 number. Two unmodified `contour.mjs` runs at `35d0e66`,
+same seed, minutes apart, one under load:
+
+```
+                      robot px   R1 box            OVERALL invisible / clean   R1 inv / clean   R2 inv / clean
+  run 1                 23725    161x261 @723,638        8.9% / 57.0%          8.3% / 60.0%     11.1% / 47.0%
+  run 2                 23717    161x261 @723,638        9.3% / 57.3%          8.7% / 60.3%     11.1% / 47.4%
+```
+
+Worst spread on any figure: **0.4 points**, against the **7 points** the round-3 critic documented
+at `10621f2`. Bounding boxes are pixel-identical. Sim state identical (`tick=420 p1=-1.93,8.02
+p2=9.52,-1.77`). The error bar is now an order of magnitude smaller than a round's improvement,
+which means #24 can be tracked for the first time. Nothing in this review is inherited; every
+figure below was re-measured at `35d0e66`.
+
+One correction to the numbers the round handed me: the builder's claim of **R2 14.2% invisible** does
+not reproduce — I get **11.1% on both runs**. The real figure is better than the one claimed, so
+this is noted rather than held against anyone; it most likely predates the stage-warmth commits
+that changed what R2 stands in front of.
+
+*Captures this round:* `contour-n.png` / `contour-mask.png` (contour meter, `--keep`),
+`c5-*.png` (screenshot.mjs at `--base http://127.0.0.1:4220/custom_robot/`), plus 1:1 and
+magnified crops. **Harness note for the next builder:** `screenshot.mjs` defaults `--base` to
+`http://127.0.0.1:4173/custom_robot/` while `contour.mjs` defaults to `http://127.0.0.1:4241/`
+with no base path, and `vite preview` serves under `/custom_robot/`. Three tools, three different
+default URLs, two of which are wrong for a local preview. Every reviewer loses a capture cycle to
+this. One shared default would fix it.
+
 ## How this round was captured
 
 ### The `a1fdf34` capture problem, and what `10621f2` actually fixed
@@ -96,7 +128,55 @@ opponent cannot be seen (#24, #1).
 
 ### BLOCKERS
 
-**1. Robots too small to find in the frame.** — **FIXED for the local robot, UNCHANGED for the opponent.**
+**1. Robots too small to find in the frame.** — **ROUND 4 (`35d0e66`): FIXED for the player.
+NOT FIXED for the opponent, but DOWNGRADED off the blocker list.**
+
+*My round-2 premise was wrong and I am correcting it against myself.* I reported the player at
+109x209px "squarely inside CRV2's band". That mask was clipped by the bottom edge, so the number
+was measured on a fraction of a machine. **Re-checked directly this round:** `maskrows.mjs` walks
+`contour-mask.png` row by row and the stencil tapers to nothing — 62, 61, 60, 58, 55, 49, 28, 24,
+7, 0 — terminating at **y=898 with row 899 empty**. The mask is *not* clipped. The player is
+**161x261px = 29% of frame height**, honestly measured, and that is above CRV2's 15-25% band rather
+than inside it. The size claim stands; my round-2 composition claim was built on a broken number
+and is withdrawn.
+
+**But one empty pixel of bottom margin is not framing, it is grazing.** The player's feet end 1px
+from the bottom of the screen. You cannot see the ground the machine is standing on, which is why
+its contact shadow is invisible (#14) and why the frame reads as if the player is falling out of
+it. CRV2 always shows deck under the player. This is now the composition defect, not the size.
+
+**The opponent: 42x79px = 8.8% of frame height** (up from 7.3%). Still under the rig's own 12%
+floor.
+
+**Assessing `9c8a4a0`'s claim that the floor is geometrically unreachable — I reject the premise
+and accept the conclusion.**
+
+The commit says: "at a 15m duel separation a 1.62m machine CANNOT be put above 12% of frame height
+at the same time as the player by repositioning alone. The geometry does not allow it. The only
+remaining lever is a much narrower FOV." Working it: the engine camera is **56° vertical**
+(`src/core/engine.js:40`). An object of height *h* subtends 12% of frame height at
+`d = h / (0.12 · 2 · tan 28°) = 1.62 / 0.1276 = 12.7m`. Measured separation on the pinned frame is
+`|p1-p2| = 15.07m`. A camera on the duel **axis** has the two machines at `d±7.5m`, so no anchor
+slide can bring the far one inside 12.7m — that much is right. But a camera **perpendicular** to
+the duel axis, 10m out from the midpoint, has *both* machines at `sqrt(10² + 7.5²) = 12.5m` — both
+inside 12.7m, both at 12%, with 2m of slack. **The lever the commit says does not exist is yaw, not
+FOV.** The rig forecloses it on line 6 of `camera.js`: "anchors behind the local robo so movement
+input stays intuitive." That is a design choice, and a defensible one, but it is not geometry.
+
+I accept the **conclusion** anyway, for a reason the commit did not give: the perpendicular camera
+costs the over-the-shoulder aim read in a game that aims, and it would drop the player from 29% to
+12% — a different game, not a better frame. And the commit's closing prediction has now come true.
+It said "a 55x78px opponent with a hard contour is perfectly readable; without one it is a smudge
+at any size." The contour landed. At 42x79 the opponent measures separation **40.5** and 47% clean
+contour, and at 1:1 (`c5-opp-1x.png`) you can read head, shoulders, arms, legs and which way it is
+facing. It is small. It is not a smudge.
+
+**Residual, and it is honest:** you can read *what* the opponent is; you cannot read *what it is
+doing*. In a fighter where you dodge on the opponent's animation, 79px of machine is marginal. So
+this is not FIXED — but it is no longer the thing standing between this build and the bar, and no
+further rounds should be spent on the rig. **Off the blocker list.**
+
+*Superseded round-2 entry:*
 `contour.mjs` measures the mask directly: ROBOT 1 is **109x209px = 23.2% of frame height**. That
 is squarely inside CRV2's 15-25% band and it is a real fix. ROBOT 2 is **47x66px = 7.3%**. The
 opponent is still a speck. In a 1v1 game the number that matters is the *smaller* of the two, and
@@ -173,7 +253,37 @@ Same frame: blocks now carry a panelled top face, a distinct darker side plane, 
 rim along the top edge and an orange under-trim at deck level. The lit-top/dark-side discipline
 that the robots still lack (#24) is present on the blocks.
 
-**14. Nothing casts a readable shadow.** — **UNCHANGED.**
+**14. Nothing casts a readable shadow.** — **ROUND 4 (`35d0e66`): PARTLY FIXED. Robots cast;
+obstacles still do not; the player's own shadow is unviewable for a composition reason.**
+
+`514051f` is real — the shadow path works now. Proof by eye: at 8x on `contour-n.png` around
+(590-710, 365-415) there is a **sharp, correctly-shaped cast shadow** of the opponent machine on
+the deck — you can make out a torso, two out-flung arms and a leg, projected down-left, consistent
+with the key's direction. That is a shadow map doing its job, not a blob.
+
+Two things are still wrong, and one of them is not a shadow bug at all:
+
+**(a) The obstacle blocks cast nothing.** `c5-shadow1.png` (3x on the left crate) and
+`c5-shadow3.png` (2x on the tall crate's base) show a metre-tall box sitting on a lit deck with no
+shadow on any side. Probed: deck at the crate base reads **87.3**, deck on the same plate 240px
+away reads **93.2** — a 6-point falloff, not a shadow. The code looks correct
+(`stage.js:702-703` sets `castShadow` on the merged obstacle Mesh, `stage.js:1093` again in
+`setQuality`, and the key's ortho frustum at `stage.js:835-838` is sized to the whole arena), so
+this is worth ten minutes of a builder's time rather than a rewrite — check that the merged
+`obstacles` mesh is inside `key.shadow.camera`'s **depth** range (`near = 1`, `far = 90`) once the
+light has been re-positioned to `focus + sunDir*30` each frame at `stage.js:1075`, and that
+`shadow.radius = 2.2` is not simply washing a short shadow out. **What makes the miss obvious is
+that each block carries a bright orange emissive under-trim at deck level — so every block
+*brightens* its own contact point.** The one place in the frame that should be darkest is lit.
+
+**(b) The player's contact shadow cannot be seen, and the cause is #1, not #14.** Probed either
+side of the player's feet on `contour-n.png`: deck 30px left of the foot reads **96.2**, deck 400px
+away reads **97.3**. No pool, no darkening. But the feet end at y=898 of a 900px frame — there is
+one pixel of deck below the machine to draw a shadow on, and the key throws down-left, i.e. off the
+bottom of the screen. Fixing the framing (see #1) will expose whatever is already being cast; do
+that before touching the shadow code for the player.
+
+*Superseded round-2 entry:*
 `contour-n.png` at 1:1: there is no contact shadow under ROBOT 1 at (755-865, 625-835), and no cast
 shadow from any of the four obstacle blocks onto the deck, despite `shadows: true` and
 `shadowMapSize: 2048` at tier 3. The only darkening is ambient occlusion at block/deck junctions.
@@ -227,8 +337,38 @@ its own dark outline so it survives over both the bright deck and the dark wall.
 `f-hud.png`: the full-width darkening gradient is gone; each plate carries its own dark backing
 box. No horizontal seam at y≈100 or anywhere else.
 
-**24. The robot silhouette is mushy.** — **UNCHANGED. This is now the #1 blocker.**
-`contour.mjs` on the pinned frame, robots at their real gameplay size:
+**24. The robot silhouette is mushy.** — **ROUND 4 (`35d0e66`): FIXED.** Judged by eye at 1:1 and
+2x on `contour-n.png`, and confirmed by two repeatable meter runs.
+
+```
+OVERALL   invisible (<12)  8.9%   weak (<25) 26.7%   clean (>=40) 57.0%   median step 48.1
+ROBOT 1 (161x261px)  invisible  8.3%   weak 23.9%   clean 60.0%   median 53.6
+ROBOT 2  (42x79px)   invisible 11.1%   weak 35.9%   clean 47.0%   median 37.8
+```
+
+The tool's own rule of thumb is "most of the contour above 25, very little below 12". Both machines
+now meet it: 73% and 64% of contour above 25, 8.3% and 11.1% below 12. Against round 2's 72.1%
+invisible / 4.1% clean this is not an incremental move, it is a different frame.
+
+**The eye agrees with the meter, which is the part that matters.** In `c5-cn-r1.png` (2x on the
+player) there is a continuous dark contour band running the whole perimeter — over the shoulder
+blocks, down both arm housings, around the leg silhouette, around the head and antenna. It does not
+break where the machine crosses a light deck plate. That is what the previous five rounds of rim
+tuning never produced, and the diagnosis behind it was right: `fres` measured against hard face
+normals fired the band only on geometry facing away from camera, so every rim tweak was tuning an
+invisible effect. Welding the normals is the fix.
+
+**Credit where it is due, and a warning.** The round-2 note listed three options and said "(c) ship
+an actual outline pass is the one that matches the reference and fixes both robots at once". That
+is what shipped, and it worked on both machines at once exactly as predicted. The warning: **the
+outline is now carrying the entire silhouette on its own.** The meter's own body-vs-background
+figures say so — ROBOT 1's body reads **84.5** against a background of **96**. The robot is still
+*darker than the deck it stands on*; the contour is a dark line drawn around a shape that has no
+value difference from its surroundings. That is a legitimate technique and it passes this defect.
+It is not the same thing as fixing the casting problem, and the casting problem is what loses the
+blind test. See N6.
+
+*Superseded round-2 measurement, kept for the record:*
 
 ```
 OVERALL   invisible (<12) 72.1%   weak (<25) 89.9%   clean (>=40) 4.1%
