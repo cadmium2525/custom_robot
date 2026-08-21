@@ -730,7 +730,58 @@ built an excellent stage and then painted the actors the colour of the scenery.*
 
 ## iPhone 12 playability, including touch
 
-PENDING
+Captured at `35d0e66`: `c5-touch-iphone12.png` (390x844 @3x, `screenshot.mjs --shots touch --device
+iphone12`, the scenario that wakes the layer with a real tap and then holds two fingers down), plus
+`c5-ip12-edge.png` and `c5-ip12-br.png` at 1:1, and a safe-area probe of my own (`inset.mjs`).
+
+**The touch layer landed and it is good.** `65e4670` works. A left analogue ring with a dragged nub
+sits at the thumb's home position, and FIRE / JUMP / DASH / BOMB / POD are laid out bottom-right in
+a thumb arc with FIRE largest. Labels carry kana. The layer mounts on first touch as designed.
+
+**The safe-area question, which is what nobody had checked.** `src/ui/ui.css` uses
+`env(safe-area-inset-*)` in 25+ places — `.hud__top`, `.hud__gear`, `.tc__stick`, `.tc__pad`, the
+screen padding — so the intent is there and the arithmetic checks out: at a real iPhone 12's 47px
+top inset, `.hud__top`'s `calc(8px + var(--safe-t))` puts the plate at y=55, clear of the notch;
+at the 34px bottom inset, `.tc__pad`'s `calc(16px + var(--safe-b))` lifts FIRE clear of the home
+indicator. Measured at 1:1 with insets at zero, FIRE's right edge sits 12.7 CSS px in
+(`c5-ip12-br.png`) and its bottom 31px up, exactly as the rules specify, so the layout is doing
+what it is told.
+
+**But it is still unverified on a device, and it cannot be verified in this harness.** Headless
+Chromium reports every `env(safe-area-inset-*)` as 0, so *every touch capture this project has ever
+taken is of the no-notch layout.* I tried to force the issue: `inset.mjs` sets the four custom
+properties on `documentElement` with `!important`, and `getComputedStyle` confirms `--safe-t: 47px`
+— **and not one element moved.** The reason is that `ui.css` declares the four variables on
+`.crv2-ui` (line 24 block, lines 73-76), not on `:root`, so the container's own `env()` declaration
+shadows any root override for everything inside it. That is not a product bug — and the fact that
+`.hud__top` resolves to exactly 8px rather than dropping an invalid `calc` proves the HUD really is
+inside `.crv2-ui` and really will receive the insets on a phone. **The claim "verifies clean" is
+therefore plausible but still untested.** To make it testable, move the four declarations to
+`:root` and let `.crv2-ui` inherit; the override then works and the notch layout becomes
+photographable in CI.
+
+### Real defects on the phone
+
+**P1. The top 23% of the portrait screen is empty, flat, saturated blue.** `c5-ip12-edge.png` at
+1:1 shows the arena's back wall terminating in a razor-sharp horizontal line across the full width,
+with nothing above it but the clear colour — measured at saturation **0.71-0.91 and 100% cool**,
+which makes it *the most saturated region of the entire phone frame, and it is empty*. On a 16:9
+desktop frame the raked stands fill the top rows and you never see it. On a 19.5:9 portrait phone
+the taller vertical FOV looks straight over the arena and out into the void, because the arena has
+no ceiling, no upper structure and no sky treatment. **This is the first thing a phone player sees
+and it is the worst-looking part of the build.** *Severity: BLOCKING on mobile.*
+
+**P2. BOMB and POD are drawn twice, in two different visual languages.** They appear as ring-gauge
+chips in the top HUD band *and* as circular touch buttons in the bottom cluster. One screen, two
+widgets, same two things.
+
+**P3. The JUMP and DASH charge pips are orphaned.** "JUMP ●● DASH ●●" sits directly on the flat
+blue with no backing plate, while every other HUD element on the screen has one.
+
+**P4. Not a defect, but do not read it as a pass:** the capture reports `fps 21, frameMs 46.6, tier
+LOW, scale 0.72`. That is software GL in a container and says **nothing** about a real iPhone 12.
+What it does show is that the auto-quality path engages and picks LOW at 0.72 render scale, which
+is the behaviour you want. **Frame rate on this device remains unmeasured.**
 
 ---
 
