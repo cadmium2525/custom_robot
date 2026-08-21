@@ -97,8 +97,26 @@
      costs nothing: the bar is read off the boundary between a solid block and a
      near-black track, and that step is still ~130 levels.
      The low state deliberately did not come down with it — an alarm is allowed
-     to be the loud one, and it also pulses. */
-  --hp-ok:      #22ac66;
+     to be the loud one, and it also pulses.
+
+     Round 6 ran the test that round did not: the SQUINT test, which is how the
+     "what does the eye land on" question is actually settled. Downscale a still
+     fight frame to 160x90 and blur it, and after the tracer beam the next thing
+     that survives is the two green bars — ahead of the player machine, which is
+     the subject. The numbers say the same thing on the exact bar rect:
+
+                          luma  p95   meanS  %highly saturated
+       bar at #22ac66      122  152    0.77       98.6
+       player machine       84  182    0.40       15.3
+       whole frame          53  113    0.41        6.0
+
+     98.6% of the bar was highly saturated against 15.3% of the machine, and its
+     mean was 1.45x the machine's. Same hue again, at ~70% of the luminance and
+     ~three quarters of the chroma; with the deeper shading on .bar__fill the
+     bar now measures 87.3 / 121 / 0.60 / 52.7 — level with the machine's mean
+     instead of half again over it, and still a ~85-level step off a near-black
+     track, which is the reading. In the squint frame the machine wins. */
+  --hp-ok:      #2f7d53;
   --hp-low:     #ff4d63;
 
   --ease:       cubic-bezier(.22, 1, .36, 1);
@@ -364,13 +382,29 @@
 
 /* Top-lit, bottom-shaded, so the fill reads as a solid object rather than a
    flat swatch. The top stop used to be 38% WHITE, which is most of why the bar
-   measured brighter than anything in the arena — see --hp-ok. 14% keeps the
-   shading and drops the highlight out of the frame's top rank. */
+   measured brighter than anything in the arena — see --hp-ok. 12% keeps the
+   shading and drops the highlight out of the frame's top rank.
+   The bottom stop went 62% -> 46% in the same pass as --hp-ok, and it is doing
+   half the work: rolling the lower third of the bar into shadow takes 8 points
+   of mean luminance and 7 points of saturated coverage off the widget without
+   touching the lit edge that the value is actually read from. It also makes the
+   bar look turned rather than printed, which is the look the rest of this file
+   is going for. */
 .bar__fill {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--hp-c) 88%, #ffffff) 0%,
+    var(--hp-c) 30%,
+    color-mix(in srgb, var(--hp-c) 46%, #000000) 100%);
+}
+/* The alarm keeps the shallower ramp. Everything above is about a green bar
+   that must not out-shout the machine it belongs to; a bar that has gone red
+   has exactly one job and it is to be noticed, so it does not inherit the
+   shading that was introduced to make the healthy state recede. */
+.hud__plate.is-low .bar__fill {
   background: linear-gradient(180deg,
     color-mix(in srgb, var(--hp-c) 86%, #ffffff) 0%,
     var(--hp-c) 34%,
-    color-mix(in srgb, var(--hp-c) 62%, #000000) 100%);
+    color-mix(in srgb, var(--hp-c) 68%, #000000) 100%);
 }
 
 /* Leading edge. Full-width box translated by a share of its own width, so the
