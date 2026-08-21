@@ -96,6 +96,201 @@ all nine captures are positive, where round 4 was negative — and that is what 
 blind test on. The **magnitude** should not be quoted to one decimal place by anybody until a
 builder finds out why two tools disagree this much about the same pixel.
 
+### Re-verified at `da3253a`, which is where this round closes
+
+Four commits landed after `b28ff8c` (`8727f60`, `1b93a1e`, `18ff5c1`, `c267025`, `51247e1`,
+`ab8b88e`, `da3253a`). Everything below is re-measured at `da3253a` on a clean worktree build,
+`vite preview` at 4220, so nothing in the verdict is inherited from the opening half of the round.
+
+The recast holds — one unmodified `contour.mjs` run, tier 3, seed 1234567:
+
+```
+                        b28ff8c (round open)   da3253a (round close)
+  OVERALL invisible            4.6-4.8%              4.4%
+  OVERALL clean               71.0-71.7%            71.1%
+  OVERALL body / bg          114-115.4 / 77.2      113.6 / 77.3
+  ROBOT 1 body / deck        115.9-117.5 / 81.1    115.7 / 81.1
+  ROBOT 2 body / bg              — / —              99.4 / 40
+```
+
+Every figure is inside the 0.4-point error bar or the 1.6-point run-to-run spread I measured at the
+top of this round. Nothing regressed under the HUD and stage work.
+
+### The frame-attention question I posed, answered — and the account of it corrected
+
+I asked whether the machines now out-rank the scenery, and a robot agent reported the robot's best
+luminance x chroma tile moving from **rank 28 of 720 to rank 17**, with the tiles above it being
+"the tracer beam, the rails and a wall lamp". I did not inherit that. `salience.mjs` (written from
+scratch this round) takes robot pixels from **contour's binary stencil** rather than a box — a box
+round a robot is mostly deck, so a box tile can score on deck pixels and be credited to the machine
+— runs three scoring models, and sweeps four tile sizes at two offsets, because one tile size and
+one formula is one data point rather than a measurement. On `r5b-player.png` (the frame the player
+sees, taken from contour's own settled page so the measured frame and the seen frame share a
+camera):
+
+```
+  model                                   T=32   T=40   T=48   T=64
+  A  lum x chroma  (the agent's model)     20/17  11/14  12/8   5/7
+  B  (lum + 1.5*local contrast) x chroma   14/11   9/8    7/6   5/7
+  C  local contrast x chroma  (harshest)    4/10   5/3    1/2   2/4
+     — best robot tile's rank, at offset 0 / offset half-tile; totals 1100, 680, 462, 275
+```
+
+**The direction reproduces and the exact number does not**, which is the same lesson as the contour
+magnitude: on the agent's own model at its own tile size I get **rank 11 of 680**, not 17 of 720.
+Quote the sign, not the digit.
+
+**The account of what out-ranks it is wrong, and the correction matters more than the rank.** It is
+not the tracer, the rails and a lamp. Under model A **the entire top ten is one object** — tiles at
+x=80-200, y=226-386, which `r5b-gate-2x.png` shows to be the **warm lit entry gate at frame left**:
+glowing amber louvre panels, the cyan rim rail beneath them and the yellow/black hazard chevron band
+under that, stacked into one 120x160px block that is the most saturated bright region in the
+picture (gate crop: warm 70.5%, saturated 50%). One piece of architecture in the corner of the frame
+is beating both machines on every model that weights brightness.
+
+**Is rank 17 acceptable, or must it be rank 1? Neither, and the tile rank is the wrong instrument.**
+A tile rank asks "is there one 40px square of robot brighter than every 40px square of anything
+else", and the honest answer for any game with a lit set is no — a lamp is allowed to be brighter
+than a machine. What the blind test actually asks is whether the machines punch above their size.
+So I measured that instead, on the same frame: the machines are **1.6% of the scene pixels** and
+supply **26.0% of the frame's brightest 1%** — a **16x over-representation**, against a background
+that also contains a tracer beam and a lit gate. The full split of that top 1% (threshold luminance
+172):
+
+```
+  white / neutral        45.4%   the tracer beams at x~800 y200-400, and the white deck-edge rim line
+  ROBOT                  26.0%   1.6% of the pixels, 26% of the highlights
+  warm (gate, chevrons)  15.5%
+  cyan / blue            12.9%
+```
+
+**That is a pass, and it is the answer to the question.** Rank 1 is not required and was never the
+right target; 16x over-representation in the top of the value range is. The one figure that is still
+the wrong way round is coverage-weighted: the cyan rail family is **2.8% of the scene at mean
+luminance 136.8** against the machines' **1.6% at 117.7**, so there is still more bright cyan on
+screen than there is robot. That is a smaller complaint than round 4's, and it is the only part of
+N6 left.
+
+### N6's own numbers reproduce, and the HUD now loses to the machine
+
+`c267025` measured the HUD against the standard the stage had just been held to and found the health
+bars at luma 169.7 / p95 207 / 85.5% saturated — brighter and more saturated than either machine.
+Re-measured independently at `da3253a` (`regions.mjs`, written this round; machine figures taken
+through contour's stencil, not a box):
+
+```
+                        mean    p50     p95   sat%   clip%      claimed after
+  P1 health bar        123.7  135.1   152.1   90.9      0       122.1 / p95 152
+  P2 health bar        135.2  139.3   152.1  100.0      0
+  P1 class chip         31.2   26.2   113.9   56.9   1.37       clipping 66.3% -> 2.2%
+  player machine       117.6  121.0   199.7   22.8      —       p95 188
+  opponent machine     106.1  104.8   186.9   28.3      —
+  deck (mid / right)  75.4/91.8  —  121/115  6.5/0.4    0
+  lit gate             114.5  113.6   171.0   69.2      0
+  hazard chevron       112.1   96.2   187.0   39.0      0
+  cyan rail band        65.3   47.2   150.9   46.1      0
+```
+
+Every claim in that commit reproduces, one of them better than claimed: **the machine's highlights
+(p95 199.7) now out-rank the loudest HUD pixel (152.1)**, and the opponent has gone from luma 51.3
+to 106.1 — it more than doubled. Both machines are now brighter than the deck they stand on, on the
+frame with the HUD and the VFX both drawn, which is the frame the player sees. The class chip's
+blowout is gone (1.37% clipping against 66.3%). **N6: FIXED.** Credit; this was the finding of round
+4 and it has been answered with the right instrument.
+
+### The notch layout, photographed for the first time in this project's history
+
+`afbefa2` moved the four safe-area custom properties from `.crv2-ui` to `:root`, on the round-4
+recommendation, and that makes the override work: `getComputedStyle(documentElement)` now returns
+`--safe-t: 47px` **and the elements move**, where in round 4 they did not. So here is the check
+nobody in this project has ever been able to make — the same touch scenario captured twice from one
+build, insets forced to `0,0,0,0` and to an iPhone 12's `47,34,0,0` (`insetshot.mjs`;
+`r5b-ip12-0.png` / `r5b-ip12-47.png`), with every element's box read out of the live page:
+
+```
+  element        insets 0 (top..bottom)   insets 47/34   moved
+  .hud__top            8 .. 69              55 .. 116     +47 down
+  .hud__centre         8 .. 65              55 .. 112     +47 down
+  .hud__gear          78 .. 201            125 .. 248     +47 down
+  .gear__mob         181 .. 201            228 .. 248     +47 down
+  .tc__pause          84 .. 130            131 .. 177     +47 down
+  .tc__pad           622 .. 828            588 .. 794     -34 up
+  .tb--fire          740 .. 828            706 .. 794     -34 up
+  .tb--jump/dash/bomb/pod                                 -34 up
+  .tc__stick       558.6 .. 690.6      558.6 .. 690.6      0  (held, so positioned at the thumb)
+  .hud__scrim          0 .. 158              0 .. 158      0  (full-bleed by design)
+```
+
+**What 47px and 34px actually do:** the notch inset pushes the entire top HUD stack down as one
+block, landing the P1/P2 plate at y=55 on a 844px screen — clear of an iPhone 12's ~47px sensor
+housing with 8px to spare — and the home-indicator inset lifts the whole five-button touch cluster
+up as one block, putting FIRE's bottom edge at 794, i.e. **50px above the screen edge** and clear of
+the indicator. Nothing collides at either setting: the HUD stack ends at 248 and the pause chip
+starts at 131 inside it, the touch cluster's top (588) is 340px below the HUD's bottom. The idle
+stick is covered by its own `bottom: calc(12px + var(--safe-b))` rule and moves with the rest; it
+does not move in this capture only because the capture holds a thumb on it, which is correct
+behaviour. **The layout is verified, not merely plausible.** The round-4 caveat is withdrawn.
+
+### The explosion, with the new occlusion metric pointed at it
+
+I wrote earlier that the explosion is *"genuinely good early and muddy late"*. The VFX agent reached
+the same conclusion independently and worked the late smoke; `51247e1` added the right instrument
+for judging the result — `cover` (the effect changed this pixel at all), `hide` (changed it by more
+than a glaze) and `lift` (mean signed change), all differenced against a plate of the same frozen
+frame captured before ignition, so the footprint is exact with no segmentation. All figures below
+are percentages **of the 560px crop**, not of the frame.
+
+Full lifetime at `da3253a`, tier 3 (`r5b-sheet-explosion.png`):
+
+```
+    age    >200%   warm%   cover   hide    lift
+     0ms   14.74   49.59   58.9%  39.5%   +45.1
+    17ms   17.21   46.35   60.2%  41.8%   +49.0
+    40ms   18.30   50.68   59.7%  41.6%   +50.0
+    70ms   11.52   55.28   52.1%  34.4%   +38.7
+   110ms   12.11   54.81   50.7%  33.3%   +37.2
+   165ms   11.93   55.70   49.4%  34.1%   +37.0
+   240ms    7.15   56.79   47.4%  36.4%   +32.5
+   340ms    4.20   60.32   49.4%  40.8%   +27.6
+   470ms    2.41   62.89   54.6%  42.0%   +25.5
+   650ms    0.37   44.46   30.2%  19.3%    +5.7
+   950ms    0.39   27.11    4.8%   1.2%    -0.4      <- effect over; -0.4 is the noise floor
+  1400ms    0.38   27.59    5.8%   1.1%    -0.4
+```
+
+**"Muddy late" is no longer true, and I am withdrawing it.** There is no grey smudge anywhere in the
+lifetime. The shape reads as drawn rather than simulated, which is the reference's whole idea: a
+white-cored hard-rimmed ball at 0-40ms, a saturated orange lobed mass with real internal soot
+striations at 70-470ms (`>200` falls from 18.3% to 2.4% while `warm` *rises* from 50% to 63% — the
+mass cools into colour instead of fading to grey, which is exactly right), then dispersal.
+
+Two residuals, both small, and one of them needs a builder's eye:
+
+**(a) The tail is attrition, not dissipation.** A narrow sweep (`r5b-sheet-excliff.png`, ages
+690/710/730/750) gives cover 20.7 / 14.0 / 9.3 / 6.5 and, at 1:1, shows *fewer* flame tongues each
+step rather than *dimmer* ones — the individual tongues are at full chroma when they stop existing.
+Over 60ms at 60fps that is four frames of large orange shapes winking out one at a time. It is the
+one part of the effect that looks like particles rather than a drawing. Cheap fix, low priority.
+
+**(b) `lift` never goes negative, which is the metric's own test for soot.** The comment in
+`51247e1` says it best: "a mass with real soot in it should go NEGATIVE in its late life, because
+burnt gas is a hole, not a lamp." This one runs +45 → +25 → +5.7 → 0. The dark striations at
+240-470ms are dark *relative to the fireball*, not dark relative to the arena; at every age the
+effect is a net lamp. That is the difference between an explosion that is drawn over the arena and
+one that is standing in it, and it is the single thing left between this effect and the reference.
+
+**(c) A number worth a designer's attention rather than an artist's.** `hide` sits at 33-42% of the
+crop from 0ms to 470ms — the effect blocks a third to a half of its own neighbourhood for half a
+second. In a game where you dodge on the opponent's animation, that is a readability decision
+somebody should make deliberately rather than inherit.
+
+**And the impact effect is not there at all.** `--effect impact` over its full 0-700ms sweep never
+exceeds **cover 1.9% / hide 0.1% / lift 0.0** — i.e. the difference against the pre-ignition plate is
+indistinguishable from nothing at every age. Either it fires outside the crop the tool centres on
+the blast, or it renders nothing. Whichever it is, the effect that plays on *every single bullet
+that lands* is currently unmeasurable, and that is worth a builder's ten minutes before any more
+tuning of the explosion, which is already the best-looking thing in the build.
+
 *Captures this round, all at `b28ff8c` on a local `vite preview` at 4220:* `r5-fight2.png` (the
 fight frame; see the harness note below), `r5-cn2.png` / `r5-mask2.png` (contour, `--keep`),
 `r5-player-samepage.png` (the player frame taken from contour's own settled page, via a four-line
