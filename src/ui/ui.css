@@ -222,10 +222,19 @@
 .hud__plate.is-local { box-shadow: 0 0 0 1px color-mix(in srgb, var(--team) 45%, transparent); }
 
 /* Hit feedback strokes the plate edge. It never paints over the readout —
-   a hit is the exact moment the numbers have to stay legible. */
+   a hit is the exact moment the numbers have to stay legible.
+   The second shadow used to be an OUTER `0 0 22px` glow, which `clip-path:
+   inherit` clipped away in full: the declaration painted nothing and the whole
+   of the hit read was a hard 2px white keyline. Inset, it does the job it was
+   written for and carries the team colour, so a hit on the red plate no longer
+   looks the same as a hit on the blue one — and the pure white stays confined
+   to the 2px line instead of being the entire signal. 14px of falloff dies well
+   short of the numerals. */
 .plate__edge {
   position: absolute; inset: 0;
-  box-shadow: inset 0 0 0 2px #fff, 0 0 22px color-mix(in srgb, var(--team) 60%, transparent);
+  box-shadow:
+    inset 0 0 0 2px #fff,
+    inset 0 0 14px color-mix(in srgb, var(--team) 55%, transparent);
   clip-path: inherit;
   opacity: 0;
   pointer-events: none;
@@ -342,19 +351,42 @@
   transform: translateX(calc((1 - var(--hp)) * 100%));
 }
 
-/* The hit flash is clipped to the *remaining* health, not the whole track.
-   Flashing the full width whites out the filled/empty boundary for the length
-   of the flash — i.e. it blinds the reading precisely on the frame the player
-   took damage. Scaled by --hp, the spent track stays black and the hit
-   actually sharpens the edge instead of erasing it. */
+/* The hit flash is clipped to the *remaining* health, not the whole track, so
+   the spent part of the bar stays black through a hit and the filled/empty
+   boundary survives.
+   It is also a RAMP, not a fill, and that is the other half of #8. A flat
+   `background: #fff` at .85 across the whole remaining bar does not flash the
+   readout, it deletes it: measured on the opponent plate 40ms into a 260ms
+   animation (and 40ms is not the peak), the 316x15 bar went from 81.0% green
+   coverage and 0.95% clipping to **0% green and 43.4% clipping**. Not one
+   green pixel left in the widget whose only job is to be green or red.
+   A damage flash carries one fact — damage landed, and it landed HERE — and
+   "here" is the depleting edge. Concentrated there it sharpens the boundary,
+   which is what the paragraph above always claimed to be doing, while the fill
+   keeps its colour so ok-vs-low still reads on the frame you took the hit. */
 .bar__flash {
   position: absolute; inset: 0;
-  background: #fff;
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, .07) 44%,
+    rgba(255, 255, 255, .34) 74%,
+    rgba(255, 255, 255, .92) 93%,
+    #ffffff 100%);
   opacity: 0;
   transform-origin: left center;
   transform: scaleX(var(--hp));
 }
-.hud__plate--r .bar__flash { transform-origin: right center; }
+/* 270deg, so the transparent end stays on the anchored side and the white end
+   lands on the depleting edge, which is the left one on the mirrored plate. */
+.hud__plate--r .bar__flash {
+  transform-origin: right center;
+  background: linear-gradient(270deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, .07) 44%,
+    rgba(255, 255, 255, .34) 74%,
+    rgba(255, 255, 255, .92) 93%,
+    #ffffff 100%);
+}
 
 .hud__plate.is-low { --hp-c: var(--hp-low); }
 .hud__plate.is-low .bar__fill { animation: hpPulse .7s ease-in-out infinite; }
