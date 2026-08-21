@@ -313,10 +313,20 @@ export class Stage {
     }
     this.wallTex = tex;
 
+    // envMapIntensity is not "shininess" here, it is the deck's bounce.
+    //
+    // The baked environment is a dark sky over a lower hemisphere painted the
+    // DECK's own colour, so it is a directional ambient, not a flat one: an
+    // up-facing plane (the deck, a block cap) sees only the black sky and gets
+    // nothing, while a vertical plane sees half deck and gets the bounce. Three
+    // of the four boundary walls face away from the key and were lit by nothing
+    // but a hemisphere term worth 0.03 of irradiance, which is why the top
+    // third of every frame measured 90-100% below the black threshold. At 0.18
+    // the arena was throwing away the light its own brightest surface makes.
     const mat = pbr(tex, {
       emissive: 0xffffff,
       emissiveIntensity: 1.15,
-      envMapIntensity: 0.18,
+      envMapIntensity: 0.85,
       normalScale: 1.2,
       side: THREE.DoubleSide,
     });
@@ -709,11 +719,21 @@ export class Stage {
 
   _flushBatches() {
     if (this._struct.length) {
+      // Architecture is painted plate, not bare chrome. The shared structure
+      // bake authors metalness at 0.5-0.7, and a metal has no diffuse term at
+      // all — it can only be as bright as what it reflects, and what a gantry
+      // 20 m up reflects is a near-black sky. That is the whole mechanism
+      // behind the black band across the top of every frame: not "too little
+      // light" but "a surface that cannot accept light". Knocking the map down
+      // to roughly a third gives the cornice, the pylons and the gate jambs a
+      // diffuse coat for the warm rig to land on, and the envMap lift lets the
+      // deck's bounce do the rest. Both are needed; either alone does nothing.
       const mat = pbr(this._structureTex(), {
         color: this.theme.struct ?? this.theme.wall,
         emissive: this.theme.accent,
         emissiveIntensity: 1.2,
-        envMapIntensity: 0.16,
+        metalness: 0.34,
+        envMapIntensity: 0.75,
         normalScale: 1.1,
         side: THREE.DoubleSide,
       });

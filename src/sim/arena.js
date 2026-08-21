@@ -62,7 +62,11 @@ export const ARENAS = [
       deck: 0x5c6068,
       floorAccent: 0x2f6bd6,
       struct: 0x39424f,
-      wall: 0x232a35,
+      // A boundary wall at 0x232a35 has a linear albedo of 0.021 — it returns
+      // two percent of everything that lands on it, so no rig can light it and
+      // the surround measured 90%+ below the black threshold. Doubled, and it
+      // is still less than half the deck.
+      wall: 0x333a45,
       accent: 0x4aa8ff,
       emissive: 0x59b7ff,
       hazard: 0xffb01f,
@@ -121,7 +125,7 @@ export const ARENAS = [
       deck: 0x7a6f62,
       floorAccent: 0xff6a1a,
       struct: 0x4b3b2e,
-      wall: 0x160e08,
+      wall: 0x2e2119,
       accent: 0xff8c2a,
       emissive: 0xff5a10,
       hazard: 0xffd24a,
@@ -172,7 +176,7 @@ export const ARENAS = [
       deck: 0x646c78,
       floorAccent: 0x7de2ff,
       struct: 0x36414f,
-      wall: 0x0b1018,
+      wall: 0x1d242f,
       accent: 0x7de2ff,
       emissive: 0x9df0ff,
       hazard: 0xff9a2e,
