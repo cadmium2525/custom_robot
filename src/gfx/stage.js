@@ -426,10 +426,33 @@ export class Stage {
     // A raked bank of seats is the single best scale reference available: the
     // viewer knows how big a seat is, therefore knows how big the robot is.
     // The bank is almost black on purpose — it frames the lit deck.
-    const galleryOn = t.crowd && this.settings.crowd;
+    //
+    // THE BANK IS ARCHITECTURE. THE CROWD SITTING IN IT IS DECORATION. Those
+    // were one flag, and that is the whole of phone defect P1.
+    //
+    // `crowd` is false at LOW and it gated the rake, the jumbotron AND the roof
+    // gantry — the entire upper volume — on the one tier that shows the most of
+    // it. A 19.5:9 portrait frame pitches the cornice down to a fifth of the
+    // way from the top and puts raw sky in every row above it: measured at
+    // saturation 0.71-0.91, the most saturated region of the whole phone frame,
+    // and empty. On a 16:9 desktop frame the rake fills those rows and the
+    // defect is invisible, which is how it survived eleven rounds of review.
+    //
+    // So the VOLUME is built at every tier now and only its SURFACE is tiered:
+    // the seat-and-crowd bake where there is texture budget for it, flat
+    // plating out of the shared structure batch where there is not. The
+    // fallback is genuinely free — it merges into a mesh that already exists,
+    // adds no texture bake to the loading screen and no draw call to the frame.
+    //
+    // An arena with no spectators gets the same volume as a terraced retaining
+    // bank rather than nothing, because "this arena has no crowd" was never a
+    // reason for the top of its frame to be empty — and the foundry, which
+    // declares `crowd: false`, has been playing with a hole up there at EVERY
+    // tier, not just LOW.
     const rakeRun = 9.0, rakeRise = 6.4;
     const gy = h + 0.15;
-    if (galleryOn) {
+    const crowdOn = t.crowd && this.settings.crowd;
+    if (crowdOn) {
       const gtex = galleryTexture(t, this.tex.gallery);
       for (const tx of Object.values(gtex)) {
         if (tx?.isTexture) tx.anisotropy = this.settings.anisotropy;
@@ -454,6 +477,37 @@ export class Stage {
       bank.name = 'gallery';
       this.group.add(bank);
       this.gallery = bank;
+    } else {
+      // Plated bank: the same raked volume in the shared structure batch. Mid
+      // tint, so it sits between the near-black wall below it and the lit top
+      // plane of the cornice — the bank has to read as a SURFACE that turns,
+      // not as one more piece of the dark surround.
+      const slope = Math.hypot(rakeRun, rakeRise);
+      this._struct.push(flatTint(ringStrip(
+        rectLoop(outHx, outHz, gy),
+        rectLoop(outHx + rakeRun, outHz + rakeRun, gy + rakeRise),
+        STRUCT_TILE, slope / STRUCT_TILE
+      ), 0.66));
+      // Capping rail along the head of the bank. A raked plane running off the
+      // top of frame with no edge on it reads as a gradient; an edge is what
+      // makes it a built thing with a top.
+      this._struct.push(flatTint(ringStrip(
+        rectLoop(outHx + rakeRun, outHz + rakeRun, gy + rakeRise),
+        rectLoop(outHx + rakeRun + 0.5, outHz + rakeRun + 0.5, gy + rakeRise + 0.45),
+        STRUCT_TILE
+      ), 1.25));
+      // One aisle line low on the rake. Additive and therefore unbounded, so it
+      // is held far under the strength of the deck kerb: this is 20 m up and
+      // near the top of the frame, which is the last place in the composition
+      // allowed to compete for brightness. It exists to put a horizontal in the
+      // dark, not to light anything.
+      const warm = new THREE.Color(t.crowdWarm ?? t.hazard ?? 0xffb01f);
+      const af = 0.26;
+      this._practicals.push(flatTint(ringStrip(
+        rectLoop(outHx + rakeRun * af, outHz + rakeRun * af, gy + rakeRise * af),
+        rectLoop(outHx + rakeRun * af + 0.06, outHz + rakeRun * af + 0.06, gy + rakeRise * af + 0.1),
+        1
+      ), warm.r * 0.17, warm.g * 0.11, warm.b * 0.05));
     }
 
     // --- Jumbotron ring -----------------------------------------------------
@@ -463,7 +517,8 @@ export class Stage {
     const screenBase = gy + rakeRise + 0.4;
     const screenH = 2.6;
     const sHx = outHx + rakeRun, sHz = outHz + rakeRun;
-    if (t.screens && this.settings.crowd) {
+    const screensOn = t.screens && this.settings.crowd;
+    if (screensOn) {
       const stex = screenTexture(t, this.tex.screen);
       const smat = pbr(stex, {
         emissive: 0xffffff,
@@ -484,8 +539,22 @@ export class Stage {
       screens.name = 'screens';
       this.group.add(screens);
       this.screens = screens;
+    } else {
+      // No screen bake at this tier: the band is still built, as the blank back
+      // of the hoarding the screens are hung on. Darker than its own framing,
+      // so the two struct strips below still read as installed hardware around
+      // something rather than as a pair of stray lines.
+      this._struct.push(flatTint(ringStrip(
+        rectLoop(sHx, sHz, screenBase),
+        rectLoop(sHx, sHz, screenBase + screenH),
+        STRUCT_TILE, screenH / STRUCT_TILE
+      ), 0.4));
+    }
 
-      // Frame the band top and bottom so it reads as installed hardware.
+    // Frame the band top and bottom so it reads as installed hardware. Built
+    // whether or not the screens themselves are — it is the hoarding, and the
+    // hoarding is what gives the top of the frame two horizontals to sit on.
+    if (t.screens) {
       this._struct.push(flatTint(ringStrip(
         rectLoop(sHx + 0.3, sHz + 0.3, screenBase - 0.35),
         rectLoop(sHx + 0.3, sHz + 0.3, screenBase), STRUCT_TILE
@@ -518,7 +587,15 @@ export class Stage {
     // A lighting truss cantilevered inward over the crowd, with lamp housings
     // aimed at the deck. Kept off the centre of the arena so it never occludes
     // the fight, but it puts hard structure into the top of the frame.
-    if (this.settings.lights >= 4) {
+    //
+    // It used to be gated on `lights >= 4`, and nothing here is a light. The
+    // truss is two ring strips in the structure batch and the lamp lenses are
+    // quads in the practicals batch; both meshes exist already, so this costs
+    // no draw call, no texture and no shader at any tier. The gate was reading
+    // the lamp COUNT as though it were the lamp BUDGET, and what it actually
+    // did was strip the last hard edge out of the top of the frame on LOW —
+    // exactly where the portrait phone is looking. Built everywhere.
+    {
       const ry = pyTop - 1.6;
       const inHx = b.hx + 3.0, inHz = b.hz + 3.0;
       this._struct.push(flatTint(ringStrip(
