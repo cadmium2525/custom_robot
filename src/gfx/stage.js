@@ -286,11 +286,22 @@ export class Stage {
     // pale dielectric surface taking a strong key light, which is how a real
     // floor is bright — an emissive floor just becomes a light box and eats
     // every shadow that lands on it.
+    //
+    // `normalScale` is the busyness dial for this surface, and it is a more
+    // honest one than the albedo. Under a single hard key every normal-mapped
+    // groove produces a lit lip and a shadow lip, so relief is what turns a
+    // quiet tonal pattern into legible line work — which is precisely the
+    // finding the blind comparison returned about this deck. Halved. The
+    // plating is all still there; it has stopped drawing itself in outline.
+    //
+    // The emissive corner nodes come down with it: they are small, cyan and
+    // scattered across the entire floor, which is three separate reasons for
+    // the eye to go to the ground.
     const mat = pbr(tex, {
       emissive: 0xffffff,
-      emissiveIntensity: 0.85,
+      emissiveIntensity: 0.5,
       envMapIntensity: this.settings.reflections ? 0.34 : 0.22,
-      normalScale: 1.0,
+      normalScale: 0.5,
     });
     mat.envMap = this.envMap;
     this.floorMat = mat;
@@ -713,8 +724,14 @@ export class Stage {
         emissive: this.theme.accent,
         emissiveIntensity: 1.4,
         metalness: 0.44,
+        // Same argument as the deck's normalScale, and the crates are the
+        // surface the comparison named first: "four brown crates occupy more of
+        // the eye's attention than the fight does". At 1.35 every plate groove,
+        // bolt head and louvre slot on a 2.6 m box gets its own highlight, so a
+        // crate carries more legible line work than a robot does. The plating
+        // stays; the relief that was drawing it in ink comes down.
         envMapIntensity: 0.6,
-        normalScale: 1.35,
+        normalScale: 0.8,
       });
       mat.envMap = this.envMap;
       mat.vertexColors = true;

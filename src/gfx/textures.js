@@ -351,6 +351,23 @@ const cellRand = (i) => ((Math.imul(i, 2654435761) >>> 0) % 65536) / 65536;
  */
 const HAZ_PAINT = 0.58;
 
+/**
+ * Value ceiling for the plain deck plate.
+ *
+ * Quieting the deck made it BRIGHTER, which is the trap in this kind of work
+ * and the reason it has to be measured rather than eyeballed: fewer dark
+ * service plates, a softer scribed seam and half the relief all remove shadow,
+ * so the floor's median climbed from 96 to 103 while its detail fell. The
+ * contour meter caught it immediately — ROBOT 1's background went up 7 points
+ * and 1.9 points of its silhouette went invisible with it.
+ *
+ * So the plain plate gives back what the quieting handed it, and then some. The
+ * deck stays the largest lit surface in the arena and still carries the frame's
+ * light; it just stops owning the top of the value range, which belongs to the
+ * two machines standing on it.
+ */
+const DECK_VALUE = 0.80;
+
 export function floorTexture(theme, size = 1024) {
   const key = `floor:${theme.key}:${size}`;
   if (cache.has(key)) return cache.get(key);
@@ -407,12 +424,26 @@ export function floorTexture(theme, size = 1024) {
       // The mix is deliberately weighted toward plain bright deck: the dark and
       // marked plates are punctuation, and punctuation stops working if you use
       // it in every sentence.
-      const kind = cr < 0.07 ? 4 : cr < 0.17 ? 3 : cr < 0.34 ? 1 : cr < 0.44 ? 2 : 0;
+      //
+      // It was still being used in every other sentence: 44% of the deck was a
+      // marked plate of one kind or another, so the floor under the fight was a
+      // patchwork with a value break every two metres. The blind comparison
+      // named this exactly — "the deck plating carries more legible texture per
+      // square inch than either machine does" — and the fix is not less detail
+      // per plate, it is more PLAIN plates. A subject reads because there is
+      // somewhere quiet around it. 70/30 instead of 56/44.
+      const kind = cr < 0.045 ? 4 : cr < 0.11 ? 3 : cr < 0.23 ? 1 : cr < 0.30 ? 2 : 0;
 
       // Base plate rides most of the way to `deck`, which is near-white. The
       // floor is the light source of the composition even though it emits
       // nothing — everything else in the arena is darker than this.
-      let shade = (0.9 + grime * 0.2) * (0.94 + cr2 * 0.12);
+      //
+      // Plate-to-plate tone jitter halved as well. A ±13% random step between
+      // adjacent plain plates is invisible as "material variation" and very
+      // visible as "the floor is a checkerboard"; at ±7% the deck reads as one
+      // surface with a history rather than as a grid of differently-painted
+      // squares.
+      let shade = (0.94 + grime * 0.12) * (0.965 + cr2 * 0.07) * DECK_VALUE;
       let r = mix(base.r, deck.r, 0.88) * shade;
       let g = mix(base.g, deck.g, 0.88) * shade;
       let b = mix(base.b, deck.b, 0.88) * shade;
@@ -425,11 +456,17 @@ export function floorTexture(theme, size = 1024) {
 
       if (kind === 1 && field > 0.5) {
         // Tread plate: a diamond raised pattern, matte and grippy.
+        //
+        // The highest-frequency thing on the deck, and under a hard key every
+        // diamond got a lit face and a shadowed face — six repeats per tile of
+        // a pattern with 100% local contrast, i.e. the busiest square metre in
+        // the arena, laid where the fight happens. Held to a shallow relief and
+        // a narrow tone step: it still reads as tread, it no longer sparkles.
         const tu = (u * cells * 6) % 1 - 0.5;
         const tv = (v * cells * 6) % 1 - 0.5;
         const dia = 1 - smoothstep(0.16, 0.3, Math.abs(tu) + Math.abs(tv));
-        h += dia * 0.3;
-        shade = 0.86 + dia * 0.2;
+        h += dia * 0.17;
+        shade = 0.9 + dia * 0.11;
         r *= shade; g *= shade; b *= shade;
         rough += 0.22 * dia;
       } else if (kind === 2 && field > 0.5) {
@@ -477,7 +514,13 @@ export function floorTexture(theme, size = 1024) {
       // The scribed grid is a dark line, not a glowing one. Dark line on bright
       // deck is legible in every lighting condition; the emissive version only
       // reads in the dark and turns to mush under bloom.
-      r *= 1 - seam * 0.86; g *= 1 - seam * 0.86; b *= 1 - seam * 0.86;
+      //
+      // A 0.86 crush makes it a near-black line, and there are eight of them
+      // across every tile in both axes — which is a lot of hard graphic edge
+      // for a surface whose job is to be the quiet thing a robot stands on. At
+      // 0.66 the grid still scribes the deck into readable plates at range and
+      // stops being the strongest line work in the frame.
+      r *= 1 - seam * 0.66; g *= 1 - seam * 0.66; b *= 1 - seam * 0.66;
 
       albedo[o] = clamp01(r) * 255;
       albedo[o + 1] = clamp01(g) * 255;

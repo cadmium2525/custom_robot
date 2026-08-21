@@ -886,15 +886,26 @@ void main() {
       // also flatters a mid-tone histogram while hiding the one thing the frame
       // is about, which is how an earlier version of this scored better and
       // looked considerably worse.
-      float bite = mix(0.16, 0.86, vT * vT);
+      // The erosion has to bite from early, not just at the end. Held off until
+      // the last quarter of its life, this mass stayed a smooth solid dome for
+      // most of a second — and a smooth solid dome the size of the fight, warm
+      // enough to read as a mid-tone, is not mass, it is the occlusion bug an
+      // earlier version of this file was rejected for. Rising with pow(vT,0.85)
+      // it is solid while the fireball is handing over to it, which is when the
+      // blast needs the weight, and torn to rags by the time it would otherwise
+      // start covering things.
+      float bite = mix(0.10, 1.05, pow(vT, 0.85));
       float d2 = smoothstep(bite, bite + 0.20, turb + 0.12);
-      float under = smoothstep(0.20, -0.75, vLocal.y) * pow(fade, 1.9);
+      // Underlighting dies with the cube of the remaining life for the same
+      // reason: it is the fire shining up into the smoke, and once the fire is
+      // out a warm cast on the smoke is a warm cast on the frame.
+      float under = smoothstep(0.20, -0.75, vLocal.y) * pow(fade, 3.0);
       float over  = smoothstep(-0.25, 0.85, vLocal.y);
       col = C_SOOT
-          + vec3(0.030, 0.033, 0.040) * over * (0.55 + turb * 0.85)
-          + C_CHAR * 1.35 * under * (0.5 + turb * 0.7);
+          + vec3(0.018, 0.020, 0.025) * over * (0.55 + turb * 0.85)
+          + C_CHAR * 0.85 * under * (0.5 + turb * 0.7);
       a = d2 * (0.32 + 0.60 * rim)
-        * smoothstep(0.0, 0.10, vT) * smoothstep(1.0, 0.62, vT);
+        * smoothstep(0.0, 0.10, vT) * smoothstep(1.0, 0.55, vT);
     } else {
       // Density and temperature are two different fields, and separating them is
       // the whole trick.
