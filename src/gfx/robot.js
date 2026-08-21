@@ -52,17 +52,31 @@ const TEAM_TINT = [0x3f8fff, 0xff4a5c];
 /**
  * Frame/joint metal, picked by the body's trim so parts read as a family.
  *
- * These are deliberately near-black. The exposed armature is the only thing
- * threaded between every pair of armour plates on the model, so it is the
+ * These stay the DARKEST thing on the machine. The exposed armature is the only
+ * thing threaded between every pair of armour plates on the model, so it is the
  * machine's line art: dark there means each plate ends somewhere visible. A
- * bright chrome frame between two mid-value plates does the opposite — it
- * welds the whole torso into one blob with a shine on it.
+ * bright chrome frame between two mid-value plates does the opposite — it welds
+ * the whole torso into one blob with a shine on it.
+ *
+ * But "darkest" is a relationship, not an absolute, and the plates moved. At
+ * metalness 1.0 a material has NO diffuse response at all, so these rendered as
+ * pure reflections of a night sky — 4-10/255 — which was a sensible line weight
+ * under armour at 40-70 and is a hole punched through armour at 115. On the
+ * shoulder yoke, which spans the whole top of the torso, it photographed as a
+ * black slot cut across the machine.
+ *
+ * The fix is to let the frame receive light rather than to make it shiny:
+ * metalness comes off 1.0 so there is a little diffuse to catch the key, and the
+ * base colours come up to match. Measured, that puts the armature around 28/255
+ * against plates at 115 — still a full two stops down, still unambiguously the
+ * line and not the form, and no more chrome than before (less, in fact: the
+ * specular share of the response went DOWN).
  */
 const TRIM = {
-  chrome:   { color: 0x272d36, rough: 0.34, metal: 1.0 },
-  gunmetal: { color: 0x1d2126, rough: 0.48, metal: 0.98 },
-  brass:    { color: 0x342b16, rough: 0.42, metal: 1.0 },
-  obsidian: { color: 0x0b0d12, rough: 0.26, metal: 1.0 },
+  chrome:   { color: 0x424b5a, rough: 0.40, metal: 0.70 },
+  gunmetal: { color: 0x333a44, rough: 0.52, metal: 0.68 },
+  brass:    { color: 0x54462a, rough: 0.46, metal: 0.72 },
+  obsidian: { color: 0x232833, rough: 0.30, metal: 0.75 },
 };
 
 // ---------------------------------------------------------------------------
@@ -84,11 +98,19 @@ const TRIM = {
 // ---------------------------------------------------------------------------
 
 /**
- * Ceiling on baked albedo. Paint * max plane gain * max grime must stay clear of
- * 1.0 or the key light drives the top planes into a flat clipped white and the
- * value structure we just built disappears at the top end. The lightest role is
- * toned to sRGB L 0.88 = 0.75 linear, and 0.75 * 0.90 * 1.34 = 0.90, so there is
- * still a tenth of a stop of room at the very top of the machine.
+ * Ceiling on baked albedo. The concern is that the key light drives the top
+ * planes into a flat clipped white and the value structure the paint builds
+ * disappears at the top end.
+ *
+ * Recomputed after the palette was re-cast light. The lightest role now tones
+ * to sRGB L 0.93 = 0.85 linear, and 0.85 * 0.90 * 1.34 (max plane gain) = 1.02,
+ * which reads as over the line — but that is only two thirds of the chain. The
+ * vertex paint is multiplied by armorTexture's albedo, which is a neutral
+ * DETAIL bake sitting around 0.80 sRGB = 0.60 linear across the machine and
+ * reaching 1.0 nowhere, so the real product on the brightest top face of the
+ * lightest plate is about 0.62. The headroom is in the map, not in this number,
+ * and it is why the value ladder could move up a stop and a half without the
+ * highlights flattening.
  */
 const PAINT_GAIN = 0.90;
 const PLANE_UP = 0.34;    // top faces lift...
