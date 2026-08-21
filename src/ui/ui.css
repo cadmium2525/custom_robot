@@ -272,7 +272,20 @@
   padding: 2px 5px;
   align-self: center;
 }
-.plate__kana { font-size: 9px; letter-spacing: .2em; color: var(--ink-faint); flex: 1; min-width: 0; }
+/* nowrap + ellipsis for the same reason `.plate__name` has them, found the same
+   way but two rows lower. On a landscape phone WITH the notch insets applied,
+   `.hud__top` gives up 94px of width to `--safe-l`/`--safe-r`, the plate falls
+   from 291px to 244px, and the kana is the first thing to wrap: "レイMk-I" broke
+   over two lines and pushed the left plate to 94px tall against the right
+   plate's 97px. Two plates that mirror each other cannot be different heights,
+   and a wrapped sub-label under a big HP numeral reads as a layout fault. This
+   was invisible for eleven rounds because headless Chromium reports every inset
+   as 0, so it only appears once the insets are forced. */
+.plate__kana {
+  font-size: 9px; letter-spacing: .2em; color: var(--ink-faint);
+  flex: 1; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 /* ---- the health bar ----
    The one element in this file that has to work at the edge of vision.
