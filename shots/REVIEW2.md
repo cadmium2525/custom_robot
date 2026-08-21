@@ -1,18 +1,113 @@
 # HOLOSSEUM — Art Direction Gate Review
 
-Rolling document. Round 2 reviewed `10621f2`; **round 4 (this pass) reviews `35d0e66`** and
-re-verifies every entry a builder has touched since. Entries still carrying a round-2 verdict were
-checked against `10621f2` and are not re-litigated unless the code under them moved.
+Rolling document. Round 2 reviewed `10621f2`; round 4 reviewed `35d0e66`; **round 5 (this pass)
+reviews `b28ff8c`** and re-runs the blind comparison, which is the acceptance criterion.
 
-**STATUS: COMPLETE at `35d0e66`.** All sections filled, including the blind comparison and the
-verdict, both of which had been PENDING through three rounds.
+**STATUS: COMPLETE at `b28ff8c`.** Blind comparison re-scored, verdict re-issued.
 
-**VERDICT: NO — but for the first time the reason is a single, named, tractable problem rather than
-a list. See the bottom of this file.**
+**VERDICT: see the VERDICT section at the bottom of this file, which is the only place a verdict is
+recorded. This header deliberately does not restate it — the last two rounds both shipped a header
+that disagreed with the section, and the fix is to stop having two of them.**
 
-*Correction to the round-2 header: it read "STATUS: COMPLETE / VERDICT: NO" while the verdict
-section at the bottom of the same file read PENDING. The header was aspirational. It has been
-rewritten to match what the document actually contains.*
+---
+
+## Round 5 (`b28ff8c`) — the recast, and what the meter is measuring
+
+Round 4 failed this build for one named reason: *"in the CRV2 frame their eye lands on two robots
+and in ours it lands on a cyan floor rail — we have built an excellent stage and then painted the
+actors the colour of the scenery."* The measured form of that was **ROBOT 1's body at 84.5 against
+a deck at 96** — the player character darker than the floor.
+
+### The sign has flipped, and that is the headline
+
+Reproduced rather than trusted. Two unmodified `contour.mjs` runs at `b28ff8c`, tier 3, seed
+1234567, against the figures the round handed me:
+
+```
+                          claimed   my run 1   my run 2
+  OVERALL invisible         4.7%      4.8%       4.6%
+  OVERALL clean            71.1%     71.0%      71.7%
+  OVERALL body / bg     113.4/77.3  114/77.2  115.4/77.3
+  ROBOT 1 invisible         4.0%      4.5%       4.0%
+  ROBOT 1 clean            74.2%     73.8%      74.7%
+  ROBOT 1 body / deck   115.5/81.1 115.9/81.1 117.5/81.1
+  ROBOT 2 invisible         7.3%      5.9%       6.6%
+  ROBOT 2 clean            60.8%     61.8%      61.9%
+```
+
+Every claimed figure reproduces. The one that matters: **ROBOT 1's body has gone from 84.5 against
+a 96 deck to 117.5 against an 81.1 deck.** A machine 11 points darker than its floor is now 36
+points lighter than it. That is the exact move round 4 demanded and it landed. `contour.mjs`'s
+`values()` is an honest definition — median of every stencil pixel against the median of a 14px
+ring just outside it — and I re-implemented it independently (`bodyring.mjs`) and got 115.6/81.1
+against contour's 115.9/81.1 on the same frame, so the tool is not flattering itself.
+
+### But the magnitude is not trustworthy, and I could not make it be
+
+I measured the same quantity — ROBOT 1 body minus deck ring — on **nine captures of one identical
+sim state at one commit** (tick=420, p1=-1.93,8.02, p2=9.52,-1.77 printed by every one of them),
+using contour's own stencil and contour's own ring rule:
+
+```
+  capture                                          frame p10   R1 body - deck ring
+  contour.mjs run 1  (VFX off, DOM off)               36.8           +34.5
+  contour.mjs run 2  (VFX off, DOM off)               36.8           +36.1
+  same page as run 2, shutter BEFORE anything hidden  26.7           +32.2
+  clockab.mjs A  (contour's flow, my script)          47.6           +24.0
+  clockab.mjs B  (same, clock stepped in lockstep)    47.6           +21.0
+  clock2.mjs t0 / t7.03 / t3.5  (one page, 3 shots)   31.4     +20.0 / +16.8 / +22.2
+  isolate.mjs  full frame, VFX and DOM on             10.8            +5.7
+  isolate.mjs  VFX off, DOM off (contour's condition)  6.1            +6.5
+  screenshot.mjs --shot fight (tier 3)                10.5            +6.8
+```
+
+`contour.mjs` is internally repeatable — its two runs agree to 1.6 points and its bounding boxes
+are pixel-identical, exactly as round 4 established. That is not the same thing as the *render*
+being repeatable. Across launches the frame's 10th-percentile luminance runs from **6.1 to 47.6**
+and the headline separation runs from **+5.7 to +36.4**. The sim is pinned, the camera is pinned,
+the seed is pinned; the picture is not.
+
+Things I ruled out, so the next person does not repeat the work:
+
+- **The effect clock.** `contour.mjs` calls `fastForward(420)` in one bulk call and never advances
+  `engine.clock.elapsed`, so it photographs the sim at t=7.0s with the effect and animation clock
+  at **t=0.03s** — I printed it. `screenshot.mjs` steps the clock in lockstep, which is the bug its
+  own commit message says it fixed; contour still has it, and the two tools therefore capture the
+  machine in visibly *different arm poses* (`r5-r1-3x.png` vs `r5-pp-r1-3x.png`). Real, worth
+  fixing, **not the cause**: moving the clock 0.03 → 7.03 → 3.5 within a single page moves the
+  separation only 20.0 → 16.8 → 22.2.
+- **The exposure ramp.** `main.js:718` damps `exposure`, `saturation` and `vignette` toward their
+  match targets on real wall-clock `dt` inside `_render`, and every tool then detaches
+  `engine.onRender`, freezing the ramp wherever it got to. Real, and worth a builder's attention
+  for a different reason — I read the uniforms at each tool's shutter and got exposure **1.2324**
+  (contour) vs **1.2284** (screenshot.mjs) against a match target of **1.35**. Under software GL
+  the ramp is so slow that *no capture this project has ever taken has reached the match grade*;
+  even a live match at t+5s only reaches 1.2362. But a 0.3% difference cannot produce a 6-fold
+  swing, so it is **not the cause** either.
+- **Mask misalignment.** Checked by eye at 3x: the stencil sits on the machine in both frames.
+
+**Consequence, and it is the same shape as the `measure.mjs` finding I made in round 4:** the
+number this round is being judged on is stable to 1.6 points *within* `contour.mjs` and moves by 30
+points *between* tools that photograph the same frozen frame. The **sign** of the recast is solid —
+all nine captures are positive, where round 4 was negative — and that is what I am scoring the
+blind test on. The **magnitude** should not be quoted to one decimal place by anybody until a
+builder finds out why two tools disagree this much about the same pixel.
+
+*Captures this round, all at `b28ff8c` on a local `vite preview` at 4220:* `r5-fight2.png` (the
+fight frame; see the harness note below), `r5-cn2.png` / `r5-mask2.png` (contour, `--keep`),
+`r5-player-samepage.png` (the player frame taken from contour's own settled page, via a four-line
+uncommitted probe), `r5-squint.png` / `r5-squint-novfx.png`, and 1:1 / 3x / 4x crops. Tools written
+this round and left in the scratchpad: `salience.mjs`, `bodyring.mjs`, `squint.mjs`, `gstat.mjs`,
+`clockab.mjs`, `clock2.mjs`, `expo.mjs`, `isolate.mjs`.
+
+### Harness note — `screenshot.mjs --shots` corrupts its first frame
+
+`--shots fight,title,garage,explosion` wrote a `fight` frame containing **the title-screen model
+rig with the match HUD drawn over it** (`r5-fight.png`): one machine facing camera on a lit
+circular pad in a black void, both HP plates reading "ROBO / BALANCED / 1000", no arena at all. The
+same scenario captured alone (`--shot fight`) gives the correct arena frame. Every batched review
+capture this project has taken has had a garbage first shot, and it looks plausible enough at
+thumbnail size to review from. *Severity: BLOCKING for the review process. N1's sibling.*
 
 ---
 
