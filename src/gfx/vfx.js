@@ -64,11 +64,19 @@ function flashSprite() {
   return paint(256, (u, v, d, o) => {
     const r2 = u * u + v * v;
     const core = Math.exp(-r2 / 0.0022);
-    const glow = Math.exp(-r2 / 0.045) * 0.5;
+    // The soft halo, and defect #32 in one term. It used to be a Gaussian of
+    // radius 0.21 at half alpha, which is a disc covering forty times the area
+    // of the core it was supposed to surround, on the card that every muzzle
+    // flash, every impact and every bomb fuse blink is drawn with. A soft
+    // circular patch of light with no structure is what dirt on a lens looks
+    // like, and this game draws hundreds of them a minute. Tightened to a third
+    // of that radius and two thirds of the alpha: the rays below now carry the
+    // read, which is what makes a card say "discharge" rather than "smudge".
+    const glow = Math.exp(-r2 / 0.016) * 0.34;
     const cross = g2(v, 0.026) * g2(u, 0.66) + g2(u, 0.026) * g2(v, 0.66);
     const ud = (u + v) * 0.7071, vd = (u - v) * 0.7071;
     const diag = (g2(vd, 0.017) * g2(ud, 0.38) + g2(ud, 0.017) * g2(vd, 0.38)) * 0.42;
-    const a = Math.min(1, core + glow + cross * 0.8 + diag);
+    const a = Math.min(1, core + glow + cross * 0.86 + diag);
     d[o] = 255; d[o + 1] = 255; d[o + 2] = 255;
     d[o + 3] = a * 255;
   });
@@ -1381,7 +1389,14 @@ export class VFX {
     const dy = Math.sin(ev.pitch || 0);
     const dz = Math.cos(ev.yaw || 0) * cp;
 
-    hot(look.colour, charged ? 4.2 : 2.6, _rgb);
+    // The card's own shader multiplies this by 2.2 for the first third of its
+    // life and the composite then blooms anything over 1.04, so 2.6 arrived on
+    // screen at nearly nine — a muzzle flash that clips to white and spills a
+    // halo across the deck, several times a second, for the whole match. A
+    // firing machine should be the brightest thing in the frame at the instant
+    // it fires and nothing like it in between; that is a job for a short curve,
+    // not a large number.
+    hot(look.colour, charged ? 3.1 : 1.85, _rgb);
 
     // Flare card oriented to face the camera, scaled by the muzzle style. The
     // card is a rayed star, so it reads as a discharge at any billboard roll.
