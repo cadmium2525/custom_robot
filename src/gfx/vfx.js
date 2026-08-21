@@ -956,7 +956,22 @@ void main() {
       // and with age. That is what puts white in the middle, yellow and orange
       // around it, deep red at the rim and soot on the outside — a gradient
       // across the ball at every instant, not one ramp played back over time.
-      float bite = mix(0.06, 0.88, vT * vT);
+      //
+      // The erosion curve was vT*vT, which is a curve that does almost nothing
+      // for the first half of a life: at mid-life it had opened to 0.27 out of
+      // 0.88, so the mass was still very nearly solid. Meanwhile the lobes are
+      // thrown outward against a drag of 2.6, which carries them 0.18 of their
+      // launch speed by 240ms and 0.27 of it by 470ms — so the cluster goes on
+      // spreading for the whole of its life. Solid mass on a still-expanding
+      // envelope is a footprint that GROWS as the fire dies, and that is what
+      // the sheet measured: cover 47.4% at 240ms rising to 54.6% at 470ms, the
+      // blast at its largest a quarter-second after it stopped being bright.
+      //
+      // pow(vT, 1.30) is very nearly linear, so the tearing tracks the
+      // spreading instead of lagging a half-life behind it. The cluster still
+      // blows apart; what it can no longer do is stay a solid object while it
+      // does so.
+      float bite = mix(0.06, 1.00, pow(vT, 1.30));
       float dens = smoothstep(bite, bite + 0.28, turb + fade * 0.26);
       // The rim term is what actually carries the gradient, and it used to span
       // 0.45..1.30 — a factor of under three across the whole ball, which put
@@ -966,8 +981,35 @@ void main() {
       // fed into most of it. Spanning 0.02..1.24, on a curve, the same ball
       // holds white at the centre, yellow and orange around it, deep red at the
       // rim and soot at the silhouette — all at once, at every age.
+      //
+      // The RIM axis of that gradient was right; the TIME axis was not, and it
+      // is the whole of the "muddy late" defect. Temperature fell on
+      // pow(fade, k) — each lobe's own *lifetime fraction* — and the lobes are
+      // deliberately spawned with lives spread over 0.50..0.90s so the cluster
+      // does not die all at once. The consequence is that the mass never agrees
+      // with itself about how hot it is: at 470ms a short lobe is at 90% of its
+      // life and nearly out while a long one is barely past half and still
+      // fully orange, so the long tail of that distribution holds the blast at
+      // fire colours for about twice as long as there is any fire.
+      //
+      // Measured on the contact sheet, that read as: peak occlusion at 470ms
+      // (hide 42.0% of the crop, higher than the flash's 41.8%), at the blast's
+      // DIMMEST (2.41% of pixels over 200, against 18.3% at 40ms) and its
+      // WARMEST (62.9% warm, against 50.7%). Most-covering, least-bright and
+      // most-orange all at the same instant is not a fireball, it is a sheet of
+      // orange paint hung in front of the fight.
+      //
+      // So temperature now falls on ONE curve in seconds, shared by every lobe,
+      // and lifetime fraction is demoted to a gentle tail. edg carries the
+      // shell's absolute age here (see the note in the vertex stage). The curve
+      // is flat across the flash and the white-hot churn and then falls hard:
+      // about 0.90 at 110ms, 0.62 at 240ms, 0.43 at 340ms, 0.27 at 470ms and
+      // 0.15 at 650ms — which walks the ramp white -> yellow -> orange -> deep
+      // red -> soot on roughly the schedule a fireball this size burns out on,
+      // with every lobe walking it together.
+      float cool = 1.0 / (1.0 + pow(max(edg, 0.0) / 0.30, 2.2));
       float heat = clamp((0.02 + 1.22 * pow(rim, 1.6)) * (0.55 + 0.78 * turb)
-                         * pow(fade, 1.12), 0.0, 1.4);
+                         * pow(fade, 0.45) * cool, 0.0, 1.4);
       if (vTint.w < 0.5) {
         // The detonation core: a smooth white-hot ball with no break-up at all,
         // over before the eye can resolve it.
@@ -981,7 +1023,11 @@ void main() {
       col = mix(col, C_WHITE, smoothstep(0.88, 1.16, heat));
       col *= mix(vec3(1.0), vTint.rgb, 0.28);
 
-      a = clamp(dens * (0.42 + 0.62 * rim) * smoothstep(1.0, 0.70, vT), 0.0, 0.95);
+      // Released from half-life rather than from 70%, for the same reason. The
+      // hold to 0.70 meant a lobe was at full opacity through the whole of the
+      // stretch where it had already cooled out of the fire ramp — opaque and
+      // no longer burning, which is the definition of a curtain.
+      a = clamp(dens * (0.42 + 0.62 * rim) * smoothstep(0.97, 0.50, vT), 0.0, 0.95);
     }
   }
 
