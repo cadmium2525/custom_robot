@@ -1426,8 +1426,23 @@ const at = (g, x, y, z) => { g.translate(x, y, z); return g; };
 // A world-space extrusion would have given the opposite of that on both ends.
 // ---------------------------------------------------------------------------
 
-/** NDC half-height units. ~1.9 px at 900p, and the same fraction on a phone. */
-const OUTLINE_WIDTH = 0.0044;
+/**
+ * NDC half-height units. ~3.1 px at 900p, and the same fraction on a phone.
+ *
+ * Why not thinner. The line has to WIN the few pixels either side of the
+ * silhouette, not share them: at 1.9 px a 7x7 neighbourhood straddling the
+ * contour was still more than half deck, so the local value step the eye reads
+ * came out as the average of a black line and a near-white floor — about 17
+ * levels, which is the "dissolves in motion" band. At 3.1 px the same
+ * neighbourhood is mostly line, and the step is the full distance from the
+ * machine's paint to near-black wherever the machine ends.
+ *
+ * Why not thicker. Past about 4 px the line stops reading as a drawn contour on
+ * the machine and starts reading as a halo behind it — a sticker pasted on the
+ * arena, which is the exact failure the near-black-with-a-trace-of-hull colour
+ * below is guarding against.
+ */
+const OUTLINE_WIDTH = 0.0068;
 
 const OUTLINE_PARS = /* glsl */`
 uniform float uOutlineWidth;
