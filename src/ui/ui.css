@@ -84,8 +84,21 @@
 
   /* Health is a quantity, not an identity. Both plates read it in the same two
      colours so a full opponent bar cannot look like a dying one; team identity
-     is carried by the portrait, the top rule and the round pips instead. */
-  --hp-ok:      #46dd8b;
+     is carried by the portrait, the top rule and the round pips instead.
+
+     --hp-ok was #46dd8b, a LIGHT green, and measured on a still fight frame the
+     two bars were the brightest and by far the most saturated large objects in
+     the picture: luma 169.7 and 85.5% of their pixels highly saturated, against
+     a whole-frame mean of 61.4 and 6.5%. The player machine itself measures 92.
+     The stage was just re-cast because the deck out-read the robots at 96 vs
+     84.5 — a 12-point gap. The HUD's gap was 78 points, in the top corners,
+     which is where the eye enters a frame. A HUD frames the fight; it does not
+     win it. Deepened to the same hue at roughly two-thirds the luminance, which
+     costs nothing: the bar is read off the boundary between a solid block and a
+     near-black track, and that step is still ~130 levels.
+     The low state deliberately did not come down with it — an alarm is allowed
+     to be the loud one, and it also pulses. */
+  --hp-ok:      #22ac66;
   --hp-low:     #ff4d63;
 
   --ease:       cubic-bezier(.22, 1, .36, 1);
@@ -274,10 +287,18 @@
   font-weight: 800; font-size: clamp(12px, 2.4vw, 16px); letter-spacing: .12em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
+/* Ghost chip, not a solid one. `background: var(--body-acc)` is the machine's
+   own accent at full chroma, and measured on a fight frame 66% of the P1 chip's
+   pixels were CLIPPING. Two small blocks that clip in the top corners are the
+   second-loudest thing in the HUD after the health bars, for a label that never
+   changes during a match. As accent-on-tint it says exactly as much and stops
+   competing; the type is still 800-weight on near-black, which is a far larger
+   contrast ratio than dark-ink-on-accent ever was. */
 .plate__class {
-  font-size: 8px; letter-spacing: .2em; font-weight: 700;
-  color: #061019;
-  background: var(--body-acc);
+  font-size: 8px; letter-spacing: .2em; font-weight: 800;
+  color: var(--body-acc);
+  background: color-mix(in srgb, var(--body-acc) 15%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--body-acc) 42%, transparent);
   padding: 2px 5px;
   align-self: center;
 }
@@ -331,11 +352,15 @@
 .bar__ghost { background: #ff3347; transition: transform .5s .16s cubic-bezier(.3, 0, .2, 1); }
 .hud__plate.is-snap .bar__ghost { transition: none; }
 
+/* Top-lit, bottom-shaded, so the fill reads as a solid object rather than a
+   flat swatch. The top stop used to be 38% WHITE, which is most of why the bar
+   measured brighter than anything in the arena — see --hp-ok. 14% keeps the
+   shading and drops the highlight out of the frame's top rank. */
 .bar__fill {
   background: linear-gradient(180deg,
-    color-mix(in srgb, var(--hp-c) 62%, #ffffff) 0%,
-    var(--hp-c) 38%,
-    color-mix(in srgb, var(--hp-c) 70%, #000000) 100%);
+    color-mix(in srgb, var(--hp-c) 86%, #ffffff) 0%,
+    var(--hp-c) 34%,
+    color-mix(in srgb, var(--hp-c) 62%, #000000) 100%);
 }
 
 /* Leading edge. Full-width box translated by a share of its own width, so the
