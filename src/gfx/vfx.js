@@ -699,7 +699,41 @@ void main() {
   // y is 1 looking straight *at* the surface (long path through a solid ball),
   // w is 1 looking *along* it (long path through a thin shell). A fireball
   // wants the first, a shock front the second.
-  vMeta = vec4(t, abs(nv.z), aMotion.w, 1.0 - abs(dot(nv, eye)));
+  float edge = 1.0 - abs(dot(nv, eye));
+  float meta = aMotion.w;
+
+  if (uMode > 0.5 && uMode < 1.5) {
+    // A shock ring is not a sphere, and measuring it like one is what made it a
+    // donut. The thing that has to look edge-on is the *wall* of compressed air
+    // standing on the ring — its normal is the ring's own radial, and its long
+    // axis is the ring's axis. dot(nv, eye) compares those in view space,
+    // where the camera's elevation contaminates every term: this camera looks
+    // down at the deck from four metres up, so the near and far lips of a ground
+    // ring came out almost as edge-on as the flanks and the sheen was uniform
+    // the whole way round. Uniform brightness all the way round is the donut.
+    //
+    // Done properly here, in the ring's own frame: project the radial and the
+    // view direction into the plane of the ring and compare them there. That is
+    // orientation-agnostic, so it is equally right for a ring lying on the deck,
+    // one stuck to a wall, and the billboarded charge tell.
+    vec3 wp   = (modelMatrix * instanceMatrix * vec4(p, 1.0)).xyz;
+    vec3 axis = normalize((modelMatrix * instanceMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+    vec3 rad  = (modelMatrix * instanceMatrix * vec4(vLocal, 0.0)).xyz;
+    rad -= axis * dot(rad, axis);
+    vec3 toEye = cameraPosition - wp;
+    float dEye = max(length(toEye), 1e-4);
+    vec3 vdir = toEye - axis * dot(toEye, axis);
+    float lr = length(rad), lv = length(vdir);
+    float algn = (lr > 1e-4 && lv > 1e-4) ? abs(dot(rad / lr, vdir / lv)) : 1.0;
+    // Straight down the axis there is no edge-on direction anywhere on the ring,
+    // so fall back to flat rather than to whichever way the numerics tipped.
+    edge = mix(0.45, 1.0 - algn, smoothstep(0.03, 0.34, lv / dEye));
+    // Radius reached so far, as a fraction of the radius it will reach. The
+    // fragment stage needs it to hold the front's thickness in *world* units.
+    meta = s / max(max(aLife.z, aLife.w), 1e-4);
+  }
+
+  vMeta = vec4(t, abs(nv.z), meta, edge);
   gl_Position = projectionMatrix * mv;
 }`;
 
@@ -734,8 +768,11 @@ void main() {
 
   if (uMode > 2.5) {
     // Scorch marks are burnt material, not light: they must never brighten the
-    // floor, and they linger rather than flash.
-    a = smoothstep(0.0, 0.04, vT) * pow(fade, 0.7) * 0.6;
+    // floor, and they linger rather than flash. Raised from 0.6 — at 0.6 on a
+    // deck sitting at value 95 the mark the blast left behind was not findable
+    // in a still, so as far as the frame was concerned the explosion had never
+    // touched the world it happened in.
+    a = smoothstep(0.0, 0.04, vT) * pow(fade, 0.7) * 0.88;
     vec4 tx = texture2D(uMap, vUv);
     col *= tx.rgb;
     a *= tx.a;
@@ -767,42 +804,89 @@ void main() {
     // it out altogether.
     float pinned = vTint.w > 0.5 ? 1.0 : 0.0;
     float r = length(vUv - 0.5) * 2.0;
-    float centre = mix(mix(0.60, 0.92, sqrt(vT)), 0.80, pinned);
-    float hw     = mix(mix(0.045, 0.105, vT), 0.13, pinned);
+    float centre = mix(mix(0.58, 0.93, sqrt(vT)), 0.80, pinned);
+    // Half-width held constant in WORLD units, by dividing the uv half-width by
+    // how far the shell has already grown (vMeta.z, the radius so far as a
+    // fraction of the radius it will reach).
+    //
+    // This is the arithmetic behind "grey donut", and it was never a colour
+    // problem. The band used to be a fixed *fraction* of a shell that grows
+    // five-fold, and the fraction itself was doubling with age on top of that:
+    // by mid-life the front was twelve times thicker in world terms than at
+    // birth — a sixty-pixel band on a ring twenty metres across, drawn at a
+    // brightness that tone-maps to paper white from edge to edge. No amount of
+    // temperature work on a band that shape would have read as a pressure wave.
+    // Held constant, the same geometry is a line that races outward.
+    float sn = max(vMeta.z, 0.05);
+    float hw = mix(clamp(0.021 / sn, 0.018, 0.16), 0.13, pinned);
     float d = (r - centre) / hw;
     float front = exp(-d * d);
-    float sheen = mix(0.26 + 0.74 * edg, 1.0, pinned);
-    float dl = (r - (centre - hw * 2.6)) / (hw * 2.0);
+    // Nearly all of the front's brightness is now anisotropic. A wave you can
+    // see equally well from every direction is a decal.
+    float sheen = mix(0.10 + 0.90 * edg, 1.0, pinned);
+    // Compression lip: alpha with almost no colour, immediately behind the
+    // front, so under the over-blend it darkens whatever it crosses. Widened
+    // along with the thinner front — it is the only part of this that says
+    // "discontinuity in the air" rather than "line on the floor".
+    float dl = (r - (centre - hw * 3.2)) / (hw * 3.0);
     float lip = exp(-dl * dl) * (1.0 - pinned);
 
-    col = vTint.rgb * front * (0.5 + sheen * 1.5)
-        + vec3(1.0, 0.94, 0.86) * pow(front, 3.0) * sheen * 2.4;
+    // Temperature across the thickness of the front rather than one clipped
+    // white band. The flanks are left where ACES still has colour — under about
+    // 1.2 linear — so they read amber, and only the spine itself is pushed past
+    // white. Every pixel of the old front was above 4.0 linear, and above 4.0
+    // every colour tone-maps to the same paper white, which is exactly why a
+    // ring authored in warm values arrived on screen grey.
+    col = vTint.rgb * front * (0.35 + sheen * 1.15)
+        + vec3(1.0, 0.93, 0.82) * pow(front, 6.0) * sheen * 3.2;
     col *= fade;
-    a = clamp(front * (0.28 + 0.72 * sheen) * 0.95 + lip * 0.24 * sheen, 0.0, 1.0)
-      * pow(fade, 1.15) * mix(1.0, 0.42, pinned);
+    a = clamp(front * (0.16 + 0.84 * sheen) * 0.88 + lip * 0.30 * sheen, 0.0, 1.0)
+      * pow(fade, 1.25) * mix(1.0, 0.42, pinned);
   } else {
     // Turbulence, sampled in a rotated frame that drifts as the mass burns, so
     // no two blasts break up the same way and each one churns while it lives.
+    // Frequency more than doubled. At 0.42 the whole ball sampled less than half
+    // a tile of the field, so every billow was one smooth gradient with no
+    // internal structure at all — which is why they read as flat yellow discs
+    // rather than as burning gas, no matter what the colour ramp did. A little
+    // under one tile across the ball, with a second octave over it, is enough
+    // detail for the eye to see the mass churn.
     float cs = cos(vMeta.z), sn = sin(vMeta.z);
-    vec2 nuv = vec2(vLocal.x * cs - vLocal.z * sn, vLocal.x * sn + vLocal.z * cs) * 0.42;
-    nuv += vec2(vLocal.y * 0.30, -vT * 0.20);
+    vec2 nuv = vec2(vLocal.x * cs - vLocal.z * sn, vLocal.x * sn + vLocal.z * cs) * 0.95;
+    nuv += vec2(vLocal.y * 0.62, -vT * 0.26);
     float t1 = texture2D(uMap, nuv).r;
-    float t2 = texture2D(uMap, nuv * 2.9 + vec2(0.37, 0.11)).g;
-    float turb = t1 * 0.64 + t2 * 0.36;
+    float t2 = texture2D(uMap, nuv * 3.1 + vec2(0.37, 0.11)).g;
+    float turb = t1 * 0.62 + t2 * 0.38;
 
     if (vTint.w > 1.5) {
-      // Smoke phase. No fire ramp at all: soot, lit from underneath by what is
-      // left of the fire, eroded hard by the same turbulence so it stays a
-      // ragged mass. Kept dark and kept to the fireball's own footprint on
-      // purpose — pale smoke big enough to cover the fight is not atmosphere,
-      // it is an occlusion bug, and it flatters a histogram while hiding the
-      // one thing the frame is about.
-      float bite = mix(0.30, 0.95, vT);
-      float d2 = smoothstep(bite, bite + 0.24, turb);
-      float under = smoothstep(0.25, -0.70, vLocal.y) * pow(fade, 2.2);
-      col = mix(C_SOOT, C_CHAR * 1.5, under) * (0.7 + turb * 0.6);
-      a = d2 * (0.26 + 0.34 * rim)
-        * smoothstep(0.0, 0.14, vT) * smoothstep(1.0, 0.5, vT);
+      // Smoke phase. No fire ramp at all: soot, eroded hard by the same
+      // turbulence so it stays a ragged mass rather than a dome.
+      //
+      // What changed is that it now has MASS. It used to top out around a=0.6
+      // on a colour of 0.03 linear, which against this arena is nothing at all:
+      // the blast handed off from a solid fireball to something you could see
+      // the deck straight through, so the last two thirds of its life were
+      // empty. Alpha now reaches 0.9 through the middle. That is the difference
+      // between smoke and a stain.
+      //
+      // Lit from two sides, because that is the whole of why smoke reads as
+      // volume: what is left of the fire from underneath, the arena from above.
+      // The upper light is deliberately held at about a twentieth of linear
+      // white — dark enough that the mass always sits well below the deck it
+      // crosses. Kept to the fireball's own footprint, too. A pale dome big
+      // enough to cover the fight is not atmosphere, it is an occlusion bug; it
+      // also flatters a mid-tone histogram while hiding the one thing the frame
+      // is about, which is how an earlier version of this scored better and
+      // looked considerably worse.
+      float bite = mix(0.16, 0.86, vT * vT);
+      float d2 = smoothstep(bite, bite + 0.20, turb + 0.12);
+      float under = smoothstep(0.20, -0.75, vLocal.y) * pow(fade, 1.9);
+      float over  = smoothstep(-0.25, 0.85, vLocal.y);
+      col = C_SOOT
+          + vec3(0.030, 0.033, 0.040) * over * (0.55 + turb * 0.85)
+          + C_CHAR * 1.35 * under * (0.5 + turb * 0.7);
+      a = d2 * (0.32 + 0.60 * rim)
+        * smoothstep(0.0, 0.10, vT) * smoothstep(1.0, 0.62, vT);
     } else {
       // Density and temperature are two different fields, and separating them is
       // the whole trick.
@@ -817,7 +901,16 @@ void main() {
       // across the ball at every instant, not one ramp played back over time.
       float bite = mix(0.06, 0.88, vT * vT);
       float dens = smoothstep(bite, bite + 0.28, turb + fade * 0.26);
-      float heat = clamp((turb * 1.15 + 0.30) * pow(fade, 1.30) * (0.45 + 0.85 * rim), 0.0, 1.4);
+      // The rim term is what actually carries the gradient, and it used to span
+      // 0.45..1.30 — a factor of under three across the whole ball, which put
+      // nearly every visible pixel inside one band of the ramp. That is why the
+      // mid-life fireball arrived as a flat yellow disc with an orange edge
+      // instead of a temperature field: the ramp was fine, nothing was being
+      // fed into most of it. Spanning 0.02..1.24, on a curve, the same ball
+      // holds white at the centre, yellow and orange around it, deep red at the
+      // rim and soot at the silhouette — all at once, at every age.
+      float heat = clamp((0.02 + 1.22 * pow(rim, 1.6)) * (0.55 + 0.78 * turb)
+                         * pow(fade, 1.12), 0.0, 1.4);
       if (vTint.w < 0.5) {
         // The detonation core: a smooth white-hot ball with no break-up at all,
         // over before the eye can resolve it.
@@ -831,7 +924,7 @@ void main() {
       col = mix(col, C_WHITE, smoothstep(0.88, 1.16, heat));
       col *= mix(vec3(1.0), vTint.rgb, 0.28);
 
-      a = clamp(dens * (0.5 + 0.5 * rim) * smoothstep(1.0, 0.70, vT), 0.0, 0.94);
+      a = clamp(dens * (0.42 + 0.62 * rim) * smoothstep(1.0, 0.70, vT), 0.0, 0.95);
     }
   }
 
@@ -1409,10 +1502,13 @@ export class VFX {
       // it is gone inside 150ms. Rings that hang around at arbitrary angles are
       // what turned the old arena into a field of grey donuts.
       _q.setFromUnitVectors(_up, _v2.set(nx, ny, nz).normalize());
+      // A third of the value the sparks are given. The ring's own shader pushes
+      // its spine past white; the tint is only there to say what colour the
+      // *flanks* are, and a tint already above 4.0 linear leaves no flanks.
       this.shockwaves.spawn(
         ev.x + nx * 0.03, ev.y + ny * 0.03, ev.z + nz * 0.03, _q,
         t, heavy ? 0.15 : 0.11, 0.2, heavy ? 1.5 : 0.85,
-        _rgb[0] * 1.1, _rgb[1] * 1.0, _rgb[2] * 0.85
+        _rgb[0] * 0.42, _rgb[1] * 0.38, _rgb[2] * 0.30
       );
       this._decal(ev.x, ev.y, ev.z, nx, ny, nz, heavy ? 1.1 : 0.55);
     } else {
@@ -1481,14 +1577,26 @@ export class VFX {
     // near-white, which bloom then smeared over the entire arena: the blast
     // washed out the very value structure it was supposed to be punching a hole
     // in, and the fireball behind it was invisible until the card had gone.
+    //
+    // Both parts of it now arrive at nearly full size on the *first* frame
+    // rather than easing up to it. They used to start at a fifth of their final
+    // radius, so the brightest thing in the whole sequence happened seventy
+    // milliseconds after the bang: the blast ramped up instead of detonating,
+    // and a detonation that ramps has no hardness. Big immediately, gone in
+    // three frames, is the shape of the curve — it is the *duration* of the old
+    // flash that washed the arena out, not its size.
     _v.set(x, y, z);
-    this.flares.spawn(x, y, z, this._faceCamera(_v), t, 0.055,
-      R * 0.22, R * 0.95, 6.6, 5.7, 4.6);
-    this.fireballs.spawn(x, y, z, null, t, 0.09, R * 0.10, R * 0.46,
+    this.flares.spawn(x, y, z, this._faceCamera(_v), t, 0.050,
+      R * 0.85, R * 1.30, 6.6, 5.7, 4.6);
+    this.fireballs.spawn(x, y, z, null, t, 0.075, R * 0.30, R * 0.52,
       1.0, 0.96, 0.90, 0);
 
     // --- 2. fireball cluster ---------------------------------------------
-    this.fireballs.spawn(x, y + R * 0.04, z, null, t, 0.62, R * 0.13, R * 0.60,
+    // The core of the cluster outlives the lobes thrown off it, and it is what
+    // stops the blast becoming a handful of separate balloons drifting apart at
+    // half a second — which is exactly what it used to do, because every part
+    // was thrown and nothing stayed behind to bridge them.
+    this.fireballs.spawn(x, y + R * 0.04, z, null, t, 0.72, R * 0.22, R * 0.72,
       hr, hg, hb, 1, 0, R * 0.16, 0);
     const billows = Math.round((s > 0.5 ? 7 : 4));
     for (let i = 0; i < billows; i++) {
@@ -1499,24 +1607,30 @@ export class VFX {
       const rad = R * (0.10 + vfxRng.f() * 0.22);
       // Thrown outward with a real velocity spread and a drag term, so the
       // cluster blows apart fast and then hangs: the outline at 60ms, at 200ms
-      // and at 500ms are three different shapes.
-      const sp = R * (1.5 + vfxRng.f() * 2.1);
+      // and at 500ms are three different shapes. Thrown a little less far, and
+      // grown a little larger, than it was: the lobes have to stay overlapped
+      // enough to share one silhouette.
+      const sp = R * (1.1 + vfxRng.f() * 1.6);
       this.fireballs.spawn(
         x + ca * rad, y + ea * rad * 0.8 + R * 0.04, z + sa * rad, null,
-        t + i * 0.016, 0.46 + vfxRng.f() * 0.40, R * 0.09, R * (0.26 + vfxRng.f() * 0.17),
+        t + i * 0.016, 0.50 + vfxRng.f() * 0.40, R * 0.09, R * (0.30 + vfxRng.f() * 0.18),
         hr, hg, hb, 1,
-        ca * sp, ea * sp + R * 0.55, sa * sp
+        ca * sp, ea * sp + R * 0.50, sa * sp
       );
     }
 
     // --- 3. shock front ---------------------------------------------------
     // One front, not a family of them. Short, hot, and strongly decelerating.
+    // It also stops well short of where it used to. A front that ends up five
+    // radii across is a ring twenty metres wide drawn over the two machines the
+    // frame is about — the blast may own the screen for a third of a second, but
+    // it may not own it by drawing a circle round the whole fight.
     if (grounded) {
-      this.shockwaves.spawn(x, deck, z, null, t, 0.26, R * 0.5, R * 2.6,
-        5.2, 4.0, 2.6, 0);
+      this.shockwaves.spawn(x, deck, z, null, t, 0.24, R * 0.42, R * 1.9,
+        1.85, 0.80, 0.30, 0);
     } else {
-      this.shockwaves.spawn(x, y, z, null, t, 0.22, R * 0.45, R * 2.2,
-        4.6, 3.5, 2.3, 0);
+      this.shockwaves.spawn(x, y, z, null, t, 0.20, R * 0.40, R * 1.6,
+        1.70, 0.74, 0.28, 0);
     }
 
     // --- 4. ground-hugging dust wave -------------------------------------
@@ -1549,10 +1663,10 @@ export class VFX {
       const rad = R * (0.05 + vfxRng.f() * 0.22);
       this.fireballs.spawn(
         x + Math.cos(a) * rad, y + R * 0.10, z + Math.sin(a) * rad, null,
-        t + 0.24 + i * 0.10, 1.5 + vfxRng.f() * 0.7,
-        R * 0.30, R * (0.62 + vfxRng.f() * 0.24),
+        t + 0.22 + i * 0.09, 1.6 + vfxRng.f() * 0.8,
+        R * 0.32, R * (0.70 + vfxRng.f() * 0.26),
         1.0, 0.92, 0.86, SHELL_SMOKE_KIND,
-        Math.cos(a) * R * 0.22, R * (0.9 + vfxRng.f() * 0.5), Math.sin(a) * R * 0.22
+        Math.cos(a) * R * 0.20, R * (1.15 + vfxRng.f() * 0.6), Math.sin(a) * R * 0.20
       );
     }
     const smokeN = Math.round(6 * s * scale);
@@ -1581,10 +1695,15 @@ export class VFX {
       const fast = vfxRng.f();
       const sp = R * (1.4 + fast * fast * 6.0);
       const heat = 0.55 + vfxRng.f() * 0.8;
+      // Sized in *world* units and then divided by depth, so 0.035 at the
+      // fifteen metres a duel is actually fought at came out as a three-pixel
+      // streak: the debris was there in the buffer and was not there in the
+      // frame. Tripled, it is a legible chunk of thrown metal at duel range and
+      // still small enough not to become a firework at contact range.
       this.sparks.spawn(
         x, y, z,
         Math.cos(a) * ce * sp, Math.sin(el) * sp + 4.5, Math.sin(a) * ce * sp,
-        t, 0.45 + vfxRng.f() * 1.0, 0.035 + vfxRng.f() * 0.055,
+        t, 0.45 + vfxRng.f() * 1.0, 0.10 + vfxRng.f() * 0.14,
         3.6 * heat, 2.1 * heat * heat, 0.7 * heat * heat * heat,
         26, 0.22, 0
       );
@@ -1600,7 +1719,7 @@ export class VFX {
       this.smoke.spawn(
         x, y, z,
         Math.cos(a) * ce * sp, Math.sin(el) * sp + 3.5, Math.sin(a) * ce * sp,
-        t, 0.7 + vfxRng.f() * 0.7, R * (0.018 + vfxRng.f() * 0.02),
+        t, 0.7 + vfxRng.f() * 0.7, R * (0.040 + vfxRng.f() * 0.035),
         0.13, 0.115, 0.105, 26, 0.1, 0
       );
     }
@@ -1723,8 +1842,10 @@ export class VFX {
 
     // Only a hard landing gets a ring, and only for a sixth of a second.
     if (hard) {
+      // Dust displaced by a landing, not burning gas: low value, so what carries
+      // it is the dark compression lip rather than the light.
       this.shockwaves.spawn(ev.x, ev.y + 0.04, ev.z, null, t,
-        0.17, 0.4, 3.0 * power, 2.6, 2.5, 2.3, 0);
+        0.17, 0.4, 2.4 * power, 1.00, 0.92, 0.80, 0);
     }
 
     const n = Math.round((hard ? 22 : 9) * s * power);
@@ -1774,8 +1895,8 @@ export class VFX {
   _getUp(ev) {
     const t = this.time;
     const s = this._budgetScale();
-    hot(0xa8e0ff, 2.6, _rgb);
-    this.shockwaves.spawn(ev.x, ev.y + 0.04, ev.z, null, t, 0.16, 0.3, 2.0,
+    hot(0xa8e0ff, 1.1, _rgb);
+    this.shockwaves.spawn(ev.x, ev.y + 0.04, ev.z, null, t, 0.16, 0.3, 1.7,
       _rgb[0], _rgb[1], _rgb[2], 0);
     for (let i = 0; i < Math.round(8 * s); i++) {
       const a = vfxRng.f() * 6.283;
@@ -1810,6 +1931,7 @@ export class VFX {
     // Kind 1: the band is pinned to the geometry, so the whole ring converges on
     // the robo as the shell shrinks — a gathering, not a blast.
     _v.set(r.pos.x, r.pos.y + 1.0, r.pos.z);
+    hot(0xffe27a, 1.6, _rgb);
     this.shockwaves.spawn(_v.x, _v.y, _v.z, this._faceCameraUp(_v),
       t, 0.3, 2.1, 0.45, _rgb[0], _rgb[1], _rgb[2], 1);
   }
