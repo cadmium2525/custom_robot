@@ -344,6 +344,13 @@ const cellRand = (i) => ((Math.imul(i, 2654435761) >>> 0) % 65536) / 65536;
  *      ground reads as a built surface and gives the frame its blacks *and*
  *      its whites without touching a single light.
  */
+/**
+ * Value ceiling for painted hazard chevrons, as a fraction of the theme's own
+ * hazard hue. See the kind-4 branch below: the chevrons were the second
+ * brightest object in the frame, and the eye goes to the brightest thing.
+ */
+const HAZ_PAINT = 0.58;
+
 export function floorTexture(theme, size = 1024) {
   const key = `floor:${theme.key}:${size}`;
   if (cache.has(key)) return cache.get(key);
@@ -446,13 +453,23 @@ export function floorTexture(theme, size = 1024) {
       } else if (kind === 4 && field > 0.5) {
         // Hazard plate: painted warning chevrons. The arena's only large warm
         // note lives on the deck, where the eye spends all its time.
+        //
+        // Painted at the paint's FULL value these plates measured 180-200 under
+        // the key — brighter than the deck they warn you about and brighter than
+        // either machine standing on them, which is how the eye ends up landing
+        // on the floor. `HAZ_PAINT` is a value knock-down, not a hue change: the
+        // chevrons keep their hue, their hard stripe rhythm and their black
+        // counter-stripe, so every bit of the information survives. What they
+        // give up is the top of the value range, which belongs to the robots.
         const s = ((cu + cv * 0.6) * 4) % 1;
         const stripe = smoothstep(0.46, 0.54, s) * smoothstep(0.9, 0.78, Math.abs(cv - 0.5) * 2);
         const worn = smoothstep(0.55, 0.9, grime);
-        r = mix(r, mix(warn.r, 0.06, 0.0), stripe * (1 - worn * 0.45));
-        g = mix(g, mix(warn.g, 0.06, 0.0), stripe * (1 - worn * 0.45));
-        b = mix(b, mix(warn.b, 0.07, 0.0), stripe * (1 - worn * 0.45));
-        r *= 1 - (1 - stripe) * 0.55; g *= 1 - (1 - stripe) * 0.55; b *= 1 - (1 - stripe) * 0.55;
+        r = mix(r, warn.r * HAZ_PAINT, stripe * (1 - worn * 0.45));
+        g = mix(g, warn.g * HAZ_PAINT, stripe * (1 - worn * 0.45));
+        b = mix(b, warn.b * HAZ_PAINT, stripe * (1 - worn * 0.45));
+        // Counter-stripe. It was a 0.55 crush, i.e. a black bar next to a white
+        // one — maximum local contrast, on the floor, in the middle of a fight.
+        r *= 1 - (1 - stripe) * 0.42; g *= 1 - (1 - stripe) * 0.42; b *= 1 - (1 - stripe) * 0.42;
         rough += 0.2;
         metal *= 0.4;
       }
@@ -1248,7 +1265,22 @@ export function wallTexture(theme, size = 512) {
         rough += 0.1;
         // The rail itself: thin, continuous, and the only horizontal glow line
         // left on the wall.
-        e = (1 - smoothstep(0.1, 0.32, Math.abs(gv - 0.5))) * 1.5;
+        //
+        // THIS IS THE OBJECT THE BLIND COMPARISON LOST ON. At 1.5 the accent
+        // hue clamps to rgb(111,252,255) in the emissive map, which the wall
+        // material then drives at 1.15 — 1.15 of linear radiance in green and
+        // blue, against a bloom threshold of 1.04. So the rail did not just
+        // clip, it bloomed, and it did it along an unbroken horizontal line
+        // running the full width of the frame at eye height. A reviewer shown
+        // this frame and a Custom Robo V2 frame unlabelled picked the reference
+        // in under a second, because in ours the eye lands on the light rail
+        // before it lands on either machine.
+        //
+        // 0.72 lands it at roughly rgb(58,123,183) on screen: still
+        // unmistakably a lit rail, still the most saturated line on the wall,
+        // still describing the perimeter — and now BELOW the bloom threshold,
+        // so it is a boundary rather than a subject.
+        e = (1 - smoothstep(0.1, 0.32, Math.abs(gv - 0.5))) * 0.72;
       } else {
         // Capping course: brighter machined coping that catches the rig light
         // and draws a clean bright line along the top of the bowl.

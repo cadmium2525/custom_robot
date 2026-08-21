@@ -361,13 +361,26 @@ export class Stage {
     // instantly, which matters when you're airborne and hunting for the ground.
     // It is deliberately slim: a bright deck already contrasts hard against a
     // near-black wall, so this is a highlight, not a light source.
-    const sh = 0.16;
+    //
+    // VALUE BUDGET, and this is the whole argument for the number below.
+    // The practicals batch is additive and its contribution goes through the
+    // same ACES curve as everything else, so a tint of 0.72 laid over a deck
+    // already sitting at ~0.35 linear sums to 1.07 — which is ABOVE the bloom
+    // threshold (0.04 above it, in fact). The kerb was therefore not a rim
+    // light, it was an emitter: it clipped near 255, it bled a halo, and it ran
+    // the full width of the composition. A blind comparison against the
+    // reference put it plainly — the eye landed on a floor rail before it
+    // landed on either machine. A boundary is allowed to be the most SATURATED
+    // thing in frame; it is not allowed to be the brightest. Held under the
+    // bloom threshold when it lands on lit deck, and slimmer, so it reads as a
+    // scribed edge rather than a strip light.
+    const sh = 0.12;
     const strip = ringStrip(
       rectLoop(b.hx - 0.05, b.hz - 0.05, 0.03),
       rectLoop(b.hx - 0.05, b.hz - 0.05, 0.03 + sh),
       1
     );
-    this._practicals.push(flatTint(strip, 0.5, 0.62, 0.72));
+    this._practicals.push(flatTint(strip, 0.12, 0.21, 0.30));
   }
 
   // -------------------------------------------------------------------------
@@ -642,9 +655,18 @@ export class Stage {
       // Emissive trim, as an actual RING around the cap. The old version was a
       // filled additive box covering the entire top face, which flattened every
       // block into one pale slab and is the direct cause of the greybox read.
+      //
+      // Same budget as the perimeter kerb, and for the same reason: the dais is
+      // 6.8 m square, so its rim is a cyan rectangle drawn across a third of the
+      // frame. At 0.85 of a near-white emissive it summed past the bloom
+      // threshold on every lit cap and became the longest, brightest line in the
+      // composition. The ring still describes the cap edge — that is the job —
+      // it just does it at rim-light strength instead of at strip-light
+      // strength.
+      const rimK = 0.30;
       const ri = rectLoop(capX + 0.16, capZ + 0.16, b.top + 0.075, b.x, b.z, b.yaw || 0);
       const ro = rectLoop(capX + 0.26, capZ + 0.26, b.top + 0.075, b.x, b.z, b.yaw || 0);
-      rims.push(flatTint(ringStrip(ri, ro, 1), emis.r * 0.85, emis.g * 0.85, emis.b * 0.85));
+      rims.push(flatTint(ringStrip(ri, ro, 1), emis.r * rimK, emis.g * rimK, emis.b * rimK));
 
       // Hazard skirt: a painted warning band wrapped round the base of every
       // obstacle. Warm, low, and it anchors the block to the deck.
@@ -769,8 +791,20 @@ export class Stage {
       for (const t of Object.values(htex)) {
         if (t?.isTexture) t.anisotropy = this.settings.anisotropy;
       }
+      // Hazard paint is INFORMATION, not illumination.
+      //
+      // The theme's `hazard` hue is the colour of the paint chip; a chevron band
+      // lit by a 3.4-intensity key at that albedo lands at 180-200 on a deck
+      // whose median is 96, i.e. the warning stripes were the second brightest
+      // object in the arena after the deck rails and comfortably brighter than
+      // either machine. Warning paint on a real deck is a mid-value ochre that
+      // reads by HUE and by its hard stripe rhythm, not by out-glowing the floor
+      // it is painted on. Two thirds of the albedo keeps every bit of the
+      // information — the chevrons are exactly as legible — and gives the top of
+      // the value range back to the robots.
+      const paint = new THREE.Color(this.theme.hazard ?? 0xffb01f).multiplyScalar(0.62);
       const mat = pbr(htex, {
-        color: this.theme.hazard ?? 0xffb01f,
+        color: paint,
         emissive: 0x000000,
         emissiveIntensity: 0,
         envMapIntensity: 0.12,
