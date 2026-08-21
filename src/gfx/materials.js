@@ -188,7 +188,16 @@ const RIM_FRAG = /* glsl */`
   // Biased to the upper and outer edges. A rim that wraps the underside as
   // hard as the shoulders is an ambient wash with no direction in it, and the
   // eye reads directionless brightness on a curved surface as translucency.
-  rim *= 0.26 + 0.74 * clamp(nWorldX.y * 0.85 + 0.50, 0.0, 1.0);
+  //
+  // The floor is 0.44 and not the 0.26 it was, because the bias was over-taxing
+  // the half of the contour that needs the rim most. From a raked arena camera
+  // the machine's lower silhouette is all downward-facing: pauldron undersides,
+  // armpits, skirt, thigh blocks. Mapped against the meter, that arc was where
+  // essentially all of the surviving invisible contour lived. The translucency
+  // read the bias was guarding against came from a rim that was a full-plate
+  // pow() ramp; this one is a band a few degrees wide with a hard dark hull
+  // drawn immediately outside it, which is a lit edge, not a glow through.
+  rim *= 0.44 + 0.56 * clamp(nWorldX.y * 0.85 + 0.50, 0.0, 1.0);
 
   // Energy veins: a slow band travelling up the body, masked to creases.
   float band = sin(vWorldPosX.y * 5.5 - uTime * 2.4) * 0.5 + 0.5;

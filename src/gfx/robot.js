@@ -92,7 +92,16 @@ const TRIM = {
  */
 const PAINT_GAIN = 0.90;
 const PLANE_UP = 0.34;    // top faces lift...
-const PLANE_DOWN = 0.66;  // ...undersides crush. Sides are the reference value.
+// ...undersides crush. Sides are the reference value.
+//
+// Eased from 0.66. Painting a downward face at a third of its plate's value is
+// right for a plate you are looking down ON and wrong for one whose underside
+// IS the silhouette — and on a machine seen from a raked arena camera, the
+// undersides of the pauldrons, the armpits, the skirt and the thigh blocks are
+// most of the outline's lower half. Mapped, the surviving invisible contour was
+// almost entirely there: mean value inside the edge 51-59 against an outline at
+// 8 and a deck at 99, which averages to no step at all.
+const PLANE_DOWN = 0.42;
 
 /** Lens/strip brightness. Above ~1.7 these stop reading as glass and bloom flat. */
 const EMIS_GAIN = 0.45;
