@@ -192,7 +192,17 @@ function buildPalette(look, legColour) {
   return {
     // The machine's mass, and the value the whole frame is judged on. This has
     // to sit ABOVE the arena deck, which measures ~96/255 in the pinned frame.
-    hull: tone(look.primary, 0.82, 0.58),
+    //
+    // WHERE THE CHROMA COMES FROM, and what it costs. Lightness and saturation
+    // trade against each other and there is a hard ceiling: in HSL at L 0.82 no
+    // colour can exceed an HSV chroma of 0.36 whatever you set S to, so the
+    // first pass up the value ladder bought "brighter than the deck" and paid
+    // for it in hue — the machine photographed as a pale grey-white blob, which
+    // wins the value half of the brief and loses the other half. Backing the
+    // hull off to 0.74 and asking for the chroma back doubles it (0.22 -> 0.45
+    // measured on RAY's blue) for 14% of the luminance, and 14% is affordable
+    // because the white plates carry the top of the machine.
+    hull: tone(look.primary, 0.74, 0.82),
     // Same hue, shadow value. Reads as the SAME paint in shade rather than as a
     // second colour, which is what lets us stack three plates and still see all
     // three edges. Carries the upper arms, the forearm cuffs, the rear skirt
@@ -200,20 +210,24 @@ function buildPalette(look, legColour) {
     // never becomes a hole. Kept two thirds of a stop under the hull rather
     // than the old full stop: these are the pieces that used to break the torso
     // group into a light front and a dark back at gameplay size.
-    hullLo: tone(look.primary, 0.66, 0.60),
-    // Hero plates: chest crest, shoulder caps, shin faces. Near-white, barely
-    // tinted, so the top of the machine has somewhere to go.
-    light: tone(look.secondary, 0.93, 0.06),
+    hullLo: tone(look.primary, 0.58, 0.86),
+    // Hero plates: chest crest, shoulder caps, shin faces. This role stays
+    // near-white on purpose — a toy robot's white plastic is white, and it is
+    // what gives the saturated plates something to be saturated against.
+    light: tone(look.secondary, 0.93, 0.10),
     // The model's line art: recesses, seams, the wash behind every hero plate.
     // This is the one role that stays genuinely dark — it keeps its hue so a
     // recess reads as shadowed machinery rather than as a hole cut in the model.
-    dark: tone(look.primary, 0.34, 0.52),
-    accent: tone(look.accent, 0.74, 0.86),
-    leg: tone(legColour, 0.88, 0.08),
+    // Driven to full chroma, which costs it nothing in value (a saturated dark
+    // blue and a greyed one measure the same luminance) and stops the recesses
+    // reading as soot.
+    dark: tone(look.primary, 0.33, 0.86),
+    accent: tone(look.accent, 0.68, 1.0),
+    leg: tone(legColour, 0.88, 0.10),
     // Legs stand on a near-white deck, so their shadow role stays a step under
     // the leg's: dark enough to hold an edge against the floor, light enough to
     // be a leg rather than a gap under the skirt.
-    legLo: tone(legColour, 0.70, 0.10),
+    legLo: tone(legColour, 0.70, 0.14),
     // Weapons are hardware: a neutral grey that belongs to no part's colour
     // scheme, so the gun never merges into the arm it hangs off — and, being
     // desaturated among saturated plates, never merges into the machine either.
