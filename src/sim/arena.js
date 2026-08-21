@@ -133,7 +133,18 @@ export const ARENAS = [
       floor: 0x352a22,
       deck: 0x7a6f62,
       floorAccent: 0xff6a1a,
-      struct: 0x4b3b2e,
+      // The cold counter-note this theme declares — a 0x3f7fd0 fill and a
+      // 0x5c9ad8 bounce — was being aimed at brown. 0x4b3b2e has a linear BLUE
+      // albedo of 0.027, so the block faces that the counter-kick exists to
+      // describe returned almost none of it and measured a median of 22/255:
+      // the arena paid for two cold lights and then threw the light away.
+      //
+      // Blued gunmetal at the same luminance. Under the 0xffd8b0 key the lit
+      // top planes still read hot, which is right — a lit plane takes the
+      // colour of the light — while the shadow sides now return three times the
+      // blue they did, so a block's dark half is the coolest thing in the frame
+      // instead of one more orange plane. Machinery in a hot mill is grey.
+      struct: 0x3e4250,
       // Same arithmetic that condemned the grid's wall, run on this one: an
       // 0x2e2119 boundary has a linear albedo of 0.017, so it returns under two
       // percent of everything that reaches it and no rig can light it — the
@@ -194,8 +205,19 @@ export const ARENAS = [
       key: 'orbital',
       floor: 0x232c3c,
       deck: 0x646c78,
-      floorAccent: 0x7de2ff,
-      struct: 0x36414f,
+      // 0x7de2ff is a 49%-saturated cyan, and the perimeter light rail baked
+      // into the wall drives it at 1.5. Added over a lit deck it landed at
+      // rgb(194,240,237) — a white line, the brightest thing in the arena,
+      // outranking the muzzle flash. Saturated so the same fixture reads as the
+      // colour it is supposed to be and stops competing for the top of the
+      // value range.
+      floorAccent: 0x55cdf5,
+      // Mirror of the foundry's problem. Orbital declares a sodium counter-kick
+      // (0xff9a4a bounce over a 0x4b3826 ground term) and then points it at a
+      // blue-grey whose linear RED albedo is 0.036, so the one warm light in
+      // the rig had nothing to land on and the arena measured 2.7% warm against
+      // 51% cool. Painted steel under service lamps, as the grid's shell is.
+      struct: 0x494033,
       // 0x1d242f is a linear albedo of 0.017 — the same unlightable surface the
       // grid was rebuilt to get rid of, left in place here. Orbital measured a
       // wall median of 29 and 33% of the frame below the black threshold.
@@ -206,8 +228,8 @@ export const ARENAS = [
       // ring is painted steel under sodium service lamps; the cyan belongs to
       // the rails and the deck.
       wall: 0x443b2f,
-      accent: 0x7de2ff,
-      emissive: 0x9df0ff,
+      accent: 0x55cdf5,
+      emissive: 0x4ad0ff,
       hazard: 0xff9a2e,
       crowdWarm: 0xffb066,
       fog: 0x02040a,

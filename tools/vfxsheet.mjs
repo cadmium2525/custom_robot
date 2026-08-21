@@ -191,6 +191,17 @@ async function boot(browser) {
       const q = window.__game.engine.quality;
       q.auto = false;
       q.setTier(Number(t));
+      // Pinning the tier is not pinning the resolution. The auto-scaler ran on
+      // every frame between page load and this call, and under software GL it
+      // has always already walked `dynamicScale` down — by a different number
+      // of 0.08 steps each run, because it is reacting to how loaded the box
+      // is. `effectiveScale` multiplies it into the render target, so the whole
+      // frame was being rendered at 1600x900, or 1472x828, or 1216x684 and
+      // upscaled: two runs differed softly along every edge in the arena, which
+      // looks exactly like a camera that has not settled.
+      q.dynamicScale = 1;
+      q.cooldown = 1e9;
+      window.__game.engine.resize(true);
     }, TIER);
     await frames(page, 3);
   }
@@ -211,19 +222,20 @@ const MATCH_SEED = 0x5eed1234;
 const VFX_SEED = 0x0b1a5701;
 
 async function enterMatch(page, ticks = 380) {
+  // `paused` goes on the same line as `startMatch`, not two round-trips later.
+  // A rendered frame under software GL is worth anywhere from one to fifteen
+  // sim ticks (`acc += dt`, clamped only above 250 ms), so even the two frames
+  // this used to render before pausing moved the fight by a load-dependent
+  // amount: the robots ended up somewhere else, the blast is ignited at their
+  // midpoint, and the crop landed on a different piece of arena. Two sheets
+  // minutes apart differed on 44% of their pixels because of these two frames.
   await page.evaluate((seed) => {
     const g = window.__game;
     g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: 'grid', loadouts: g.loadouts, seed });
+    g.engine.paused = true;
     g.setDemo(true);
   }, MATCH_SEED);
   await frames(page, 2);
-  // Freeze the fixed step here, not in `freeze()` further down. Between the two
-  // there are several rendered frames, and a rendered frame under software GL is
-  // worth anywhere from one to fifteen sim ticks (`acc += dt` with dt clamped
-  // only above 250 ms) — so the fight kept moving by a load-dependent amount
-  // after the fast-forward, the blast is ignited at the two robots' midpoint,
-  // and the sheet was of a different moment and a different crop every run.
-  await page.evaluate(() => { window.__game.engine.paused = true; });
   await page.evaluate((n) => window.__game.fastForward(n), ticks);
   // The rig has to catch up before the freeze: `fastForward` teleports the fight
   // a long way from wherever the camera was last pointed, and freezing it
@@ -232,10 +244,17 @@ async function enterMatch(page, ticks = 380) {
   // It is settled by hand on a fixed 1/60 delta rather than by rendering real
   // frames, because a real frame damps by the *wall-clock* delta and a software
   // GL frame is worth anywhere between 50 ms and half a second depending on how
-  // loaded the box is. Four seconds of fixed-step damping converges the
-  // exponential to float precision from any starting pose, so the camera lands
-  // in exactly the same place on every run — which is the whole point of a
-  // before/after sheet.
+  // loaded the box is.
+  //
+  // The step count is not "enough to look settled", it is enough to converge to
+  // *bit equality*. The rig's slowest term decays by about exp(-2*dt) a step,
+  // i.e. a factor of 0.967, and the two rendered frames before this leave the
+  // camera metres from its target with a load-dependent error. Four seconds
+  // (240 steps) only takes that error down by 1e-4 — still a fraction of a
+  // pixel of parallax, which is enough to light up every edge in the frame in a
+  // diff and put the integer crop rectangle one pixel over. Twenty-five seconds
+  // takes it below double precision, so the last few hundred steps are exact
+  // no-ops and the camera lands on the same float on every run.
   await page.evaluate((n) => {
     const g = window.__game;
     let t = 0;
@@ -244,7 +263,26 @@ async function enterMatch(page, ticks = 380) {
       t += 1 / 60;
     }
     g.view.update(0, 1, g.engine.clock.elapsed);
-  }, 240);
+  }, 1500);
+
+  // From here the page renders on a *pinned* delta. `paused` gates only the
+  // fixed step; `engine.onRender` still fires on every rendered frame with the
+  // real wall-clock delta, and `_render` feeds that delta to the camera rig,
+  // the grade damping and — the one that actually broke this harness —
+  // `view.update`, which drives the thruster emitters. A `page.screenshot()`
+  // under software GL is worth dozens of rendered frames, each one aging the
+  // plumes and drawing values out of `vfxRng`, so the effect being captured had
+  // a different random seed by the time the shutter closed and every tile after
+  // the first was of a different blast.
+  //
+  // Replacing the callback with a dt=0 render keeps everything the frame needs
+  // — model placement, billboarding, `vfx.update`'s uniform writes, the shell
+  // pools' flush — while integrating nothing. Rendering the same frame twice
+  // now gives the same pixels, which is the entire premise of a contact sheet.
+  await page.evaluate(() => {
+    const g = window.__game;
+    g.engine.onRender = () => { g.view.update(0, 1, g.engine.clock.elapsed); };
+  });
   await frames(page, 2);
 }
 
@@ -409,6 +447,21 @@ async function runLifetime(browser, effect) {
   // Freeze everything before anything is ignited: from here on the only thing
   // that moves is the number written into clock.elapsed.
   const t0 = await freeze(page);
+  // Printed on every run so "is this sheet comparable to the last one" is a
+  // string match rather than a hope. Sim tick, the two robots and — the one
+  // that actually drifted — the settled camera, to four decimals: a rig that is
+  // a thousandth of a unit out moves the integer crop rectangle and lights up
+  // every edge in a pixel diff.
+  console.log('  pin: ' + await page.evaluate(() => {
+    const g = window.__game;
+    const c = g.camera.position;
+    const f = (n) => n.toFixed(4);
+    const r = g.world.robos;
+    return `tick=${g.world.tick} cam=${f(c.x)},${f(c.y)},${f(c.z)} ` +
+      `rot=${f(g.camera.rotation.x)},${f(g.camera.rotation.y)} ` +
+      `p1=${r[0].pos.x.toFixed(2)},${r[0].pos.z.toFixed(2)} ` +
+      `p2=${r[1].pos.x.toFixed(2)},${r[1].pos.z.toFixed(2)}`;
+  }));
   // Wipe the firefight already in flight so the sheet shows this effect and not
   // a hundred stale tracers. The wide shot at the end keeps the staging read.
   // ...and reseed the jitter, so the lobes, the spark cone and the debris
