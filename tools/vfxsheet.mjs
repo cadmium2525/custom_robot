@@ -255,8 +255,49 @@ async function enterMatch(page, ticks = 380) {
   // diff and put the integer crop rectangle one pixel over. Twenty-five seconds
   // takes it below double precision, so the last few hundred steps are exact
   // no-ops and the camera lands on the same float on every run.
+  //
+  // ...and that argument holds for every term in the rig EXCEPT the one that
+  // matters, which is why the pin line still drifted between runs:
+  //
+  //     run A   cam=5.8248,4.1261,11.8550  rot=-0.4355,-0.0111
+  //     run B   cam=6.0009,3.9910,11.8843  rot=-0.4332,-0.0032
+  //
+  // Eighteen centimetres and eight milliradians apart, from an identical sim
+  // state — same tick, same two robot positions to the centimetre. That is not
+  // an unconverged exponential; it is a *closed loop*. `camera.js`'s framing
+  // check projects the opponent through the camera, derives `anchorBias`,
+  // `lookAhead`, `fitBoost` and `aimDrop` from where they land, and then those
+  // four move the camera that did the projecting — with deliberately asymmetric
+  // damping (2.2 opening, 0.8 closing). A feedback loop with asymmetric rates
+  // is not obliged to converge to a point, and this one does not; where it ends
+  // up depends on the rig state it started from. That state is whatever
+  // `engine.onRender` left behind after damping by real wall-clock deltas for
+  // however many frames the box managed while the page was booting. The settle
+  // was deterministic. Its *input* was not.
+  //
+  // Fixed by starting the settle from a canonical rig state rather than from
+  // the boot's leftovers. These are the rig's own resting values, written back
+  // verbatim, so this reproduces framing the game reaches on its own and simply
+  // strips the boot's history out of it.
   await page.evaluate((n) => {
     const g = window.__game;
+    const r = g.rig;
+    const canon = {
+      yaw: 0, yawOffset: 0, pitch: 0.1, roll: 0,
+      distance: 7, height: 3, introT: 0, mode: 'duel',
+      anchorBias: 0, lookAhead: 1, fitBoost: 1, aimDrop: 0,
+      fovOffset: 0, _speedBlur: 0, shakeRoll: 0,
+    };
+    for (const k of Object.keys(canon)) if (k in r) r[k] = canon[k];
+    if (r.shake && r.shake.set) r.shake.set(0, 0, 0);
+    // The smoothed pose is seeded just behind the player rather than at the
+    // origin: from the origin the first step swings the boom across the whole
+    // arena, and the clamp that keeps the camera inside the arena shell is not
+    // a damped term, so that one swing can leave a permanent mark on the result.
+    const me = g.world.robos[g.localIndex];
+    if (r.smoothPos && r.smoothPos.set) r.smoothPos.set(me.pos.x, me.pos.y + 3, me.pos.z + 7);
+    if (r.smoothTarget && r.smoothTarget.set) r.smoothTarget.set(me.pos.x, me.pos.y + 1, me.pos.z);
+
     let t = 0;
     for (let i = 0; i < n; i++) {
       g.rig.update(g.world, g.view.prepare(1), g.localIndex, 1 / 60, t);
