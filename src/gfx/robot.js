@@ -156,39 +156,68 @@ function tone(hex, l, satMin, mul = 1) {
  * Six roles is the whole vocabulary. Anything more and the machine stops having
  * a colour scheme; anything less and there is nothing to separate groups with.
  *
- * The numbers are a VALUE LADDER, and the gaps between them are the point:
- * 0.88 / 0.68 / 0.44 / 0.17 is roughly a stop between neighbours, which is what
- * makes two overlapping plates read as two plates at forty pixels tall.
+ * WHERE THE LADDER SITS, and why it moved.
+ *
+ * The previous ladder — 0.88 / 0.68 / 0.44 / 0.17 — was authored as "roughly a
+ * stop between neighbours" and it is a perfectly good ladder. It is in the
+ * wrong PLACE. Measured on the pinned fight frame, the machine's body came out
+ * at a median of 85 while the deck it stands on measured 96: the actor was
+ * painted darker than the scenery. The reference this game is chasing does the
+ * opposite without exception — its robots are saturated LIGHT toys and the
+ * stage is deliberately duller and darker than they are, so the eye lands on
+ * the fight and not on the floor.
+ *
+ * The whole ladder is therefore shifted up, and the deck is left exactly where
+ * it is (it belongs to the stage and is not ours to darken). Two consequences
+ * are deliberate:
+ *
+ *  - THE RUNGS ARE CLOSER TOGETHER at the top. hull/light was 0.20 apart and is
+ *    now 0.11. That is not a loss of structure, it is the fix for the second
+ *    half of the same complaint: at 42x79 px the old spread turned the shoulder
+ *    caps and the chest crest into detached PALE BLOCKS floating on a dark
+ *    machine instead of highlights on a light one. Four or five big masses in
+ *    clearly different values is the read we want; nine small ones in wildly
+ *    different values is what we had.
+ *  - `dark` STOPS BEING A HOLE. At 0.17 the recesses and the wash behind every
+ *    hero plate rendered at 15-40/255 on the title rig, which is what made the
+ *    emissive trim look like glowing wire around a void (#5's residual). At
+ *    0.34 it is still comfortably the darkest paint on the machine — a full
+ *    stop under the hull — but it now reads as shadowed machinery.
+ *
+ * Chroma goes up with value, not down. Lightening a colour in HSL costs
+ * saturation for free unless you ask for it back, and "the blue one" and "the
+ * pink one" have to survive being cast light.
  */
 function buildPalette(look, legColour) {
   return {
-    // The machine's mass. Light enough to sit clearly above the arena deck, and
-    // saturated enough that "the blue one" and "the pink one" are still the
-    // first thing you read at distance.
-    hull: tone(look.primary, 0.68, 0.44),
+    // The machine's mass, and the value the whole frame is judged on. This has
+    // to sit ABOVE the arena deck, which measures ~96/255 in the pinned frame.
+    hull: tone(look.primary, 0.82, 0.58),
     // Same hue, shadow value. Reads as the SAME paint in shade rather than as a
     // second colour, which is what lets us stack three plates and still see all
     // three edges. Carries the upper arms, the forearm cuffs, the rear skirt
     // and the whole backpack — masses, not creases, so it stays a value and
-    // never becomes a hole.
-    hullLo: tone(look.primary, 0.44, 0.48),
+    // never becomes a hole. Kept two thirds of a stop under the hull rather
+    // than the old full stop: these are the pieces that used to break the torso
+    // group into a light front and a dark back at gameplay size.
+    hullLo: tone(look.primary, 0.66, 0.60),
     // Hero plates: chest crest, shoulder caps, shin faces. Near-white, barely
     // tinted, so the top of the machine has somewhere to go.
-    light: tone(look.secondary, 0.88, 0.04),
+    light: tone(look.secondary, 0.93, 0.06),
     // The model's line art: recesses, seams, the wash behind every hero plate.
     // This is the one role that stays genuinely dark — it keeps its hue so a
     // recess reads as shadowed machinery rather than as a hole cut in the model.
-    dark: tone(look.primary, 0.17, 0.42),
-    accent: tone(look.accent, 0.62, 0.72),
-    leg: tone(legColour, 0.74, 0.06),
-    // Legs stand on a near-white deck, so their shadow role stays a full step
-    // under the hull's: dark enough to hold an edge against the floor, light
-    // enough to be a leg rather than a gap under the skirt.
-    legLo: tone(legColour, 0.46, 0.08),
+    dark: tone(look.primary, 0.34, 0.52),
+    accent: tone(look.accent, 0.74, 0.86),
+    leg: tone(legColour, 0.88, 0.08),
+    // Legs stand on a near-white deck, so their shadow role stays a step under
+    // the leg's: dark enough to hold an edge against the floor, light enough to
+    // be a leg rather than a gap under the skirt.
+    legLo: tone(legColour, 0.70, 0.10),
     // Weapons are hardware: a neutral grey that belongs to no part's colour
     // scheme, so the gun never merges into the arm it hangs off — and, being
     // desaturated among saturated plates, never merges into the machine either.
-    gunmetal: tone(0x9aa6b4, 0.56, 0.05),
+    gunmetal: tone(0x9aa6b4, 0.72, 0.06),
     frame: { r: PAINT_GAIN, g: PAINT_GAIN, b: PAINT_GAIN },
   };
 }
