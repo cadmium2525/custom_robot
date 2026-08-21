@@ -21,6 +21,24 @@
    rules, deep blacks, and an English/kana lockup on every label.
    ========================================================================= */
 
+/* The device's safe-area insets, and the ONE thing in this file declared
+   outside `.crv2-ui`.
+   These used to live in the `.crv2-ui` block below, which is correct on a
+   phone and untestable everywhere else: headless Chromium resolves every
+   `env(safe-area-inset-*)` to 0, and an override pushed onto `:root` was
+   shadowed by `.crv2-ui`'s own `env()` declaration for everything inside it —
+   so every notch capture this project ever took was of the no-notch layout.
+   Declared here they still resolve from `env()` on a real device and still
+   inherit into every UI root, but a harness can now set them on
+   `document.documentElement` and photograph the notch layout. Custom
+   properties only: nothing here paints, so nothing leaks into the page shell. */
+:root {
+  --safe-t:     env(safe-area-inset-top, 0px);
+  --safe-b:     env(safe-area-inset-bottom, 0px);
+  --safe-l:     env(safe-area-inset-left, 0px);
+  --safe-r:     env(safe-area-inset-right, 0px);
+}
+
 .crv2-ui {
   --ink:        #eaf2fd;
   --ink-dim:    #93aac8;
@@ -69,11 +87,6 @@
      is carried by the portrait, the top rule and the round pips instead. */
   --hp-ok:      #46dd8b;
   --hp-low:     #ff4d63;
-
-  --safe-t:     env(safe-area-inset-top, 0px);
-  --safe-b:     env(safe-area-inset-bottom, 0px);
-  --safe-l:     env(safe-area-inset-left, 0px);
-  --safe-r:     env(safe-area-inset-right, 0px);
 
   --ease:       cubic-bezier(.22, 1, .36, 1);
   --ease-in:    cubic-bezier(.55, 0, .68, .19);
