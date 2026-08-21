@@ -1779,11 +1779,14 @@ export class RoboModel {
     this.matShell = roboShell(maps, look, teamHex, {
       rimStrength: 0.10, rimPower: 5.2, energy: 0.03,
       normalScale: 1.15, envMapIntensity: 0.5,
-      // Hemispheric fill. Small, but it is the whole difference between a robot
-      // in an unlit corner of the arena reading as a machine and reading as a
-      // hole — see FILL_FRAG. Deliberately cool above and dim/warm below so it
-      // adds a top and a bottom rather than flattening the machine out.
-      fillUp: 0x4a5a72, fillDown: 0x241d18,
+      // Hemispheric bounce card — see FILL_FRAG. Deliberately cool above and
+      // dim/warm below so it adds a top and a bottom rather than flattening the
+      // machine out, and deliberately well under the key: at these values the
+      // shell reads roughly two thirds key, one third bounce, which is a lit
+      // model kit rather than an ambient-occlusion render. fillDark is the
+      // separate stop and a half handed to a machine standing where no light
+      // reaches, which is where the far robot spends most of a duel.
+      fillUp: 0x74889f, fillDown: 0x3b3138, fillDark: 1.6,
     });
     // Without this the entire paint system above is dead code and every plate
     // renders at the neutral bake's value — one blue-grey machine, defect #24.

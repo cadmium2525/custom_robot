@@ -59,6 +59,7 @@ uniform float uRimStrength;
 uniform float uRimWash;
 uniform vec3  uFillUp;
 uniform vec3  uFillDown;
+uniform float uFillDark;
 uniform vec3  uTeamColor;
 uniform float uEnergy;
 uniform float uHitFlash;
@@ -123,20 +124,24 @@ const RIM_VERT = /* glsl */`
 `;
 
 /**
- * Shadow fill: a hemispheric term that only fires where the machine is actually
- * receiving nothing.
+ * Bounce card: a hemispheric fill that always fires, with an extra kick where
+ * the machine is receiving nothing at all.
  *
  * Why it exists: measured, the far robot's body sat at luminance 5/255 against
  * a background of 2. It was standing where the key light does not reach, and no
  * edge treatment rescues a machine that is receiving no light — 68% of its
  * contour was invisible.
  *
- * Why it is gated on how lit the fragment already is, rather than being a plain
- * ambient: the arena deck measures 88/255 and the near robot's body 78, so the
- * two are already within ten levels of each other. An unconditional fill lifts
- * the near robot straight ONTO the deck's value and trades one robot's
- * legibility for the other's. Weighting it by what the direct lights failed to
- * deliver keeps it out of the key entirely — it is a bounce card, not exposure.
+ * Why it is no longer gated OFF on lit fragments. It used to be, and the reason
+ * given was that an unconditional fill would lift the near robot onto the
+ * deck's value: the deck measured 88 and the body 78, so the fill would close
+ * the last ten levels between them. That argument only holds while the machine
+ * is DARKER than the floor it stands on. It is not any more — the paint is cast
+ * light on purpose now (see buildPalette) — so the fill is pushing the body
+ * further AWAY from the deck's value, not toward it, and the gate was costing
+ * exactly the lift the far machine needs. The gate survives as the second term,
+ * where it is still the right tool: a machine in an unlit corner gets a stop and
+ * a half of bounce that a machine standing in the key does not.
  *
  * It is added to the INDIRECT diffuse, so it is a light and not a paint job: it
  * is multiplied by the albedo, every value break the panel bake and the vertex
@@ -149,9 +154,10 @@ const FILL_FRAG = /* glsl */`
   {
     const vec3 lumaX = vec3(0.2126, 0.7152, 0.0722);
     float litX = dot(reflectedLight.directDiffuse + reflectedLight.indirectDiffuse, lumaX);
-    float needX = 1.0 - smoothstep(0.0, 0.075, litX);
+    float darkX = 1.0 - smoothstep(0.0, 0.09, litX);
     float upX = normalize(vWorldNormalX).y * 0.5 + 0.5;
-    reflectedLight.indirectDiffuse += diffuseColor.rgb * mix(uFillDown, uFillUp, upX) * needX;
+    reflectedLight.indirectDiffuse +=
+      diffuseColor.rgb * mix(uFillDown, uFillUp, upX) * (1.0 + uFillDark * darkX);
   }
 `;
 
@@ -239,6 +245,7 @@ export function roboShell(maps, look, teamColor, opts = {}) {
     uRimStrength: { value: opts.rimStrength ?? 0.22 },
     uFillUp: { value: new THREE.Color(opts.fillUp ?? 0x000000) },
     uFillDown: { value: new THREE.Color(opts.fillDown ?? 0x000000) },
+    uFillDark: { value: opts.fillDark ?? 0.0 },
     uTeamColor: { value: new THREE.Color(teamColor) },
     uEnergy: { value: opts.energy ?? 0.10 },
     uHitFlash: { value: 0 },

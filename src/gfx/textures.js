@@ -212,8 +212,15 @@ export function armorTexture(look, size = 512, seedOffset = 0) {
       // where the coat is worn through, at the seams and along scuffed edges.
       // Making the whole shell metallic turns the robo into a mirror, and a
       // mirror in a dark arena reads as a hologram rather than a machine.
+      //
+      // The wear term is halved from what it was. A metal fragment has no
+      // diffuse at all, so every texel this drives toward 1 is a texel lit only
+      // by an environment map of a night sky — i.e. a black one. `wear` covers
+      // the whole outer third of every panel, so at 0.55 a wide band around each
+      // plate was quietly being switched off. Paint wears thin at an edge; it
+      // does not turn the edge into chrome.
       const metal = clamp01(
-        0.10 + wear * 0.55 * (look.metalness ?? 0.9) + seam * 0.3 - stripe * 0.08
+        0.08 + wear * 0.26 * (look.metalness ?? 0.9) + seam * 0.24 - stripe * 0.06
       );
 
       orm[o] = ao * 255;
