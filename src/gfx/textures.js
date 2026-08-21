@@ -146,19 +146,23 @@ export function armorTexture(look, size = 512, seedOffset = 0) {
       // panels across a wide range also means that whatever value the
       // background happens to be, some of the robot still separates from it.
       //
-      // The tiers are far apart and the MIDDLE one is deliberately the smallest
-      // share of the model. Measured against a deck at 88/255, the shell's value
-      // histogram ran p25=61 p50=78 p75=97 — half the machine sat inside twelve
-      // levels of the exact value it was standing on, which is the whole of why
-      // half its contour measured invisible. What matters is not the width of
-      // the range (that was already 5..175) but where the MASS is: a body piled
-      // up around one value merges with any background near it, and a body split
-      // into a dark family and a light family has most of its area in the clear
-      // whatever it happens to be in front of. So the darks go genuinely dark —
-      // 12x the old dark:light ratio in linear — and the mid tier is narrowed to
-      // the smallest of the three.
+      // How far apart the tiers should sit was argued the wrong way round for
+      // two rounds. The previous split — 0.38 / 0.90 / 1.19, i.e. a 13x range in
+      // linear — was a HEDGE: paint a third of the machine near-black and a
+      // quarter of it near-white, and whatever the background turns out to be,
+      // some of the robot is in the clear. Measured, that hedge lost. It dragged
+      // the shell's median down to 59/255 while it stood on a deck at 97, and a
+      // third of the plates went so dark that the panel split stopped reading as
+      // panels and started reading as holes punched in the armour.
+      //
+      // The silhouette is the OUTLINE's job (see robot.js), and the outline only
+      // works on a body that is lighter than the line drawn around it. So the
+      // texture's job here is narrowed back to what a bake is actually good at:
+      // saying that this plate and its neighbour are different plates. A ~1.8x
+      // linear spread does that at 40px and leaves the machine's mass up where a
+      // painted toy's mass belongs.
       const pv = ((p.id * 2654435761) >>> 0) / 4294967296;
-      const tier = pv < 0.34 ? 0.38 : (pv > 0.74 ? 1.19 : 0.90);
+      const tier = pv < 0.34 ? 0.74 : (pv > 0.74 ? 1.12 : 0.93);
       const tint = tier * (0.95 + (((p.id * 40503) >>> 0) % 97) / 97 * 0.10);
 
       // Brushed grain, anisotropic along the longer panel axis.

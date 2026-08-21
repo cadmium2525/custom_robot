@@ -86,9 +86,11 @@ const TRIM = {
 /**
  * Ceiling on baked albedo. Paint * max plane gain * max grime must stay clear of
  * 1.0 or the key light drives the top planes into a flat clipped white and the
- * value structure we just built disappears at the top end.
+ * value structure we just built disappears at the top end. The lightest role is
+ * toned to sRGB L 0.88 = 0.75 linear, and 0.75 * 0.90 * 1.34 = 0.90, so there is
+ * still a tenth of a stop of room at the very top of the machine.
  */
-const PAINT_GAIN = 0.78;
+const PAINT_GAIN = 0.90;
 const PLANE_UP = 0.34;    // top faces lift...
 const PLANE_DOWN = 0.66;  // ...undersides crush. Sides are the reference value.
 
@@ -109,9 +111,34 @@ const NEUTRAL_LOOK = {
   metalness: 0.85, roughness: 0.50,
 };
 
-/** Linear-space paint swatch, pre-scaled by PAINT_GAIN. */
-function swatch(hex, mul = 1) {
+const _hsl = { h: 0, s: 0, l: 0 };
+
+/**
+ * Re-value a roster colour to a TARGET LIGHTNESS, keeping its hue and at least
+ * `satMin` of its chroma. Returns a linear swatch pre-scaled by PAINT_GAIN.
+ *
+ * Why the roster colours are not used as authored. `parts.js` picks each body's
+ * primary for identity — RAY is a mid-dark tournament blue at sRGB L 0.51,
+ * NOCTURNE is near-black at L 0.14 — and multiplying an already-dark hue by a
+ * shadow factor leaves nothing. Measured on the pinned frame, the local machine
+ * sat at 59/255 on a deck at 97 and the far machine at 50 in front of a wall at
+ * 37: BOTH robots had been painted the value of the thing behind them, which is
+ * defect #24 stated exactly.
+ *
+ * The reference this game is chasing solves it with a casting decision rather
+ * than a shader: saturated, LIGHT toys, with a hard dark line drawn round them.
+ * A light body separates from the arena's near-white deck AND from its black
+ * service wall, because the outline supplies the dark half of the step in both
+ * places — and neither is true of a mid-dark body. So the roster keeps naming
+ * the hue and the palette decides the value, per role, identically for every
+ * body in the roster. NOCTURNE comes out as a light violet-grey machine rather
+ * than an invisible one, which is what "assassin" has to look like in a game
+ * where you can still see it.
+ */
+function tone(hex, l, satMin, mul = 1) {
   _col.setHex(hex);
+  _col.getHSL(_hsl, THREE.SRGBColorSpace);
+  _col.setHSL(_hsl.h, clamp01(Math.max(_hsl.s, satMin)), clamp01(l), THREE.SRGBColorSpace);
   const k = PAINT_GAIN * mul;
   return { r: _col.r * k, g: _col.g * k, b: _col.b * k };
 }
@@ -119,52 +146,40 @@ function swatch(hex, mul = 1) {
 /**
  * Six roles is the whole vocabulary. Anything more and the machine stops having
  * a colour scheme; anything less and there is nothing to separate groups with.
+ *
+ * The numbers are a VALUE LADDER, and the gaps between them are the point:
+ * 0.88 / 0.68 / 0.44 / 0.17 is roughly a stop between neighbours, which is what
+ * makes two overlapping plates read as two plates at forty pixels tall.
  */
 function buildPalette(look, legColour) {
-  // A near-black floor mixed into every shadow role. Without it a body whose
-  // primary is already dark (NOCTURNE) has no shadow value left to give, and its
-  // recesses go to literal zero, which reads as a hole rather than as shade.
-  //
-  // The floor is deliberately a visible near-black (~RGB 32) rather than a
-  // mathematical one. The garage backdrop is itself near-black, so a shadow role
-  // mixed down to 4/255 does not read as shade there — it reads as a hole
-  // punched through the machine, and the arms and weapon simply stop existing.
-  const shade = (hex, mul) => {
-    _col.setHex(hex);
-    const k = PAINT_GAIN * mul;
-    return {
-      r: _col.r * k + 0.018 * PAINT_GAIN,
-      g: _col.g * k + 0.022 * PAINT_GAIN,
-      b: _col.b * k + 0.034 * PAINT_GAIN,
-    };
-  };
   return {
-    hull: swatch(look.primary),
+    // The machine's mass. Light enough to sit clearly above the arena deck, and
+    // saturated enough that "the blue one" and "the pink one" are still the
+    // first thing you read at distance.
+    hull: tone(look.primary, 0.68, 0.44),
     // Same hue, shadow value. Reads as the SAME paint in shade rather than as a
     // second colour, which is what lets us stack three plates and still see all
-    // three edges.
-    //
-    // Half the hull value, not a third: this role carries the upper arms, the
-    // forearm cuffs, the rear skirt and the whole backpack — masses, not
-    // creases. Painted at 0.34 they read as holes between the pauldron and the
-    // gun on a dark backdrop, which cost the machine both arms in silhouette.
-    hullLo: shade(look.primary, 0.52),
-    light: swatch(look.secondary),
-    // Cool near-black with a trace of the hull in it, so recesses look like
-    // shadowed machinery and not like holes cut in the model. This is the one
-    // role that stays genuinely dark — it is the model's line art.
-    dark: shade(look.primary, 0.09),
-    accent: swatch(look.accent, 0.95),
-    leg: swatch(legColour),
-    // Legs stand on a near-white arena deck, so their mass value stays lower
-    // than the arms': dark enough to hold an edge against the floor, light
+    // three edges. Carries the upper arms, the forearm cuffs, the rear skirt
+    // and the whole backpack — masses, not creases, so it stays a value and
+    // never becomes a hole.
+    hullLo: tone(look.primary, 0.44, 0.48),
+    // Hero plates: chest crest, shoulder caps, shin faces. Near-white, barely
+    // tinted, so the top of the machine has somewhere to go.
+    light: tone(look.secondary, 0.88, 0.04),
+    // The model's line art: recesses, seams, the wash behind every hero plate.
+    // This is the one role that stays genuinely dark — it keeps its hue so a
+    // recess reads as shadowed machinery rather than as a hole cut in the model.
+    dark: tone(look.primary, 0.17, 0.42),
+    accent: tone(look.accent, 0.62, 0.72),
+    leg: tone(legColour, 0.74, 0.06),
+    // Legs stand on a near-white deck, so their shadow role stays a full step
+    // under the hull's: dark enough to hold an edge against the floor, light
     // enough to be a leg rather than a gap under the skirt.
-    legLo: shade(legColour, 0.40),
-    // Weapons and hardware are hardware: a neutral mid grey that belongs to no
-    // part's colour scheme, so the gun never merges into the arm it hangs off —
-    // and never merges into the background either. At 0.16 the vulcan read as a
-    // black circle where the machine's right hand should be.
-    gunmetal: shade(0x9aa6b4, 0.34),
+    legLo: tone(legColour, 0.46, 0.08),
+    // Weapons are hardware: a neutral grey that belongs to no part's colour
+    // scheme, so the gun never merges into the arm it hangs off — and, being
+    // desaturated among saturated plates, never merges into the machine either.
+    gunmetal: tone(0x9aa6b4, 0.56, 0.05),
     frame: { r: PAINT_GAIN, g: PAINT_GAIN, b: PAINT_GAIN },
   };
 }
