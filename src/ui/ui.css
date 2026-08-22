@@ -1947,16 +1947,65 @@
     padding: calc(14px + var(--safe-t)) calc(14px + var(--safe-r)) calc(14px + var(--safe-b)) calc(14px + var(--safe-l));
     scroll-padding: calc(14px + var(--safe-t)) 0 calc(14px + var(--safe-b));
   }
+  /* THE GARAGE IS A DOCUMENT ON A PHONE, NOT A DASHBOARD.
+     It used to be the desktop's four-panel grid folded into one column and
+     then told to fit inside the screen's height — `grid-template-rows: auto
+     minmax(120px,1fr) minmax(120px,1.1fr) auto` on a `.garage` that is
+     `flex: 1` of a fixed-height screen. Measured at 390x844, that is 684px of
+     grid holding 781px of panels, and every one of the four is a casualty:
+
+       .garage__list   box 114..234 (120px, its floor) holding 184px of head +
+                       presets, so it overflowed its own row by 64px;
+       .list__scroll   height 0 — `flex: 1` inside a box with no free space —
+                       and it carries `overflow-y: auto`, so all five parts
+                       were CLIPPED. The garage listed nothing. On the one
+                       device this game is aimed at you could not change a
+                       part, and the only reason it was not reported as a
+                       blank screen is that the header still printed "5 PARTS";
+       .list__presets  painted at 167..298, i.e. outside its own panel and on
+                       top of the machine;
+       .garage__stage  box 120px holding a 160px min-height view;
+       .garage__info   358px box, 387px of compare table — the last stat row's
+                       bar cut off.
+
+     So: the panels flow at their natural height, the SCREEN scrolls (it has
+     since `b6ba7ed`), and the stage goes to the top because the machine is
+     what the player came to look at. Nothing is a scroll container inside a
+     scroll container any more — the one nested scroller left is the screen's,
+     which the sticky footer already accounts for. */
   .garage {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(120px, 1fr) minmax(120px, 1.1fr) auto;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    overflow: visible;
+    gap: 12px;
   }
-  .garage__rail { flex-direction: row; overflow-x: auto; gap: 4px; }
-  .rail__b { min-width: 104px; }
+  /* All five categories at once, in two rows. The horizontal scroller this
+     replaces put POD half off the right edge and LEGS entirely off it (rail
+     scrollWidth 614 in a 362px box), with no scrollbar on iOS to say so: two
+     of the five things you come to the garage to change looked like they did
+     not exist. */
+  .garage__rail { flex-direction: row; flex-wrap: wrap; overflow: visible; gap: 4px; }
+  .rail__b { flex: 1 1 30%; min-width: 0; min-height: 46px; }
   .rail__i { display: none; }
   .rail__eq { grid-column: 1 / -1; }
-  .garage__info { max-height: none; }
+  /* A 1px-tall divider is a zero-width flex ITEM in a row, so the player
+     switcher ran on from LEGS as if P1 were a sixth part category. Basis 100%
+     makes the rule do in a row what it does in a column: break the line. */
+  .rail__sep { flex-basis: 100%; margin: 6px 0 2px; }
+  .rail__pl { flex-basis: 100%; }
+  /* The machine is ~500px tall on a 390px-wide phone whatever box it is given
+     (`_renderPreview` maps the slot's CENTRE into the world and renders at a
+     fixed size), so it always overhangs. Give it the top of the page, where
+     the overhang has the header above it and its own panels below, and make
+     those panels opaque so no part of it is ever behind a number. */
+  .garage__stage { order: -1; flex: none; height: 40vh; min-height: 240px; }
+  .garage__list, .garage__info { flex: none; background: rgba(6, 10, 18, .94); }
+  .rail__b { background: rgba(10, 16, 26, .88); }
+  /* `flex: 1` with a zero basis is what zeroed this box; in a flowing column
+     it has to size to its rows. The screen is the scrollport now. */
+  .list__scroll { flex: none; overflow: visible; }
+  .garage__info { max-height: none; overflow: visible; }
   /* The footer stops floating at the end of the document and becomes a bar.
      `margin-top: auto` is the whole of `.foot`'s claim on the bottom of the
      frame, and an auto margin is free space — the instant the content is

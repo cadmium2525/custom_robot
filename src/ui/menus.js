@@ -925,6 +925,13 @@ export class Menus {
         paintEquipped();
         s.hover = null;
         preview(cat(s.cat).map.get(this.sel.loadouts[s.player][s.cat]));
+        // The stage is a single live model driven by `loadoutChange`, and
+        // switching player was the one thing that changed which machine the
+        // panel describes without announcing it. The tag read P2, the rail
+        // read P2's parts, the compare table read P2's numbers — and the
+        // machine on the stage was still P1's, until you happened to equip
+        // something and it swapped under you.
+        this._emit('loadoutChange', { index: s.player, loadout: { ...this.sel.loadouts[s.player] } });
         return;
       }
 
@@ -950,7 +957,14 @@ export class Menus {
         }
       }
       if (data.mode) this.sel.mode = data.mode;
+      // `is-2p` was toggled on the SCREEN root and the only rules that read it
+      // are `.stage__view.is-2p`, so the two-up stage has never once been on.
+      // It is also only honest when there is a second machine to put in it:
+      // the integrator hands us one preview node, and splitting the box for a
+      // slot nobody filled would trade one machine for an empty half-frame.
       el.classList.toggle('is-2p', this.sel.mode === 'versus');
+      el.querySelector('.stage__view').classList.toggle(
+        'is-2p', this.sel.mode === 'versus' && !!this._previewSlots[1]);
       if (this.sel.mode !== 'versus') s.player = 0;
       s.hover = null;
       setCat(s.cat);
