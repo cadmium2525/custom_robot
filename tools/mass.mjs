@@ -1,0 +1,405 @@
+#!/usr/bin/env node
+/**
+ * Mass meter — how many pieces does a machine break into at gameplay size?
+ *
+ *   node tools/mass.mjs --base http://127.0.0.1:4211/ --arena grid
+ *
+ * The blind-comparison rule this answers, quoted from the review: *blur at a
+ * radius scaled to on-screen size, quantise to five value bands, count the
+ * connected regions above 3% of the body*. A Custom Robo V2 machine returns
+ * four or five. This build returned eleven, twice, and the round spent closing
+ * that number closed the wrong file — because the number was a single figure
+ * from a tool with two modes that disagreed by a factor of two.
+ *
+ * So this reports a CURVE, never one number, and it reports the inputs that
+ * make a flattering number cheap to fake:
+ *
+ *   - The quantisation step is ABSOLUTE (levels of 0-255), swept from 24 to 85.
+ *     A claim only counts if the sign of the change holds across the sweep.
+ *   - `spread` (the body's own p2..p98 luminance range) and `median` are printed
+ *     beside it. Darkening a machine until it fits in one band collapses the
+ *     count and shows up here instantly, as does washing it out flat: neither
+ *     is a fix, and both are visible in the same three lines.
+ *   - Top-4 coverage: the share of the body the four largest masses occupy. A
+ *     toy is four masses that cover it. Five masses covering 40% is not a pass
+ *     just because the count says 5.
+ *
+ * Method, and where it is identical to contour.mjs on purpose. The frame is
+ * pinned exactly as the silhouette meter pins it — same seed, same tick, same
+ * hand-driven camera settle, same VFX suppression — and the robots' pixels come
+ * from the same white-on-black stencil pass, so a mass count and a contour
+ * reading taken at one commit describe the same photograph. The mask is ground
+ * truth: no colour keying, no hand-picked boxes, and a machine standing behind
+ * a pillar is measured on the part of it you can actually see.
+ *
+ * The blur is a masked Gaussian (three box passes), sigma = body height / 32,
+ * so a 260px machine and a 79px machine are squinted at with the SAME relative
+ * acuity — which is the only way the near and far robot can be compared at all.
+ * Background pixels are excluded from the kernel's weight, so the deck behind a
+ * thin arm never bleeds into the arm and invents a value step inside the body.
+ */
+
+import { chromium } from 'playwright';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import process from 'node:process';
+
+const args = process.argv.slice(2);
+const flag = (name, def = null) => {
+  const i = args.indexOf(`--${name}`);
+  if (i < 0) return def;
+  const v = args[i + 1];
+  return v && !v.startsWith('--') ? v : true;
+};
+
+const BASE = flag('base', 'http://127.0.0.1:4211/');
+const TIER = Number(flag('tier', 3));
+const TICKS = Number(flag('ticks', 420));
+const ARENA = flag('arena', 'grid');
+const SEED = Number(flag('seed', 1234567));
+const KEEP = !!flag('keep');
+const NOPAINT = !!flag('nopaint');
+const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+
+/** Absolute quantisation steps, in 0-255 levels. 51 = "five value bands". */
+const STEPS = [24, 30, 36, 42, 51, 60, 72, 85];
+
+/* Identical to contour.mjs's stencil — see the commentary there. */
+const STENCIL_FN = `(on) => {
+  const v = window.__game.view;
+  if (on) {
+    const MB = v.blobs[0].material.constructor;
+    const white = new MB({ color: 0xffffff, fog: false, toneMapped: false });
+    const black = new MB({ color: 0x000000, fog: false, toneMapped: false });
+    v.__hidden = [];
+    for (const b of v.blobs) if (b.visible) { v.__hidden.push(b); b.visible = false; }
+    for (const m of v.models) {
+      if (m.shadow && m.shadow.visible) { v.__hidden.push(m.shadow); m.shadow.visible = false; }
+    }
+    const shells = new Set();
+    for (const m of v.models) m.group.traverse((o) => { if (o.isMesh) shells.add(o); });
+    v.__swap = [];
+    v.scene.traverse((o) => {
+      if (!o.isMesh || !o.visible) return;
+      v.__swap.push([o, o.material]);
+      o.material = shells.has(o) ? white : black;
+    });
+    v.__bg = v.scene.background; v.__fog = v.scene.fog;
+    v.scene.background = null; v.scene.fog = null;
+  } else {
+    for (const [o, mat] of v.__swap || []) o.material = mat;
+    for (const o of v.__hidden || []) o.visible = true;
+    v.scene.background = v.__bg; v.scene.fog = v.__fog;
+    v.__swap = null; v.__hidden = null;
+  }
+}`;
+
+/**
+ * The control the review ran by hand: every shell and frame material on both
+ * machines forced to one flat grey, so the paint contributes nothing. What
+ * survives is what the LIGHT and the PART COUNT are doing on their own.
+ */
+const NOPAINT_FN = `() => {
+  const v = window.__game.view;
+  for (const m of v.models) {
+    for (const mat of [m.matShell, m.matFrame]) {
+      if (!mat) continue;
+      mat.vertexColors = false;
+      mat.color.setRGB(0.55, 0.55, 0.55);
+      mat.needsUpdate = true;
+    }
+  }
+}`;
+
+const SETTLE_FN = `(n) => {
+  const g = window.__game;
+  if (!g.rig || !g.world || !g.view) return false;
+  let t = (g.engine.clock && g.engine.clock.elapsed) || 0;
+  for (let i = 0; i < n; i++) {
+    const views = g.view.prepare(1);
+    g.rig.update(g.world, views, g.localIndex, 1 / 60, t);
+    t += 1 / 60;
+  }
+  g.view.update(0, 1, t);
+  g.engine.onRender = null;
+  if (g.engine.quality) g.engine.quality.auto = false;
+  return true;
+}`;
+
+const VFX_OFF_FN = `() => {
+  const v = window.__game.view;
+  const keep = new Set([v.stage.group, ...v.models.map((m) => m.group), ...v.blobs]);
+  for (const o of v.scene.children) {
+    if (keep.has(o) || o.isLight || o.isCamera) continue;
+    o.visible = false;
+  }
+  for (const k of ['motes', 'shafts', 'sweep']) if (v.stage[k]) v.stage[k].visible = false;
+}`;
+
+const ANALYSE_FN = async ({ nUri, hUri, steps }) => {
+  const load = async (uri) => {
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = uri; });
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(img, 0, 0);
+    return { d: g.getImageData(0, 0, c.width, c.height).data, W: c.width, H: c.height };
+  };
+
+  const N = await load(nUri);
+  const H = await load(hUri);
+  const W = N.W, HT = N.H;
+  const lumOf = (d, i) => 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+
+  const Ln = new Float32Array(W * HT);
+  const mask = new Uint8Array(W * HT);
+  for (let p = 0, i = 0; p < W * HT; p++, i += 4) {
+    Ln[p] = lumOf(N.d, i);
+    if (lumOf(H.d, i) > 128) mask[p] = 1;
+  }
+
+  // One component per machine, from the stencil.
+  const comp = new Int32Array(W * HT).fill(-1);
+  const comps = [];
+  const stack = new Int32Array(W * HT);
+  for (let p = 0; p < W * HT; p++) {
+    if (!mask[p] || comp[p] >= 0) continue;
+    const id = comps.length;
+    let sp = 0, n = 0, x0 = W, x1 = 0, y0 = HT, y1 = 0;
+    stack[sp++] = p; comp[p] = id;
+    while (sp) {
+      const q = stack[--sp];
+      const qx = q % W, qy = (q / W) | 0;
+      n++;
+      if (qx < x0) x0 = qx; if (qx > x1) x1 = qx;
+      if (qy < y0) y0 = qy; if (qy > y1) y1 = qy;
+      if (qx > 0 && mask[q - 1] && comp[q - 1] < 0) { comp[q - 1] = id; stack[sp++] = q - 1; }
+      if (qx < W - 1 && mask[q + 1] && comp[q + 1] < 0) { comp[q + 1] = id; stack[sp++] = q + 1; }
+      if (qy > 0 && mask[q - W] && comp[q - W] < 0) { comp[q - W] = id; stack[sp++] = q - W; }
+      if (qy < HT - 1 && mask[q + W] && comp[q + W] < 0) { comp[q + W] = id; stack[sp++] = q + W; }
+    }
+    comps.push({ id, n, x0, x1, y0, y1 });
+  }
+  const bodies = comps.filter((c) => c.n >= 300 && (c.y1 - c.y0) >= 16)
+    .sort((a, b) => b.n - a.n).slice(0, 2);
+
+  /**
+   * Masked box blur, run three times to approximate a Gaussian. Only masked
+   * pixels contribute and only masked pixels are normalised, so the machine is
+   * blurred against itself and never against what is behind it.
+   */
+  const blurBody = (c, sigma) => {
+    const x0 = Math.max(0, c.x0 - 2), x1 = Math.min(W - 1, c.x1 + 2);
+    const y0 = Math.max(0, c.y0 - 2), y1 = Math.min(HT - 1, c.y1 + 2);
+    const bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+    let val = new Float32Array(bw * bh);
+    let wgt = new Float32Array(bw * bh);
+    for (let y = 0; y < bh; y++) {
+      for (let x = 0; x < bw; x++) {
+        const p = (y + y0) * W + (x + x0);
+        const on = mask[p] && comp[p] === c.id;
+        val[y * bw + x] = on ? Ln[p] : 0;
+        wgt[y * bw + x] = on ? 1 : 0;
+      }
+    }
+    // Box radius for three passes approximating a Gaussian of this sigma.
+    // Three boxes of radius r sum to variance 3*((2r+1)^2-1)/12, so matching
+    // it to sigma^2 gives r = (sqrt(4*sigma^2+1)-1)/2 — very nearly sigma-0.5.
+    // Getting this wrong by the obvious factor (r = 1.2*sigma) blurs 30% harder
+    // than the rule asks and quietly deletes masses.
+    const r = Math.max(1, Math.round((Math.sqrt(4 * sigma * sigma + 1) - 1) / 2));
+    const tmpV = new Float32Array(bw * bh), tmpW = new Float32Array(bw * bh);
+    const pass = (src, srcW, dst, dstW, horiz) => {
+      const outerN = horiz ? bh : bw, innerN = horiz ? bw : bh;
+      for (let o = 0; o < outerN; o++) {
+        for (let i = 0; i < innerN; i++) {
+          let sv = 0, sw = 0;
+          for (let k = -r; k <= r; k++) {
+            const j = i + k;
+            if (j < 0 || j >= innerN) continue;
+            const idx = horiz ? o * bw + j : j * bw + o;
+            sv += src[idx]; sw += srcW[idx];
+          }
+          const idx = horiz ? o * bw + i : i * bw + o;
+          dst[idx] = sv; dstW[idx] = sw;
+        }
+      }
+    };
+    for (let it = 0; it < 3; it++) {
+      pass(val, wgt, tmpV, tmpW, true);
+      pass(tmpV, tmpW, val, wgt, false);
+    }
+    const out = new Float32Array(bw * bh);
+    for (let i = 0; i < bw * bh; i++) out[i] = wgt[i] > 1e-4 ? val[i] / wgt[i] : -1;
+    return { out, x0, y0, bw, bh };
+  };
+
+  /** Connected regions of one quantisation band inside the body, at one phase. */
+  const regionsAtPhase = (c, B, step, phase) => {
+    const { out, bw, bh } = B;
+    const band = new Int16Array(bw * bh).fill(-999);
+    let area = 0;
+    for (let i = 0; i < bw * bh; i++) {
+      if (out[i] < 0) continue;
+      band[i] = Math.floor((out[i] + phase) / step);
+      area++;
+    }
+    const seen = new Int32Array(bw * bh).fill(-1);
+    const st = new Int32Array(bw * bh);
+    const sizes = [];
+    for (let p = 0; p < bw * bh; p++) {
+      if (band[p] === -999 || seen[p] >= 0) continue;
+      const id = sizes.length;
+      const b = band[p];
+      let sp = 0, n = 0;
+      st[sp++] = p; seen[p] = id;
+      while (sp) {
+        const q = st[--sp];
+        n++;
+        const qx = q % bw, qy = (q / bw) | 0;
+        const nb = [];
+        if (qx > 0) nb.push(q - 1);
+        if (qx < bw - 1) nb.push(q + 1);
+        if (qy > 0) nb.push(q - bw);
+        if (qy < bh - 1) nb.push(q + bw);
+        for (const m of nb) if (band[m] === b && seen[m] < 0) { seen[m] = id; st[sp++] = m; }
+      }
+      sizes.push(n);
+    }
+    sizes.sort((a, b) => b - a);
+    const big = sizes.filter((s) => s / area >= 0.03);
+    const top4 = sizes.slice(0, 4).reduce((a, b) => a + b, 0) / area;
+    return {
+      masses: big.length,
+      largest: sizes[0] / area * 100,
+      top4: top4 * 100,
+    };
+  };
+
+  /**
+   * The same count, averaged over four quantisation PHASES.
+   *
+   * A single fixed origin makes the count a lottery: a machine whose torso sits
+   * exactly on a band boundary splits down the middle into two masses, and the
+   * same machine one level darker does not. Averaging the phase out removes an
+   * artefact worth two masses on this model, and it also closes the cheapest
+   * way to fake a win — nudging the paint until the body lands mid-band.
+   */
+  const regionsAt = (c, B, step) => {
+    const phases = [0, 0.25, 0.5, 0.75].map((f) => f * step);
+    const runs = phases.map((ph) => regionsAtPhase(c, B, step, ph));
+    const avg = (k) => runs.reduce((a, r) => a + r[k], 0) / runs.length;
+    return {
+      masses: Math.round(avg('masses') * 10) / 10,
+      massesMax: Math.max(...runs.map((r) => r.masses)),
+      largest: Math.round(avg('largest') * 10) / 10,
+      top4: Math.round(avg('top4') * 10) / 10,
+    };
+  };
+
+  const stats = (c) => {
+    const v = [];
+    for (let y = c.y0; y <= c.y1; y++) {
+      for (let x = c.x0; x <= c.x1; x++) {
+        const p = y * W + x;
+        if (mask[p] && comp[p] === c.id) v.push(Ln[p]);
+      }
+    }
+    v.sort((a, b) => a - b);
+    const q = (f) => v[Math.min(v.length - 1, Math.floor(f * v.length))];
+    const p2 = q(0.02), p98 = q(0.98);
+    return {
+      spread: Math.round(p98 - p2),
+      p2: Math.round(p2), p98: Math.round(p98),
+      median: Math.round(q(0.5)),
+    };
+  };
+
+  return {
+    screen: `${W}x${HT}`,
+    bodies: bodies.map((c) => {
+      const h = c.y1 - c.y0 + 1;
+      const sigma = Math.max(0.8, h / 32);
+      const B = blurBody(c, sigma);
+      return {
+        px: c.n,
+        box: `${c.x1 - c.x0 + 1}x${h}`,
+        at: `${c.x0},${c.y0}`,
+        sigma: Math.round(sigma * 100) / 100,
+        ...stats(c),
+        curve: steps.map((s) => ({ step: s, ...regionsAt(c, B, s) })),
+      };
+    }),
+  };
+};
+
+(async () => {
+  const browser = await chromium.launch({
+    executablePath: PINNED,
+    args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+  });
+  const context = await browser.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+
+  await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.waitForFunction(() => window.__game && window.__game.engine?.running, null, { timeout: 90000 });
+  await page.evaluate((t) => { const q = window.__game.engine.quality; q.auto = false; q.setTier(t); }, TIER);
+  await page.waitForTimeout(400);
+
+  await page.evaluate(({ id, seed }) => {
+    const g = window.__game;
+    g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: id, loadouts: g.loadouts, seed });
+    g.setDemo(true);
+    g.engine.paused = true;
+  }, { id: ARENA, seed: SEED });
+  await page.waitForTimeout(1200);
+  await page.evaluate((n) => window.__game.fastForward(n), TICKS);
+  const settled = await page.evaluate(`(${SETTLE_FN})(240)`);
+  if (!settled) throw new Error('camera rig unavailable — cannot pin the frame');
+  await page.evaluate(`(${VFX_OFF_FN})()`);
+  if (NOPAINT) await page.evaluate(`(${NOPAINT_FN})()`);
+  for (const id of ['ui-layer', 'hud-layer', 'splash']) {
+    await page.evaluate((i) => { const el = document.getElementById(i); if (el) el.style.display = 'none'; }, id);
+  }
+  await page.waitForTimeout(700);
+
+  const N = await page.screenshot({ timeout: 180000 });
+  await page.evaluate(`(${STENCIL_FN})(true)`);
+  await page.waitForTimeout(700);
+  const Hs = await page.screenshot({ timeout: 180000 });
+  await page.evaluate(`(${STENCIL_FN})(false)`);
+
+  if (KEEP) {
+    mkdirSync('shots', { recursive: true });
+    writeFileSync(`shots/mass-${ARENA}.png`, N);
+  }
+
+  const probe = await context.newPage();
+  await probe.goto('about:blank');
+  const out = await probe.evaluate(ANALYSE_FN, {
+    nUri: 'data:image/png;base64,' + N.toString('base64'),
+    hUri: 'data:image/png;base64,' + Hs.toString('base64'),
+    steps: STEPS,
+  });
+
+  console.log(`\nMASSES — ${ARENA} @ tier ${TIER}, ${out.screen}${NOPAINT ? '  [NO PAINT]' : ''}`);
+  out.bodies.forEach((b, i) => {
+    console.log(`  ROBOT ${i + 1}  ${b.box}px at ${b.at}   blur sigma ${b.sigma}`);
+    console.log(`     value  p2=${b.p2} median=${b.median} p98=${b.p98}   spread ${b.spread} levels`);
+    const head = b.curve.map((c) => String(c.step).padStart(6)).join('');
+    const mass = b.curve.map((c) => c.masses.toFixed(1).padStart(6)).join('');
+    const top4 = b.curve.map((c) => String(Math.round(c.top4)).padStart(6)).join('');
+    console.log(`     step  ${head}`);
+    console.log(`     mass  ${mass}`);
+    console.log(`     top4% ${top4}`);
+    const five = b.curve.find((c) => c.step === 51);
+    const mean = b.curve.reduce((a, c) => a + c.masses, 0) / b.curve.length;
+    console.log(`     @51 (five bands): ${five.masses} masses, largest ${five.largest}%, top4 ${five.top4}%`);
+    console.log(`     curve mean: ${Math.round(mean * 10) / 10} masses`);
+  });
+  if (errors.length) console.log('\npage errors:', errors.slice(0, 4));
+
+  await browser.close();
+})().catch((e) => { console.error(e); process.exit(1); });
