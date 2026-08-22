@@ -625,12 +625,17 @@ async function runLifetime(browser, effect) {
         x: p.x, y: p.y, z: p.z,
         nx: dx, ny: 0.2, nz: dz, heavy: true, surface: false,
       });
-      // Deck hit: a round that missed and struck the floor a little short.
+      // Deck hit: a round that missed and struck the floor beside the target.
+      // Offset ACROSS the line of fire rather than along it — grid puts a
+      // shipping block on the near side of the far spawn, so a round staged
+      // "a little short" lands behind two metres of crate and the ring and the
+      // scorch are judged on a sheet that cannot see them.
+      const sx = -dz, sz = dx;                 // the line of fire's left normal
       g.view.vfx._hit({
-        x: r.pos.x + dx * 2.2 + 1.0, y: 0.02, z: r.pos.z + dz * 2.2,
+        x: r.pos.x + sx * 2.4, y: r.pos.y + 0.02, z: r.pos.z + sz * 2.4,
         nx: 0, ny: 1, nz: 0, heavy: true, surface: true,
       });
-      return { x: r.pos.x + 0.5, y: r.pos.y + 0.7, z: r.pos.z + dz * 1.1 };
+      return { x: r.pos.x + sx * 1.2, y: r.pos.y + 0.75, z: r.pos.z + sz * 1.2 };
     });
   } else if (effect === 'tracer') {
     // Fire one round from robo 0 straight at robo 1 and walk alongside it.

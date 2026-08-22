@@ -712,9 +712,24 @@ export class Stage {
       // hot thing in the arena, and its brightest point barely moves), the mean
       // radiance halves, and the flat rectangle becomes a gradient that reads
       // as depth. Four vertex colours, no texture, no extra draw call.
+      //
+      // The gradient fixed the SHAPE and left the VALUE where it was, which is
+      // why the review's sweep still returns this panel at rank 1: at the old
+      // peak the quad's luminance was 0.394 linear, which ACES lands at 194 on
+      // screen against a machine's p95 of 193. A dead heat between one large
+      // contiguous rectangle and the scattered highlights on a robot is not a
+      // dead heat to the eye — the rectangle wins, and it did, on every model.
+      //
+      // Scaled to 0.62 of itself, hue untouched. Luminance lands at 162 and the
+      // red channel still resolves at 204, so the throat is exactly as orange
+      // and exactly as saturated as it was and is no longer the brightest
+      // object in the composition. This is the kerb's rule applied to the one
+      // fixture that had never been held to it: a piece of architecture is
+      // allowed to be the most saturated thing in frame, not the brightest.
+      const GATE_GLOW = 0.62;
       this._practicals.push(rampTint(glow,
-        [warm.r * 0.78, warm.g * 0.46, warm.b * 0.15],
-        [warm.r * 0.10, warm.g * 0.06, warm.b * 0.02]));
+        [warm.r * 0.78 * GATE_GLOW, warm.g * 0.46 * GATE_GLOW, warm.b * 0.15 * GATE_GLOW],
+        [warm.r * 0.10 * GATE_GLOW, warm.g * 0.06 * GATE_GLOW, warm.b * 0.02 * GATE_GLOW]));
 
       // Hazard chevrons painted across the threshold — warm paint on the white
       // deck, at exactly the spot the player's robot stands at round start.
@@ -727,9 +742,33 @@ export class Stage {
       for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 3, uv.getY(i));
       this._hazard.push(th);
 
+      // Throat lamp. A PRACTICAL, and a practical is not allowed to out-light
+      // the sun — which this one did, by a factor of eight at the surface it
+      // was closest to.
+      //
+      // Decay is 2, so the illuminance it delivers is intensity / d². At 26 that
+      // is 26 lux at one metre against a key of 3.2, and the boundary wall the
+      // gate is cut into stands 0.6-3 m away from it. Knocking each light out of
+      // a frozen frame in turn and diffing measures what that actually bought:
+      //
+      //   foundry   gate lamp  2.8% of the frame, mean +26.7, PEAK +160
+      //             key light 60.3% of the frame, mean +24.4, peak +122
+      //
+      // A 5 m doorway's fixture was the strongest single light in the arena, and
+      // its footprint is the 626x443 box of blown-out gold plating that made the
+      // boundary wall — 19.4% of the foundry frame — supply 42% of the frame's
+      // brightest 1%. That is a surround out-lighting the fight.
+      //
+      // Matched to the key at the distance it is meant to reach instead. The
+      // threshold chevrons sit ~2.5 m from the lamp, where 7 lux of intensity
+      // lands 1.1 against the key's 3.2 — a warm fill on the deck at the
+      // doorway, which is the whole of what the paragraph above promises it for.
+      // And the range comes down with it: 16 m of reach on a 5 m opening is what
+      // put the lamp's fingerprint eight metres down the plating, so the window
+      // now closes at 6.5 m and the wash stops at the jambs.
       if (this.settings.lights >= 4) {
         const p = put(0, 2.2, 0.6);
-        const l = new THREE.PointLight(warm, 26, 16, 2.0);
+        const l = new THREE.PointLight(warm, 7, 6.5, 2.0);
         l.position.set(p[0], p[1], p[2]);
         this.group.add(l);
         this.gateLights.push(l);

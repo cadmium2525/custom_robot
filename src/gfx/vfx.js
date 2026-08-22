@@ -1300,6 +1300,8 @@ void main() {
 const _v = new THREE.Vector3();
 const _v2 = new THREE.Vector3();
 const _fv = new THREE.Vector3();
+/** Contact point after `_liftOffSurface` has pulled it clear of what it hit. */
+const _hp = new THREE.Vector3();
 const _q = new THREE.Quaternion();
 const _up = new THREE.Vector3(0, 1, 0);
 const FORWARD = new THREE.Vector3(0, 0, 1);
@@ -1653,6 +1655,36 @@ export class VFX {
     }
   }
 
+  /**
+   * Lift a contact point off the thing it landed on, into `_hp`.
+   *
+   * This is the whole of why the most-played effect in the game rendered
+   * NOTHING. An EV.HIT arrives at the point the collision test caught the round
+   * — for an armour hit that is the round's own position *inside the target's
+   * capsule*, and for a surface hit it is a point on the deck or the wall. Every
+   * pool in this file draws with `depthTest: true`, so a billboard centred there
+   * is behind the very surface the hit is about and is discarded in its
+   * entirety. Measured on a frozen frame at 17m: an armour hit changed exactly
+   * ZERO pixels; the same spawn pushed half a metre toward the camera changed
+   * 1753 of them. Not a shader bug, not the spawn path, not alpha — geometry.
+   *
+   * The lift is toward the CAMERA, not along the normal, because the normal is
+   * the one direction that does not help: a round hitting a chest plate has a
+   * normal pointing back at the shooter, which is very often across the lens
+   * rather than toward it. It is scaled with view distance so it is a constant
+   * *screen-space* bias — about a fixed number of pixels of parallax at any
+   * range — and clamped so it never detaches the effect from the hit up close.
+   * A dash of normal is added on top so a deck mark still sits above the deck.
+   */
+  _liftOffSurface(x, y, z, nx, ny, nz) {
+    _fv.set(this.camera.position.x - x, this.camera.position.y - y, this.camera.position.z - z);
+    const d = Math.max(_fv.length(), 1e-3);
+    _fv.multiplyScalar(1 / d);
+    const lift = clamp(d * 0.035, 0.14, 0.6);
+    _hp.set(x + _fv.x * lift + nx * 0.05, y + _fv.y * lift + ny * 0.05, z + _fv.z * lift + nz * 0.05);
+    return d;
+  }
+
   _hit(ev) {
     const t = this.time;
     const s = this._budgetScale();
@@ -1666,24 +1698,94 @@ export class VFX {
     const colour = surface ? 0xffd9a0 : 0xfff0d0;
     hot(colour, heavy ? 4.0 : 2.8, _rgb);
 
-    const n = Math.round((heavy ? 26 : 11) * s);
+    // Out of the surface first — see `_liftOffSurface`. `dist` comes back
+    // because everything below is sized against it.
+    const dist = this._liftOffSurface(ev.x, ev.y, ev.z, nx, ny, nz);
+    const hx = _hp.x, hy = _hp.y, hz = _hp.z;
+
+    // Screen-referenced sizing, and this is the second half of "the impact is
+    // not there". A duel in this arena is fought at fifteen to twenty-six
+    // metres — the review measures the opponent at 42x79px, under 9% of frame
+    // height — so a card authored at 0.62 world units arrived on screen 29
+    // pixels across and the sparks arrived at three. A hit is one event whether
+    // it lands near or far and it has to read the same either way, so the cards
+    // are given back the size perspective takes off them, above a reference
+    // range where the authored sizes are already right. Never below 1: a hit at
+    // arm's length keeps exactly the size it was authored at, which is what
+    // stops a vulcan burst at close quarters from strobing the screen.
+    const gain = clamp(dist / 9, 1, 2.2);
+
+    // --- the burst -----------------------------------------------------------
+    // The read is a hard-edged star, not a glow, so the flash card is at 72% of
+    // its final size on its FIRST frame. It used to open at 0.1 units against a
+    // 0.62 finish, i.e. a sixth of its size, on a 3.4 ease — which is why the
+    // sheet measured cover 0.0% at age 0 even in the frames where something did
+    // survive the depth test. A flash that grows into existence is a bloom; a
+    // flash that is already there and shuts is an impact.
+    //
+    // The star is tinted at well under half the value the sparks get, and that
+    // is the explosion's own lesson applied here: the card shader multiplies by
+    // 2.2 for the first third of a life, so a tint of 4.0 linear arrives at 8.8
+    // and above about 4.0 every colour tone-maps to the same paper white. The
+    // first version of this burst was a pure white four-point twinkle for
+    // exactly that reason. Held down, the rays keep the gold the tint asked for
+    // and the white is left to the nucleus below, where it belongs.
+    const cardTo = (heavy ? 1.35 : 0.64) * gain;
+    const cv = heavy ? 0.52 : 0.62;
+    _v.set(hx, hy, hz);
+    this.flares.spawn(hx, hy, hz, this._faceCamera(_v), t,
+      heavy ? 0.11 : 0.075, cardTo * 0.72, cardTo,
+      _rgb[0] * cv, _rgb[1] * cv, _rgb[2] * cv);
+    // A white nucleus inside the star that shuts faster than the star does, so
+    // the centre of the hit is hard rather than a soft bright patch. It shrinks
+    // rather than grows — the card shader's ease is front-loaded, so a shrinking
+    // core snaps closed over two or three frames.
+    this.flares.spawn(hx, hy, hz, this._faceCamera(_v), t,
+      heavy ? 0.05 : 0.038, cardTo * 0.44, cardTo * 0.16, 5.2, 4.6, 3.9);
+
+    // --- sparks and debris ---------------------------------------------------
+    // Two populations rather than one cloud. The sparks are fast, thin,
+    // velocity-aligned streaks that are gone in a fifth of a second; the debris
+    // is a handful of slower chunks under hard gravity that arc out of the hit
+    // and fall, which is the part that says a piece of the machine came off.
+    // Counts are unchanged at tier 3 and still scale on `_budgetScale`, because
+    // this plays on every landed round and its frame cost is a phone's problem:
+    // what changed is the SIZE of each streak, which costs nothing.
+    //
+    // A point sprite's screen size is `size * 640 / depth`, so the old 0.04-0.085
+    // was three pixels at duel range — sub-pixel once the alpha profile has
+    // shaped it thin. These are authored against that arithmetic rather than
+    // against the world: ~8-17px at twenty-six metres, ~25-50px at nine, which
+    // is a streak at both ends and needs no distance gain because the point
+    // sprite already carries perspective correctly.
+    const n = Math.round((heavy ? 24 : 11) * s);
     for (let i = 0; i < n; i++) {
-      // Cone around the surface normal, with a wide skirt.
-      const spread = heavy ? 1.5 : 1.0;
-      const vx = nx * 7 + vfxRng.s() * 6 * spread;
-      const vy = ny * 7 + vfxRng.s() * 5 * spread + 1.5;
-      const vz = nz * 7 + vfxRng.s() * 6 * spread;
+      const spread = heavy ? 1.5 : 1.1;
+      const sp = 8 + vfxRng.f() * 7;
+      const vx = nx * sp + vfxRng.s() * 7 * spread;
+      const vy = ny * sp + vfxRng.s() * 6 * spread + 2.2;
+      const vz = nz * sp + vfxRng.s() * 7 * spread;
       this.sparks.spawn(
-        ev.x, ev.y, ev.z, vx, vy, vz,
-        t, 0.2 + vfxRng.f() * 0.36, 0.04 + vfxRng.f() * 0.045,
-        _rgb[0], _rgb[1], _rgb[2], 20, 0.9, 0
+        hx, hy, hz, vx, vy, vz,
+        t, 0.16 + vfxRng.f() * 0.24, 0.24 + vfxRng.f() * 0.26,
+        _rgb[0], _rgb[1], _rgb[2], 22, 1.1, 0
       );
     }
-
-    // Flash card — the whole impact read, on one billboard, gone in ~90ms.
-    _v.set(ev.x, ev.y, ev.z);
-    this.flares.spawn(ev.x, ev.y, ev.z, this._faceCamera(_v), t,
-      heavy ? 0.12 : 0.06, 0.1, heavy ? 0.62 : 0.3, _rgb[0], _rgb[1], _rgb[2]);
+    const chunks = Math.round((heavy ? 6 : 3) * s);
+    for (let i = 0; i < chunks; i++) {
+      const a = vfxRng.f() * 6.283;
+      const sp = 2.6 + vfxRng.f() * 3.4;
+      this.sparks.spawn(
+        hx, hy, hz,
+        nx * 2 + Math.cos(a) * sp, ny * 2 + 3.4 + vfxRng.f() * 2.6, nz * 2 + Math.sin(a) * sp,
+        t, 0.45 + vfxRng.f() * 0.35, 0.22 + vfxRng.f() * 0.16,
+        // Dim and warm rather than white-hot: a chunk is lit debris, not a
+        // spark, and at spark values it would just be more of the burst. It is
+        // the one part of the hit that outlives the flash, so it is also the
+        // part that says something came off rather than merely lit up.
+        _rgb[0] * 0.34, _rgb[1] * 0.24, _rgb[2] * 0.15, 26, 0.35, 0
+      );
+    }
 
     if (surface) {
       // A ring only ever lies on the surface it hit, never free in the air, and
@@ -1693,29 +1795,36 @@ export class VFX {
       // A third of the value the sparks are given. The ring's own shader pushes
       // its spine past white; the tint is only there to say what colour the
       // *flanks* are, and a tint already above 4.0 linear leaves no flanks.
+      //
+      // Kept on the surface, not on the lifted point — a shock front that is
+      // not lying on the deck is not a shock front. It clears the deck by the
+      // 3cm it always did, and it is a ring rather than a filled card so the
+      // depth test can only ever eat its far lip.
       this.shockwaves.spawn(
         ev.x + nx * 0.03, ev.y + ny * 0.03, ev.z + nz * 0.03, _q,
-        t, heavy ? 0.15 : 0.11, 0.2, heavy ? 1.5 : 0.85,
+        t, heavy ? 0.15 : 0.11, 0.2, (heavy ? 1.5 : 0.85) * Math.min(gain, 1.7),
         _rgb[0] * 0.42, _rgb[1] * 0.38, _rgb[2] * 0.30
       );
-      this._decal(ev.x, ev.y, ev.z, nx, ny, nz, heavy ? 1.1 : 0.55);
+      // Short-lived, as a scorch from a rifle round should be. At 7.5s the mark
+      // a single bullet left outlived four more bursts of them, and — because
+      // the decal shader ramps in over the first 4% of a life — it took 300ms
+      // to arrive, so the only thing the contact sheet was measuring at 250ms
+      // was a stain fading UP. At 1.1s that ramp is 44ms and the mark is there
+      // with the flash.
+      this._decal(ev.x, ev.y, ev.z, nx, ny, nz, (heavy ? 1.1 : 0.55) * gain, 1.1);
     } else {
-      // Armour hit: a second, tighter flash instead of a ring. Nothing about a
-      // round bouncing off a chest plate says "expanding disc on the ground".
-      this.flares.spawn(ev.x, ev.y, ev.z, this._faceCamera(_v), t + 0.02,
-        heavy ? 0.16 : 0.08, 0.06, heavy ? 0.34 : 0.16, 3.4, 2.4, 1.6);
       const prox = this._proximity(ev.x, ev.y, ev.z);
       const mag = (heavy ? 0.24 : 0.06) * prox;
       this._addShake(vfxRng.s() * mag, vfxRng.s() * mag * 0.7, vfxRng.s() * mag, vfxRng.s() * mag * 0.05);
     }
   }
 
-  _decal(x, y, z, nx, ny, nz, size) {
+  _decal(x, y, z, nx, ny, nz, size, life = 7.5) {
     if (!this.settings.decals) return;
     _q.setFromUnitVectors(_v2.set(0, 0, 1), _v.set(nx, ny, nz).normalize());
     this.decals.spawn(
       x + nx * 0.012, y + ny * 0.012, z + nz * 0.012, _q,
-      this.time, 7.5, size, size * 1.05, 0.05, 0.04, 0.045
+      this.time, life, size, size * 1.05, 0.05, 0.04, 0.045
     );
   }
 
