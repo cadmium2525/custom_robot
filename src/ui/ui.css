@@ -31,7 +31,31 @@
    Declared here they still resolve from `env()` on a real device and still
    inherit into every UI root, but a harness can now set them on
    `document.documentElement` and photograph the notch layout. Custom
-   properties only: nothing here paints, so nothing leaks into the page shell. */
+   properties only: nothing here paints, so nothing leaks into the page shell.
+
+   PHOTOGRAPHED AT LAST, and the result is on the record. Method: set
+   `--safe-t: 47px; --safe-b: 34px` here, rebuild, capture `touch` at
+   iphone12 (390x844 @3x), and measure every UI rect against the two bands.
+
+   The in-match arithmetic is CORRECT, every number of it:
+     .hud__top     top  calc(8px  + 47) =  55  — clears the 47px status band
+     .hud__gear    top  calc(78px + 47) = 125  — under the plates, not on them
+     .tc__pause    top  calc(84px + 47) = 131  — right of the gear column
+     .hud__scrim   height calc(158+47)  = 205  — still ends below the gear
+     .tc__stick    bottom calc(46 + 34) =  80  — ring bottom at y=764
+     .tc__pad/FIRE bottom calc(16 + 34) =  50  — FIRE bottom at y=794, i.e.
+                                                16px clear of the home
+                                                indicator, exactly as believed
+   Nothing in the HUD or the touch layer intrudes into either band.
+
+   The MENUS were a different story, and this capture is what found it. The
+   screen padding does carry the insets — `calc(14px + var(--safe-t))` top and
+   `calc(14px + var(--safe-b))` bottom — which adds 81px of chrome to a 844px
+   screen, and three screens had no room to give: `mode` put its BACK/TO GARAGE
+   row 20px below the fold, `arena` lost its BACK/FIGHT labels AND the selected
+   arena's name to the same 20px, and `controls` — 846px of table in an 844px
+   viewport before any inset at all — ended 242px past the bottom with its only
+   BACK button on the far side. See `.screen` for the fix. */
 :root {
   --safe-t:     env(safe-area-inset-top, 0px);
   --safe-b:     env(safe-area-inset-bottom, 0px);
