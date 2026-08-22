@@ -57,7 +57,21 @@ const TICKS = Number(flag('ticks', 420));
 const ARENA = flag('arena', 'grid');
 const SEED = Number(flag('seed', 1234567));
 const KEEP = !!flag('keep');
+const DUMP = !!flag('dump');
 const NOPAINT = !!flag('nopaint');
+/**
+ * Live shell-uniform overrides — `--u lightCeil=0.4,specCap=0.2`.
+ *
+ * Every number in the shell's light governor is a uniform, so tuning it does
+ * not need a rebuild: this sets them on the running page between the settle and
+ * the shutter. Findings still have to be baked into robot.js and re-measured
+ * from a build, but the search for the number costs one browser launch instead
+ * of one build plus one launch.
+ */
+const UNIFORMS = String(flag('u', '') || '').split(',').filter(Boolean).map((kv) => {
+  const [k, v] = kv.split('=');
+  return [k.trim(), Number(v)];
+});
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /** Absolute quantisation steps, in 0-255 levels. 51 = "five value bands". */
@@ -125,6 +139,21 @@ const SETTLE_FN = `(n) => {
   return true;
 }`;
 
+/**
+ * Suppress every effect, INCLUDING the ones painted onto the shell itself.
+ *
+ * The scene-graph half is contour.mjs'. The second half is this tool's, and it
+ * was bought with a wrong answer: pinned at tick 420 in orbital the player is
+ * mid hit-flash, so its shell is mixed 90% toward (1.6, 0.9, 0.85) and every
+ * value reading taken off it described a white-hot machine that exists for
+ * 150 ms. That frame cannot be tuned against — it did not respond to the
+ * shell's light governor at all, because almost none of what it photographed
+ * was light. A hit flash across the body is not the body, the same way a
+ * muzzle flash across the outline is not the outline.
+ *
+ * Returns whatever it had to switch off, so a suppressed transient is reported
+ * rather than silently assumed.
+ */
 const VFX_OFF_FN = `() => {
   const v = window.__game.view;
   const keep = new Set([v.stage.group, ...v.models.map((m) => m.group), ...v.blobs]);
@@ -133,9 +162,21 @@ const VFX_OFF_FN = `() => {
     o.visible = false;
   }
   for (const k of ['motes', 'shafts', 'sweep']) if (v.stage[k]) v.stage[k].visible = false;
+  const was = [];
+  for (let i = 0; i < v.models.length; i++) {
+    const u = v.models[i].matShell && v.models[i].matShell.userData.u;
+    if (!u) continue;
+    for (const k of ['uHitFlash', 'uCharge', 'uRimWash', 'uDissolve']) {
+      if (u[k] && u[k].value > 0.001) {
+        was.push('robot ' + (i + 1) + ' ' + k + '=' + Math.round(u[k].value * 100) / 100);
+        u[k].value = 0;
+      }
+    }
+  }
+  return was;
 }`;
 
-const ANALYSE_FN = async ({ nUri, hUri, steps }) => {
+const ANALYSE_FN = async ({ nUri, hUri, steps, dump }) => {
   const load = async (uri) => {
     const img = new Image();
     await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = uri; });
@@ -315,6 +356,39 @@ const ANALYSE_FN = async ({ nUri, hUri, steps }) => {
     };
   };
 
+  /**
+   * A contact sheet for one machine: the crop as photographed, the masked blur
+   * the count is taken on, and the bands themselves in flat false colour. The
+   * count says how many pieces; only this says WHICH pieces, which is the
+   * difference between fixing the defect and guessing at it.
+   */
+  const sheet = (c, B, step) => {
+    const { out, x0, y0, bw, bh } = B;
+    const Z = Math.max(1, Math.round(220 / bh));
+    const cv = document.createElement('canvas');
+    cv.width = bw * Z * 3 + 24; cv.height = bh * Z;
+    const g = cv.getContext('2d');
+    g.fillStyle = '#202024'; g.fillRect(0, 0, cv.width, cv.height);
+    const px = (gx, gy, r, gr, b) => { g.fillStyle = `rgb(${r|0},${gr|0},${b|0})`; g.fillRect(gx, gy, Z, Z); };
+    const BAND = [[24,26,32],[70,58,110],[196,64,92],[240,150,40],[250,240,180],[255,255,255],[120,220,255]];
+    for (let y = 0; y < bh; y++) {
+      for (let x = 0; x < bw; x++) {
+        const i = y * bw + x;
+        const p = (y + y0) * W + (x + x0);
+        const on = mask[p] && comp[p] === c.id;
+        const o = (p) * 4;
+        if (on) px(x * Z, y * Z, N.d[o], N.d[o + 1], N.d[o + 2]);
+        const v = out[i];
+        if (v >= 0) {
+          px(bw * Z + 12 + x * Z, y * Z, v, v, v);
+          const b = BAND[Math.min(BAND.length - 1, Math.floor(v / step))];
+          px(bw * Z * 2 + 24 + x * Z, y * Z, b[0], b[1], b[2]);
+        }
+      }
+    }
+    return cv.toDataURL('image/png');
+  };
+
   return {
     screen: `${W}x${HT}`,
     bodies: bodies.map((c) => {
@@ -328,6 +402,7 @@ const ANALYSE_FN = async ({ nUri, hUri, steps }) => {
         sigma: Math.round(sigma * 100) / 100,
         ...stats(c),
         curve: steps.map((s) => ({ step: s, ...regionsAt(c, B, s) })),
+        sheet: dump ? sheet(c, B, 51) : null,
       };
     }),
   };
@@ -358,8 +433,22 @@ const ANALYSE_FN = async ({ nUri, hUri, steps }) => {
   await page.evaluate((n) => window.__game.fastForward(n), TICKS);
   const settled = await page.evaluate(`(${SETTLE_FN})(240)`);
   if (!settled) throw new Error('camera rig unavailable — cannot pin the frame');
-  await page.evaluate(`(${VFX_OFF_FN})()`);
+  const transient = await page.evaluate(`(${VFX_OFF_FN})()`);
+  if (transient && transient.length) console.log('  suppressed transients:', transient.join(', '));
   if (NOPAINT) await page.evaluate(`(${NOPAINT_FN})()`);
+  if (UNIFORMS.length) {
+    await page.evaluate((list) => {
+      for (const m of window.__game.view.models) {
+        const u = m.matShell?.userData?.u;
+        if (!u) continue;
+        for (const [k, v] of list) {
+          const name = 'u' + k[0].toUpperCase() + k.slice(1);
+          if (u[name]) u[name].value = v;
+        }
+      }
+    }, UNIFORMS);
+    console.log('  uniforms:', UNIFORMS.map(([k, v]) => `${k}=${v}`).join(' '));
+  }
   for (const id of ['ui-layer', 'hud-layer', 'splash']) {
     await page.evaluate((i) => { const el = document.getElementById(i); if (el) el.style.display = 'none'; }, id);
   }
@@ -382,6 +471,7 @@ const ANALYSE_FN = async ({ nUri, hUri, steps }) => {
     nUri: 'data:image/png;base64,' + N.toString('base64'),
     hUri: 'data:image/png;base64,' + Hs.toString('base64'),
     steps: STEPS,
+    dump: DUMP,
   });
 
   console.log(`\nMASSES — ${ARENA} @ tier ${TIER}, ${out.screen}${NOPAINT ? '  [NO PAINT]' : ''}`);
@@ -399,6 +489,15 @@ const ANALYSE_FN = async ({ nUri, hUri, steps }) => {
     console.log(`     @51 (five bands): ${five.masses} masses, largest ${five.largest}%, top4 ${five.top4}%`);
     console.log(`     curve mean: ${Math.round(mean * 10) / 10} masses`);
   });
+  if (DUMP) {
+    mkdirSync('shots', { recursive: true });
+    out.bodies.forEach((b, i) => {
+      if (!b.sheet) return;
+      const f = `shots/mass-${ARENA}-r${i + 1}.png`;
+      writeFileSync(f, Buffer.from(b.sheet.split(',')[1], 'base64'));
+      console.log(`  wrote ${f}  (crop | masked blur | bands @51)`);
+    });
+  }
   if (errors.length) console.log('\npage errors:', errors.slice(0, 4));
 
   await browser.close();
