@@ -2131,8 +2131,29 @@
   .gear__mob { display: block; }
   .hud__net, .hud__debug { display: none !important; }
   .mode__grid { grid-template-columns: 1fr; }
-  .ctl { grid-template-columns: 1fr 1fr; }
-  .ctl__p { display: none; }
+
+  /* CONTROLS, on the device whose column it was deleting.
+     Four columns folded to `1fr 1fr` leaves three cells in a two-cell grid:
+     every row printed ACTION | KEYBOARD on one line and the TOUCH binding
+     alone under the action name on the next, beside an EMPTY cell — half the
+     table was blank boxes — and `.ctl__p` was hidden outright, so the gamepad
+     column and its header simply were not there and nothing said so.
+     Two lines per row, no empty cells, nothing dropped, and the binding this
+     device actually has gets the wide cell on the first line with the other
+     two under it. The header row carries the same shape, so each label sits
+     over the cell it names. */
+  .ctl { grid-template-columns: minmax(0, 1fr) minmax(0, .78fr) minmax(0, .78fr); }
+  .ctl__a { grid-column: 1; grid-row: 1 / span 2; }
+  .ctl__t { grid-column: 2 / span 2; grid-row: 1; }
+  .ctl__k { grid-column: 2; grid-row: 2; }
+  .ctl__p { grid-column: 3; grid-row: 2; }
+  /* Cells STRETCH and centre their own content. `align-items: center` on the
+     grid shrink-wraps each cell instead, and the row's 1px rule colour is its
+     background — so every row grew two pale bands where the cell no longer
+     covered it, and the table read as if it had extra empty rows in it. */
+  .ctl > * { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+  .ctl > * { padding: 8px 10px; }
+  .ctl kbd { padding: 4px 5px; letter-spacing: .04em; }
   .net__status { flex-wrap: wrap; }
 }
 
