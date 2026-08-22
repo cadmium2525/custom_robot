@@ -941,9 +941,22 @@
   flex-direction: column;
   padding: calc(22px + var(--safe-t)) calc(26px + var(--safe-r)) calc(20px + var(--safe-b)) calc(26px + var(--safe-l));
 }
+/* `forwards`, not `both`. `screenIn` has no delay, so the backwards half of
+   `both` buys nothing on a healthy frame — and it costs everything on a sick
+   one, because it paints `from { opacity: 0 }` over the element for the whole
+   stretch between `is-on` landing and the animation actually starting. That
+   gap is not hypothetical: Chromium advances the document timeline on
+   COMPOSITED frames, and while this page is bringing up a WebGL context under
+   software GL the timeline runs behind the wall clock — measured here at
+   `performance.now()` 22508ms against `document.timeline.currentTime` 9609ms,
+   with the title screen's own animation not starting until t+22.7s. For those
+   13 seconds `.screen--title` computed to opacity 0: the game booted to a
+   blank menu, and every title/menu capture this project has taken was of a
+   screen part-way through a fade it had not started yet. With `forwards` an
+   un-started animation shows the screen at its own style instead of hiding it. */
 .crv2-ui .screen.is-on {
   display: flex;
-  animation: screenIn .28s var(--ease) both;
+  animation: screenIn .28s var(--ease) forwards;
 }
 @keyframes screenIn { from { opacity: 0; transform: translateY(10px); } }
 
@@ -1026,16 +1039,28 @@
 
 /* ---- boot ---- */
 
-.boot { justify-content: center; align-items: center; text-align: center; }
+/* `.boot` is the screen's only child and it was a plain block, so BOTH of its
+   centring declarations were inert — same failure as `.title` below, and the
+   result was the whole boot lockup welded to the top edge of a 900px frame
+   with 88% of the screen empty under it. It has to become the flex column
+   itself. */
+.boot {
+  display: flex; flex-direction: column; flex: 1; min-height: 0;
+  justify-content: center; align-items: center; text-align: center;
+}
 .boot__mark { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
 .boot__title b { font-size: clamp(22px, 6vw, 46px); font-weight: 900; letter-spacing: .3em; }
 .boot__title i { font-size: 10px; letter-spacing: .4em; margin-top: 8px; }
-.boot__row { --p: 0; width: min(420px, 74vw); margin-top: 30px; }
+/* No `--p` default here. `setLoading` writes --p to the SCREEN root, and this
+   element is now an ancestor of `.boot__fill` — re-declaring it here would win
+   over the inherited value and pin the fill at zero forever, which is the trap
+   documented at the top of this file. The default lives in the `var()` call. */
+.boot__row { width: min(420px, 74vw); margin-top: 30px; }
 .boot__bar { position: relative; height: 5px; background: rgba(255, 255, 255, .08); overflow: hidden; }
 .boot__fill {
   position: absolute; inset: 0;
   transform-origin: left center;
-  transform: scaleX(var(--p));
+  transform: scaleX(var(--p, 0));
   background: linear-gradient(90deg, var(--acc), #d8f0ff);
   box-shadow: var(--glow);
   transition: transform .3s var(--ease);
@@ -1049,6 +1074,24 @@
   pointer-events: none;
 }
 @keyframes bootScan { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+/* `.boot__glitch` had no rule at all, so the word under the bar rendered as
+   unstyled body copy and its `data-text` — the house chromatic-split hook, see
+   `.banner__main` — did nothing. Same treatment, held well back: this is a
+   status word on a loading screen, not an impact banner. */
+.boot__glitch {
+  position: relative;
+  margin-top: 26px;
+  font-size: 10px; font-weight: 800; letter-spacing: .52em; text-indent: .52em;
+  color: var(--ink-dim);
+}
+.boot__glitch::before, .boot__glitch::after {
+  content: attr(data-text);
+  position: absolute; inset: 0;
+  mix-blend-mode: screen;
+  opacity: .55;
+}
+.boot__glitch::before { color: #ff2f6d; transform: translateX(-1.5px); }
+.boot__glitch::after  { color: #22e0c8; transform: translateX(1.5px); }
 
 /* ---- the mark ---- */
 

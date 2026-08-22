@@ -442,16 +442,34 @@ export class Menus {
   // BOOT
   // -------------------------------------------------------------------------
 
+  /*
+   * The first screen anybody ever sees, and the one nobody had ever captured.
+   * Its markup and its stylesheet described two different documents:
+   *   - `<span class="mark__hex">` was an empty span. The house mark is the
+   *     inline SVG in `MARK` and its classes are `mk__*`, so the boot logo was
+   *     a zero-size box and the screen opened with no mark on it at all.
+   *   - `.boot__bar` was a direct child of `.boot`, so it had no width of its
+   *     own and stretched the full 1600px of the frame — a progress bar drawn
+   *     as a hairline rule from edge to edge.
+   *   - `.boot__row` carried the 420px width the bar wanted, but held the
+   *     label and the percentage; and the stylesheet's `.boot__meta` — the
+   *     `space-between` row those two belong in — matched nothing, so
+   *     "ARENA GEOMETRY" and "62%" printed as one run-on string.
+   * Rebuilt in the shape the stylesheet has always described: a 420px
+   * `.boot__row` holding the bar with the meta line under it.
+   */
   _build_boot() {
     const el = h('div');
     el.innerHTML = `
       <div class="boot">
-        <div class="boot__mark"><span class="mark__hex"></span><span class="mark__id">CR·V2</span></div>
+        <div class="boot__mark">${MARK}<span class="mark__id">CR·V2</span></div>
         <div class="boot__title">${bi('HOLOSSEUM LINK', 'ホロシアム接続')}</div>
-        <div class="boot__bar"><i class="boot__fill"></i><i class="boot__scan"></i></div>
         <div class="boot__row">
-          <span class="boot__label">INITIALISING</span>
-          <span class="boot__pct">0%</span>
+          <div class="boot__bar"><i class="boot__fill"></i><i class="boot__scan"></i></div>
+          <div class="boot__meta">
+            <span class="boot__label">INITIALISING</span>
+            <span class="boot__pct">0%</span>
+          </div>
         </div>
         <div class="boot__glitch" data-text="LOADING">LOADING</div>
       </div>`;
