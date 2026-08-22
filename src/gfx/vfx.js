@@ -1872,16 +1872,26 @@ export class VFX {
     // They also rise harder and die sooner. What the smoke is *for* is the
     // silhouette change — ball becomes rising stalked column — and it can only
     // do that by leaving, which is the same thing as giving the fight back.
+    //
+    // "Rise harder" was taken much too literally. R*(1.8..2.7) on a four-metre
+    // blast is eight to eleven metres a second, and at eleven metres a second a
+    // mass clears the top of the picture in about four hundred milliseconds.
+    // The sheet showed the consequence as a cliff — cover 27.9% at 470ms, 12.7%
+    // at 560ms — and the cliff was not the smoke thinning, it was the smoke
+    // leaving. Two to four metres a second instead: enough to stalk the column
+    // and drift it off the crater, slow enough that the thinning happens where
+    // it can be seen. The life is lengthened to match, because the point of the
+    // stage is the dispersal and the dispersal is now allowed to take place.
     const smokeShells = s > 0.5 ? 3 : 2;
     for (let i = 0; i < smokeShells; i++) {
       const a = vfxRng.f() * 6.283;
       const rad = R * (0.04 + vfxRng.f() * 0.16);
       this.fireballs.spawn(
         x + Math.cos(a) * rad, y + R * 0.10, z + Math.sin(a) * rad, null,
-        t + 0.17 + i * 0.075, 1.15 + vfxRng.f() * 0.5,
+        t + 0.17 + i * 0.075, 1.55 + vfxRng.f() * 0.6,
         R * 0.30, R * (0.46 + vfxRng.f() * 0.16),
         1.0, 0.92, 0.86, SHELL_SMOKE_KIND,
-        Math.cos(a) * R * 0.14, R * (1.8 + vfxRng.f() * 0.9), Math.sin(a) * R * 0.14
+        Math.cos(a) * R * 0.14, R * (0.55 + vfxRng.f() * 0.45), Math.sin(a) * R * 0.14
       );
     }
     // --- 5b. the rising plume, and the settle -----------------------------

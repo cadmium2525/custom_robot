@@ -956,24 +956,28 @@
   flex-direction: column;
   padding: calc(22px + var(--safe-t)) calc(26px + var(--safe-r)) calc(20px + var(--safe-b)) calc(26px + var(--safe-l));
 }
-/* `forwards`, not `both`. `screenIn` has no delay, so the backwards half of
-   `both` buys nothing on a healthy frame — and it costs everything on a sick
-   one, because it paints `from { opacity: 0 }` over the element for the whole
-   stretch between `is-on` landing and the animation actually starting. That
-   gap is not hypothetical: Chromium advances the document timeline on
-   COMPOSITED frames, and while this page is bringing up a WebGL context under
-   software GL the timeline runs behind the wall clock — measured here at
-   `performance.now()` 22508ms against `document.timeline.currentTime` 9609ms,
-   with the title screen's own animation not starting until t+22.7s. For those
-   13 seconds `.screen--title` computed to opacity 0: the game booted to a
-   blank menu, and every title/menu capture this project has taken was of a
-   screen part-way through a fade it had not started yet. With `forwards` an
-   un-started animation shows the screen at its own style instead of hiding it. */
+/* The entrance is a lift, not a fade, and that is deliberate.
+   `screenIn` used to open on `opacity: 0`, which makes the whole screen
+   invisible for as long as the animation sits at its first keyframe — and the
+   length of that stretch is not ours to choose, because Chromium advances the
+   document timeline on COMPOSITED frames rather than on wall time. While this
+   page is bringing up a WebGL context under software GL the two diverge badly.
+   Measured on this build: `performance.now()` 22508ms against
+   `document.timeline.currentTime` 9609ms, and a sample of the title screen at
+   wall t+17.2s found the animation `running` at `currentTime: 0` with the
+   screen computing to **opacity 0** — then the timeline jumped 9.4 seconds in
+   the next 600ms and the fade completed in one step. A 280ms fade had become a
+   multi-second blackout, and the shutter of every menu capture this project
+   has ever taken landed inside it: that is why every title PNG in shots/ shows
+   a half-faded logo. No fill-mode fixes it, because the animation is genuinely
+   running, at time zero.
+   A 10px translate cannot hide anything no matter how long it is stuck, reads
+   the same on a healthy frame, and makes a menu screenshot mean something. */
 .crv2-ui .screen.is-on {
   display: flex;
   animation: screenIn .28s var(--ease) forwards;
 }
-@keyframes screenIn { from { opacity: 0; transform: translateY(10px); } }
+@keyframes screenIn { from { transform: translateY(10px); } }
 
 .menus__bg {
   position: absolute; inset: 0;

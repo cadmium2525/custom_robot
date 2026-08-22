@@ -146,6 +146,26 @@ function flatTint(g, r, gr = r, b = r) {
   return g;
 }
 
+/**
+ * Vertical ramp instead of a flat tint: colour `lo` at the bottom of the
+ * geometry's own bounding box, `hi` at the top. Costs four vertex colours and
+ * no texture, which is the only reason a gradient is affordable on a batch
+ * whose whole point is to stay one draw call.
+ */
+function rampTint(g, lo, hi) {
+  g.computeBoundingBox();
+  const y0 = g.boundingBox.min.y;
+  const span = Math.max(1e-4, g.boundingBox.max.y - y0);
+  const pos = g.attributes.position;
+  const c = new Float32Array(pos.count * 3);
+  for (let i = 0; i < pos.count; i++) {
+    const k = (pos.getY(i) - y0) / span;
+    for (let j = 0; j < 3; j++) c[i * 3 + j] = lo[j] + (hi[j] - lo[j]) * k;
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+  return g;
+}
+
 /** Closed rectangular loop of 5 points (last repeats the first) at height y. */
 function rectLoop(hx, hz, y, cx = 0, cz = 0, yaw = 0) {
   const co = Math.cos(yaw), si = Math.sin(yaw);
@@ -679,7 +699,22 @@ export class Stage {
       glow.rotateY(yaw);
       const gp = put(0, H / 2, -D + 0.18);
       glow.translate(gp[0], gp[1], gp[2]);
-      this._practicals.push(flatTint(glow, warm.r * 0.85, warm.g * 0.5, warm.b * 0.16));
+      // "Small, saturated" is what the paragraph above promises and it is not
+      // what was built: 17 m² of additive quad at a FLAT 0.85 red, which after
+      // ACES is a near-white slab of even value with no gradient anywhere in
+      // it. Evenly lit and rectangular is the description of a screen, not of a
+      // doorway, and the review's salience sweep found it — the strongest
+      // single region of the frame on every model that weights brightness is
+      // this panel, one piece of architecture, out-ranking both machines.
+      //
+      // A throat light spills from the threshold and falls off with height, so
+      // ramp it: the peak stays where the floor is (the gate is still the one
+      // hot thing in the arena, and its brightest point barely moves), the mean
+      // radiance halves, and the flat rectangle becomes a gradient that reads
+      // as depth. Four vertex colours, no texture, no extra draw call.
+      this._practicals.push(rampTint(glow,
+        [warm.r * 0.78, warm.g * 0.46, warm.b * 0.15],
+        [warm.r * 0.10, warm.g * 0.06, warm.b * 0.02]));
 
       // Hazard chevrons painted across the threshold — warm paint on the white
       // deck, at exactly the spot the player's robot stands at round start.

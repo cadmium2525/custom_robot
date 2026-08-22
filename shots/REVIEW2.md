@@ -781,6 +781,14 @@ it. CRV2 always shows deck under the player. This is now the composition defect,
 **The opponent: 42x79px = 8.8% of frame height** (up from 7.3%). Still under the rig's own 12%
 floor.
 
+**ROUND 6 (`1e49409`): worse than grid alone could show, and the reason this is back near the top of
+the ranked list.** Grid is the arena every review had been looking at. Measured in all three:
+**foundry puts the opponent at 38x43px = 4.8% of frame height, with 26.1% of its contour invisible
+and only 34% clean**; orbital gives 34x63px = 7.0% and 12.3% invisible. Round 4's judgement that no
+further rounds should be spent on the *rig* still stands. But 4.8% of frame height with a quarter of
+its outline gone is not "small but readable", and it has to be recovered from the machine's own
+silhouette rather than from the camera. See the VERDICT.
+
 **Assessing `9c8a4a0`'s claim that the floor is geometrically unreachable — I reject the premise
 and accept the conclusion.**
 
@@ -836,7 +844,16 @@ comparable at a glance and a healthy opponent reads as "in danger". The Vulcan a
 below (`f-gear.png`) is the *same* blue at the *same* weight as the P1 health bar — two different
 quantities in identical visual language, 750px apart.
 
-**4. `explosion.png` contains no explosion.** — **ROUND 5 (`da3253a`): FIXED.**
+**4. `explosion.png` contains no explosion.** — **ROUND 6 (`1e49409`): FIXED, and the last residual
+with it.** `51b7098` made the lobes cool on one clock, and `lift` now reaches **-0.9 at 650ms while
+the mass still covers 18% of the crop** — the effect is a hole in the arena, not a lamp drawn over
+it, which was the single thing round 5 named as standing between it and the reference. At 340-470ms
+there is a large dark grey-brown soot mass with saturated orange flame tongues around its edges.
+See the round 6 section. Two residuals carried forward, neither a blocker: `hide` still sits at
+29-42% of the crop for the first 470ms, and `warm` no longer rises through the late phase (the
+round-5 note "the mass cools into colour" should not be quoted any more — the soot took that over).
+
+*Superseded round-5 header:* **ROUND 5 (`da3253a`): FIXED.**
 Twelve tiles of one blast, aged by written clock, at `r5b-sheet-explosion.png`, plus the wide
 staging frame `sheet-explosion-wide.png`: a white-cored hard-rimmed ball that expands into a
 saturated orange lobed mass with internal soot striations and disperses by 760ms. Peak coverage
@@ -1077,7 +1094,13 @@ panel is gone from solo play.
 block, a warm lit gate at frame left, warm crowd lights in the stands, orange BOMB ring in the HUD.
 There is a warm note in the 3D scene at three different scales.
 
-**22. Crosshair is invisible.** — **ROUND 4 (`35d0e66`): REGRESSED. There is no crosshair at all.**
+**22. Crosshair is invisible.** — **ROUND 6 (`1e49409`): the regression is CLOSED.**
+Looked for it rather than assumed, as round 4 did. `contour-player.png` carries a white-cored
+reticle with an orange ring and four ticks at dead centre (800,450), and it is present in the
+foundry frame, the orbital frame and the iPhone 12 frame as well. Whoever touched the HUD layer put
+it back. *Severity: closed.*
+
+*Superseded round-4 header:* **ROUND 4 (`35d0e66`): REGRESSED. There is no crosshair at all.**
 Round 2 verified a white-cored reticle with an orange ring and four ticks at (800,450). At
 `35d0e66` it is gone. I looked for it rather than assuming: `c5-ret.png` is a 4x crop of
 (720-880, 370-530), i.e. ±80px around dead centre — empty. `c5-ret-wide.png` widens that to a 2x
@@ -1224,6 +1247,31 @@ needs styling that reads as "spent" rather than "absent". Compare the BOMB and P
 which are unmistakably alive.
 
 **N6. The value and detail hierarchy is inverted — the stage out-reads the machines.**
+— **ROUND 6 (`1e49409`): the BRIGHTNESS half is CLOSED. The DETAIL half was WRONG and is withdrawn.
+What is left is neither, and it is the subject of the verdict.**
+
+- **Brightness — closed.** Body 115.4 against an 81.1 deck (was 84.5 against 96); machines are 1.6%
+  of scene pixels supplying **31.4% of the frame's brightest 1%**, a 19.6x over-representation; the
+  machine's p95 (199.7) beats the loudest HUD pixel (152.1); the HUD no longer survives the squint
+  test against the fight; the cyan rail appears in no salience top ten on any of three models and
+  survives no squint. *Residual, coverage-weighted:* cyan is 3.1% of the scene at mean luminance
+  128.4 and the machines are 1.6% at 118.4, so pixel-for-pixel the rails and the hazard chevrons are
+  still brighter and more saturated than the machines — they simply no longer form one dominant
+  structure. **And on orbital and foundry none of this landed** — see the round 6 section.
+- **Detail — the claim was false and I am withdrawing it.** "The louvred wall panels, the crate faces
+  and the deck plating all carry more legible texture per square inch than either machine" was
+  written by eye in round 2 and inherited unmeasured through rounds 4 and 5. Measured
+  (`masses.mjs`, mean gradient magnitude per pixel, machines through contour's stencil): **robots
+  37.8**, lit gate 21.9, platform top 16.4, wall louvre 7.5, crate face 6.4, deck plate 6.3. The
+  machines out-detail everything on the floor by five to six times. **Nothing on the floor out-details
+  a robot.**
+- **What is actually left**, and it is not "the stage out-reads the machines": the machines are
+  described in **8 and 9 distinct masses** against the reference's four or five, and the opponent —
+  one tenth of the player's pixels — is the more fragmented of the two. That is the named cause in
+  the VERDICT section.
+
+*Superseded round-4 entry, kept because it is where the brightness half was named:*
+
 *New at round 4, and it is the finding of this review.* Every individual defect on the list above
 is now fixed or close to it, and the frame still loses the blind test, because the thing that was
 never on the list is the relationship between the subjects and the set. Measured on `c5-fight.png`
@@ -1394,6 +1442,24 @@ therefore plausible but still untested.** To make it testable, move the four dec
 photographable in CI.
 
 ### Real defects on the phone
+
+**ROUND 6 (`1e49409`): P1, P2 and P3 are all CLOSED, and two new ones are open. The whole section
+below is the round-4 record; the current phone state is in the round 6 section at the top of this
+file.**
+
+- **P1 — FIXED, and it was the worst-looking part of the build.** The empty saturated blue band is
+  gone; the arena wall now reaches the top of the 3D viewport with the HUD sitting on it.
+- **P2 — FIXED.** BOMB and POD are drawn once. The top band carries VULCAN and the JUMP/DASH pips;
+  BOMB and POD are touch buttons only.
+- **P3 — FIXED.** The JUMP/DASH pips sit on their own backing plate.
+- **P5 — NEW.** The HUD stack owns the top 205 CSS px of an 844px screen — 24% of the phone — and its
+  largest single element is the VULCAN meter with all eight segments empty. The biggest UI object on
+  the screen is a blank box. This is N4's residual, promoted by the aspect ratio.
+- **P6 — NEW.** The touch cluster overlaps the machine: DASH sits on the player's left arm, the idle
+  stick ring covers its left leg.
+- **P4 stands** — frame rate on a real iPhone 12 remains unmeasured.
+
+*Round-4 record follows.*
 
 **P1. The top 23% of the portrait screen is empty, flat, saturated blue.** `c5-ip12-edge.png` at
 1:1 shows the arena's back wall terminating in a razor-sharp horizontal line across the full width,
