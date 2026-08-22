@@ -1,20 +1,170 @@
 # HOLOSSEUM — Art Direction Gate Review
 
 Rolling document. Round 2 reviewed `10621f2`; round 4 reviewed `35d0e66`; round 5 opened at
-`b28ff8c` and closed at `da3253a`; round 6 opened at `1e49409` and named a cause; **round 7 (this
-pass) opens at `ac50610` and closes at `762d220`**, and its job is to re-score the cause round 6
-named after the commit that was written to fix it.
+`b28ff8c` and closed at `da3253a`; round 6 opened at `1e49409` and named a cause; round 7 opened at
+`ac50610` and closed at `762d220`; **round 8 (this pass) opens at `cc7cebb`**, and its job is to
+re-measure the cause round 7 renamed — the light rig and the part count — and to close the two
+stage residuals round 7 carried forward without measuring.
 
-**STATUS: COMPLETE — the VERDICT section at the bottom of this file is written, is scored on all five
-points of the blind comparison, and is no longer PENDING for the first time in six rounds. That
-section, not this line, is what decides; the header was permitted to read COMPLETE only once the
-section said something. It says NO, and it names one cause.**
+**STATUS: IN PROGRESS. The VERDICT section at the bottom of this file was rewritten for round 8
+from existing evidence BEFORE this round's captures were taken, and is being revised as they land.
+It has never been allowed to read PENDING and does not now. That section, not this line, is what
+decides.**
 
 **VERDICT: see the VERDICT section at the bottom of this file, which is the only place a verdict is
 recorded. This header deliberately does not restate it — two earlier rounds shipped a header that
 disagreed with the section, and the fix is to stop having two of them.**
 
 ---
+
+
+## Round 8 (opens at `cc7cebb`) — the two stage residuals, measured at last, and one of them is worse than it was named
+
+Round 7's verdict left two residuals against the stage, both marked "not re-measured this round",
+and a stage agent reported that the first of them had gone away. **It has not. I checked it myself
+and it reproduces on the instrument the claim was originally made with, unchanged between round 7's
+build and this one.** The second residual turns out to have been filed against the wrong arena.
+
+### Baseline at `cc7cebb`, all three arenas, so the light-rig commit has something to land against
+
+Captured with `masses.mjs --dump` — settled frame, VFX off, DOM hidden, stencil mask — and counted
+with `mass2.mjs`' absolute-step curve, which is the instrument round 7 replaced the retired single
+number with. Dumps are `r8dump` / `r8dumpF` / `r8dumpO` in the critic scratchpad.
+
+```
+  step W:              10   14   18   22   26   32   40   51    spread
+  grid    R1 masses     8    7    7    8    9    6    4    7    74..166  (92)
+          R1 top4%   33.9 45.1 47.7 59.2 54.1 75.9 79.4 80.4
+          R2 masses     7   10   10    9    8    6    8    5    65..158  (93)
+          R2 top4%   33.4   43 50.7 59.8 60.8 79.2 75.1 90.4
+  foundry R1 masses    10   12    9   10    9    9    7    7    55..185 (130)
+          R1 top4%   29.5   36 46.5 51.8 56.1 63.3 75.3 74.2
+          R2 masses     1    1    7    8    7    5    5    4    57..161 (104)
+          R2 top4%   12.7 22.5 29.6 36.5   57 69.3 70.9 88.2
+  orbital R1 masses     8    8    9   10    8   10    9    5    68..210 (142)
+          R1 top4%   19.7 27.1 34.7 33.8 51.9 52.4 63.8 76.3
+          R2 masses     3    6    9   12    9    6    5    6    65..164  (99)
+          R2 top4%   27.5   44 50.1 54.7 56.7 75.1 74.2 86.5
+```
+
+**Round 7's arena-dependence claim reproduces exactly**: the same player machine with the same paint
+spans 92 levels in grid, 130 in foundry, 142 in orbital. That is the number to watch when the light
+rig lands.
+
+**And a flaw in my own replacement instrument, before anyone else finds it.** Look at foundry R2:
+`masses` reads **1** at W=10 and W=14. That is not a machine reading as one mass — its four largest
+regions cover **12.7%** of it, i.e. it has shattered into thirty-plus pieces and *none of them clears
+the 3% floor*. The region count is **non-monotonic in W and a low count at a fine step is the worst
+possible reading, not the best.** This is a cousin of the defect I retired `masses.mjs --fixed` for
+last round, in the tool I wrote to replace it. The rule from here: **`top4 cover%` is the honest
+column and the count may never be quoted without it.**
+
+### Residual 1 — the warm lit gate. The report that it no longer reproduces is wrong
+
+Round 6 measured this with `salience.mjs` running "three scoring models at four tile sizes and two
+offsets", and found the gate at frame left owning ranks 1-8 of model A. That file has since been
+rewritten and **no tool in this tree can reproduce those numbers any more** — which is the residual's
+real problem and is why a report that it "no longer reproduces" could be made in good faith. So the
+sweep was re-implemented from round 6's own written definition (`r8attn.mjs`): A = lum x chroma,
+B = (lum + 1.5 x local contrast) x chroma, C = local contrast x chroma; T = 32/40/48/64 at offsets 0
+and half-tile; machine pixels from contour's binary stencil, not a box.
+
+Best rank achieved by a >=50%-machine tile / best rank achieved by a tile inside the gate rect
+(x 80-200, y 226-386), with the count of gate tiles in the top ten in brackets:
+
+```
+                     round 7 build (r7dump)                  head (r8dump)
+   T  off  total     A          B          C           A          B          C
+  32    0   1400   9/  1 [4]  8/  1 [4]  6/  1 [4]   9/  1 [4]  8/  1 [4]  6/  1 [4]
+  32   16   1323  16/  5 [5] 16/  4 [4] 28/  3 [4]  16/  5 [5] 18/  4 [4] 27/  3 [4]
+  40    0    880  19/  2 [5] 12/  2 [5] 17/  2 [3]  19/  2 [5] 12/  2 [5] 27/  2 [3]
+  40   20    858   7/  1 [5]  7/  1 [4]  7/  1 [4]   8/  1 [5]  7/  1 [4]  7/  1 [4]
+  48    0    594   7/  1 [3]  6/  1 [2]  6/  1 [2]   8/  1 [3]  6/  1 [2]  6/  1 [2]
+  48   24    576   6/  2 [5]  5/  2 [5] 10/  3 [2]   6/  2 [5]  6/  2 [5]  9/  3 [2]
+  64    0    350  11/  1 [2]  4/  1 [2]  4/  1 [2]  14/  1 [3]  4/  1 [2]  4/  1 [2]
+  64   32    312  21/  1 [3]  4/  2 [2]  3/  2 [1]  23/  1 [3]  4/  2 [2]  3/  2 [1]
+```
+
+**The gate takes rank 1 in ten of the twenty-four cells, and the two builds are identical to within a
+rank.** Listed straight, the top fourteen tiles of model A at T=40 on head are:
+
+```
+  40,360  80,360  160,360  120,360  1240,840  200,360  240,320  200,320  160,320  120,240
+  520,480  120,320  400,560  640,440          — eleven of the top fourteen inside x 40-240, y 240-360
+                                                and not one of the fourteen contains a single robot pixel
+```
+
+`r8-c-gate.png` is that region at 3x. It is a **saturated orange-and-black hazard chevron band**
+running the full width of the crop, backlit and glowing, with a pale cyan-white rim rail lying along
+its top edge, over amber louvre panels. Alternating black and orange stripes at maximum chroma is
+the highest-attention texture it is possible to paint, and we have put one along the left edge of
+the frame. **The residual is not closed, it is not smaller, and it is unchanged by `cc7cebb`.**
+
+Worth separating out, because it is the reason two honest people can disagree here: on a **pure
+brightness** sweep (80px windows ranked by mean luminance, `r8sal.mjs`) the machine takes rank 1 on
+grid and the best gate window is **rank 111**. The gate wins on every chroma-weighted model and
+loses on every brightness-only one. That is not a contradiction, it is the finding: *the gate is not
+brighter than the machines, it is more colourful than them* — and the review must name its model
+every time it quotes a rank. Round 7's verdict table said "the salience sweep" without naming one.
+
+### Residual 2 — the cyan rails. Filed against grid; grid is the arena where they are fixed
+
+Round 6 recorded "cyan family 3.1% of the scene at mean 128.4 against the machines' 1.6% at 118.4"
+in its **grid** section. That number cannot be reproduced either — the family definition was never
+written down. So the definition is stated here and applied identically to all three arenas:
+cyan = non-machine, sat >= 0.35, hue 165-200; amber = non-machine, sat >= 0.35, hue 20-55.
+
+```
+                  cyan family        amber family         MACHINES
+                pct    lum    sat   pct    lum   sat    pct    lum    sat   own% of top 1%
+  grid         0.1%  152.3  0.587  3.7%  103.2  0.62   1.6%  115.1  0.315      36.6
+  foundry        0%  104.3  0.376  5.6%   99.7  0.813  0.5%  117.7  0.329      17.3
+  orbital      3.5%  144.9  0.566  0.6%   89.8  0.643  1.8%  163.1  0.210      86.6
+```
+
+**On grid the cyan rails are gone — 0.1% of the frame.** `850ab2f` worked. The residual round 6 wrote
+into the grid section and round 7 carried forward is, on grid, closed.
+
+**On orbital it is worse than the number it was filed under.** Cyan is **3.5% of the frame at mean
+144.9 against the machines' 1.8%** — twice the machines' coverage, where round 6's grid complaint was
+1.9x. `r8-c-orb-hot.png` is the top-ranked region at 3x: a fat saturated cyan strip running the full
+height of the crop with two more crossing it. It owns ranks 1, 2, 3, 4, 6 and 7 of model A at T=40.
+Round 4 named this defect. Round 6 said "orbital is where it did not land at all". Four rounds.
+
+**On foundry the same defect has been recoloured and nobody has been counting it.** Cyan is zero and
+**amber is 5.6% of the frame at saturation 0.813 — eleven times the machines' 0.5% coverage — and it
+owns 49.8% of the frame's brightest 1% against the machines' 17.3%.** `r8-c-foundry-hot.png`: the
+chevron band again, in yellow, plus orange floor rails running diagonally under the fight and yellow
+chevrons painted on the deck plates. This has never appeared in the ledger under any name.
+
+### The thing that measurement turned up that nobody has measured before: point 1's second clause
+
+Blind point 1 is *"the robots are the brightest, most saturated things on screen"*. Every round since
+round 4 has scored it on the brightness half — top-1% ownership — and **no round has ever measured
+the saturation half.** Round 6 quoted one unconditional mean (machines 0.382, scene 0.294) and moved
+on; an unconditional mean over a scene that is largely near-black background flatters us.
+
+Measured with the same filter on both sides — what fraction of a region's own pixels clear sat 0.35,
+and at what mean saturation:
+
+```
+              machines: % of frame  % of own px   mean sat      stage: % of frame  % of own px  mean sat
+  grid                        0.7%        40.6%      0.475                  58.5%        59.5%     0.473
+  foundry                     0.2%        47.4%      0.481                  89.5%        89.9%     0.502
+  orbital                     0.3%        19.0%      0.457                  59.2%        60.3%     0.460
+```
+
+Pixel for pixel the two sides are the same saturation — ~0.46-0.50 on both. What differs is how much
+there is: **the machines own between 0.2% and 1.2% of the coloured pixels in the frame.** In foundry
+**89.9% of the stage's own pixels are saturated colour**; the arena is an orange room, and a machine
+standing in an orange room cannot be the most saturated thing in it, and is not.
+
+The honest caveat, stated because it cuts the other way: at sat >= 0.35 a brown rusted wall counts as
+saturated, and foundry's walls are brown. That is a fair reading — brown is a saturated hue — but it
+means this number is partly measuring "the arena is monochrome-warm" rather than "the arena is
+loud". It does not rescue the amber-family figure above it, which is selected on hue as well.
+
+**Point 1 is therefore re-scored as a split: PASS on value, FAIL on chroma.** See the VERDICT.
 
 
 ## Round 7 (`ac50610` → `762d220`) — the named cause, re-measured, and the prescription withdrawn
@@ -1688,11 +1838,12 @@ is the behaviour you want. **Frame rate on this device remains unmeasured.**
 **NO.** Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
 picks CRV2.
 
-Written at `ac50610`, revised at `762d220`, and revised again at `b6ba7ed`. Round 6 established the
-order — verdict first from existing evidence, then verify, then revise — and round 7 keeps it. This
-round's revisions are large and they go in both directions: **two of the five points improved, one
-whole defect list closed, and the cause round 6 named turned out to have been prescribed to the
-wrong file — by me.**
+Round 8. Written at `cc7cebb` from round 7's evidence **before this round's captures were taken**,
+then revised as they landed — the order round 6 established and every round since has kept. Round
+7's revisions went in both directions; round 8's go mostly one way, and it is not ours: **a residual
+reported closed is open, a residual filed against the wrong arena is twice as bad in the right one,
+a third arena has been carrying the same defect under a different colour with nobody counting it,
+and one clause of blind point 1 turns out never to have been measured in eight rounds.**
 
 ### The reason, renamed, because round 6's name was half wrong
 
@@ -1727,16 +1878,18 @@ prescription implied, which is the honest thing to say rather than the comfortab
 
 ### The five-point blind comparison, re-scored
 
-| # | What a CRV2 frame does | R4 | R6 | Now | Evidence |
-|---|---|---|---|---|---|
-| 1 | The robots are the brightest, most saturated things on screen | **Inverted** | **PASS** | **PASS** | Unchanged, and strengthened: R1 body 114.8 → **120.2** against an unchanged 80.6 deck, separation 33.7 → **39.6**. Machines still 1.6% of scene pixels supplying 31.4% of the frame's brightest 1%. |
-| 2 | The stage is quieter than the subjects | **Inverted** | **PASS** | **PASS** | Unchanged. Robots 37.8 texture energy against the lit gate's 21.9 and the deck's 6.3. Residuals — the warm gate owning ranks 1-8 of the salience sweep, and the cyan rails at 3.1% of the scene — are with the stage agent and were not re-measured this round. |
-| 3 | Both machines legible at once | **Failed** | **FAIL** | **FAIL — and its cause is reassigned** | Not a camera defect. See below. |
-| 4 | Very few, very large forms per machine | **Failed** | **FAIL** | **FAIL — and the fix aimed at the wrong file** | 11 masses on each machine on round 6's headline mode, up from 8 and 10. Largest single mass 17.4% / 16.2% of body. Worse at five of eight quantisation steps on an absolute sweep, and the four largest masses cover **less** of the player at seven of eight. |
-| 5 | The effects are enormous, hard-edged, saturated, drawn not simulated | *deferred* | **PASS with a hole** | **PASS** | The hole is closed. The impact effect **reads** — cover 4.7%, lift +2.1 at 0ms — and round 6's "renders nothing" was a harness artefact, now withdrawn. **`#10` closes**: the tracer is a fat white-cored cyan bolt at 0ms and a hard-edged flat gold ring around an eight-point star burst at 33-67ms, peaking at 36.4% of the crop. **`#7` closes**: that ring is `#7`'s ring, photographed at last away from the fireball, and it is a thin bright annulus rather than a grey donut. |
+| # | What a CRV2 frame does | R4 | R6 | R7 | Now | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | The robots are the brightest, most saturated things on screen | **Inverted** | **PASS** | **PASS** | **SPLIT — PASS on value, FAIL on chroma** | The value half holds and is unchanged: machines own **36.6% / 17.3% / 86.6%** of the frame's brightest 1% off **1.6% / 0.5% / 1.8%** of its pixels in grid / foundry / orbital. The chroma half **has never been measured in eight rounds** and fails on measurement: same filter both sides, the machines own **0.7% / 0.2% / 0.3%** of the frame against a stage carrying **58.5% / 89.5% / 59.2%** saturated pixels. Round 6's single unconditional mean (0.382 vs 0.294) flattered us because most of the scene is near-black. |
+| 2 | The stage is quieter than the subjects | **Inverted** | **PASS** | **PASS** | **FAIL** | Both residuals round 7 declined to measure are open, and one of them is worse than its filed description. The warm gate takes **rank 1 in 10 of 24 model x tile cells** and **eleven of the top fourteen tiles**, identical between round 7's build and head; a report that it no longer reproduced does not survive re-measurement. Orbital's cyan is **3.5% of the frame at 144.9 against the machines' 1.8%**. Foundry's amber is **5.6% at saturation 0.813, eleven times the machines' coverage, owning 49.8% of the frame's brightest 1%.** |
+| 3 | Both machines legible at once | **Failed** | **FAIL** | **FAIL — cause reassigned** | **FAIL** | Unchanged and now with a baseline: opponent top-4 coverage **12.7% at W=10 in foundry** — thirty-plus regions, not one of them clearing 3% of the body. |
+| 4 | Very few, very large forms per machine | **Failed** | **FAIL** | **FAIL — fix aimed at the wrong file** | **FAIL** | Baselined at `cc7cebb` across three arenas on the absolute-step curve. Player spread **92 / 130 / 142 levels** in grid / foundry / orbital — the same machine, the same paint. The light-rig commit round 7 prescribed has not landed at the time of writing. |
+| 5 | The effects are enormous, hard-edged, saturated, drawn not simulated | *deferred* | **PASS with a hole** | **PASS** | **PASS** | Unchanged from round 7. The impact effect reads (cover 4.7%, lift +2.1 at 0ms), `#7` and `#10` both closed on round 7's tracer sheet. |
 
-**Three passes and two fails.** The same count as round 6, but the two halves moved: point 5 is now
-clean, and point 4's attempted fix did not land.
+**Two passes, two fails and a split — down from three passes.** Point 2 has gone from PASS to FAIL,
+not because the stage got worse but because it was finally measured; point 1 loses half of itself for
+the same reason. Nothing regressed in the build this round. What regressed is our confidence, and
+that is the correct direction for it to move when a claim is checked for the first time.
 
 ### The judgement round 6 left open: is point 3 ever winnable?
 
