@@ -1594,7 +1594,16 @@
 .opt__sw i { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: var(--ink-dim); transition: transform .16s var(--ease), background .16s var(--ease); }
 .opt.is-on .opt__sw { background: rgba(89, 183, 255, .28); }
 .opt.is-on .opt__sw i { transform: translateX(24px); background: var(--acc); }
+/* The cycler keeps its value INSIDE `.opt__cy`, so the row's third column —
+   the one every slider and the toggle right-align their value in — was empty
+   and the whole control sat in the middle column. QUALITY and TOUCH LAYOUT
+   were the only two values on the screen not in the value column, and they
+   broke it in the middle of the list. Moved to column 3 so the right edges
+   line up; the value is centred between its arrows instead of inheriting the
+   right-alignment that had it hugging the `›`. */
 .opt__cy { display: flex; align-items: center; gap: 8px; }
+.opt--cycle .opt__cy { grid-column: 3; }
+.opt--cycle .opt__v { min-width: 78px; text-align: center; }
 .cy__a { font-size: 12px; color: var(--acc); padding: 0 4px; }
 
 .ctls { display: grid; gap: 1px; background: var(--line); box-shadow: 0 0 0 1px var(--line); max-width: 780px; }

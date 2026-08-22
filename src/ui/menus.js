@@ -117,6 +117,16 @@ const CONTROL_ROWS = [
   ['PAUSE', 'ポーズ', 'ESC', 'START', 'PAUSE'],
 ];
 
+/**
+ * Fallback back-targets, for a screen reached by a route nobody recorded.
+ *
+ * The garage is reachable from four places — the title's item 02, the mode
+ * step, a connected netplay lobby and the results screen — and this table only
+ * knows one of them, so BACK out of the garage always landed on the BATTLE
+ * MODE step. Enter from the title and one press of BACK dropped you two
+ * screens deep into a flow you had not started. `_from` records the actual
+ * route and this stays as the fallback.
+ */
 const BACK_TO = { mode: 'title', garage: 'mode', arena: 'garage' };
 
 const STORE_KEY = 'crv2.settings.v1';
@@ -185,6 +195,8 @@ export class Menus {
     this.screens = new Map();
     this._cur = null;
     this._returnTo = 'title';
+    /** screen id -> the screen it was actually entered from. See BACK_TO. */
+    this._from = new Map();
     this._events = new Map();
     this._previewSlots = [null, null];
 
@@ -434,8 +446,14 @@ export class Menus {
     if (id === 'settings' || id === 'controls') { this.show(this._returnTo || 'title'); return; }
     if (id === 'netplay') { this._emit('netCancel'); this.show('title'); return; }
     if (id === 'results') { this._emit('quit'); return; }
-    const to = BACK_TO[id];
+    const to = this._from.get(id) || BACK_TO[id];
     if (to) this.show(to);
+  }
+
+  /** `show`, remembering the route so BACK can retrace it. */
+  _enter(screen, from) {
+    this._from.set(screen, from);
+    this.show(screen);
   }
 
   // -------------------------------------------------------------------------
@@ -543,9 +561,9 @@ export class Menus {
       const b = e.target.closest('[data-act]');
       if (!b) return;
       switch (b.dataset.act) {
-        case 'battle': this.show('mode'); break;
-        case 'garage': this.show('garage'); break;
-        case 'online': this.sel.mode = 'online'; this.show('netplay'); break;
+        case 'battle': this._enter('mode', 'title'); break;
+        case 'garage': this._enter('garage', 'title'); break;
+        case 'online': this.sel.mode = 'online'; this._enter('netplay', 'title'); break;
         case 'settings': this._returnTo = 'title'; this.show('settings'); break;
         case 'controls': this._returnTo = 'title'; this.show('controls'); break;
       }
@@ -605,9 +623,9 @@ export class Menus {
       if (d) { this.sel.difficulty = d.dataset.diff; paint(); return; }
       const a = e.target.closest('[data-act]');
       if (!a) return;
-      if (a.dataset.act === 'back') this.show('title');
-      else if (this.sel.mode === 'online') this.show('netplay');
-      else this.show('garage');
+      if (a.dataset.act === 'back') this._back();
+      else if (this.sel.mode === 'online') this._enter('netplay', 'mode');
+      else this._enter('garage', 'mode');
     });
 
     s.onShow = paint;
@@ -899,8 +917,8 @@ export class Menus {
 
       const act = e.target.closest('[data-act]');
       if (!act) return;
-      if (act.dataset.act === 'back') this.show(BACK_TO.garage);
-      else this.show('arena');
+      if (act.dataset.act === 'back') this._back();
+      else this._enter('arena', 'garage');
     });
 
     // Focus (keyboard/pad) and hover (pointer) both drive the comparison.
@@ -1008,7 +1026,7 @@ export class Menus {
       if (c) { pick(c.dataset.arena, true); return; }
       const a = e.target.closest('[data-act]');
       if (!a) return;
-      if (a.dataset.act === 'back') this.show(BACK_TO.arena);
+      if (a.dataset.act === 'back') this._back();
       else this._start();
     });
 
@@ -1158,7 +1176,7 @@ export class Menus {
           break;
         case 'ready':
           this.sel.mode = 'online';
-          this.show('garage');
+          this._enter('garage', 'netplay');
           break;
       }
     });
@@ -1286,7 +1304,8 @@ export class Menus {
       const a = e.target.closest('[data-act]');
       if (!a) return;
       if (a.dataset.act === 'rematch') this._emit('rematch');
-      else if (a.dataset.act === 'garage') this.show('garage');
+      // The match is over, so there is no results screen to come BACK to.
+      else if (a.dataset.act === 'garage') this._enter('garage', 'title');
       else this._emit('quit');
     });
 
@@ -1400,9 +1419,19 @@ export class Menus {
       const opt = e.target.closest('[data-ctl]');
       if (opt) {
         const key = opt.dataset.ctl;
-        if (opt.classList.contains('opt--slider')) {
-          // Click position sets the value directly — expected of a slider.
-          const bar = opt.querySelector('.opt__bar');
+        // Position-set ONLY for a real pointer press that landed on the bar.
+        //
+        // Every option here is a <button>, so Enter and Space — and the pad,
+        // which is forwarded as keydown — fire a click with `detail: 0` and
+        // `clientX: 0`. That put `t` at the far left of the track: pressing
+        // Enter on MASTER set the volume to 0%, on a screen whose own footer
+        // hint says the way to change a value is the arrow keys. A pointer
+        // click on the row's LABEL was the same bug by another route, since
+        // that x is also left of the bar.
+        // Both cases now nudge one step, which is what the cycler and the
+        // toggle have always done on activation.
+        const bar = e.detail > 0 && SLIDERS[key] ? e.target.closest('.opt__bar') : null;
+        if (bar) {
           const r = bar.getBoundingClientRect();
           const t = clamp((e.clientX - r.left) / r.width, 0, 1);
           const [min, max, step] = SLIDERS[key];
@@ -1519,6 +1548,7 @@ export class Menus {
     const net = this.screens.get('netplay');
     if (net?._flashT) clearTimeout(net._flashT);
     this.screens.clear();
+    this._from.clear();
     this._events.clear();
     this.el.remove();
   }
