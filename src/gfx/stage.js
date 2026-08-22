@@ -166,6 +166,55 @@ function rampTint(g, lo, hi) {
   return g;
 }
 
+/**
+ * THE ADDITIVE VALUE BUDGET, and the one place it is enforced.
+ *
+ * Every practical in this arena is drawn into one additive, un-tone-mapped
+ * batch, and the bloom prefilter thresholds on max(r, g, b) at 1.04 linear
+ * (postfx.js). So a practical whose largest channel exceeds that blooms on its
+ * OWN, before a single photon from behind it is added: it has stopped being a
+ * light drawn on a surface and become an emitter with a halo.
+ *
+ * That rule has been re-derived from scratch, in a comment, three times in this
+ * file — for the deck kerb, for the cap rim rings and for the gate throat — and
+ * each time it was applied to exactly the one fixture under discussion. The
+ * gantry lamp lenses were never in any of those discussions, and they are
+ * authored at 1.5x a near-saturated hue: all twenty of them, in all three
+ * arenas, clip their strongest channel by 45% and bloom by themselves, 20 m up
+ * at the top of the frame. Nothing caught it because nothing was looking; there
+ * was no budget, only three separate arguments about three separate numbers.
+ *
+ * So the budget is a property of the BATCH now. Anything pushed into
+ * `_practicals` is held to it at flush time, whoever pushed it and whenever.
+ *
+ * The scaling is proportional across the three channels, which is the whole
+ * point: hue and saturation come through untouched and only radiance moves. A
+ * practical is allowed to be the most saturated thing in frame. It is not
+ * allowed to be the brightest.
+ */
+const PRACTICAL_CEIL = 0.92;
+
+/**
+ * Hold a merged vertex-coloured additive batch to the budget above. Runs once,
+ * at build, over the colour attribute — no per-frame cost and no shader.
+ */
+function clampAdditive(geo, ceil = PRACTICAL_CEIL) {
+  const c = geo.attributes.color;
+  if (!c) return geo;
+  const a = c.array;
+  let clamped = 0;
+  for (let i = 0; i < a.length; i += 3) {
+    const peak = Math.max(a[i], a[i + 1], a[i + 2]);
+    if (peak <= ceil) continue;
+    const s = ceil / peak;
+    a[i] *= s; a[i + 1] *= s; a[i + 2] *= s;
+    clamped++;
+  }
+  c.needsUpdate = true;
+  geo.userData.practicalsClamped = clamped;
+  return geo;
+}
+
 /** Closed rectangular loop of 5 points (last repeats the first) at height y. */
 function rectLoop(hx, hz, y, cx = 0, cz = 0, yaw = 0) {
   const co = Math.cos(yaw), si = Math.sin(yaw);
@@ -596,10 +645,12 @@ export class Stage {
         this._struct.push(flatTint(slab(3.4, 0.9, 3.4, px, pyTop - 0.45, pz), 1.2));
         // Warm beacon at the head of every pylon: four small hot points at the
         // extremes of the composition, which is all the warmth a wide shot
-        // needs to stop being monochrome.
+        // needs to stop being monochrome. There are only four of them and they
+        // are as far from the fight as anything in the arena gets, so they are
+        // the one practical allowed to sit at the top of the budget.
         const beacon = new THREE.BoxGeometry(1.1, 0.5, 1.1);
         beacon.translate(px, pyTop + 0.3, pz);
-        this._practicals.push(flatTint(beacon, 1.0, 0.52, 0.14));
+        this._practicals.push(flatTint(beacon, PRACTICAL_CEIL, PRACTICAL_CEIL * 0.52, PRACTICAL_CEIL * 0.14));
       }
     }
 
@@ -626,7 +677,15 @@ export class Stage {
       ), 0.9));
 
       // Lamp housings on the inner edge, alternating cool key and warm fill.
+      //
+      // There are twenty of these and they run in an unbroken dotted line along
+      // the top of the frame, which is why they get a fraction of the budget the
+      // four corner beacons get rather than the same share. They were authored
+      // at 1.5x a near-saturated hue — 45% over the bloom threshold on their
+      // strongest channel, i.e. twenty self-blooming emitters in a composition
+      // whose kerb had already been argued down to 0.30 for exactly this.
       const lampsPerSide = 5;
+      const LENS = PRACTICAL_CEIL * 0.62;
       const acc = new THREE.Color(t.emissive);
       const warm = new THREE.Color(t.hazard ?? 0xffb01f);
       let li = 0;
@@ -639,8 +698,12 @@ export class Stage {
           this._struct.push(flatTint(slab(0.9, 0.7, 0.9, x, ry - 1.0, z), 0.55));
           const lens = new THREE.BoxGeometry(0.62, 0.1, 0.62);
           lens.translate(x, ry - 1.36, z);
+          // Normalised on its own peak channel, so a lens is the same
+          // brightness whichever hue it is: the alternation is meant to read as
+          // two colours of lamp, not as one bright lamp and one dim one.
           const c = (li++ % 3 === 0) ? warm : acc;
-          this._practicals.push(flatTint(lens, c.r * 1.5, c.g * 1.5, c.b * 1.5));
+          const k = LENS / Math.max(1e-4, Math.max(c.r, c.g, c.b));
+          this._practicals.push(flatTint(lens, c.r * k, c.g * k, c.b * k));
         }
       }
     }
@@ -1013,7 +1076,11 @@ export class Stage {
 
     if (this._practicals.length) {
       const mat = additive(0xffffff, { opacity: 1, vertexColors: true, side: THREE.DoubleSide });
-      const m = new THREE.Mesh(mergeGeometries(this._practicals), mat);
+      // Every practical in the arena passes through here, so this is where the
+      // additive budget is enforced — see PRACTICAL_CEIL.
+      const geo = clampAdditive(mergeGeometries(this._practicals));
+      this.buildProfile.practicalsClamped = geo.userData.practicalsClamped;
+      const m = new THREE.Mesh(geo, mat);
       m.name = 'practicals';
       m.renderOrder = 4;
       this.group.add(m);

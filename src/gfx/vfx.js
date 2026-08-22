@@ -1723,15 +1723,32 @@ export class VFX {
     // survive the depth test. A flash that grows into existence is a bloom; a
     // flash that is already there and shuts is an impact.
     //
-    // The star is tinted at well under half the value the sparks get, and that
-    // is the explosion's own lesson applied here: the card shader multiplies by
-    // 2.2 for the first third of a life, so a tint of 4.0 linear arrives at 8.8
-    // and above about 4.0 every colour tone-maps to the same paper white. The
-    // first version of this burst was a pure white four-point twinkle for
-    // exactly that reason. Held down, the rays keep the gold the tint asked for
-    // and the white is left to the nucleus below, where it belongs.
+    // The star is tinted well under the value the sparks get, and the arithmetic
+    // for how far under is worth writing down, because the first version of this
+    // burst was held down by eye and still arrived as a white disc.
+    //
+    // The card shader's whole output is `col * a` into an additive buffer, where
+    // `a` is the sprite's alpha and `col` is the tint multiplied by 3.41 at
+    // vT=0 (2.2 from the hot-phase mix, times 0.35 + fade * 1.2). The flash
+    // sprite is white texels with three alpha populations: the nucleus at ~1.0,
+    // the ray spines at ~0.86, and the soft halo at 0.34. So the tint is the one
+    // number that decides which of those three land above the white point and
+    // which keep their colour, and ACES puts that point at about 1.2 linear.
+    //
+    //   tint 1.74 (what this was)     halo 2.0   rays 5.1   core 5.9
+    //   tint 0.98 (what it is now)    halo 1.1   rays 2.9   core 3.3
+    //
+    // At the old numbers every population was over the white point — the halo
+    // included — so the card was a uniformly white disc with a 2px ray buried in
+    // it, and the bloom halo of that disc is the "soft round blob" the sheet
+    // photographed at 0 and 17ms. Held at 0.98 the halo lands just above the
+    // bloom threshold and KEEPS ITS HUE, the ray spines go white with a warm
+    // fringe where they fall off, and the nucleus below is the only paper-white
+    // thing in the frame. That is a hard-edged star instead of a lamp, and it is
+    // the same lesson `51b7098` applied to the fireball: a tone-mapped renderer
+    // gives you exactly one white, so only one thing may have it.
     const cardTo = (heavy ? 1.35 : 0.64) * gain;
-    const cv = heavy ? 0.52 : 0.62;
+    const cv = (heavy ? 0.52 : 0.62) * 0.56;
     _v.set(hx, hy, hz);
     this.flares.spawn(hx, hy, hz, this._faceCamera(_v), t,
       heavy ? 0.11 : 0.075, cardTo * 0.72, cardTo,
@@ -1740,8 +1757,15 @@ export class VFX {
     // the centre of the hit is hard rather than a soft bright patch. It shrinks
     // rather than grows — the card shader's ease is front-loaded, so a shrinking
     // core snaps closed over two or three frames.
+    //
+    // 5.2 linear reached the frame at 17.7 through the same 3.41, which put
+    // every texel above alpha 0.23 at paper white — i.e. the "nucleus" was a
+    // disc a third of the card across, not a nucleus. At 2.7 only the texels
+    // above 0.45 clip, and 0.45 on a Gaussian of sigma 0.047 is a dot a
+    // twentieth of the card wide. Same idea as the star: the clipped region has
+    // to be SMALL for the eye to read it as hard.
     this.flares.spawn(hx, hy, hz, this._faceCamera(_v), t,
-      heavy ? 0.05 : 0.038, cardTo * 0.44, cardTo * 0.16, 5.2, 4.6, 3.9);
+      heavy ? 0.05 : 0.038, cardTo * 0.44, cardTo * 0.16, 2.7, 2.4, 2.05);
 
     // --- sparks and debris ---------------------------------------------------
     // Two populations rather than one cloud. The sparks are fast, thin,

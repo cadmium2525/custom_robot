@@ -451,6 +451,22 @@ async function installDeckSearch(page) {
       }
       return null;
     };
+
+    /**
+     * Is the line from (x,y,z) along (dx,dy,dz) clear of every collision box for
+     * `run` metres? Same sampler as `visible`, pointed along a shot rather than
+     * along the line of sight.
+     */
+    window.__clearShot = (x, y, z, dx, dy, dz, run) => {
+      const n = Math.ceil(run / 0.4);
+      for (let i = 1; i <= n; i++) {
+        const t = (i / n) * run;
+        const sx = x + dx * t, sy = y + dy * t, sz = z + dz * t;
+        if (Math.abs(sx) > bnd.hx || Math.abs(sz) > bnd.hz) return false;
+        for (const b of A.boxes) if (inBox(sx, sy, sz, b, 0.25)) return false;
+      }
+      return true;
+    };
   });
 }
 
@@ -797,12 +813,36 @@ async function runLifetime(browser, effect) {
       `${['x', 'y', 'z'].map((k) => world.__deck[k].toFixed(2)).join(',')}` +
       (world.__searched ? '' : '  (FALLBACK — no visible deck found)'));
   } else if (effect === 'tracer') {
-    // Fire one round from robo 0 straight at robo 1 and walk alongside it.
+    // Fire one round from robo 0 and walk alongside it.
+    //
+    // Straight at robo 1 is what this used to do, and on the pinned seed the
+    // line from the muzzle to the opponent passes through the shipping crate at
+    // (7.2, 7.2): the round struck it about 1.8 metres out, one tick after the
+    // trigger. Every tile after the first was therefore a close-range surface
+    // IMPACT — flash, sparks and shock ring, filling the crop — and the crop
+    // froze there because the tracer it was following no longer existed. #10 has
+    // been PENDING for five rounds partly on sheets that contain no tracer.
+    //
+    // So the azimuth is searched: start from the true aim and walk out in small
+    // symmetric steps until the muzzle has a clear line for `RUN` metres, which
+    // is further than the walk can carry the round in 350ms. The deviation from
+    // the true aim is printed, because a tracer photographed twelve degrees off
+    // the line of fire is still a tracer but the sheet should say so.
     world = await page.evaluate(() => {
       const g = window.__game;
       const w = g.world;
       const a = w.robos[0], b = w.robos[1];
-      a.aimYaw = Math.atan2(b.pos.x - a.pos.x, b.pos.z - a.pos.z);
+      const RUN = 16;
+      const trueYaw = Math.atan2(b.pos.x - a.pos.x, b.pos.z - a.pos.z);
+      const my = a.pos.y + 1.2;
+      let yaw = trueYaw, off = 0;
+      for (const d of [0, 0.12, -0.12, 0.24, -0.24, 0.38, -0.38, 0.55, -0.55, 0.75, -0.75]) {
+        const y = trueYaw + d;
+        if (window.__clearShot(a.pos.x, my, a.pos.z, Math.sin(y), 0, Math.cos(y), RUN)) {
+          yaw = y; off = d; break;
+        }
+      }
+      a.aimYaw = yaw;
       a.aimPitch = 0;
       a.gunCd = 0; a.burstLeft = 0;
       w.fireGun(a, w.loadouts[0], true);
@@ -810,8 +850,10 @@ async function runLifetime(browser, effect) {
       // outside a step has to be handed to the view now or the muzzle flash is
       // gone before anything renders.
       g.view.endStep();
-      return { x: a.pos.x, y: a.pos.y + 1.2, z: a.pos.z };
+      return { x: a.pos.x, y: my, z: a.pos.z, __off: off };
     });
+    console.log(`  tracer fired ${world.__off === 0
+      ? 'on the line of fire' : `${(world.__off * 180 / Math.PI).toFixed(0)}deg off the line of fire (it is blocked)`}`);
   }
 
   if (world) {
