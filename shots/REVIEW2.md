@@ -127,6 +127,92 @@ about: the win is a **brightness** win. Raising `dark` from 0.33 to 0.52 lifted 
 variance — which is what a mass count measures — was untouched. `5ddd763` is a good contour commit
 mis-labelled as a mass-count commit.
 
+Captures for this section are in the critic scratchpad, not in `shots/` — `r7-r1-ba.png` and
+`r7-r2-ba.png` are the two machines before and after at 1:1 and magnified, `r7-r1-flat.png` and
+`r7-r2-flat.png` are painted against fully de-painted, and `r7-r1-mass.png` / `r7-r2-mass.png` are
+the mass maps that were counted.
+
+### `#4` the impact effect — WITHDRAWN. It renders, and round 6's entry was a harness artefact
+
+Round 6 listed "the impact effect renders nothing" as the one hole in blind point 5, on cover
+0-1.4% and lift 0.0 at every age across two rounds. `c7563ec` and `762d220` between them found that
+the harness was staging the deck hit in the seam where the floor meets the wall, twenty-six metres
+out at a four-degree grazing angle. Re-measured at `762d220` on a placement searched against the
+arena's own collision boxes:
+
+```
+     0ms  cover  4.7%  hide 2.2%  lift +2.1
+    17ms  cover  2.7%  hide 1.1%  lift +1.1
+    33ms  cover  1.6%  hide 0.7%  lift +0.7
+   250ms  cover  1.8%  hide 0.4%  lift +0.1
+```
+
+Read at 1:1: a hard white star flash on the armour at 0ms, a spark burst with radiating white-pink
+spikes at 17-50ms, a thin hard ring on the deck at 33-50ms, magenta filaments fading out by 250ms.
+**It reads.** The entry is withdrawn — "renders nothing" was never true, it was never captured.
+What survives as a note rather than a defect: at peak the effect covers 4.7% of a 560px crop and is
+over in a quarter of a second, and its 33-183ms read is thin spark filaments, which is the
+simulated idiom rather than the drawn one. That is a tuning observation, not a hole.
+
+### `#10` tracers and `#7`'s shockwave ring — both photographed for the first time, both CLOSE
+
+`#10` has been PENDING for five rounds and `#7` since round 5 said "a defect that cannot be
+photographed cannot be marked FIXED". One `vfxsheet --effect tracer` run closes both.
+
+```
+     0ms  cover   24%  hide 14.8%  lift +17.3
+    33ms  cover 25.1%  hide 19.7%  lift +18.9
+    67ms  cover 36.4%  hide 24.2%  lift +19.1
+   133ms  cover 15.8%  hide  9.4%  lift  +1.6
+```
+
+At 1:1: **0ms is a fat white-cored cyan bolt with hard edges**; **33ms is a hard-edged flat gold
+ring around an eight-point star burst**; 67ms is the same ring expanded with the star's spikes
+drawn out; 133ms is the spikes flying off and fading. Peak cover 36.4% of the crop.
+
+That is the reference idiom exactly — *"fat coloured bolts with white cores, flat expanding rings,
+star bursts, drawn not simulated"*. **`#10` closes as a pass.** And the ring visible at 33-67ms is
+the thing `#7` is about, finally photographed away from the fireball that has been sitting on top of
+it: it is a thin bright annulus, not a solid grey donut. **`#7` closes.** `r7-tracer.png`.
+
+### The notch, done, and `b9ea78b`'s conclusion corrected on its most important line
+
+Five agents were assigned this capture and were killed before doing it; `b9ea78b` finally did it and
+concluded "the HUD is fine, the menus are not". `notch7.mjs` re-ran it independently at 390x844 with
+`--safe-t: 47px` / `--safe-b: 34px` forced on `:root`, walking every visible element on every menu
+screen and comparing its bottom edge against the fold and against the home indicator.
+
+The HUD half reproduces: in-match, nothing intrudes. Of the menus, `title`, `garage`, `settings` and
+`results` are clean. The other three are not, and **the important correction is which of them the
+notch is actually responsible for.** The same sweep was re-run with the insets at zero:
+
+```
+                     insets 47/34            insets 0/0
+  mode      TO GARAGE 20px off-screen   bottom 830 of 844 — clean
+  arena     FIGHT under the home bar,   bottom 830 of 844 — clean
+            selected arena name 28px off
+  controls  BACK 241px off-screen       BACK 194px OFF-SCREEN
+```
+
+`mode` and `arena` are genuine notch defects — fine on a notchless 844px screen, and on an iPhone 12
+the button that advances the flow is off the bottom of the display. **`controls` is not a notch
+defect at all.** It is 194px short of its own BACK button with the insets at zero, so it fails on
+every 844px-tall phone that exists. `b9ea78b` describes it as "846px of table in an 844px viewport",
+which undersells it by an order of magnitude.
+
+And it is worse than a layout error, because I checked whether it can be escaped. `body` is
+`overflow-y: hidden`, the menu host is `position: fixed`, every ancestor of the button is
+`overflow: visible`, and driving both `window.scrollTo` and a wheel gesture leaves `scrollY` at 0
+and the button's bottom edge at 1085. `menus.js` fires `_back()` from exactly two places: a keypress
+of Escape/Backspace, and a tap on `[data-act="back"]`. On a phone there is no keyboard and the
+button cannot be reached.
+
+> **NEW BLOCKER (P7). The CONTROLS screen is a dead end on any phone.** It is reachable from the
+> title menu *and*, via `_returnTo = 'pause'`, from the in-match pause menu — so a player can open
+> it mid-match and have no way back to their game. The fix is one line of CSS (`overflow-y: auto` on
+> the menu host, or a fixed footer for the action row) and it should not wait for an art round.
+
+
 
 
 ## Round 6 (`1e49409`) — the verdict, and the six commits that landed after round 5 closed
