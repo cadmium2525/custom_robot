@@ -972,13 +972,44 @@
   --ink-faint: #8ba0be;
 }
 
-/* Screens are built once and kept in the DOM; only `is-on` is mounted. */
+/* Screens are built once and kept in the DOM; only `is-on` is mounted.
+
+   `overflow-y: auto` is a safety net, and it was added because a screen had
+   already fallen through the hole. Every screen is a column that ends in
+   `.foot`, and `.foot`'s only claim on the bottom of the frame is
+   `margin-top: auto` — which does nothing once the content is taller than the
+   box. It then overflows `visible`: painted past the bottom edge of a screen
+   that cannot scroll, so the buttons are neither visible nor reachable.
+   Measured at 390x844 with an iPhone 12's insets forced (the screen padding
+   carries them, so a notch adds 81px of chrome to an 844px screen):
+   `mode` put BACK / TO GARAGE 20px below the fold, `arena` lost the FIGHT
+   label and the selected arena's name to the same 20px, and `controls` — 846px
+   of table in an 844px viewport before any inset at all — ended 242px past the
+   bottom with the screen's ONLY back control on the far side of it. A menu
+   screen with no reachable BACK is a dead end, and on a phone there is no
+   Escape key to bail out with.
+   The portrait block below tightens the shared chrome so `mode` and `arena`
+   fit without scrolling at all; this rule is what guarantees that whatever
+   does not fit — a long table, a short window, a future row — stays reachable.
+   `overflow-x: hidden` because nothing here is meant to be scrolled sideways;
+   what used to hang off the right edge was a layout bug (see `.opt`), and a
+   sideways scrollbar would have hidden it rather than fixed it. */
 .crv2-ui .screen {
   position: absolute; inset: 0;
   pointer-events: auto;
   display: none;
   flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: calc(22px + var(--safe-t)) calc(26px + var(--safe-r)) calc(20px + var(--safe-b)) calc(26px + var(--safe-l));
+  /* `scrollIntoView({block:'nearest'})` aligns to the SCROLLPORT, which is the
+     padding box — so keyboard-focusing the last row parked it flush against
+     the bottom edge of the phone, i.e. under the home indicator, and the first
+     row flush under the notch. `scroll-padding` is the one thing that tells it
+     where the usable box actually ends. */
+  scroll-padding: calc(22px + var(--safe-t)) 0 calc(20px + var(--safe-b));
 }
 /* The entrance is a lift, not a fade, and that is deliberate.
    `screenIn` used to open on `opacity: 0`, which makes the whole screen
@@ -1647,7 +1678,17 @@
 .opt__cy { display: flex; align-items: center; gap: 8px; }
 .opt--cycle .opt__cy { grid-column: 3; }
 .opt--cycle .opt__v { min-width: 78px; text-align: center; }
-.cy__a { font-size: 12px; color: var(--acc); padding: 0 4px; }
+/* Each arrow is its own control now (`data-cyc`), so it needs a target you can
+   actually hit with a thumb: a 12px glyph with 4px of side padding was 20x14.
+   The row still cycles forward when pressed anywhere else, so this is the only
+   way to go backwards with a pointer. */
+.cy__a {
+  display: grid; place-content: center;
+  min-width: 26px; min-height: 34px;
+  font-size: 12px; color: var(--acc);
+  padding: 0 4px;
+}
+.opt:hover .cy__a, .opt:focus-visible .cy__a { color: #cfe8ff; }
 
 .ctls { display: grid; gap: 1px; background: var(--line); box-shadow: 0 0 0 1px var(--line); max-width: 780px; }
 .ctl { display: grid; grid-template-columns: minmax(130px, 1.2fr) repeat(3, minmax(80px, 1fr)); gap: 1px; background: var(--line); }
@@ -1902,7 +1943,10 @@
 }
 
 @media (max-width: 780px), (orientation: portrait) {
-  .crv2-ui .screen { padding: calc(14px + var(--safe-t)) calc(14px + var(--safe-r)) calc(14px + var(--safe-b)) calc(14px + var(--safe-l)); }
+  .crv2-ui .screen {
+    padding: calc(14px + var(--safe-t)) calc(14px + var(--safe-r)) calc(14px + var(--safe-b)) calc(14px + var(--safe-l));
+    scroll-padding: calc(14px + var(--safe-t)) 0 calc(14px + var(--safe-b));
+  }
   .garage {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(120px, 1fr) minmax(120px, 1.1fr) auto;
@@ -1913,8 +1957,64 @@
   .rail__i { display: none; }
   .rail__eq { grid-column: 1 / -1; }
   .garage__info { max-height: none; }
-  .foot { flex-wrap: wrap; }
+  /* The footer stops floating at the end of the document and becomes a bar.
+     `margin-top: auto` is the whole of `.foot`'s claim on the bottom of the
+     frame, and an auto margin is free space — the instant the content is
+     taller than the screen there is none, and BACK / FIGHT / TO GARAGE are
+     painted past the bottom edge. Sticky is the version of that claim that
+     survives overflow: the row holds the bottom of the scrollport while the
+     cards, the table or the option list run underneath it.
+     Three details, each of which was wrong once and is measured now:
+     - The ground is OPAQUE. A gradient to transparent over the first 22px put
+       the arena blurb straight through the BACK and FIGHT labels, which reads
+       as a rendering fault rather than as depth. The 1px `border-top` is the
+       separation; it does not need help.
+     - It bleeds to the edges. Negative side margins with matching padding, so
+       the bar spans the phone while its buttons keep the screen's own inset —
+       without them the screen's 14px side padding stayed uncovered and two
+       lit strips of arena ran down either side of the bar.
+     - The bar's own box stops at the screen's CONTENT edge: a sticky box is
+       clamped to its containing block, so a negative bottom margin will not
+       let it reach into the screen's bottom padding — that was tried and
+       measured (border box held at 796 on an 844px screen, 48px of live
+       content still scrolling past underneath). The `box-shadow` is the ground
+       for that strip: zero blur, offset by exactly the padding, clipped by the
+       screen's own overflow. In `--safe-b`, so with no notch it is the 14px
+       the screen already reserved. */
+  .foot {
+    flex-wrap: wrap;
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    background: #04070d;
+    margin-left: calc(-14px - var(--safe-l));
+    margin-right: calc(-14px - var(--safe-r));
+    padding-left: calc(14px + var(--safe-l));
+    padding-right: calc(14px + var(--safe-r));
+    box-shadow: 0 calc(14px + var(--safe-b)) 0 0 #04070d;
+  }
   .foot__hint { order: 3; flex-basis: 100%; }
+
+  /* Reclaim the 81px the notch takes out of an 844px screen.
+     `mode` overflowed its own frame by 20px and `arena` by 28px once the
+     insets were real, and both of them spend that much on chrome around a
+     screen that has three cards on it. 6px off the step header's gap, 6px off
+     the footer's rule gap and 4px off each button gets both back under the
+     fold with room to spare, and none of it touches the 50px minimum on a
+     footer button — that one is a thumb target, not decoration. */
+  .step { margin-bottom: 10px; }
+  .foot { padding-top: 10px; gap: 10px; }
+  .btn { padding: 10px 16px; }
+
+  /* The two cycler rows — QUALITY and TOUCH LAYOUT — ran 38px off the right
+     edge of a 390px phone with the `›` arrow entirely off-screen and the value
+     clipped mid-word — "DEFAULT" read as "DEFAUL". Same failure as
+     `.hud__top`'s, one screen over: `minmax(130px, 1fr) minmax(120px, 1.4fr)`
+     floors the two text columns at 250px, the cycler's own min-content is
+     another 122, and 250 + 122 + gaps + padding is 428 in a 362px row. Grid
+     does not shrink below a track minimum; it overflows. Floored at 0 so the
+     label wraps instead, which is what the row has room for. */
+  .opt { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 10px; padding: 10px; }
 
   .hud__top { top: calc(8px + var(--safe-t)); left: calc(10px + var(--safe-l)); right: calc(10px + var(--safe-r)); gap: 6px; }
   /* Every number below is doing the same job: fitting two plates and a clock

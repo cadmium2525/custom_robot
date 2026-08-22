@@ -264,6 +264,10 @@ export class Menus {
     this.el.dataset.screen = screen;
     this._cur = screen;
     s.el.classList.add('is-on');
+    // Screens are kept in the DOM, and a scroll container keeps its offset.
+    // Without this, leaving CONTROLS half-read and coming back reopened it
+    // half-read — a screen that has been shown, not resumed.
+    s.el.scrollTop = 0;
     s.onShow?.(data || {});
 
     if (!this._keysOn) {
@@ -274,11 +278,20 @@ export class Menus {
     this._announce(true);
 
     // Focus after the screen is painted so scroll containers are laid out.
+    //
+    // Focus WITHOUT scrolling. A screen mounts at scroll offset 0 and that is
+    // where its reading starts — the step header, then the thing the screen is
+    // about. But several screens put `data-default` on the BACK button in the
+    // footer, so scrolling the default item into view scrolled to the END:
+    // opening CONTROLS on a 390x844 phone landed 169px down its own table,
+    // with the title and the first four rows already above the fold, before
+    // the player had touched anything. Every later `_focus` still scrolls,
+    // which is what the arrow keys and the pad need.
     requestAnimationFrame(() => {
       if (this._cur !== screen) return;
       const pref = s.el.querySelector('[data-nav][data-default]') ||
         s.el.querySelector('[data-nav]:not([disabled])');
-      if (pref) this._focus(pref, true);
+      if (pref) this._focus(pref, false);
     });
   }
 
@@ -1372,10 +1385,14 @@ export class Menus {
         <span class="opt__v"></span>
       </button>`;
 
+    // The two arrows carry their own direction. Without `data-cyc` the click
+    // handler had one branch for the whole row and pressed `‹` — a control
+    // whose entire meaning is "the other way" — one step FORWARD. With four
+    // quality tiers that is three presses to reach the neighbour on your left.
     const cycler = (key, en, kana) => `
       <button class="opt opt--cycle" data-nav data-ctl="${key}">
         <span class="opt__l">${bi(en, kana)}</span>
-        <span class="opt__cy"><i class="cy__a">‹</i><span class="opt__v"></span><i class="cy__a">›</i></span>
+        <span class="opt__cy"><i class="cy__a" data-cyc="-1">‹</i><span class="opt__v"></span><i class="cy__a" data-cyc="1">›</i></span>
       </button>`;
 
     const toggle = (key, en, kana) => `
@@ -1437,7 +1454,11 @@ export class Menus {
           const [min, max, step] = SLIDERS[key];
           this._setSetting(key, Math.round((min + t * (max - min)) / step) * step);
         } else {
-          this._nudgeControl(opt, 1);
+          // A pointer landing on an arrow means that arrow's direction; a
+          // press anywhere else on the row (or Enter, whose target is the
+          // button itself) keeps the old "one step forward".
+          const arrow = e.detail > 0 ? e.target.closest('[data-cyc]') : null;
+          this._nudgeControl(opt, arrow ? Number(arrow.dataset.cyc) : 1);
         }
         return;
       }
