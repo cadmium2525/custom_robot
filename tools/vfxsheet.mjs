@@ -598,16 +598,39 @@ async function runLifetime(browser, effect) {
     // ring only exists on one of them: an armour hit on the robo's chest (flash
     // card, no ring) and a deck hit a little in front of it (ring + scorch).
     // The crop is centred between the two so one tile judges both.
+    //
+    // The event this stages has to be the event the game emits, and for six
+    // rounds it was not. `world.damageRobo` emits EV.HIT at the *round's* own
+    // position — which is inside the target's capsule, because that is where the
+    // capsule test caught it — with a normal pointing back down the line of
+    // fire at whoever fired. This used to stage it with an UP normal at the
+    // target's own axis, which is a hit that nothing in the game can produce and
+    // which happens to hide the single reason the effect was invisible: an
+    // impact is drawn at a point *behind the surface it landed on*, so the depth
+    // test throws all of it away. Measured, at head, before the fix: an armour
+    // hit changed exactly ZERO pixels of the frame, and pushing the same spawn
+    // half a metre toward the camera brought 1753 of them back.
     world = await page.evaluate(() => {
       const g = window.__game;
-      const r = g.world.robos[1];
-      const p = { x: r.pos.x, y: r.pos.y + 1.2, z: r.pos.z };
-      g.view.vfx._hit({ x: p.x, y: p.y, z: p.z, nx: 0, ny: 1, nz: 0, heavy: true, surface: false });
+      const a = g.world.robos[0], r = g.world.robos[1];
+      // Unit vector from the target back to the shooter — the sim's own `-dx,
+      // 0.2, -dz`, normalised the same way.
+      let dx = a.pos.x - r.pos.x, dz = a.pos.z - r.pos.z;
+      const l = Math.hypot(dx, dz) || 1;
+      dx /= l; dz /= l;
+      // Just inside the chest, on the line of fire: where a round that has just
+      // been caught by the capsule test actually sits.
+      const p = { x: r.pos.x + dx * 0.34, y: r.pos.y + 1.2, z: r.pos.z + dz * 0.34 };
       g.view.vfx._hit({
-        x: r.pos.x + 1.6, y: 0.02, z: r.pos.z + 1.0,
+        x: p.x, y: p.y, z: p.z,
+        nx: dx, ny: 0.2, nz: dz, heavy: true, surface: false,
+      });
+      // Deck hit: a round that missed and struck the floor a little short.
+      g.view.vfx._hit({
+        x: r.pos.x + dx * 2.2 + 1.0, y: 0.02, z: r.pos.z + dz * 2.2,
         nx: 0, ny: 1, nz: 0, heavy: true, surface: true,
       });
-      return { x: r.pos.x + 0.8, y: r.pos.y + 0.6, z: r.pos.z + 0.5 };
+      return { x: r.pos.x + 0.5, y: r.pos.y + 0.7, z: r.pos.z + dz * 1.1 };
     });
   } else if (effect === 'tracer') {
     // Fire one round from robo 0 straight at robo 1 and walk alongside it.
@@ -642,6 +665,7 @@ async function runLifetime(browser, effect) {
   const tiles = [];
   let rect = cropRect(centre, ZOOM);   // camera is frozen: one crop for all
   let ticks = 0;
+  let peakCover = 0, peakHide = 0, peakAge = 0, minLift = 0, maxLift = 0;
 
   for (const ms of ages) {
     // A live projectile only moves when the sim moves, so the tracer sheet
@@ -667,6 +691,12 @@ async function runLifetime(browser, effect) {
 
     const buf = await page.screenshot({ clip: rect, timeout: 180000 });
     const m = await analyze(page, buf, rect);
+    if (m.cover !== null) {
+      if (m.cover > peakCover) { peakCover = m.cover; peakAge = ms; }
+      if (m.hide > peakHide) peakHide = m.hide;
+      if (m.lift < minLift) minLift = m.lift;
+      if (m.lift > maxLift) maxLift = m.lift;
+    }
     const covTxt = m.cover === null ? ''
       : ` cover ${m.cover}% · hide ${m.hide}%`;
     tiles.push({
@@ -683,6 +713,31 @@ async function runLifetime(browser, effect) {
     if (KEEP) {
       await mkdir('shots/frames', { recursive: true });
       await writeFile(`shots/frames/${effect}-${String(ms).padStart(4, '0')}ms.png`, buf);
+    }
+  }
+
+  // --- the one line that would have caught six rounds of nothing ------------
+  //
+  // Twelve tiles of numbers do not shout. An effect that renders NOTHING looks
+  // exactly like an effect that renders a little, because "cover 0.4%" and
+  // "cover 0%" are one character apart in a column of thirty numbers, and this
+  // project shipped an invisible impact through five review rounds and two
+  // agents on precisely that margin. So the walk states its own verdict.
+  //
+  // 0.5% of the crop is roughly a 40x40px mark on the 560px default — below
+  // that there is nothing on screen a player could see, whatever the tiles
+  // look like at thumbnail size.
+  if (peakCover > 0) {
+    const verdict = peakCover < 0.5 ? 'RENDERS NOTHING'
+      : peakCover < 2 ? 'barely reads' : 'reads';
+    console.log(`\n  footprint: peak cover ${peakCover}% at ${peakAge}ms, ` +
+      `peak hide ${peakHide}%, lift ${minLift} .. +${maxLift}  -- ${verdict}`);
+    if (peakCover < 0.5) {
+      console.log('  !! this effect is indistinguishable from not being drawn at all.');
+      console.log('     Check: shader VALIDATE_STATUS, the spawn path being reached,');
+      console.log('     and whether it is drawn at zero size, zero alpha, or BEHIND');
+      console.log('     the geometry it lands on (depth test) -- all four have');
+      console.log('     happened in this file.');
     }
   }
 
