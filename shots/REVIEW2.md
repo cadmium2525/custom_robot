@@ -1,16 +1,17 @@
 # HOLOSSEUM — Art Direction Gate Review
 
-Rolling document. Round 2 reviewed `10621f2`; round 4 reviewed `35d0e66`; **round 5 (this pass)
-opened at `b28ff8c` and closes at `da3253a`**, and re-runs the blind comparison, which is the
-acceptance criterion.
+Rolling document. Round 2 reviewed `10621f2`; round 4 reviewed `35d0e66`; round 5 opened at
+`b28ff8c` and closed at `da3253a`; **round 6 (this pass) opens at `1e49409`**, scores the blind
+comparison — which is the acceptance criterion — and then verifies the six commits that landed after
+round 5 closed.
 
-**STATUS: IN PROGRESS — the blind comparison is being re-scored at `da3253a`. The header will read
-COMPLETE only when the VERDICT section at the bottom of this file says something other than
-PENDING, and it is the section, not this line, that decides.**
+**STATUS: COMPLETE — the VERDICT section at the bottom of this file is written and is no longer
+PENDING. That section, not this line, is what decides; the header was permitted to read COMPLETE
+only once the section said something.**
 
 **VERDICT: see the VERDICT section at the bottom of this file, which is the only place a verdict is
-recorded. This header deliberately does not restate it — the last two rounds both shipped a header
-that disagreed with the section, and the fix is to stop having two of them.**
+recorded. This header deliberately does not restate it — two earlier rounds shipped a header that
+disagreed with the section, and the fix is to stop having two of them.**
 
 ---
 
@@ -1012,7 +1013,8 @@ capture path does not use it.
    "saturated light toy" read, not a polish item after it.
 
 *This ranking is superseded by the re-ranked list in the VERDICT section at the bottom, which is
-written against `35d0e66` after re-verification. The list above is preserved as the round-2 view.*
+written against `1e49409` after round 5's re-verification. The list above is preserved as the
+round-2 view, and every item on it except #4's tracer/ring half has since moved.*
 
 ---
 
@@ -1020,6 +1022,11 @@ written against `35d0e66` after re-verification. The list above is preserved as 
 
 **This is the acceptance criterion, so it is stated plainly: shown our frame and a real Custom Robo
 V2 frame side by side and unlabelled, a person picks the CRV2 frame. We do not pass yet.**
+
+*The five-point scoring in this section is the **round-4** scoring, at `35d0e66`, and it is
+superseded — point 1 has since flipped from Inverted to PASS. The current scoring is the table in
+the VERDICT section at the bottom. This block is preserved because it is where the round-4 cause was
+named, and that naming is the reason point 1 moved.*
 
 ### Method, and its one honest limitation
 
@@ -1141,6 +1148,106 @@ is the behaviour you want. **Frame rate on this device remains unmeasured.**
 
 ---
 
+
 ## VERDICT
 
-PENDING
+**NO.** Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
+picks CRV2. Written at `1e49409` against the evidence re-verified at `da3253a` in round 5, which is
+the first round in this project's history where the acceptance criterion is scored rather than
+deferred.
+
+### The reason, named as tightly as round 4's was
+
+Round 4 failed this build for one cause — *"we have built an excellent stage and then painted the
+actors the colour of the scenery"* — and that cause is **fixed**. I re-verified it myself and
+independently: ROBOT 1's body went from **84.5 against a 96 deck to 117.5 against an 81.1 deck**,
+contour invisible from **72.1% to 4.0%**, and `bodyring.mjs` — my own from-scratch re-implementation
+of contour's body-vs-ring rule — returned 115.6/81.1 against contour's 115.9/81.1, so the meter is
+not flattering itself. The machines are now the lightest things standing on that deck. That was the
+right call and it landed.
+
+What the lights revealed is the next cause, and it is one thing, not a list:
+
+> **We turned the lights on the actors and found out they are model kits, not toys.**
+
+A CRV2 machine is described by four or five chunky masses and you can draw its silhouette from
+memory after one frame. Ours is described by **eight or nine panel tones per torso, bounded by a
+cage of emissive edge lines that are still brighter than most of the plates they enclose** (#5's
+residual: `matEmis` is `MeshBasicMaterial` + `toneMapped:false`, lines at 120-180 around plates at
+15-40 on the menu rig) — and the frame gives that description **161px** for the player and **79px**
+for the opponent to resolve in. Nine tones in 79 pixels is not detail, it is noise; it is why the
+opponent reads as *a robot* and never as *a robot doing something*, and it is why the louvred wall
+panels, the crate faces and the deck plating still carry more legible texture per square inch than
+either machine does. N6 was written as two bullets, **brightness** and **detail**. The brightness
+bullet has been answered completely. **The detail bullet has never been touched by a single commit,
+and it is now the whole of what is left.**
+
+This is one art decision again, and a cheaper one than the recast was: **reduce the number of
+distinct panel tones per machine until it reads as four or five masses, and bring the emissive trim
+below the plates it bounds instead of above them.** Not a shader change; a materials-table change.
+
+### The five-point blind comparison, re-scored
+
+Round 4 scored this Inverted / Inverted / Failed / Failed / deferred. Re-scored against the
+`da3253a` re-verification:
+
+| # | What a CRV2 frame does | Round 4 | Now | Evidence |
+|---|---|---|---|---|
+| 1 | The robots are the brightest, most saturated things on screen | **Inverted** | **PASS** | R1 body 115.7-117.5 vs deck 81.1; machines are 1.6% of scene pixels and supply **26.0% of the frame's brightest 1%** — 16x over-represented; machine p95 **199.7** now beats the loudest HUD pixel **152.1**. Residual: coverage-weighted the cyan rail family is still 2.8% of the scene at mean 136.8 against the machines' 1.6% at 117.7 — there is more bright cyan on screen than there is robot. |
+| 2 | The stage is quieter than the subjects | **Inverted** | **FAIL — on detail, no longer on value** | Value half won (see 1). Detail half unmeasured and unaddressed: no commit in five rounds has reduced per-machine tone count. The single strongest region of the frame on every salience model that weights brightness is still **one piece of architecture** — the warm lit gate at frame left, which owns the entire top ten tiles of a 680-tile sweep (gate crop: warm 70.5%, saturated 50%). |
+| 3 | Both machines legible at once | **Failed** | **FAIL — unchanged** | Opponent **42x79px = 8.8% of frame height**, under the rig's own 12% floor. You can read *what* it is; you cannot read *what it is doing*. Taken off the blocker list in round 4 by argument (a perpendicular camera would cost the over-the-shoulder aim read and drop the player 29% → 12%), not by fix. The argument is right and the point still fails. |
+| 4 | Very few, very large forms per machine | **Failed** | **FAIL — and it is now the named cause** | Torso is a mosaic of 8-9 small blue and orange rectangles at true 1:1; shoulders read as two pale blocks; no four-or-five-mass read. The one place ours is objectively *more* detailed than the reference and objectively *worse* for it. |
+| 5 | The effects are enormous, hard-edged, saturated, drawn not simulated | *deferred* | **SPLIT — the explosion passes, the rest is unproven or absent** | Explosion: white-cored hard-rimmed ball → saturated orange lobed mass with real soot striations → dispersal, `>200` falling 18.3% → 2.4% while `warm` **rises** 50% → 63%, i.e. the mass cools into colour instead of fading to grey. That is the reference's whole idea and it is the best-looking thing in the build; "muddy late" is withdrawn. Against it: **#10 tracers still PENDING**, **#7's ring has never been photographed** (it lives under a fireball covering 59% of the crop for its whole 150ms life), and **the impact effect measures cover 1.9% / hide 0.1% / lift 0.0 across its full 0-700ms sweep** — the effect that plays on every single bullet that lands is indistinguishable from nothing. |
+
+**One pass, one split, three fails.** Every failing point is downstream of the named cause except #5,
+which is downstream of an unmeasurable impact effect.
+
+### The open question I posed, answered
+
+*Must the machines out-rank all scenery on the attention metric, or is rank 17 of 720 enough?*
+
+**Neither. The tile rank is the wrong instrument and I am retiring it.** A tile rank asks "is there
+one 40px square of robot brighter than every 40px square of anything else", and for any game with a
+lit set the honest answer is no — a lamp is allowed to be brighter than a machine, and in CRV2 it
+often is. It is also not reproducible: on the agent's own model at its own tile size I get **rank 11
+of 680**, not 17 of 720, and the ranking moves with tile size and offset (1st to 20th across a
+4-size, 2-offset sweep). Quote the sign, never the digit.
+
+What the blind test actually asks is whether the machines **punch above their size**, and that is
+measurable without a tile: the machines are **1.6% of the scene pixels and supply 26.0% of the
+frame's brightest 1%** — a **16x over-representation** — against a background that contains a tracer
+beam and a lit gate. Rank 1 was never the target. **16x is a pass, and point 1 of the blind test is
+scored on it.** The metric that should replace the tile rank in future rounds is that over-
+representation ratio plus its coverage-weighted counterpart, which is the one figure still the wrong
+way round.
+
+### Ranked list of what stands between this build and the bar
+
+This list supersedes the round-2 top-5 above it.
+
+1. **Part count per machine.** #5's emissive residual and N6's detail bullet are the same defect from
+   inside and outside. Reduce distinct panel tones per machine to four or five masses; put the trim
+   below the plates. **This is the named cause and nothing else on this list matters as much.**
+2. **The opponent at 8.8% of frame height.** Not fixable by the rig without changing the game — so it
+   must be fixed by (1). Nine tones at 79px is unreadable; five masses at 79px is not.
+3. **The impact effect renders nothing measurable.** It plays on every landed bullet. Ten minutes of
+   a builder's time, ahead of any further tuning of the explosion.
+4. **#10 tracers/beams — still PENDING after five rounds** — and **#7's ring, which no capture in this
+   project has ever contained.** `vfxsheet` needs a ground-ring scenario that fires the shock front
+   without the fireball on top of it.
+5. **#22 — the crosshair regression.** Verified *gone* at `35d0e66` across a ±80px and a 480x400
+   centre crop. An arena shooter with no crosshair is not shippable. Status at head unverified.
+6. **P1 — the phone frame's top 23% is empty, flat, saturated blue** (sat 0.71-0.91, 100% cool: the
+   most saturated region of the entire phone frame, and it is nothing). *BLOCKING on mobile.*
+7. **The coverage-weighted cyan residual** and the lit gate owning the salience top ten. Smaller than
+   round 4's complaint; the last of N6's brightness half.
+8. **N1 / the harness.** `screenshot.mjs --shots` writes a garbage first frame — the title rig with
+   the match HUD over it — and it is plausible at thumbnail size. Every batched review capture this
+   project has taken has had one. *BLOCKING for the review process.*
+
+### What this verdict is not
+
+It is not a rejection of the round-5 work. The recast, N6's brightness half, the notch layout, #8,
+#32 and the explosion all landed and all reproduce under independent re-measurement. The gap between
+this build and the bar was one whole art direction six rounds ago and is now **one materials table
+and one missing effect**. That is close. It is not a pass.
