@@ -5,13 +5,283 @@ Rolling document. Round 2 reviewed `10621f2`; round 4 reviewed `35d0e66`; round 
 comparison — which is the acceptance criterion — and then verifies the six commits that landed after
 round 5 closed.
 
-**STATUS: COMPLETE — the VERDICT section at the bottom of this file is written and is no longer
-PENDING. That section, not this line, is what decides; the header was permitted to read COMPLETE
-only once the section said something.**
+**STATUS: COMPLETE — the VERDICT section at the bottom of this file is written, is scored on all five
+points of the blind comparison, and is no longer PENDING for the first time in six rounds. That
+section, not this line, is what decides; the header was permitted to read COMPLETE only once the
+section said something. It says NO, and it names one cause.**
 
 **VERDICT: see the VERDICT section at the bottom of this file, which is the only place a verdict is
 recorded. This header deliberately does not restate it — two earlier rounds shipped a header that
 disagreed with the section, and the fix is to stop having two of them.**
+
+---
+
+
+## Round 6 (`1e49409`) — the verdict, and the six commits that landed after round 5 closed
+
+Round 5 closed at `da3253a` with the acceptance criterion still unscored. **This round writes the
+verdict first, from the evidence round 5 had already put on the table, and then verifies the six
+commits that landed afterwards and revises it.** Two of those verifications moved the score, one of
+them against a claim this document has repeated since round 2, so the verdict below is not the one
+that was committed at the top of this round — see "What the verification moved" at the end.
+
+Everything here is measured at `1e49409` on a clean worktree build, `vite preview` at 4220. Tools
+used: unmodified `contour.mjs`, `vfxsheet.mjs`, `screenshot.mjs`, plus `salience.mjs`, `masses.mjs`,
+`squint.mjs` and `insetshot.mjs` from the scratchpad.
+
+### The recast holds at head, in three arenas, and the player's silhouette is now excellent
+
+Three unmodified `contour.mjs` runs, tier 3, seed 1234567, one per arena. **Foundry and orbital have
+never been reviewed in this project; these are the first numbers anyone has taken on them.**
+
+```
+  arena     ROBOT 1 size       body / bg     inv    ROBOT 2 size      body / bg    inv    clean
+  grid      161x261  (29%)   115.4 / 81.1   4.0%   42x79  (8.8%)   99.4 / 40.3   6.3%   60.8%
+  foundry    69x216  (24%)   115.1 / 40.5   7.3%   38x43  (4.8%)   84.0 / 59.4  26.1%   34.0%
+  orbital   168x252  (28%)   204.2 / 37.7   3.7%   34x63  (7.0%)   88.5 / 41.2  12.3%   51.6%
+```
+
+Grid reproduces `da3253a` exactly (115.4/81.1 against 115.7/81.1, inside the 0.4-point error bar).
+Two runs at head agreed to 0.1 points on ROBOT 1's body. Nothing regressed under six commits of HUD,
+stage and VFX work.
+
+**Orbital is the best silhouette this project has ever measured** — body 204.2 against a 37.7 deck,
+separation **166.5**, **90.9% clean contour, 3.7% invisible**. A pale machine on a dark blue deck,
+which is the reference's own recipe.
+
+**Foundry is the worst opponent this project has ever measured.** ROBOT 2 at **38x43px = 4.8% of
+frame height**, barely half of grid's already-failing 8.8%, with **26.1% of its contour invisible**
+and only 34% clean. That is round-2 territory, in an arena the review process had never opened.
+
+**And a caution about the recast that only three arenas could show.** The same machine measures
+115.4 in grid, 115.1 in foundry and **204.2** in orbital. An 89-point spread means the machine's
+value is set by the arena's lighting, not by the machine's materials. In orbital it is near-white
+against a 255 ceiling, which is not "saturated toy", it is blown out. **The recast is a property of
+grid's light plan, not of the robot**, and a fourth arena could undo it without anybody touching the
+machine.
+
+### `850ab2f` — the cyan floor rail I named in round 4. Fixed on grid. Alive on orbital.
+
+Round 4's sentence was *"their eye lands on two robots and in ours it lands on a cyan floor rail"*.
+Three instruments, all pointed at the frame the player sees (`contour-player.png`, taken from
+contour's own settled page so the measured frame and the seen frame share a camera):
+
+**The squint test** (`r6-squint-grid.png`, downscale to 0.14 then 2px blur — roughly what peripheral
+vision keeps). What survives on grid: the two white tracer beams at centre, the player machine as a
+compact pale block bottom-centre, the warm gate glow at frame left, and **one** thin cyan line
+across the wall. The platform rails have dissolved. In round 4 the rail was the first thing the eye
+found; **it is now not in the running.**
+
+**The attention sweep** (`salience.mjs`, robot pixels from contour's binary stencil, three scoring
+models, four tile sizes at two offsets):
+
+```
+  T   off    A     B     C    total tiles      (best robot tile's rank)
+  32   0    14    11     2     1100
+  32  16    13     9     1     1029
+  40   0     9     6     5      680
+  40  20    10     5     2      663
+  48   0    11     7     2      462
+  48  24     5     5     4      448
+  64   0     3     1     1      275
+  64  32     6     5     4      240
+```
+
+Rank 3-14 across the sweep, against round 5's 4-20. **No cyan-rail tile appears in any top ten on
+any model.** The robot now takes rank 1 on the harshest model (local contrast x chroma) at three of
+the eight cells.
+
+**Over-representation, which is the instrument this document settled on:** the machines are **1.6% of
+the scene pixels and supply 31.4% of the frame's brightest 1%** — a **19.6x over-representation**,
+up from 16x at `da3253a`.
+
+**What did not move, and one thing that got slightly worse.** The top of model A is still one object
+and it is still the same object: tiles at x=80-240, y=266-386, `robotFrac=0` for ranks 1 through 8 —
+the **warm lit gate at frame left**, glowing amber louvres over a yellow/black hazard chevron band
+with a cyan rail running through the brightest part of it (`r6-gate-2x.png`). And coverage-weighted:
+
+```
+                pct of scene   mean lum   mean sat
+  cyan family        3.1%        128.4      0.511      (round 5: 2.8% at 136.8)
+  hazard chevrons    1.2%        137.0      0.795
+  MACHINES           1.6%        118.4      0.382
+  whole scene       98.4%         75.9      0.294
+```
+
+Cyan gained coverage (2.8% → 3.1%) while losing brightness (136.8 → 128.4). **Pixel for pixel, both
+the rails and the chevrons are still brighter and more saturated than the machines** — what changed
+is that the rails no longer form one dominant connected structure. That is a real fix and a partial
+one.
+
+**Orbital is where it did not land at all.** `r6-squint.png` is orbital's squint frame, and the cyan
+platform rails are the longest, brightest, most connected structures in it — a full-frame lattice
+that ties with the player machine for the eye and beats it on total area. Foundry has the same defect
+recoloured: its rails are orange, and the biggest, most saturated line in that frame is a floor rail
+running diagonally underneath the player. **Whatever `850ab2f` did to grid's wall texture has to
+reach the other two arenas.**
+
+### `e5915f9` — the crowd bank
+
+Verified in `contour-n.png` (stage only, VFX and DOM off). The raked stands now occupy the top ~90px
+of the frame as a dark base carrying sparse cyan and amber crowd pips — lights *in* the stand rather
+than a wash coming down onto it. The top of the frame is quiet, which is what it should be. No
+complaint. The wall beneath it reads as warm brown louvred service panelling, right way up.
+
+### `5f95ea1` — N6 second pass. The HUD no longer wins the squint test.
+
+`c267025` closed N6's brightness half; `5f95ea1` was a second pass because the HP bars were still
+winning the squint. **Verified closed.** In `r6-squint-grid.png` the HUD survives as two thin dark
+chips with small green bars, a centre timer, and a dark bottom strip. The machine survives as a
+compact pale block. The HUD does not out-read the fight at squint distance any more, and the
+measured form of it from round 5 still holds — machine p95 199.7 against the loudest HUD pixel
+152.1. **N6's HUD half: closed.**
+
+### `51b7098` — #4. The one thing I named as standing between this effect and the reference is fixed.
+
+Round 5's residual (b) was the whole of the complaint: *"`lift` never goes negative, which is the
+metric's own test for soot... at every age the effect is a net lamp. That is the difference between
+an explosion that is drawn over the arena and one that is standing in it."* Full lifetime at
+`1e49409`, tier 3 (`r6-sheet-explosion.png`), against `da3253a`:
+
+```
+    age     >200%          warm%           cover          hide          lift
+             r5    r6      r5    r6      r5    r6      r5    r6      r5      r6
+     0ms   14.74 14.89   49.6  48.3    58.9  60.7    39.5  38.8    +45.1   +45.6
+    40ms   18.30 18.46   50.7  50.3    59.7  60.9    41.6  41.7    +50.0   +51.1
+   165ms   11.93 11.70   55.7  54.9    49.4  49.4    34.1  34.3    +37.0   +37.7
+   240ms    7.15  5.83   56.8  56.6    47.4  45.8    36.4  36.6    +32.5   +30.2
+   340ms    4.20  1.90   60.3  54.8    49.4  48.1    40.8  36.6    +27.6   +19.8
+   470ms    2.41  0.51   62.9  48.5    54.6  50.3    42.0  29.3    +25.5   +10.4
+   650ms    0.37  0.37   44.5  29.1    30.2  18.0    19.3   4.7     +5.7    -0.9
+   950ms    0.39  0.37   27.1  26.8     4.8  11.3     1.2   1.3     -0.4    -1.0
+  1400ms    0.38  0.37   27.6  27.5     5.8   6.2     1.1   1.1     -0.4    -0.6
+```
+
+**`lift` goes negative at 650ms while the effect is still covering 18% of the crop** — against a
+noise floor of -0.4 that round 5 established, -0.9 at real coverage is the mass being a hole rather
+than a lamp. The whole late half of the curve came down: 470ms from +25.5 to **+10.4**, 340ms from
++27.6 to +19.8. And the eye agrees with the meter, which is the part that matters: **at 340ms and
+470ms there is a large dark grey-brown soot mass occupying most of the fireball with saturated
+orange flame tongues around its edges.** You can see burnt gas. That is the reference.
+
+The commit's own stated fix reads true as well — at 240/340/470ms the mass is at *one* stage of
+cooling across all its lobes, where the complaint was that each lobe kept its own clock.
+
+Two residuals carried forward, both unchanged in kind:
+
+- **`hide` still sits at 29-42% of the crop from 0ms to 470ms.** The blast blocks a third of its own
+  neighbourhood for half a second, in a game where you dodge on the opponent's animation. It is
+  better than round 5 at the late end (470ms: 42.0% → 29.3%) and identical early. Still a
+  readability decision somebody should make deliberately.
+- **`warm` no longer rises through the late phase.** Round 5 praised "the mass cools into colour
+  instead of fading to grey" (warm 50% → 63%). It now peaks at 56.6% at 240ms and falls to 29.1% by
+  650ms. That is the soot doing its job and it is the right trade, but the "cools into colour" note
+  should not be quoted any more.
+
+**The impact effect is still not there, and it is now unchanged across two rounds.** `--effect
+impact` at ages 0/40/110/240: **cover 0 / 0.6 / 1.0 / 1.4%, hide 0 / 0 / 0 / 0.1%, lift 0.0 at every
+age.** Indistinguishable from nothing. This plays on every single bullet that lands.
+
+### The notch layout, forced to an iPhone 12's insets and photographed
+
+`--safe-t: 47px` / `--safe-b: 34px` against `0,0,0,0`, same build, same touch scenario, 390x844 @3x
+(`insetshot.mjs`; `r6-ip12-47.png` / `r6-ip12-0.png`), every box read from the live page:
+
+```
+  element        insets 0          insets 47/34     moved
+  .hud__top        8 .. 69          55 .. 116       +47 down
+  .hud__centre     8 .. 65          55 .. 112       +47 down
+  .hud__gear      78 .. 159        125 .. 206       +47 down
+  .gear__mob     139 .. 159        186 .. 206       +47 down
+  .tc__pause      84 .. 130        131 .. 177       +47 down
+  .hud__scrim      0 .. 158          0 .. 205        top held, BOTTOM +47
+  .tc__pad       622 .. 828        588 .. 794       -34 up
+  .tb--fire      740 .. 828        706 .. 794       -34 up
+  .tb--jump/dash/bomb/pod                           -34 up
+  .tc__stick   558.6 .. 690.6   558.6 .. 690.6        0  (held, positioned at the thumb)
+```
+
+**What actually happens: nothing collides, and one thing is better than it was in round 5.** The
+P1/P2 plate lands at y=55 on an 844px screen, clear of a ~47px sensor housing with 8px to spare.
+FIRE's bottom edge lands at 794 — 50px above the screen edge, clear of the home indicator. The HUD
+stack ends at 206 and the touch cluster starts at 588, leaving 382px of clear play area between
+them. **And `.hud__scrim` now grows with the inset** (0..158 → 0..205) where in round 5 it was
+fixed-height full-bleed, so the notch region is backed rather than transparent. `.hud__gear` also
+got 42px shorter under the HUD work.
+
+**Three of the four round-4 phone defects are closed**, read at 1:1 off `r6-ip12-47.png`:
+
+- **P1 — FIXED, and it was the worst-looking part of the build.** The empty, flat, saturated blue
+  band across the top 23% of the portrait screen is gone. The arena's wall now reaches the top of the
+  3D viewport and the HUD sits on it. No void, no razor-sharp horizon, no 0.71-0.91 saturation.
+- **P2 — FIXED.** BOMB and POD are no longer drawn twice in two visual languages. The top band
+  carries VULCAN and the JUMP/DASH pips; BOMB and POD are touch buttons only.
+- **P3 — FIXED.** The JUMP/DASH charge pips now sit on their own backing plate like everything else.
+
+**Two new ones, both created by the portrait aspect ratio rather than by any commit:**
+
+- **P5. The HUD stack owns the top 205 CSS px of an 844px screen — 24% of the phone — and its
+  largest single element is the VULCAN meter with all eight segments empty.** The biggest UI object
+  on a phone screen is a blank box. This is N4's residual ("an empty segmented gauge is visually
+  identical to a gauge that was never wired up") promoted from minor to conspicuous by the phone.
+- **P6. The touch cluster overlaps the machine.** DASH sits on the player's left arm and the idle
+  stick ring covers its left leg. On a 19.5:9 screen the five-button arc and the player character
+  occupy the same third of the display.
+
+### Two measurements that retire claims this document has repeated since round 2
+
+**(1) "Nothing on the floor out-details a robot" — we pass, and I am withdrawing the opposite
+claim.** `masses.mjs` measures mean gradient magnitude per pixel — texture energy per square inch —
+with the machines taken through contour's stencil rather than a box:
+
+```
+  ROBOTS (stencil)   37.8      23831 px
+  lit gate           21.9
+  platform top       16.4
+  wall louvre         7.5
+  crate face          6.4
+  deck plate          6.3
+```
+
+N6's detail bullet says "the louvred wall panels, the crate faces and the deck plating all carry
+more legible texture per square inch than either machine does". **It measures the other way by a
+factor of five to six.** That claim was written by eye in round 2, inherited unmeasured through
+rounds 4 and 5, and it is false at head. Blind-test point 2's detail half passes.
+
+**(2) "Very few, very large forms per machine" — we fail, and here is the number.** Same tool: blur
+at a radius scaled to the machine's on-screen size, quantise to five value bands, count connected
+regions larger than 3% of the body. The tool's own rule of thumb is that a CRV2 robot returns four
+or five and a mosaic returns a dozen.
+
+```
+                        blur r   body px   masses >=3%   largest   shares
+  ROBOT 1  161x261      10px      21821         8         22.2%    22.2/12.1/9.4/9.2/4.3/3.6/3.2/3.1
+  ROBOT 1  (heavier)    16px      21821         7         35.1%    35.1/6.6/6.2/5.1/4.7/3.2/3.2
+  ROBOT 2  42x79         5px       2008         9         15.2%    15.2/12.9/12.4/11.9/6.7/6.1/5.5/4.6/3.2
+```
+
+**Eight masses on the player and nine on the opponent, against the reference's four or five.** And
+the opponent — one tenth of the player's pixels — is the *more* fragmented of the two, with no mass
+larger than 15% of its body. That is exactly backwards: the machine you have the fewest pixels to
+describe is the one described in the most pieces.
+
+### Two ledger corrections
+
+**#22 the crosshair — the round-4 regression is CLOSED.** `contour-player.png` carries a white-cored
+reticle with an orange ring and four ticks at dead centre (800,450), and it is present in the
+foundry, orbital and phone frames too. Round 4's "there is no crosshair at all" no longer holds.
+
+**N7 the octahedra — UNCHANGED and still highly visible.** One frame of grid at 1:1 contains a
+flat-shaded green octahedron at (475,705), a cyan cone at (845,480) and a blue cube at (845,395) —
+bare primitives with visible facets, no texture, no trail, sitting in a frame where the crates carry
+panel lines, rivets and wear. Cheap to fix, and it is the least-finished thing on screen.
+
+### Harness note
+
+`vite preview` died once mid-round and a tool reported it as a navigation timeout rather than a
+connection refusal. Not a product defect; recorded so the next reviewer checks the server before
+debugging a tool. `screenshot.mjs --shots` (plural) was not re-tested this round — assume N1's
+sibling still bites and use `--shot` singular.
 
 ---
 
@@ -1152,55 +1422,66 @@ is the behaviour you want. **Frame rate on this device remains unmeasured.**
 ## VERDICT
 
 **NO.** Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
-picks CRV2. Written at `1e49409` against the evidence re-verified at `da3253a` in round 5, which is
-the first round in this project's history where the acceptance criterion is scored rather than
-deferred.
+picks CRV2.
+
+Written at `1e49409`. Round 6 wrote a first verdict from round 5's evidence before capturing
+anything — because six consecutive rounds had done the analysis and died before writing three
+sentences of conclusion — and then verified the six commits that had landed since and revised it.
+**Two verifications moved the score and one of them moved it in our favour against a claim this
+document had repeated since round 2.** What follows is the revised verdict; the revisions are named
+explicitly at the end so the reader can see which way the evidence pushed.
 
 ### The reason, named as tightly as round 4's was
 
-Round 4 failed this build for one cause — *"we have built an excellent stage and then painted the
-actors the colour of the scenery"* — and that cause is **fixed**. I re-verified it myself and
-independently: ROBOT 1's body went from **84.5 against a 96 deck to 117.5 against an 81.1 deck**,
-contour invisible from **72.1% to 4.0%**, and `bodyring.mjs` — my own from-scratch re-implementation
-of contour's body-vs-ring rule — returned 115.6/81.1 against contour's 115.9/81.1, so the meter is
-not flattering itself. The machines are now the lightest things standing on that deck. That was the
-right call and it landed.
+Round 4's cause — *"we have built an excellent stage and then painted the actors the colour of the
+scenery"* — is **fixed, and it was the right call.** Independently re-verified: ROBOT 1's body went
+from 84.5 against a 96 deck to **115.4 against an 81.1 deck**, contour invisible from **72.1% to
+4.0%**, and `bodyring.mjs` — a from-scratch re-implementation of contour's body-vs-ring rule —
+returned 115.6/81.1 against contour's 115.9/81.1, so the meter is not flattering itself. The
+machines are now the lightest things standing on that deck, and in orbital the player measures 204.2
+against a 37.7 deck with **90.9% clean contour**, which is the best silhouette this project has ever
+recorded.
 
-What the lights revealed is the next cause, and it is one thing, not a list:
+What the lights revealed is the next cause, and it is one thing:
 
-> **We turned the lights on the actors and found out they are model kits, not toys.**
+> **We turned the lights on the actors and found out they are model kits, not toys — and we build the
+> far one out of nine parts and then draw it forty pixels wide.**
 
-A CRV2 machine is described by four or five chunky masses and you can draw its silhouette from
-memory after one frame. Ours is described by **eight or nine panel tones per torso, bounded by a
-cage of emissive edge lines that are still brighter than most of the plates they enclose** (#5's
-residual: `matEmis` is `MeshBasicMaterial` + `toneMapped:false`, lines at 120-180 around plates at
-15-40 on the menu rig) — and the frame gives that description **161px** for the player and **79px**
-for the opponent to resolve in. Nine tones in 79 pixels is not detail, it is noise; it is why the
-opponent reads as *a robot* and never as *a robot doing something*, and it is why the louvred wall
-panels, the crate faces and the deck plating still carry more legible texture per square inch than
-either machine does. N6 was written as two bullets, **brightness** and **detail**. The brightness
-bullet has been answered completely. **The detail bullet has never been touched by a single commit,
-and it is now the whole of what is left.**
+Measured, with the same rule applied to both machines (blur at a radius scaled to on-screen size,
+quantise to five value bands, count connected regions above 3% of the body — a CRV2 robot returns
+four or five, a mosaic returns a dozen):
 
-This is one art decision again, and a cheaper one than the recast was: **reduce the number of
-distinct panel tones per machine until it reads as four or five masses, and bring the emissive trim
-below the plates it bounds instead of above them.** Not a shader change; a materials-table change.
+```
+  ROBOT 1  161x261px      8 masses     largest 22.2% of body
+  ROBOT 2   42x79px       9 masses     largest 15.2% of body
+```
+
+**Eight and nine against the reference's four or five** — and the opponent, with one tenth of the
+player's pixels, is the *more* fragmented of the two. That is exactly backwards. The machine you have
+the fewest pixels to describe is the one you have described in the most pieces, which is why you can
+read *what* the opponent is and never *what it is doing*, and why the same machine at 38x43px in
+foundry loses **26.1% of its contour to invisibility**.
+
+This is one art decision, and a cheaper one than the recast was: **reduce the distinct panel tones
+per machine until it reads as four or five masses, and do it on the opponent's silhouette first.**
+`#5`'s residual — `matEmis` is `MeshBasicMaterial` + `toneMapped:false`, so the trim draws edge lines
+at 120-180 around plates at 15-40 on the menu rig — is the same defect seen from the inside and
+belongs in the same pass. It is a materials-table change, not a shader change.
 
 ### The five-point blind comparison, re-scored
 
-Round 4 scored this Inverted / Inverted / Failed / Failed / deferred. Re-scored against the
-`da3253a` re-verification:
+Round 4 scored this Inverted / Inverted / Failed / Failed / deferred.
 
-| # | What a CRV2 frame does | Round 4 | Now | Evidence |
+| # | What a CRV2 frame does | R4 | Now | Evidence at `1e49409` |
 |---|---|---|---|---|
-| 1 | The robots are the brightest, most saturated things on screen | **Inverted** | **PASS** | R1 body 115.7-117.5 vs deck 81.1; machines are 1.6% of scene pixels and supply **26.0% of the frame's brightest 1%** — 16x over-represented; machine p95 **199.7** now beats the loudest HUD pixel **152.1**. Residual: coverage-weighted the cyan rail family is still 2.8% of the scene at mean 136.8 against the machines' 1.6% at 117.7 — there is more bright cyan on screen than there is robot. |
-| 2 | The stage is quieter than the subjects | **Inverted** | **FAIL — on detail, no longer on value** | Value half won (see 1). Detail half unmeasured and unaddressed: no commit in five rounds has reduced per-machine tone count. The single strongest region of the frame on every salience model that weights brightness is still **one piece of architecture** — the warm lit gate at frame left, which owns the entire top ten tiles of a 680-tile sweep (gate crop: warm 70.5%, saturated 50%). |
-| 3 | Both machines legible at once | **Failed** | **FAIL — unchanged** | Opponent **42x79px = 8.8% of frame height**, under the rig's own 12% floor. You can read *what* it is; you cannot read *what it is doing*. Taken off the blocker list in round 4 by argument (a perpendicular camera would cost the over-the-shoulder aim read and drop the player 29% → 12%), not by fix. The argument is right and the point still fails. |
-| 4 | Very few, very large forms per machine | **Failed** | **FAIL — and it is now the named cause** | Torso is a mosaic of 8-9 small blue and orange rectangles at true 1:1; shoulders read as two pale blocks; no four-or-five-mass read. The one place ours is objectively *more* detailed than the reference and objectively *worse* for it. |
-| 5 | The effects are enormous, hard-edged, saturated, drawn not simulated | *deferred* | **SPLIT — the explosion passes, the rest is unproven or absent** | Explosion: white-cored hard-rimmed ball → saturated orange lobed mass with real soot striations → dispersal, `>200` falling 18.3% → 2.4% while `warm` **rises** 50% → 63%, i.e. the mass cools into colour instead of fading to grey. That is the reference's whole idea and it is the best-looking thing in the build; "muddy late" is withdrawn. Against it: **#10 tracers still PENDING**, **#7's ring has never been photographed** (it lives under a fireball covering 59% of the crop for its whole 150ms life), and **the impact effect measures cover 1.9% / hide 0.1% / lift 0.0 across its full 0-700ms sweep** — the effect that plays on every single bullet that lands is indistinguishable from nothing. |
+| 1 | The robots are the brightest, most saturated things on screen | **Inverted** | **PASS** | R1 body 115.4 vs deck 81.1 (grid), 204.2 vs 37.7 (orbital). Machines are 1.6% of scene pixels and supply **31.4% of the frame's brightest 1%** — **19.6x over-represented**, up from 16x. Machine p95 199.7 beats the loudest HUD pixel 152.1. Best robot tile ranks 3-14 across an 8-cell salience sweep, and takes **rank 1** on the harshest model at three cells. |
+| 2 | The stage is quieter than the subjects | **Inverted** | **PASS** | Texture energy (mean gradient per px, machines through contour's stencil): **robots 37.8**, lit gate 21.9, platform top 16.4, wall louvre 7.5, crate face 6.4, deck plate 6.3. **Nothing on the floor out-details a robot** — by a factor of five to six. The round-2 claim to the contrary was never measured and is withdrawn. Residual: the warm lit gate at frame left still owns ranks 1-8 of the brightness-weighted salience sweep, and coverage-weighted the cyan rails are 3.1% of the scene at mean 128.4 against the machines' 1.6% at 118.4. |
+| 3 | Both machines legible at once | **Failed** | **FAIL — and worse than round 4 knew** | Opponent at **8.8%** of frame height in grid, **7.0%** in orbital, **4.8%** in foundry — where 26.1% of its contour is invisible and only 34% reads cleanly. Grid was the arena the reviews had been looking at; the other two are worse. Taken off the blocker list in round 4 by argument (a perpendicular camera would cost the over-the-shoulder aim read and drop the player 29% → 12%). The argument is still right. The point still fails, and now fails in three arenas. |
+| 4 | Very few, very large forms per machine | **Failed** | **FAIL — and it is the named cause** | 8 masses on the player, 9 on the opponent, against 4-5. Largest single mass 22.2% / 15.2% of body. |
+| 5 | The effects are enormous, hard-edged, saturated, drawn not simulated | *deferred* | **PASS with a hole** | The explosion is now at the reference standard: white-cored hard-rimmed ball at 0-40ms, saturated orange lobed mass at 70-240ms, and at **340-470ms a large dark grey-brown soot mass with orange flame tongues around it** — `lift` reaches **-0.9 at 650ms while still covering 18% of the crop**, i.e. the mass is a hole, not a lamp. That was the single thing round 5 named as standing between this effect and the reference and it is fixed. The hole: **the impact effect renders nothing** (cover 0-1.4%, hide 0-0.1%, lift 0.0 at every age, unchanged across two rounds) and it plays on every bullet that lands; **#10** tracers remain PENDING; **#7**'s ring has still never been photographed. |
 
-**One pass, one split, three fails.** Every failing point is downstream of the named cause except #5,
-which is downstream of an unmeasurable impact effect.
+**Three passes and two fails**, where round 4 had none and four. Every remaining failure is the named
+cause or downstream of it.
 
 ### The open question I posed, answered
 
@@ -1209,45 +1490,65 @@ which is downstream of an unmeasurable impact effect.
 **Neither. The tile rank is the wrong instrument and I am retiring it.** A tile rank asks "is there
 one 40px square of robot brighter than every 40px square of anything else", and for any game with a
 lit set the honest answer is no — a lamp is allowed to be brighter than a machine, and in CRV2 it
-often is. It is also not reproducible: on the agent's own model at its own tile size I get **rank 11
-of 680**, not 17 of 720, and the ranking moves with tile size and offset (1st to 20th across a
-4-size, 2-offset sweep). Quote the sign, never the digit.
+often is. It is also not reproducible: the best robot tile ranks anywhere from **1 to 14** depending
+on tile size, offset and scoring model, over an eight-cell sweep of the same frame. Quote the sign,
+never the digit.
 
 What the blind test actually asks is whether the machines **punch above their size**, and that is
-measurable without a tile: the machines are **1.6% of the scene pixels and supply 26.0% of the
-frame's brightest 1%** — a **16x over-representation** — against a background that contains a tracer
-beam and a lit gate. Rank 1 was never the target. **16x is a pass, and point 1 of the blind test is
-scored on it.** The metric that should replace the tile rank in future rounds is that over-
-representation ratio plus its coverage-weighted counterpart, which is the one figure still the wrong
-way round.
+measurable without a tile: the machines are **1.6% of the scene pixels and supply 31.4% of the
+frame's brightest 1%** — a **19.6x over-representation** — against a background containing a tracer
+beam and a lit gate. **Rank 1 was never the target. 19.6x is a pass, and point 1 is scored on it.**
+The two figures that should replace the tile rank in future rounds are that ratio and its
+coverage-weighted counterpart, which is the one still on the wrong side.
 
 ### Ranked list of what stands between this build and the bar
 
 This list supersedes the round-2 top-5 above it.
 
-1. **Part count per machine.** #5's emissive residual and N6's detail bullet are the same defect from
-   inside and outside. Reduce distinct panel tones per machine to four or five masses; put the trim
-   below the plates. **This is the named cause and nothing else on this list matters as much.**
-2. **The opponent at 8.8% of frame height.** Not fixable by the rig without changing the game — so it
-   must be fixed by (1). Nine tones at 79px is unreadable; five masses at 79px is not.
-3. **The impact effect renders nothing measurable.** It plays on every landed bullet. Ten minutes of
-   a builder's time, ahead of any further tuning of the explosion.
-4. **#10 tracers/beams — still PENDING after five rounds** — and **#7's ring, which no capture in this
+1. **Part count per machine, and the opponent first.** 8 and 9 masses against 4-5; `#5`'s emissive
+   trim is the same defect from inside. **This is the named cause and nothing else matters as much.**
+2. **The opponent at 4.8-8.8% of frame height.** Not fixable by the rig without changing the game, so
+   it has to be fixed by (1). Nine masses at 43px is unreadable; four at 43px is not.
+3. **The cyan rail, in the two arenas the fix did not reach.** On grid it is genuinely beaten — it
+   survives no squint test and appears in no salience top ten. On **orbital** the rails are a
+   full-frame lattice that ties with the player machine for the eye, and **foundry** has the same
+   defect in orange, with the brightest line in the frame running under the player's feet. Round 4's
+   defect is alive in two thirds of the shipped arenas.
+4. **The impact effect renders nothing measurable**, on every landed bullet, unchanged for two rounds.
+   Ten minutes, ahead of any further tuning of the explosion.
+5. **#10 tracers — still PENDING after five rounds** — and **#7's ring, which no capture in this
    project has ever contained.** `vfxsheet` needs a ground-ring scenario that fires the shock front
    without the fireball on top of it.
-5. **#22 — the crosshair regression.** Verified *gone* at `35d0e66` across a ±80px and a 480x400
-   centre crop. An arena shooter with no crosshair is not shippable. Status at head unverified.
-6. **P1 — the phone frame's top 23% is empty, flat, saturated blue** (sat 0.71-0.91, 100% cool: the
-   most saturated region of the entire phone frame, and it is nothing). *BLOCKING on mobile.*
-7. **The coverage-weighted cyan residual** and the lit gate owning the salience top ten. Smaller than
-   round 4's complaint; the last of N6's brightness half.
-8. **N1 / the harness.** `screenshot.mjs --shots` writes a garbage first frame — the title rig with
-   the match HUD over it — and it is plausible at thumbnail size. Every batched review capture this
-   project has taken has had one. *BLOCKING for the review process.*
+6. **The machine's value is set by the arena, not by the machine.** 115.4 / 115.1 / 204.2 for the same
+   robot in grid / foundry / orbital. Near-white in orbital is not "saturated toy", it is blown out,
+   and a fourth arena could undo the recast without anybody touching the robot.
+7. **N7 — the ordnance is still bare flat-shaded octahedra**, three of them in one frame, in a scene
+   where the crates carry rivets and wear.
+8. **On the phone: the HUD owns 24% of the screen and its largest element is an empty gauge** (P5),
+   and the touch cluster sits on the player character (P6). P1, P2 and P3 are all closed.
+9. **N1 / the harness.** `screenshot.mjs --shots` writes a garbage first frame that is plausible at
+   thumbnail size. *BLOCKING for the review process.*
+
+### What the verification moved, in both directions
+
+Recorded because a verdict that was revised is only worth more than one that was not if the
+revisions are visible.
+
+**Moved in our favour:** point 2 went from FAIL to PASS. The first verdict rested its detail half on
+N6's round-2 sentence about the louvres and crates out-detailing the machines. That sentence was
+never measured. It measures the other way by 5-6x, and it should not have survived three rounds
+unchecked. Point 5 went from SPLIT to PASS-with-a-hole — `51b7098` fixed the exact residual round 5
+had named. `#22`'s crosshair regression is closed. Three of the four phone blockers are closed.
+
+**Moved against us:** point 3 got worse, not better, once foundry and orbital were opened for the
+first time — 4.8% of frame height and 26.1% invisible contour is below anything grid has shown since
+round 2. And the cyan rail, which the first verdict listed as a small coverage-weighted residual, is
+a live round-4-grade defect in two arenas nobody had reviewed.
 
 ### What this verdict is not
 
-It is not a rejection of the round-5 work. The recast, N6's brightness half, the notch layout, #8,
-#32 and the explosion all landed and all reproduce under independent re-measurement. The gap between
-this build and the bar was one whole art direction six rounds ago and is now **one materials table
-and one missing effect**. That is close. It is not a pass.
+It is not a rejection of the work. The recast, N6 in both halves, the notch layout, the wall, the
+crowd bank, `#8`, `#22`, `#32` and the explosion all landed, and all of them reproduce under
+independent re-measurement with tools written from scratch to check them. The gap between this build
+and the bar was one whole art direction six rounds ago; it is now **one materials table, one missing
+effect, and two arenas that have not caught up with the third.** That is close. It is not a pass.
