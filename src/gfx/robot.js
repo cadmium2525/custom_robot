@@ -113,17 +113,37 @@ const TRIM = {
  * highlights flattening.
  */
 const PAINT_GAIN = 0.90;
-const PLANE_UP = 0.34;    // top faces lift...
-// ...undersides crush. Sides are the reference value.
-//
-// Eased from 0.66. Painting a downward face at a third of its plate's value is
-// right for a plate you are looking down ON and wrong for one whose underside
-// IS the silhouette — and on a machine seen from a raked arena camera, the
-// undersides of the pauldrons, the armpits, the skirt and the thigh blocks are
-// most of the outline's lower half. Mapped, the surviving invisible contour was
-// almost entirely there: mean value inside the edge 51-59 against an outline at
-// 8 and a deck at 99, which averages to no step at all.
-const PLANE_DOWN = 0.42;
+
+/**
+ * The baked plane ramp: top faces lift, undersides crush, side faces are the
+ * reference. Both numbers are now roughly half what they were (0.34 / 0.42),
+ * and this is the LARGEST of the mass-count fixes — larger than the palette
+ * collapse under it.
+ *
+ * Why. Measured on the pinned fight frame, the player's body spans p2..p98 =
+ * 76..167 in luminance, a spread of ninety levels. Collapsing eight paint roles
+ * to four barely touched that number, because the paint roles were never what
+ * set it: at 0.34/0.42 a plate's top face is painted 1.34x its side and its
+ * underside 0.58x, a 2.3:1 ratio inside ONE plate — wider than the entire
+ * distance from `dark` to `light`. Every chamfered box on the machine therefore
+ * arrived carrying three tones of its own, and a machine of thirty such boxes
+ * is a mosaic no matter how few colours the palette names.
+ *
+ * It is also a duplicate. The arena's key light already lifts top faces and
+ * shades undersides — that is what a light does — so a baked copy of the same
+ * cue is the second application of an effect the renderer is already applying.
+ * Halved, the cue survives (stacked plates still separate, which is what it was
+ * added for) and stops out-shouting the paint.
+ *
+ * The DOWN half was already eased once, from 0.66, because painting a downward
+ * face at a third of its plate's value is right for a plate you look down ON and
+ * wrong for one whose underside IS the silhouette: on a raked arena camera the
+ * pauldron undersides, armpits, skirt and thigh blocks are most of the outline's
+ * lower half, and mapped, essentially all the surviving invisible contour lived
+ * there. Easing it further pushes the same way, so this cannot cost contour.
+ */
+const PLANE_UP = 0.17;
+const PLANE_DOWN = 0.21;
 
 /** Lens/strip brightness. Above ~1.7 these stop reading as glass and bloom flat. */
 const EMIS_GAIN = 0.45;
@@ -175,8 +195,38 @@ function tone(hex, l, satMin, mul = 1) {
 }
 
 /**
- * Six roles is the whole vocabulary. Anything more and the machine stops having
- * a colour scheme; anything less and there is nothing to separate groups with.
+ * Nine ROLES, but only FOUR VALUES. That distinction is the whole of this
+ * table and it is worth stating before the numbers.
+ *
+ * WHY IT COLLAPSED. Measured with the review's own rule — blur at a radius
+ * scaled to the machine's on-screen size, quantise to five value bands, count
+ * the connected regions above 3% of the body — the machines came back at 8
+ * masses (player, 160x260px) and 10 (opponent, 39x77px) against a Custom Robo
+ * V2 reference that returns four or five. The opponent, drawn with a tenth of
+ * the player's pixels, was the MORE fragmented of the two, which is backwards:
+ * the machine you have the fewest pixels to describe is the one that has to be
+ * described in the fewest pieces.
+ *
+ * The cause was that every role carried its own VALUE. hull 0.74, hullLo 0.58,
+ * accent 0.68, leg 0.88, legLo 0.70, gunmetal 0.72, light 0.93, dark 0.33 —
+ * eight rungs, sprayed across a machine whose separate plates are each a few
+ * pixels wide at gameplay distance. That is per-panel variety, and it is what a
+ * model kit has and a toy does not. An earlier round widened this deliberately
+ * to fix a mushy silhouette; internal contrast was the right idea and it was
+ * overshot.
+ *
+ * So the ladder keeps its rungs and loses its steps. The roles still exist,
+ * still name what a plate is for, and still carry their own HUE — the accent is
+ * still the accent colour up close in the garage. What they no longer do is
+ * each occupy a separate value band at 40 pixels. Four values remain:
+ *
+ *    dark   0.52   line art: recesses, the wash behind a hero plate
+ *    body   0.74   hull, hullLo, accent, gunmetal — the machine's mass
+ *    leg    0.86   the leg group, one value from hip to toe
+ *    light  0.93   hero plates: chest crest, shoulder caps, shin faces
+ *
+ * Which is torso+arms, legs, hero plates, and the dark that separates them —
+ * four masses, arranged as a machine rather than as a mosaic.
  *
  * WHERE THE LADDER SITS, and why it moved.
  *
@@ -225,14 +275,15 @@ function buildPalette(look, legColour) {
     // measured on RAY's blue) for 14% of the luminance, and 14% is affordable
     // because the white plates carry the top of the machine.
     hull: tone(look.primary, 0.74, 0.82),
-    // Same hue, shadow value. Reads as the SAME paint in shade rather than as a
-    // second colour, which is what lets us stack three plates and still see all
-    // three edges. Carries the upper arms, the forearm cuffs, the rear skirt
-    // and the whole backpack — masses, not creases, so it stays a value and
-    // never becomes a hole. Kept two thirds of a stop under the hull rather
-    // than the old full stop: these are the pieces that used to break the torso
-    // group into a light front and a dark back at gameplay size.
-    hullLo: tone(look.primary, 0.58, 0.86),
+    // Same hue, a breath of shade. Carries the upper arms, the forearm cuffs,
+    // the rear skirt and the whole backpack — which is to say the pieces that
+    // WRAP the torso, so if it is a separate value the torso group arrives in
+    // two halves. At 0.58 it was two thirds of a stop under the hull and did
+    // exactly that: measured, the player's back plate and its upper arms landed
+    // in different quantisation bands and counted as separate masses. At 0.72
+    // it is inside the hull's band at gameplay size and still a visible turn of
+    // the form in the garage, which is the only place anybody can see it.
+    hullLo: tone(look.primary, 0.72, 0.86),
     // Hero plates: chest crest, shoulder caps, shin faces. This role stays
     // near-white on purpose — a toy robot's white plastic is white, and it is
     // what gives the saturated plates something to be saturated against.
@@ -243,17 +294,35 @@ function buildPalette(look, legColour) {
     // Driven to full chroma, which costs it nothing in value (a saturated dark
     // blue and a greyed one measure the same luminance) and stops the recesses
     // reading as soot.
-    dark: tone(look.primary, 0.33, 0.86),
-    accent: tone(look.accent, 0.68, 1.0),
+    //
+    // Raised again, from 0.33, and this is the half of the fix that is visible
+    // in a still. `dark` is not only used for creases: the chest's back plate,
+    // the pelvic block, the head's jaw and the thigh's rear blocks are all
+    // painted with it, and they are BIG. At 0.33 the player photographed with a
+    // near-black slab across the middle of its own torso — a hole with a lit
+    // machine drawn round it, which is #5's residual seen from the outside. At
+    // 0.52 it is still a clear stop under the hull and still the darkest paint
+    // on the machine, but a large piece of it now reads as shadowed armour
+    // instead of as absence.
+    dark: tone(look.primary, 0.52, 0.86),
+    // The accent keeps its HUE and gives up its VALUE. Its plates are the
+    // knee caps, elbow tapers, head crest, toe claws, chest fin: eight or nine
+    // small scattered pieces, which is precisely the per-panel variety that has
+    // to go. Sitting on the hull's rung it is a colour note on a solid mass in
+    // the garage and invisible as a separate mass at 40px, which is the right
+    // answer at both distances.
+    accent: tone(look.accent, 0.74, 1.0),
     leg: tone(legColour, 0.88, 0.10),
-    // Legs stand on a near-white deck, so their shadow role stays a step under
-    // the leg's: dark enough to hold an edge against the floor, light enough to
-    // be a leg rather than a gap under the skirt.
-    legLo: tone(legColour, 0.70, 0.14),
+    // Formerly a full stop under the leg, which split every leg into a light
+    // front and a dark side and gave the machine four masses below the waist.
+    // Held just under `leg` so the thigh and shin plates still turn against
+    // their own greebles without the leg group coming apart.
+    legLo: tone(legColour, 0.84, 0.14),
     // Weapons are hardware: a neutral grey that belongs to no part's colour
-    // scheme, so the gun never merges into the arm it hangs off — and, being
-    // desaturated among saturated plates, never merges into the machine either.
-    gunmetal: tone(0x9aa6b4, 0.72, 0.06),
+    // scheme, so the gun reads as bolted-on rather than moulded in. It matches
+    // the hull's VALUE — desaturation is what separates it, and desaturation
+    // survives being 40 pixels tall in a way a value step does not.
+    gunmetal: tone(0x9aa6b4, 0.74, 0.06),
     frame: { r: PAINT_GAIN, g: PAINT_GAIN, b: PAINT_GAIN },
   };
 }
