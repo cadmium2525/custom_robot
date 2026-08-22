@@ -206,13 +206,33 @@ void main() {
   gl_Position = projectionMatrix * mv;
 
   // fadeMode 0: fade out. 1: flash in then out. 2: hold then cut.
+  // 3: dissipate — ramp in fast, then thin on a long continuous tail.
+  //
+  // Mode 2 holds at full opacity for three quarters of a life and then cuts,
+  // which is the shape of a curtain being dropped rather than of smoke going
+  // away: the mass is equally solid at 10% and at 70% of its life and then
+  // leaves in a couple of frames. It is fine for a short dust wave, where the
+  // whole point is a hard fast pass, and it is wrong for anything that is
+  // supposed to dissipate. Mode 3 never holds — from the moment it is up it is
+  // on its way out, which is what lets the late blast thin instead of vanish.
   float a;
   if (aFlags.z < 0.5)      a = 1.0 - t;
   else if (aFlags.z < 1.5) a = sin(t * 3.14159);
-  else                     a = smoothstep(1.0, 0.75, t);
+  else if (aFlags.z < 2.5) a = smoothstep(1.0, 0.75, t);
+  else                     a = smoothstep(0.0, 0.09, t) * pow(1.0 - t, 1.45);
 
   // Sparks streak thin and long; smoke swells as it dissipates.
-  float grow = aFlags.z < 1.5 ? (1.0 - t * 0.55) : (0.5 + t * 0.85);
+  //
+  // Mode 3 swells much harder than mode 2, and the two halves of that are one
+  // idea: a puff that grows to three and a half times its birth size while its
+  // opacity falls to a tenth is spreading its mass over an area that grows
+  // faster than the mass thins, which is what makes it read as gas mixing into
+  // air. It is also the guard against the failure this effect was rejected for
+  // twice — the growth is in the transparent direction, so the late plume is
+  // large and see-through rather than large and solid.
+  float grow = aFlags.z < 1.5 ? (1.0 - t * 0.55)
+             : aFlags.z < 2.5 ? (0.5 + t * 0.85)
+             : (0.40 + t * 1.60);
   float size = aParams.z * grow * uSizeScale;
 
   float depth = -mv.z;
@@ -919,9 +939,31 @@ void main() {
       // solid enough in its billows to be a hole in the frame, already full of
       // gaps between them.
       //
-      // Curve is pow(vT, 0.55) rather than 0.85 so the tearing front-loads.
-      float bite = mix(0.34, 1.18, pow(vT, 0.55));
-      float d2 = smoothstep(bite, bite + 0.17, turb + 0.12);
+      // That correction then went far past its target and deleted the stage it
+      // was tuning. Opening to 1.18 on pow(vT, 0.55) puts the threshold at 0.77
+      // by a third of the way through a life, and turb only reaches about 0.62
+      // in the middle of its distribution, so d2 was zero nearly everywhere
+      // from very early on. With the fire also fixed to go out on time, the
+      // sheet measured the consequence exactly: 5.8% of the crop at 650ms and
+      // 4.8% at 950ms. There was no late blast left to be muddy because there
+      // was no late blast.
+      //
+      // Two changes, and they are different ideas. The threshold opens over a
+      // range the noise can actually answer, so the mass survives its handoff
+      // and then thins; and it opens with HEIGHT as well as with age, so the
+      // cap shreds while the base is still a volume. That second term is the
+      // silhouette break-up — a rising mass that erodes uniformly is a blob
+      // that gets smaller, and a rising mass whose top comes apart first is a
+      // column turning into rags, which is the thing an explosion does.
+      float cap  = smoothstep(-0.30, 0.90, vLocal.y);
+      float bite = mix(0.18, 0.74, pow(vT, 0.90)) + cap * 0.22 * vT;
+      // A WIDE window, not the 0.17 it was. A narrow one is a stencil: every
+      // pixel is either fully in or fully out, so the mass has a cut edge and
+      // leaves by losing whole regions at once — which is the "fades as a whole
+      // rather than thinning at the edges" complaint, arriving as geometry
+      // instead of as opacity. Widened, the same noise field reads as a
+      // soot-to-transparent falloff and the mass frays.
+      float d2 = smoothstep(bite, bite + 0.34, turb + 0.16);
       // Underlighting is the fire shining up into the smoke, so it has to die
       // with the fire and not with the smoke. It went out on pow(fade, 3.0) of
       // the *smoke's* two-second life, i.e. it was still at a third of full
@@ -935,15 +977,24 @@ void main() {
       float lit = exp(-edg * 3.6);
       float under = smoothstep(0.10, -0.80, vLocal.y) * lit;
       float over  = smoothstep(-0.25, 0.85, vLocal.y);
+      // Two lights and a cold bias, which between them are the whole of "lit by
+      // the embers early, cold and thin late". The underlight is the fire and
+      // dies with the fire, on the shell's own age in seconds. What is left
+      // over is a thin cold skylight on the upper surfaces, deliberately blue
+      // against the soot's neutral, so the mass has somewhere to go once the
+      // warmth has gone rather than settling on one flat mid-grey.
       col = C_SOOT
-          + vec3(0.018, 0.020, 0.025) * over * (0.55 + turb * 0.85)
+          + vec3(0.014, 0.019, 0.030) * over * (0.55 + turb * 0.85)
           + C_CHAR * 0.42 * under * (0.5 + turb * 0.7);
-      // Weight early, gone early. The hold used to run to 55% of a 2.4s life —
-      // 1.3 seconds of arena under a translucent warm sheet. The blast gets its
-      // mass during the handoff, which is the only moment it is needed, and the
-      // frame is given back well before the next exchange.
-      a = d2 * (0.34 + 0.58 * rim)
-        * smoothstep(0.0, 0.08, vT) * smoothstep(0.82, 0.30, vT);
+      // Continuous to the end, and this is not the same knob as the erosion
+      // above. The tail used to be smoothstep(0.82, 0.30) — full opacity for
+      // the first third of a life, then a ramp that reaches zero with a fifth
+      // of the life still to run. A mass that arrives at full weight, holds,
+      // and then stops eighteen percent short of its own death is a curtain
+      // being dropped. pow(1 - vT, 0.85) is falling from the first frame and
+      // reaches nothing exactly when the shell does.
+      a = d2 * (0.30 + 0.52 * rim)
+        * smoothstep(0.0, 0.08, vT) * pow(1.0 - vT, 0.85);
     } else {
       // Density and temperature are two different fields, and separating them is
       // the whole trick.
@@ -1806,15 +1857,59 @@ export class VFX {
         Math.cos(a) * R * 0.14, R * (1.8 + vfxRng.f() * 0.9), Math.sin(a) * R * 0.14
       );
     }
-    const smokeN = Math.round(6 * s * scale);
-    for (let i = 0; i < smokeN; i++) {
-      const a = vfxRng.f() * 6.283;
-      const rad = vfxRng.f() * R * 0.3;
+    // --- 5b. the rising plume, and the settle -----------------------------
+    // The third and fourth stages of the blast, and until now they did not
+    // exist. Six sprites of R*0.10..0.17 at fifteen metres are thirteen screen
+    // pixels each: measured on the contact sheet, once the fire was fixed to go
+    // out on schedule the whole effect fell from 27.1% of the crop at 650ms to
+    // 5.8%, and to 4.8% at 950ms. The blast went fireball, fireball, nothing.
+    // A detonation that stops rather than dissipates has no weight, because
+    // nothing is left to say the air it happened in was disturbed.
+    //
+    // Sprites rather than another shell, deliberately, and this is the answer
+    // to the failure this effect has been rejected for twice. A shell can only
+    // ever be ONE silhouette, so a shell big enough to be a presence is a dome,
+    // and a dome over the fight is an occlusion bug however it is coloured.
+    // Sixteen independent puffs rising at different speeds from different
+    // offsets separate as they climb: the mass breaks into pieces on its own,
+    // with gaps between them that are the arena, and it cannot facet the way a
+    // coarse displaced icosahedron does.
+    //
+    // Three guards keep it atmosphere rather than a curtain:
+    //
+    //  * VALUE. Round 6's dust was 0.92 linear, which is sRGB 247 on a deck
+    //    that measures 81 — brighter than anything in the arena including the
+    //    machines. These sit at 0.05..0.12 linear, i.e. sRGB 63..90, at or
+    //    below the deck. Soot is darker than what it drifts across; that is
+    //    what makes it a hole rather than a lamp, and it is what finally lets
+    //    the late blast measure NEGATIVE on the sheet's signed-change column.
+    //  * FADE. Mode 3, which never holds — see the note in the particle vertex
+    //    stage. The plume is thinning from the moment it appears.
+    //  * DIRECTION. They rise, and they carry enough outward velocity to lean.
+    //    A fight happens at deck level, so a mass that leaves upward is a mass
+    //    that has stopped standing in front of the machines.
+    //
+    // Temperature over the plume's life comes free from WHEN each puff is born
+    // rather than from any shader work: a puff that forms at 200ms forms in
+    // light from a fire that is still burning, and one that forms at 700ms
+    // forms in the dark. So warmth is keyed to the birth offset and the plume
+    // grades itself from ember-lit brown at the base to cold blue-grey soot at
+    // the top, which is also the direction the eye reads a rising column in.
+    const plumeN = Math.round(16 * s * scale);
+    for (let i = 0; i < plumeN; i++) {
+      const a = (i / plumeN) * 6.283 + vfxRng.s() * 0.9;
+      const ca = Math.cos(a), sa = Math.sin(a);
+      const rad = R * (0.05 + vfxRng.f() * 0.34);
+      const bt = 0.18 + vfxRng.f() * 0.62;
+      // 1 for a puff that forms while there is still fire, 0 once there is not.
+      const warmth = Math.max(0, 1 - bt / 0.55);
+      const out = R * (0.18 + vfxRng.f() * 0.40);
       this.smoke.spawn(
-        x + Math.cos(a) * rad, y + vfxRng.f() * R * 0.4, z + Math.sin(a) * rad,
-        Math.cos(a) * 1.1, 2.4 + vfxRng.f() * 2.2, Math.sin(a) * 1.1,
-        t + 0.25 + vfxRng.f() * 0.35, 1.6 + vfxRng.f() * 1.0, R * (0.10 + vfxRng.f() * 0.07),
-        0.13, 0.12, 0.115, -0.5, 1.1, 2
+        x + ca * rad, y + R * (0.04 + vfxRng.f() * 0.48), z + sa * rad,
+        ca * out, 1.5 + vfxRng.f() * 2.5, sa * out,
+        t + bt, 1.15 + vfxRng.f() * 0.90, R * (0.12 + vfxRng.f() * 0.10),
+        0.052 + warmth * 0.070, 0.052 + warmth * 0.022, 0.058 + warmth * 0.002,
+        -0.55, 1.35, 3
       );
     }
 

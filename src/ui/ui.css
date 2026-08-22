@@ -1498,9 +1498,17 @@
 .rchip.is-lose .rchip__o { color: var(--bad); }
 .rchip.is-draw .rchip__o { color: var(--ink-dim); }
 .rchip__x { font-size: 8px; letter-spacing: .14em; color: var(--ink-faint); }
-.res__stats { display: flex; gap: 26px; justify-content: center; margin: 24px 0; flex-wrap: wrap; }
+.res__stats { display: flex; gap: 34px; justify-content: center; margin: 24px 0; flex-wrap: wrap; }
+/* `.rstat` had no rule at all, so its two spans stayed inline and the summary
+   of the whole match rendered as "DAMAGE2480 HITS63 ACCURACY41% LONGEST CHAIN7"
+   — label welded to value, with 26px of air between the PAIRS. Proximity read
+   backwards: the four groups were invisible and the eight tokens read as one
+   run-on string. `.rstat__v`'s `margin-top: 3px` is the proof of intent; it has
+   been dead since it was written, because a margin-top does nothing to an
+   inline span. Stacked, which is what the type sizes were chosen for. */
+.rstat { display: flex; flex-direction: column; align-items: center; }
 .rstat__k { font-size: 8px; letter-spacing: .22em; color: var(--ink-faint); }
-.rstat__v { font-size: 20px; font-weight: 800; margin-top: 3px; }
+.rstat__v { font-size: 20px; font-weight: 800; margin-top: 3px; letter-spacing: .02em; }
 .res__actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
 .opts { display: flex; flex-direction: column; gap: 22px; max-width: 640px; }

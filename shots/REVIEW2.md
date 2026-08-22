@@ -565,7 +565,14 @@ comparable at a glance and a healthy opponent reads as "in danger". The Vulcan a
 below (`f-gear.png`) is the *same* blue at the *same* weight as the P1 health bar — two different
 quantities in identical visual language, 750px apart.
 
-**4. `explosion.png` contains no explosion.** — PENDING
+**4. `explosion.png` contains no explosion.** — **ROUND 5 (`da3253a`): FIXED.**
+Twelve tiles of one blast, aged by written clock, at `r5b-sheet-explosion.png`, plus the wide
+staging frame `sheet-explosion-wide.png`: a white-cored hard-rimmed ball that expands into a
+saturated orange lobed mass with internal soot striations and disperses by 760ms. Peak coverage
+60.2% of the crop, `hide` 41.8%, `>200` 18.3%. There is an explosion, it is large, it is
+hard-edged, it has a white core and it is the best-looking thing in this build. See the explosion
+section above for the two residuals (the tail thins by attrition rather than fading, and `lift`
+never goes negative so the mass is a lamp for its whole life) — neither is a blocker.
 
 **5. The robots are translucent.** — **FIXED.**
 Verified in code and in pixels. `src/gfx/materials.js:112+` builds the shell as an opaque
@@ -585,9 +592,32 @@ read again. Bring the plate values up (see #24) rather than the lines down.
 frame with ~20px of bottom margin, labels and kana intact. These are now the best-designed
 elements in the HUD.
 
-**7. Shockwave rings read as solid grey donuts.** — PENDING (early read: still typographic — see notes)
+**7. Shockwave rings read as solid grey donuts.** — **ROUND 5 (`da3253a`): NO GREY DONUT SURVIVES,
+BUT I COULD NOT PHOTOGRAPH THE RING ITSELF. Not closing it on that.**
+`ff0ead7` ("the shock front was twelve times too thick, and that is the whole donut") and the shell
+shader's own comments describe the right fix — a travelling band inside the geometry, brightest at
+the leading edge, oriented in the ring's own frame rather than measured as a sphere, and the note at
+`vfx.js:1565` that a ring "only ever lies on the surface it hit and is gone inside 150ms". Across
+every frame I captured this round — twelve explosion ages, six late ages, four cliff ages, two wide
+staging frames and every fight capture — **there is no grey donut anywhere.** But there is also no
+ring: it lives under the fireball for its whole 150ms life and the fireball covers 59% of the crop
+at that age, so the thing this defect is about is not visible in any capture the harness can
+currently take. *For the next round: `vfxsheet` needs a ground-ring scenario that fires the shock
+front without the fireball on top of it.* Until then this is unproven in either direction, and a
+defect that cannot be photographed cannot be marked FIXED.
 
-**8. Damage flash blows out the opponent HUD plate.** — PENDING
+**8. Damage flash blows out the opponent HUD plate.** — **ROUND 5 (`da3253a`): FIXED, and verified
+in the wild rather than in the probe that fixed it.**
+`1b93a1e` measured the old behaviour honestly — 81.0% green coverage at rest becoming **0.0% green
+and 43.35% clipping** 40ms into the flash, which is not a flash, it is a deletion — and replaced the
+flat white fill with a ramp that is transparent at the anchored end and white at the depleting edge,
+mirrored to 270deg on the right plate. **I did not re-run its probe; I found the flash in an
+ordinary capture.** `r5b-player.png` came back at 977/1000 and 839/860, the first partial-health
+fight frame this review has had, and `r5b-hud-2x.png` / `r5b-hudR-2x.png` at 2x show exactly the
+described widget on both plates: a solid green fill, a hard white sliver **at the depleting boundary
+and nowhere else**, and the boundary itself sharper for it. On P1 the white sits at the right-hand
+end of the fill; on P2 it sits at the left. It mirrors. Measured, the bars now clip **0.00%**.
+*Note for the ledger:* this also gives N3 its first partial-health frame — see N3.
 
 **9. Brand mismatch on the title screen.** — **FIXED.**
 `c3a-title.png`: wordmark is **HOLOSSEUM**, sub is ホロシアム, eyebrow is "CUSTOM MACHINE COMBAT
@@ -627,7 +657,33 @@ Same frame: blocks now carry a panelled top face, a distinct darker side plane, 
 rim along the top edge and an orange under-trim at deck level. The lit-top/dark-side discipline
 that the robots still lack (#24) is present on the blocks.
 
-**14. Nothing casts a readable shadow.** — **ROUND 4 (`35d0e66`): PARTLY FIXED. Robots cast;
+**14. Nothing casts a readable shadow.** — **ROUND 5 (`da3253a`): the round-4 diagnosis is now
+PROVEN on both halves. (b) was never a shadow bug and is closed. (a) is still open and is now
+isolated to the obstacle mesh alone.**
+
+**(b) is closed, and it closed exactly the way round 4 predicted it would.** I wrote: "the feet end
+at y=898 of a 900px frame — there is one pixel of deck below the machine to draw a shadow on. Fixing
+the framing will expose whatever is already being cast; do that before touching the shadow code for
+the player." `r5b-explosion.png` happens to use a pulled-back camera with real deck under the
+player, and there it is: a **robot-shaped cast shadow with readable arms**, thrown down-left,
+measuring **67.8 against 176.6** on the deck beside it — a **109-point** drop. Nothing was fixed in
+the shadow code; the camera simply showed the ground. The player's shadow has been there all along.
+
+**(a) obstacles still cast nothing, and the evidence is now unambiguous.** `r5b-crateshadow-2x.png`
+(2x on a crate that sits alone on open, brightly lit deck, in the same frame as the 109-point player
+shadow above) shows a metre-tall box with **no shadow on any side** — the deck runs uniform straight
+up to the contact line, and the crate's orange emissive under-trim *brightens* its own contact
+point, which is the round-4 observation and it is still the thing that makes the miss obvious.
+Because the player casts a deep shadow in the same frame, the shadow map, the key direction, the
+frustum and the bias are all demonstrably fine: **whatever is wrong is specific to the merged
+obstacle mesh**, which is a much smaller search than round 4 could offer. *Do not chase the shadow
+camera; chase `castShadow` on the merged mesh and whether the merge survives `setQuality`.*
+*I nearly published the opposite.* Two `vfxsheet` staging frames show a large dark parallelogram
+down-left of a crate row that measures 48.9 against 83.5-109.6, and I had it written down as proof
+that obstacles cast. At 2x in a cleaner frame it is a lower deck level, not a shadow. Recording it
+because it is convincing at thumbnail size, which is how #24 survived six rounds.
+
+*Superseded round-4 header:* **ROUND 4 (`35d0e66`): PARTLY FIXED. Robots cast;
 obstacles still do not; the player's own shadow is unviewable for a composition reason.**
 
 `514051f` is real — the shadow path works now. Proof by eye: at 8x on `contour-n.png` around
@@ -849,7 +905,14 @@ fades out to the right instead of terminating on a hard vertical edge.
 orange/white bar inside. It carries no read of "arena", "machine" or "holo". Lowest-value item on
 this list; fine to leave.
 
-**32. Soft circular flares read as lens dirt.** — PENDING
+**32. Soft circular flares read as lens dirt.** — **ROUND 5 (`da3253a`): FIXED.**
+`3759482` took the lens dirt off the flash card. Looked for it rather than assuming: across twelve
+explosion ages, six late ages, four cliff ages, twelve impact ages, three wide staging frames and
+five fight/phone captures, **there is not one soft circular blob anywhere.** What the muzzle and the
+blast now put on screen are hard-rimmed shapes and small directional sparks
+(`sheet-explosion-wide.png` at 110ms is the clearest example: a hard fireball with discrete spark
+streaks radiating from it, no halo of smudges). The one soft thing left in any frame is bloom around
+the fireball itself, which is the effect and not dirt on a lens.
 
 ---
 
