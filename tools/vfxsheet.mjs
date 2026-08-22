@@ -625,18 +625,96 @@ async function runLifetime(browser, effect) {
         x: p.x, y: p.y, z: p.z,
         nx: dx, ny: 0.2, nz: dz, heavy: true, surface: false,
       });
-      // Deck hit: a round that missed and struck the floor beside the target.
-      // Offset ACROSS the line of fire rather than along it — grid puts a
-      // shipping block on the near side of the far spawn, so a round staged
-      // "a little short" lands behind two metres of crate and the ring and the
-      // scorch are judged on a sheet that cannot see them.
-      const sx = -dz, sz = dx;                 // the line of fire's left normal
+      // Deck hit: a round that missed and struck the floor near the target.
+      //
+      // WHERE it lands is not a detail. The previous placement offset 2.4m
+      // across the line of fire, which on this seed put it at (3.7, 0, -14.5) —
+      // one and a half metres from the arena shell, i.e. in the seam where the
+      // floor meets the boundary wall, twenty-six metres out and viewed at a
+      // grazing angle of about four degrees. A ring lying on the deck there is a
+      // one-pixel-tall ellipse buried in the wall base and the scorch is on the
+      // seam. That is not "the impact renders nothing"; it is the same class of
+      // mistake as the last one — staging the effect where it cannot be seen and
+      // then reading the number as a property of the effect.
+      //
+      // So the point is now SEARCHED for rather than assumed, against the
+      // arena's own collision boxes, which is what makes this work on foundry
+      // and orbital too. A candidate must be:
+      //   - a plausible miss: on the line of fire, short of the target, with a
+      //     little lateral scatter;
+      //   - on open floor, not inside a block's footprint;
+      //   - clear of the boundary shell by 3m, so the ring is not in the seam;
+      //   - and actually VISIBLE — the segment from the camera to the point is
+      //     sampled against every box, so a candidate behind the shipping crate
+      //     on the near side of the far spawn is rejected instead of being
+      //     photographed.
+      const A = g.world.arena;
+      const bnd = A.bounds || { hx: 16, hz: 16 };
+      const inBox = (x, y, z, b, pad) => {
+        let px = x - b.x, pz = z - b.z;
+        if (b.yaw) {
+          const c = Math.cos(-b.yaw), s = Math.sin(-b.yaw);
+          const rx = px * c - pz * s; pz = px * s + pz * c; px = rx;
+        }
+        return Math.abs(px) <= b.hx + pad && Math.abs(pz) <= b.hz + pad &&
+               y >= b.y - b.hy - pad && y <= b.y + b.hy + pad;
+      };
+      // Floor height under a column: the top of the tallest box covering it, or
+      // the arena floor at y=0.
+      const floorAt = (x, z) => {
+        let h = 0;
+        for (const b of A.boxes) if (inBox(x, 0, z, b, 0) || inBox(x, b.y, z, b, 0)) {
+          let px = x - b.x, pz = z - b.z;
+          if (b.yaw) {
+            const c = Math.cos(-b.yaw), s = Math.sin(-b.yaw);
+            const rx = px * c - pz * s; pz = px * s + pz * c; px = rx;
+          }
+          if (Math.abs(px) <= b.hx && Math.abs(pz) <= b.hz) h = Math.max(h, b.y + b.hy);
+        }
+        return h;
+      };
+      const cam = g.camera.position;
+      const visible = (x, y, z) => {
+        // 40 samples is one every ~65cm at duel range; a crate is 2.6m across.
+        for (let i = 1; i < 40; i++) {
+          const t = i / 40;
+          const sx = cam.x + (x - cam.x) * t, sy = cam.y + (y - cam.y) * t, sz = cam.z + (z - cam.z) * t;
+          for (const b of A.boxes) if (inBox(sx, sy, sz, b, 0.1)) return false;
+        }
+        return true;
+      };
+      const lx = -dz, lz = dx;                 // the line of fire's left normal
+      let deck = null;
+      for (const back of [3.4, 5.0, 6.8, 2.2, 8.5, 1.2]) {
+        for (const side of [0.9, -0.9, 1.9, -1.9, 0]) {
+          const x = r.pos.x + dx * back + lx * side;
+          const z = r.pos.z + dz * back + lz * side;
+          if (Math.abs(x) > bnd.hx - 3 || Math.abs(z) > bnd.hz - 3) continue;
+          const fy = floorAt(x, z);
+          if (fy > 0.05) continue;             // standing on a crate is not deck
+          if (!visible(x, fy + 0.4, z)) continue;
+          deck = { x, y: fy + 0.02, z };
+          break;
+        }
+        if (deck) break;
+      }
+      // Nothing passed — fall back to the old placement rather than skipping the
+      // surface path entirely, and say so, because a sheet that quietly drops
+      // half the effect is the bug this whole file exists to stop.
+      const searched = !!deck;
+      if (!deck) deck = { x: r.pos.x + lx * 2.4, y: r.pos.y + 0.02, z: r.pos.z + lz * 2.4 };
       g.view.vfx._hit({
-        x: r.pos.x + sx * 2.4, y: r.pos.y + 0.02, z: r.pos.z + sz * 2.4,
+        x: deck.x, y: deck.y, z: deck.z,
         nx: 0, ny: 1, nz: 0, heavy: true, surface: true,
       });
-      return { x: r.pos.x + sx * 1.2, y: r.pos.y + 0.75, z: r.pos.z + sz * 1.2 };
+      return {
+        x: (p.x + deck.x) / 2, y: (p.y + deck.y) / 2 + 0.15, z: (p.z + deck.z) / 2,
+        __deck: deck, __armour: p, __searched: searched,
+      };
     });
+    console.log(`  impact staged: armour ${['x', 'y', 'z'].map((k) => world.__armour[k].toFixed(2)).join(',')}` +
+      `  deck ${['x', 'y', 'z'].map((k) => world.__deck[k].toFixed(2)).join(',')}` +
+      (world.__searched ? '' : '  (FALLBACK — no visible deck found)'));
   } else if (effect === 'tracer') {
     // Fire one round from robo 0 straight at robo 1 and walk alongside it.
     world = await page.evaluate(() => {
