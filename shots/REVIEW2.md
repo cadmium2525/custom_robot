@@ -1,9 +1,9 @@
 # HOLOSSEUM — Art Direction Gate Review
 
 Rolling document. Round 2 reviewed `10621f2`; round 4 reviewed `35d0e66`; round 5 opened at
-`b28ff8c` and closed at `da3253a`; **round 6 (this pass) opens at `1e49409`**, scores the blind
-comparison — which is the acceptance criterion — and then verifies the six commits that landed after
-round 5 closed.
+`b28ff8c` and closed at `da3253a`; round 6 opened at `1e49409` and named a cause; **round 7 (this
+pass) opens at `ac50610` and closes at `762d220`**, and its job is to re-score the cause round 6
+named after the commit that was written to fix it.
 
 **STATUS: COMPLETE — the VERDICT section at the bottom of this file is written, is scored on all five
 points of the blind comparison, and is no longer PENDING for the first time in six rounds. That
@@ -15,6 +15,118 @@ recorded. This header deliberately does not restate it — two earlier rounds sh
 disagreed with the section, and the fix is to stop having two of them.**
 
 ---
+
+
+## Round 7 (`ac50610` → `762d220`) — the named cause, re-measured, and the prescription withdrawn
+
+Round 6's verdict named one cause and one fix: *"we build the far one out of nine parts and then
+draw it forty pixels wide"*, to be fixed by **reducing the distinct panel tones per machine — a
+materials-table change, not a shader change**. `5ddd763` did exactly that, faithfully and in the
+right file. This round re-ran the measurement.
+
+**The counts did not come down. The prescription was wrong, and it was my prescription.**
+
+### The A/B, both builds, same tool, same seed, same pinned frame
+
+`c7563ec` (the paint commit's parent) was built to `dist-old` and served on 4221; `ac50610` was
+built and served on 4220; `masses.mjs` was run against both without modification. Robot pixel counts
+agree to within 2px, so this is the same photograph twice.
+
+```
+                       masses (range)   largest   masses (fixed)  largest   spread p2..p98
+  ROBOT 1  before   8   38.1%           6   55.1%    77..167  (90)
+  ROBOT 1  after   11   17.4%           5   65.7%    74..165  (91)
+  ROBOT 2  before  10   17.3%           4   39.3%    66..153  (87)
+  ROBOT 2  after   11   16.2%           5   36.9%    67..159  (92)
+```
+
+On the mode round 6 quoted as the headline — `range` — **the player went 8 masses to 11 and the
+opponent 10 to 11.** The commit message reports "ROBOT 1 6 masses -> 5", which is the `fixed` mode:
+the tool prints both and round 6 said in writing that `range` was the harsher reading and the one
+that reproduced its 8/9. The number that improved is not the number the verdict was scored on, and
+the opponent — which round 6 said to fix **first** — went 4 → 5 on `fixed`, i.e. it was already at
+the reference count under that reading and the change moved it off.
+
+The spread is the tell. The commit's stated mechanism was that halving the baked plane ramp would
+close the machine's ninety-level luminance spread, and calls that "the LARGEST of the mass-count
+fixes". **The spread did not move: 90 → 91 on the player, and 87 → 92 — wider — on the opponent.**
+
+### Neither mode of that tool is an instrument, and I am retiring the pair of them
+
+`range` normalises to the body's own p2..p98 before cutting five bands, so it is contrast-
+**invariant**: a machine painted one flat colour still fills five bands and can still be shredded
+into a dozen regions. `fixed` cuts 0-255 into five 51-level bands, so it is contrast-dependent in
+the wrong direction — darken a machine until it fits inside one band and it scores a perfect "one
+mass", which is precisely the defect the round-5 recast was undertaken to remove. The two disagree
+by a factor of two on the same photograph, and **the "four or five" they are scored against was
+never measured against anything**: this repository still contains no CRV2 capture, as round 4 said
+in writing, so the constant is an assertion.
+
+So `mass2.mjs` was written from scratch to replace the single number with a curve — for an
+**absolute** quantisation step of W luminance levels, how many connected regions above 3% of the
+body survive, and what share of the body do its four largest masses cover. If a change helps at
+every W it helped; if the sign depends on W, the instrument picked the answer.
+
+```
+  step W:            10   14   18   22   26   32   40   51
+  R1 before masses    6    6    6    7    8    6    3    6      top4 cover 39.7 → 83.0
+  R1 after  masses    9    7    7    9    8    6    5    5      top4 cover 29.2 → 90.3
+  R2 before masses    7   10   10   10    9    7    7    4      top4 cover 30.8 → 93.3
+  R2 after  masses    9    9    8    9    8    7    7    5      top4 cover 30.7 → 90.7
+```
+
+The player is **worse at five of the eight steps and better at one**, and its four largest masses
+cover **less** of it at seven of the eight. The opponent is unchanged inside the noise. Whatever
+`5ddd763` did, it did not make either machine read as fewer, larger forms.
+
+### Why it could not have: the paint is the smallest term in the machine's value structure
+
+The decisive experiment, and the one that should have been run before round 6 wrote a prescription.
+`flatten.mjs` boots the same pinned frame and forces **every shell and frame material on both
+machines to one flat 0.42 grey with vertex colours off** — no paint roles, no palette, no accent, no
+`dark`, nothing but the lighting rig, the black outline and the emissive strips.
+
+```
+                     spread          masses (range)   masses (fixed)   largest
+  ROBOT 1 painted    74..165  (91)        11                5           65.7%
+  ROBOT 1 NO PAINT   98..171  (73)         6                3           88.0%
+  ROBOT 2 painted    67..159  (92)        11                5           36.9%
+  ROBOT 2 NO PAINT   65..148  (83)         8                4           31.0%
+```
+
+**Delete the entire materials table and the player keeps 80% of its value spread and the opponent
+90% of its.** The opponent still returns eight masses with no paint on it at all. `shots/` carries
+the picture — the de-painted machine is the same mosaic with the colour taken out of it: the same
+thirty chamfered plates, each catching the key at its own angle, separated by the same dark frame
+line art.
+
+The fragmentation is produced, in order of size, by **the lighting rig, then the geometry, then the
+paint**. A materials-table change cannot fix it because the materials table is not what sets it.
+Round 6 named the right defect and prescribed the wrong file.
+
+### What `5ddd763` actually bought, which is not nothing
+
+Contour, re-run by me on both builds, grid:
+
+```
+                    invisible   weak    clean    body    bg      separation
+  ROBOT 1 before      4.5%     14.5%    74.0%   114.8   81.1        33.7
+  ROBOT 1 after       3.6%      8.1%    75.9%   120.2   80.6        39.6
+  ROBOT 2 before      6.2%     23.2%    59.9%    98.6   40.3        58.3
+  ROBOT 2 after       7.3%     21.6%    65.2%   104.0   40.4        63.6
+```
+
+The player's **weak fraction nearly halves, 14.5% → 8.1%**, which is a larger move than anything in
+the commit message and nobody quoted it. Separation is up 6 points on the player and 5 on the
+opponent. The one figure on the wrong side is the opponent's invisible fraction, 6.2% → 7.3%.
+
+**So the tension an earlier round assumed — that simplifying the machines would cost silhouette —
+is false, and this is now measured rather than argued.** But the mechanism is worth being honest
+about: the win is a **brightness** win. Raising `dark` from 0.33 to 0.52 lifted the body mean 114.8
+→ 120.2 against an unchanged deck, and a brighter body steps harder against an 80.6 floor. The
+variance — which is what a mass count measures — was untouched. `5ddd763` is a good contour commit
+mis-labelled as a mass-count commit.
+
 
 
 ## Round 6 (`1e49409`) — the verdict, and the six commits that landed after round 5 closed
