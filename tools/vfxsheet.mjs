@@ -27,7 +27,12 @@
  *   node tools/vfxsheet.mjs --effect probe          # DOM/canvas luminance probe
  *
  * Flags:
- *   --effect  explosion | ko | tracer | impact | probe
+ *   --effect  explosion | ko | tracer | impact | shock | probe
+ *             `shock` is one surface hit alone on open floor: the ground-ring
+ *             scenario, so the shock front can be judged without a fireball
+ *             sitting on top of it for the whole of its 200ms life
+ *   --heavy   stage a charged round instead of the vulcan round that plays on
+ *             every trigger pull (impact / shock)
  *   --ages    "0,40,110"  only these ages, in ms — a three-tile sheet is under
  *             a minute where the full twelve is four, which is the difference
  *             between tuning an effect and guessing at it
@@ -60,6 +65,11 @@ const ZOOM = Number(flag('zoom', 560));      // crop side length in CSS px
 const AGES_ARG = flag('ages', null);         // "0,40,110" — fewer tiles, faster loop
 const NOWIDE = !!flag('nowide');             // skip the 1600x900 staging frame
 const OUT = flag('out', `shots/sheet-${EFFECT}.png`);
+// A charged round, not the one that plays on every trigger pull. `_hit` branches
+// on `heavy` for the card size, the spark count and the ring radius, so a sheet
+// taken with this on is a sheet of the rare case; the default is a vulcan round,
+// which is what the review means by "plays on every bullet that lands".
+const HEAVY = !!flag('heavy');
 const VP = { width: 1600, height: 900 };
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
@@ -69,10 +79,13 @@ const AGES = {
   ko: [0, 33, 100, 200, 350, 550, 800, 1100, 1500, 2000, 2600, 3200],
   tracer: [0, 17, 33, 50, 67, 83, 100, 133, 167, 217, 283, 350],
   impact: [0, 17, 33, 50, 67, 100, 133, 183, 250, 350, 500, 700],
+  // The shock front lives 200ms and nothing else in this scenario is drawn over
+  // it, so the walk is dense across that window and stops shortly after.
+  shock: [0, 17, 33, 50, 67, 83, 100, 117, 133, 150, 183, 250],
 };
 
 /** Age, in seconds, the wide staging frame is taken at. */
-const PEAK = { explosion: 0.11, ko: 0.20, tracer: 0.08, impact: 0.05 };
+const PEAK = { explosion: 0.11, ko: 0.20, tracer: 0.08, impact: 0.05, shock: 0.06 };
 
 /** Effects whose subject is a live projectile: step the sim alongside the clock. */
 const LOCKSTEP = { tracer: true };
@@ -353,6 +366,94 @@ async function igniteExplosion(page, opts = {}) {
   }, opts);
 }
 
+/**
+ * Install a deck-point finder in the page, used by every scenario that has to
+ * put something ON THE FLOOR where the camera can see it.
+ *
+ * This exists because the surface half of `--effect impact` was staged for six
+ * rounds at a point 1.5m from the arena shell, twenty-six metres out, at about
+ * four degrees of grazing angle: a shock ring lying on the deck there is a
+ * one-pixel-tall ellipse half-buried in the wall base, and the scorch is on the
+ * floor/wall seam. Every surface-path number ever recorded was taken there. That
+ * is the same class of mistake as staging an impact behind the surface it landed
+ * on — the effect is put where it cannot be seen and the reading is then
+ * reported as a property of the effect.
+ *
+ * So the point is searched for against the arena's own collision boxes rather
+ * than assumed, which also makes it work on foundry and orbital. A candidate has
+ * to be on open floor rather than on top of a crate, clear of the boundary shell
+ * (`edge`) so the ring is not in the seam, inside a distance window from the
+ * camera (`near`..`far`), and *visible*: the segment from the camera to the
+ * candidate is sampled against every box, so the shipping crate on the near side
+ * of the far spawn rejects a candidate instead of being photographed in front
+ * of it.
+ */
+async function installDeckSearch(page) {
+  await page.evaluate(() => {
+    const g = window.__game;
+    const A = g.world.arena;
+    const bnd = A.bounds || { hx: 16, hz: 16 };
+    const local = (x, z, b) => {
+      let px = x - b.x, pz = z - b.z;
+      if (b.yaw) {
+        const c = Math.cos(-b.yaw), s = Math.sin(-b.yaw);
+        const rx = px * c - pz * s; pz = px * s + pz * c; px = rx;
+      }
+      return [px, pz];
+    };
+    const inBox = (x, y, z, b, pad) => {
+      const [px, pz] = local(x, z, b);
+      return Math.abs(px) <= b.hx + pad && Math.abs(pz) <= b.hz + pad &&
+             y >= b.y - b.hy - pad && y <= b.y + b.hy + pad;
+    };
+    /** Top of the tallest box covering this column, or the arena floor at 0. */
+    const floorAt = (x, z) => {
+      let h = 0;
+      for (const b of A.boxes) {
+        const [px, pz] = local(x, z, b);
+        if (Math.abs(px) <= b.hx && Math.abs(pz) <= b.hz) h = Math.max(h, b.y + b.hy);
+      }
+      return h;
+    };
+    const visible = (x, y, z) => {
+      const c = g.camera.position;
+      // 40 samples is one every ~65cm at duel range; a crate is 2.6m across.
+      for (let i = 1; i < 40; i++) {
+        const t = i / 40;
+        const sx = c.x + (x - c.x) * t, sy = c.y + (y - c.y) * t, sz = c.z + (z - c.z) * t;
+        for (const b of A.boxes) if (inBox(sx, sy, sz, b, 0.1)) return false;
+      }
+      return true;
+    };
+    /**
+     * @param o.ox,o.oz    origin the walk starts from
+     * @param o.dx,o.dz    unit direction the walk runs along
+     * @param o.backs      distances along it to try, in order of preference
+     * @param o.sides      lateral offsets to try at each distance
+     * @param o.edge       required clearance from the boundary shell
+     * @param o.near,o.far accepted distance window from the camera
+     */
+    window.__deckSearch = (o) => {
+      const cam = g.camera.position;
+      const lx = -o.dz, lz = o.dx;
+      for (const back of o.backs) {
+        for (const side of o.sides) {
+          const x = o.ox + o.dx * back + lx * side;
+          const z = o.oz + o.dz * back + lz * side;
+          if (Math.abs(x) > bnd.hx - o.edge || Math.abs(z) > bnd.hz - o.edge) continue;
+          const fy = floorAt(x, z);
+          if (fy > 0.05) continue;               // standing on a crate is not deck
+          const d = Math.hypot(x - cam.x, fy - cam.y, z - cam.z);
+          if (d < (o.near ?? 0) || d > (o.far ?? 1e9)) continue;
+          if (!visible(x, fy + 0.4, z)) continue;
+          return { x, y: fy + 0.02, z, dist: d };
+        }
+      }
+      return null;
+    };
+  });
+}
+
 /** Project a world point to CSS pixels for the crop rectangle. */
 async function projectPoint(page, pt) {
   return page.evaluate((p) => {
@@ -579,6 +680,9 @@ async function runLifetime(browser, effect) {
   // the clear, before the spawn — because that is the only moment at which the
   // frame is identical to the tiles in every respect except the effect itself.
   await capturePlate(page);
+  // After the freeze, because the finder measures visibility and range from the
+  // camera and the camera has to have stopped moving first.
+  await installDeckSearch(page);
 
   let centre = { x: VP.width / 2, y: VP.height / 2 };
   let world = null;
@@ -610,7 +714,7 @@ async function runLifetime(browser, effect) {
     // test throws all of it away. Measured, at head, before the fix: an armour
     // hit changed exactly ZERO pixels of the frame, and pushing the same spawn
     // half a metre toward the camera brought 1753 of them back.
-    world = await page.evaluate(() => {
+    world = await page.evaluate((heavy) => {
       const g = window.__game;
       const a = g.world.robos[0], r = g.world.robos[1];
       // Unit vector from the target back to the shooter — the sim's own `-dx,
@@ -623,97 +727,74 @@ async function runLifetime(browser, effect) {
       const p = { x: r.pos.x + dx * 0.34, y: r.pos.y + 1.2, z: r.pos.z + dz * 0.34 };
       g.view.vfx._hit({
         x: p.x, y: p.y, z: p.z,
-        nx: dx, ny: 0.2, nz: dz, heavy: true, surface: false,
+        nx: dx, ny: 0.2, nz: dz, heavy, surface: false,
       });
-      // Deck hit: a round that missed and struck the floor near the target.
-      //
-      // WHERE it lands is not a detail. The previous placement offset 2.4m
-      // across the line of fire, which on this seed put it at (3.7, 0, -14.5) —
-      // one and a half metres from the arena shell, i.e. in the seam where the
-      // floor meets the boundary wall, twenty-six metres out and viewed at a
-      // grazing angle of about four degrees. A ring lying on the deck there is a
-      // one-pixel-tall ellipse buried in the wall base and the scorch is on the
-      // seam. That is not "the impact renders nothing"; it is the same class of
-      // mistake as the last one — staging the effect where it cannot be seen and
-      // then reading the number as a property of the effect.
-      //
-      // So the point is now SEARCHED for rather than assumed, against the
-      // arena's own collision boxes, which is what makes this work on foundry
-      // and orbital too. A candidate must be:
-      //   - a plausible miss: on the line of fire, short of the target, with a
-      //     little lateral scatter;
-      //   - on open floor, not inside a block's footprint;
-      //   - clear of the boundary shell by 3m, so the ring is not in the seam;
-      //   - and actually VISIBLE — the segment from the camera to the point is
-      //     sampled against every box, so a candidate behind the shipping crate
-      //     on the near side of the far spawn is rejected instead of being
-      //     photographed.
-      const A = g.world.arena;
-      const bnd = A.bounds || { hx: 16, hz: 16 };
-      const inBox = (x, y, z, b, pad) => {
-        let px = x - b.x, pz = z - b.z;
-        if (b.yaw) {
-          const c = Math.cos(-b.yaw), s = Math.sin(-b.yaw);
-          const rx = px * c - pz * s; pz = px * s + pz * c; px = rx;
-        }
-        return Math.abs(px) <= b.hx + pad && Math.abs(pz) <= b.hz + pad &&
-               y >= b.y - b.hy - pad && y <= b.y + b.hy + pad;
-      };
-      // Floor height under a column: the top of the tallest box covering it, or
-      // the arena floor at y=0.
-      const floorAt = (x, z) => {
-        let h = 0;
-        for (const b of A.boxes) if (inBox(x, 0, z, b, 0) || inBox(x, b.y, z, b, 0)) {
-          let px = x - b.x, pz = z - b.z;
-          if (b.yaw) {
-            const c = Math.cos(-b.yaw), s = Math.sin(-b.yaw);
-            const rx = px * c - pz * s; pz = px * s + pz * c; px = rx;
-          }
-          if (Math.abs(px) <= b.hx && Math.abs(pz) <= b.hz) h = Math.max(h, b.y + b.hy);
-        }
-        return h;
-      };
-      const cam = g.camera.position;
-      const visible = (x, y, z) => {
-        // 40 samples is one every ~65cm at duel range; a crate is 2.6m across.
-        for (let i = 1; i < 40; i++) {
-          const t = i / 40;
-          const sx = cam.x + (x - cam.x) * t, sy = cam.y + (y - cam.y) * t, sz = cam.z + (z - cam.z) * t;
-          for (const b of A.boxes) if (inBox(sx, sy, sz, b, 0.1)) return false;
-        }
-        return true;
-      };
+      // Deck hit: a round that fell short and struck the floor in front of the
+      // target. Searched for rather than assumed — see `installDeckSearch`.
       const lx = -dz, lz = dx;                 // the line of fire's left normal
-      let deck = null;
-      for (const back of [3.4, 5.0, 6.8, 2.2, 8.5, 1.2]) {
-        for (const side of [0.9, -0.9, 1.9, -1.9, 0]) {
-          const x = r.pos.x + dx * back + lx * side;
-          const z = r.pos.z + dz * back + lz * side;
-          if (Math.abs(x) > bnd.hx - 3 || Math.abs(z) > bnd.hz - 3) continue;
-          const fy = floorAt(x, z);
-          if (fy > 0.05) continue;             // standing on a crate is not deck
-          if (!visible(x, fy + 0.4, z)) continue;
-          deck = { x, y: fy + 0.02, z };
-          break;
-        }
-        if (deck) break;
-      }
+      const found = window.__deckSearch({
+        ox: r.pos.x, oz: r.pos.z, dx, dz,
+        backs: [3.4, 5.0, 6.8, 2.2, 8.5, 1.2], sides: [0.9, -0.9, 1.9, -1.9, 0],
+        edge: 3,
+      });
       // Nothing passed — fall back to the old placement rather than skipping the
       // surface path entirely, and say so, because a sheet that quietly drops
       // half the effect is the bug this whole file exists to stop.
-      const searched = !!deck;
-      if (!deck) deck = { x: r.pos.x + lx * 2.4, y: r.pos.y + 0.02, z: r.pos.z + lz * 2.4 };
+      const deck = found || { x: r.pos.x + lx * 2.4, y: r.pos.y + 0.02, z: r.pos.z + lz * 2.4 };
       g.view.vfx._hit({
         x: deck.x, y: deck.y, z: deck.z,
-        nx: 0, ny: 1, nz: 0, heavy: true, surface: true,
+        nx: 0, ny: 1, nz: 0, heavy, surface: true,
       });
       return {
         x: (p.x + deck.x) / 2, y: (p.y + deck.y) / 2 + 0.15, z: (p.z + deck.z) / 2,
-        __deck: deck, __armour: p, __searched: searched,
+        __deck: deck, __armour: p, __searched: !!found,
       };
-    });
-    console.log(`  impact staged: armour ${['x', 'y', 'z'].map((k) => world.__armour[k].toFixed(2)).join(',')}` +
+    }, HEAVY);
+    console.log(`  impact staged (${HEAVY ? 'charged' : 'vulcan round'}): ` +
+      `armour ${['x', 'y', 'z'].map((k) => world.__armour[k].toFixed(2)).join(',')}` +
       `  deck ${['x', 'y', 'z'].map((k) => world.__deck[k].toFixed(2)).join(',')}` +
+      (world.__searched ? '' : '  (FALLBACK — no visible deck found)'));
+  } else if (effect === 'shock') {
+    // The ground-ring scenario round 6 asked for in as many words: *"vfxsheet
+    // needs a ground-ring scenario that fires the shock front without the
+    // fireball on top of it."* #7 has been unprovable in either direction for
+    // two rounds because the only thing in this game that fires a shock front
+    // was the bomb, and the ring lives its whole 200ms under a fireball covering
+    // 59% of the crop.
+    //
+    // A surface impact fires the same front with nothing over it at all. So this
+    // is one deck hit, alone in the frame, on open floor at a range where the
+    // ring is large enough to judge the *shape* of the front rather than merely
+    // detect it: eight to fourteen metres, which is a hit at the near end of the
+    // duel band rather than a laboratory close-up.
+    world = await page.evaluate((heavy) => {
+      const g = window.__game;
+      const cam = g.camera;
+      // Walk out along the camera's own ground forward, so the point lands in
+      // the middle of frame whatever the rig settled on. Forward is the negated
+      // third basis column of the world matrix — read straight off it, because
+      // the production bundle puts no THREE handle on window to build a vector
+      // with.
+      cam.updateMatrixWorld();
+      const e = cam.matrixWorld.elements;
+      const fx = -e[8], fz = -e[10];
+      const l = Math.hypot(fx, fz) || 1;
+      const dx = fx / l, dz = fz / l;
+      const found = window.__deckSearch({
+        ox: cam.position.x, oz: cam.position.z, dx, dz,
+        backs: [10, 11.5, 9, 13, 8, 14.5, 16],
+        sides: [0, 1.6, -1.6, 3, -3],
+        edge: 2.5, near: 7.5, far: 15.5,
+      });
+      const deck = found || { x: cam.position.x + dx * 10, y: 0.02, z: cam.position.z + dz * 10 };
+      g.view.vfx._hit({
+        x: deck.x, y: deck.y, z: deck.z,
+        nx: 0, ny: 1, nz: 0, heavy, surface: true,
+      });
+      return { x: deck.x, y: deck.y + 0.35, z: deck.z, __deck: deck, __searched: !!found };
+    }, HEAVY);
+    console.log(`  ground ring staged (${HEAVY ? 'charged' : 'vulcan round'}): ` +
+      `${['x', 'y', 'z'].map((k) => world.__deck[k].toFixed(2)).join(',')}` +
       (world.__searched ? '' : '  (FALLBACK — no visible deck found)'));
   } else if (effect === 'tracer') {
     // Fire one round from robo 0 straight at robo 1 and walk alongside it.
