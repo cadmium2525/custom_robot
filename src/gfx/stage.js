@@ -751,7 +751,28 @@ export class Stage {
       // composition. The ring still describes the cap edge — that is the job —
       // it just does it at rim-light strength instead of at strip-light
       // strength.
-      const rimK = 0.30;
+      //
+      // 0.30 IS A PER-METRE BUDGET SPENT ON A PER-FRAME COST, and that is the
+      // whole of why it does not survive leaving the grid. It was set against
+      // one cap — the grid's 6.8 m dais, whose ring the comment above already
+      // calls "a cyan rectangle drawn across a third of the frame" — and then
+      // applied unchanged to caps that draw two to four times as much line.
+      // What a viewer pays for is the LENGTH of additive line in the frame; the
+      // reason the ring exists (mark the edge you can land on) does not grow
+      // with the platform. Nobody re-ran the arithmetic for the orbital's 11.6 m
+      // dais, whose ring is 45 m of it, or for the foundry's two 12 m wall
+      // blocks 6 m up, and the two arenas nobody has reviewed both ship a web of
+      // it that a squint finds before it finds either machine.
+      //
+      // So the budget is held per frame instead: a cap no larger than the
+      // reference keeps the full 0.30 and anything bigger is cut in proportion
+      // to the extra line it draws, with a floor so a large platform still gets
+      // its edge described. The reference IS the grid's dais, so every box in
+      // the reviewed arena — dais, crates, pillars, rails — comes out at
+      // exactly 0.30 and the arena five rounds of review signed off on does not
+      // move by one pixel.
+      const RIM_REF = 3.4;
+      const rimK = 0.30 * Math.min(1, Math.max(0.45, RIM_REF / Math.max(b.hx, b.hz)));
       const ri = rectLoop(capX + 0.16, capZ + 0.16, b.top + 0.075, b.x, b.z, b.yaw || 0);
       const ro = rectLoop(capX + 0.26, capZ + 0.26, b.top + 0.075, b.x, b.z, b.yaw || 0);
       rims.push(flatTint(ringStrip(ri, ro, 1), emis.r * rimK, emis.g * rimK, emis.b * rimK));

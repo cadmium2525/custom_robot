@@ -1060,13 +1060,17 @@ export class Menus {
             <button class="btn btn--ghost" data-nav data-act="clear">${bi('CLEAR', '消去')}</button>
           </div>
         </section>
-      </div>
 
-      <div class="net__status">
-        <span class="ns__dot"></span>
-        <span class="ns__t">IDLE</span>
-        <span class="ns__m"></span>
-        <span class="ns__p"></span>
+        <!-- Inside .net, not after it. .net is the flex:1 centred block and the
+             status line is the caption for what is in it; as a sibling it fell
+             to the bottom of the screen, 130px of empty space below the panel
+             it describes, and its own top margin was inert. -->
+        <div class="net__status">
+          <span class="ns__dot"></span>
+          <span class="ns__t">IDLE</span>
+          <span class="ns__m"></span>
+          <span class="ns__p"></span>
+        </div>
       </div>
 
       <footer class="foot">
@@ -1084,6 +1088,7 @@ export class Menus {
       statusM: el.querySelector('.ns__m'),
       statusP: el.querySelector('.ns__p'),
       status: el.querySelector('.net__status'),
+      hostPanel: el.querySelector('.net__panel--host'),
     };
 
     const code = () => s.boxes.map((b) => b.value).join('').toUpperCase();
@@ -1185,6 +1190,14 @@ export class Menus {
     s.status.className = `net__status is-${status}`;
     s.readyBtn.disabled = status !== 'connected';
     s.readyBtn.classList.toggle('is-armed', status === 'connected');
+
+    // The three-dot "WAITING FOR CHALLENGER" indicator is styled behind
+    // `.net__panel.is-armed`, and nothing had ever put `is-armed` on a
+    // `.net__panel` — the class was only ever set on two buttons. So the one
+    // piece of feedback the host screen has for the state it spends all its
+    // time in was unreachable markup: you pressed CREATE ROOM, a code
+    // appeared, and nothing else on the panel said anybody was listening.
+    s.hostPanel.classList.toggle('is-armed', status === 'hosting');
   }
 
   _flashStatus(text) {
@@ -1237,10 +1250,16 @@ export class Menus {
     el.innerHTML = `
       <div class="results">
         <div class="res__verdict" data-text="WIN">WIN<i class="res__kana">勝利</i></div>
+        <!-- Both sides read name-over-number. Side B used to be written in
+             mirrored source order, which is right for a row and wrong for a
+             column: rs__side stacks its children, so the mirror flipped the
+             side VERTICALLY instead of horizontally and the two score numerals
+             — the largest objects on the screen — sat at different heights
+             either side of the VS. -->
         <div class="res__score">
           <div class="rs__side rs__side--a"><span class="rs__n"></span><span class="rs__w">0</span></div>
           <span class="rs__vs">VS</span>
-          <div class="rs__side rs__side--b"><span class="rs__w">0</span><span class="rs__n"></span></div>
+          <div class="rs__side rs__side--b"><span class="rs__n"></span><span class="rs__w">0</span></div>
         </div>
         <div class="res__rounds"></div>
         <div class="res__stats"></div>
