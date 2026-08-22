@@ -118,6 +118,16 @@
      track, which is the reading. In the squint frame the machine wins. */
   --hp-ok:      #2f7d53;
   --hp-low:     #ff4d63;
+  /* Chip damage — the tail the ghost bar leaves behind the live value. It has
+     to be legible AGAINST the fill, and against a green fill #ff3347 is. It is
+     not against a red one: at low health the fill is --hp-low #ff4d63 and the
+     tail was #ff3347, two reds four points apart, so for the ~660ms the ghost
+     takes to drain the whole widget was one undifferentiated red block. Caught
+     on a forced 180/860 frame — the entire 316px track was red and the only
+     thing marking the remaining health was the 260ms hit flash, which is gone
+     long before the drain finishes. That is the one moment in a match when the
+     player most needs to read this number. See the is-low override below. */
+  --hp-chip:    #ff3347;
 
   --ease:       cubic-bezier(.22, 1, .36, 1);
   --ease-in:    cubic-bezier(.55, 0, .68, .19);
@@ -377,7 +387,7 @@
 .hud__plate--r .bar__ghost, .hud__plate--r .bar__fill { transform-origin: right center; }
 
 /* Chip damage drains behind the live value, so a big hit leaves a red tail. */
-.bar__ghost { background: #ff3347; transition: transform .5s .16s cubic-bezier(.3, 0, .2, 1); }
+.bar__ghost { background: var(--hp-chip); transition: transform .5s .16s cubic-bezier(.3, 0, .2, 1); }
 .hud__plate.is-snap .bar__ghost { transition: none; }
 
 /* Top-lit, bottom-shaded, so the fill reads as a solid object rather than a
@@ -457,7 +467,12 @@
     #ffffff 100%);
 }
 
-.hud__plate.is-low { --hp-c: var(--hp-low); }
+/* The alarm state swaps BOTH halves of the bar, not just the fill. Same hue
+   family so the tail still reads as "you just lost this", at about a fifth of
+   the luminance so the boundary between what is left and what was taken is the
+   strongest edge in the widget — which is the whole job of an HP bar, and it
+   was the one state where it was not being done. */
+.hud__plate.is-low { --hp-c: var(--hp-low); --hp-chip: #6d1122; }
 .hud__plate.is-low .bar__fill { animation: hpPulse .7s ease-in-out infinite; }
 .hud__plate.is-low .hp__now { color: var(--hp-low); }
 @keyframes hpPulse { 50% { filter: brightness(1.55) saturate(1.2); } }

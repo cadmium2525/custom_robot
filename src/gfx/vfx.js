@@ -719,8 +719,18 @@ void main() {
     // composition rather than physics: a fight happens at deck level, so a mass
     // that leaves upward is a mass that has stopped standing in front of the
     // machines. Rising is how the smoke gives the frame back.
+    //
+    // There is a ceiling on how much of that is useful, and it is the frame
+    // itself. This camera sits four metres up looking down a quarter of a
+    // radian, so at the fifteen metres a duel is fought at the top edge of the
+    // picture is only about three and a half metres above the deck. A smoke
+    // mass that climbs faster than that has not dissipated, it has EXITED — and
+    // an effect that leaves by walking out of shot has no late life to judge,
+    // which is exactly what the contact sheet was measuring when cover fell
+    // from 27.9% at 470ms to 12.7% at 560ms. Nothing had thinned. It had gone
+    // upstairs. Trimmed so the column stretches and stalls inside the frame.
     float rise = t * t;
-    p.y += rise * (0.45 + 0.55 * vLocal.y) * mix(0.95, 1.70, smoky);
+    p.y += rise * (0.45 + 0.55 * vLocal.y) * mix(0.95, 1.28, smoky);
     p.xz *= 1.0 - mix(0.34, 0.58, smoky) * rise * smoothstep(0.4, -0.8, vLocal.y);
   }
   p *= s;
@@ -948,22 +958,39 @@ void main() {
       // 4.8% at 950ms. There was no late blast left to be muddy because there
       // was no late blast.
       //
-      // Two changes, and they are different ideas. The threshold opens over a
-      // range the noise can actually answer, so the mass survives its handoff
-      // and then thins; and it opens with HEIGHT as well as with age, so the
-      // cap shreds while the base is still a volume. That second term is the
-      // silhouette break-up — a rising mass that erodes uniformly is a blob
-      // that gets smaller, and a rising mass whose top comes apart first is a
-      // column turning into rags, which is the thing an explosion does.
+      // The correction to THAT then landed on 0.18, and 0.18 is the bug this
+      // curve keeps coming back to, because the field it is thresholding is
+      // much narrower than it looks. Measured over the actual turbulence
+      // texture: p05 0.367, p50 0.502, p95 0.637. Ninety percent of the mass
+      // lives inside a band 0.27 wide. Against that, a threshold of 0.18 is
+      // BELOW the whole distribution — d2 came out 1.0 on every pixel for the
+      // first fifth of the shell's life, which is precisely the 240-470ms
+      // window the smoke is on screen alone. That is where the dark dome came
+      // from: not from the colour, not from the size, but from an erosion that
+      // had not started yet.
+      //
+      // The range is now written against that measurement. 0.40 puts p50 at
+      // about four fifths open and p05 at a quarter, so the mass is holed from
+      // its first frame; 0.74 at the end leaves only the densest cores. Nearly
+      // linear in vT because the noise is nearly Gaussian in that band — a
+      // power curve on one side of it just wastes half the schedule.
       float cap  = smoothstep(-0.30, 0.90, vLocal.y);
-      float bite = mix(0.18, 0.74, pow(vT, 0.90)) + cap * 0.22 * vT;
+      float bite = mix(0.40, 0.74, vT) + cap * 0.18 * vT;
+      // A third octave, and it exists to WIDEN the distribution rather than to
+      // add another average. turb is two samples already averaged together, and
+      // averaging narrows: mixing a third one in would make the field flatter
+      // and the mass smoother, which is the opposite of break-up. Added as a
+      // signed offset it increases the variance instead, so the same threshold
+      // now cuts small holes through the billows as well as separating them.
+      float t3 = texture2D(uMap, nuv * 6.7 + vec2(0.19, 0.63)).r;
+      float rag = turb + (t3 - 0.5) * 0.55;
       // A WIDE window, not the 0.17 it was. A narrow one is a stencil: every
       // pixel is either fully in or fully out, so the mass has a cut edge and
       // leaves by losing whole regions at once — which is the "fades as a whole
       // rather than thinning at the edges" complaint, arriving as geometry
       // instead of as opacity. Widened, the same noise field reads as a
       // soot-to-transparent falloff and the mass frays.
-      float d2 = smoothstep(bite, bite + 0.34, turb + 0.16);
+      float d2 = smoothstep(bite, bite + 0.34, rag + 0.16);
       // Underlighting is the fire shining up into the smoke, so it has to die
       // with the fire and not with the smoke. It went out on pow(fade, 3.0) of
       // the *smoke's* two-second life, i.e. it was still at a third of full
