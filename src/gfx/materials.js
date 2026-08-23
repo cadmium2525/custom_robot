@@ -60,6 +60,8 @@ uniform float uRimWash;
 uniform vec3  uFillUp;
 uniform vec3  uFillDown;
 uniform float uFillDark;
+uniform float uLightCeil;
+uniform float uSpecCap;
 uniform vec3  uTeamColor;
 uniform float uEnergy;
 uniform float uHitFlash;
@@ -158,6 +160,45 @@ const FILL_FRAG = /* glsl */`
     float upX = normalize(vWorldNormalX).y * 0.5 + 0.5;
     reflectedLight.indirectDiffuse +=
       diffuseColor.rgb * mix(uFillDown, uFillUp, upX) * (1.0 + uFillDark * darkX);
+
+    // --- the governor ---------------------------------------------------
+    //
+    // A ceiling on how much light the machine is allowed to accept, and a lid
+    // on its specular. This is the machine's own light rig asserting itself
+    // over the arena's, and it is the largest single term in the mass count.
+    //
+    // WHY. The same robot, with the same paint, spans 91 levels of luminance in
+    // grid, 129 in foundry and 142 in orbital, and photographs at a median of
+    // 118 / 118 / 203. A number that moves that far with the backdrop is not a
+    // property of the model at all — the arena is deciding how many
+    // quantisation bands the machine occupies, and a machine spread across four
+    // bands arrives as four-plus masses however few colours are painted on it.
+    // In orbital the key drove the shell clean off the top of the scale, so its
+    // brightest third clipped into one flat white while its shadow side sat
+    // three bands lower: a toy lit like a chrome kettle.
+    //
+    // Reinhard on the DIFFUSE TOTAL, hue preserved by scaling all three
+    // channels off the luminance. Under the knee (an arena that lights the
+    // machine gently) it is very nearly the identity, so nothing is taken away
+    // from a machine standing in shade; over it the response rolls off, so no
+    // arena can push the shell past uLightCeil. Combined with the bounce card
+    // above — which sets the FLOOR — the machine now lives in a known band in
+    // every arena, which is what "flat-lit toy" actually means.
+    //
+    // The specular lid is the second half. Two point practicals sweep the arena
+    // to give the robos moving highlights; on a 42px machine a moving highlight
+    // is not a highlight, it is a detached bright island in the middle of the
+    // body — measured, the far machine's band map was a field of them. Painted
+    // armour keeps a sheen, it does not keep a hotspot.
+    reflectedLight.directSpecular *= uSpecCap;
+    reflectedLight.indirectSpecular *= mix(1.0, uSpecCap, 0.5);
+    {
+      vec3 dTot = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
+      float lD = max(dot(dTot, lumaX), 1e-5);
+      float scaleD = (1.0 / (1.0 + lD / uLightCeil));
+      reflectedLight.directDiffuse *= scaleD;
+      reflectedLight.indirectDiffuse *= scaleD;
+    }
   }
 `;
 
@@ -255,6 +296,10 @@ export function roboShell(maps, look, teamColor, opts = {}) {
     uFillUp: { value: new THREE.Color(opts.fillUp ?? 0x000000) },
     uFillDown: { value: new THREE.Color(opts.fillDown ?? 0x000000) },
     uFillDark: { value: opts.fillDark ?? 0.0 },
+    // The ceiling the arena's key rolls off toward, and the share of the
+    // specular response the shell keeps. See FILL_FRAG.
+    uLightCeil: { value: opts.lightCeil ?? 1.15 },
+    uSpecCap: { value: opts.specCap ?? 0.5 },
     uTeamColor: { value: new THREE.Color(teamColor) },
     uEnergy: { value: opts.energy ?? 0.10 },
     uHitFlash: { value: 0 },

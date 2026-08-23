@@ -1937,6 +1937,11 @@ export class RoboModel {
     this.matShell = roboShell(maps, look, teamHex, {
       rimStrength: 0.10, rimPower: 5.2, energy: 0.03,
       normalScale: 1.15, envMapIntensity: 0.5,
+      // The governor — see FILL_FRAG. The ceiling is what stops the arena
+      // deciding how many value bands the machine occupies; the specular lid is
+      // what stops the two sweeping practicals writing bright islands onto a
+      // machine forty pixels wide.
+      lightCeil: 1.15, specCap: 0.45,
       // Hemispheric bounce card — see FILL_FRAG. Deliberately cool above and
       // dim/warm below so it adds a top and a bottom rather than flattening the
       // machine out, and deliberately well under the key: at these values the

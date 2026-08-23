@@ -841,10 +841,42 @@ export class Stage {
 
   // -------------------------------------------------------------------------
 
+  /**
+   * Perimeter of one box's emissive cap ring, in metres. Kept next to the code
+   * that builds the ring so the two cannot drift apart: it re-derives the same
+   * chamfer inset and cap inset, and takes the mid-line between the ring's inner
+   * and outer loops.
+   */
+  static _rimPerimeter(b) {
+    const inset = Math.min(0.12, Math.min(b.hx, b.hz) * 0.18);
+    const capX = Math.max(0.12, b.hx - inset - 0.22);
+    const capZ = Math.max(0.12, b.hz - inset - 0.22);
+    return 4 * (capX + capZ + 0.42);
+  }
+
   _buildBoxes() {
     const solids = [];
     const rims = [];
     const emis = new THREE.Color(this.theme.emissive);
+
+    // ARENA TERM OF THE RIM BUDGET — see the per-box term below.
+    //
+    // The per-box term answers "is this cap bigger than the one the number was
+    // set on", and it was the right question asked at the wrong scope. What a
+    // viewer pays for is the total additive line in the FRAME, and the three
+    // arenas draw very different amounts of it: 116 m of ring in the grid, 143
+    // in the orbital, 167 in the foundry. Two arenas nobody had reviewed were
+    // therefore shipping 23% and 44% more glowing line than the one arena the
+    // number was signed off against, out of the same per-metre allowance.
+    //
+    // Held against the reference arena's own total, so the grid comes out at
+    // exactly 1.0 and does not move by a pixel, and an arena that draws half as
+    // much line again pays for it per metre. The two terms multiply because they
+    // are two different mistakes: one very large cap in a sparse arena and forty
+    // small ones in a dense arena both need cutting, for different reasons.
+    const RIM_ARENA_REF = 116.3;
+    const rimTotal = this.arena.boxes.reduce((s, b) => s + Stage._rimPerimeter(b), 0);
+    const arenaK = Math.min(1, RIM_ARENA_REF / Math.max(1e-3, rimTotal));
 
     for (const b of this.arena.boxes) {
       const g = new THREE.BoxGeometry(b.hx * 2, b.hy * 2, b.hz * 2, 1, 1, 1);
@@ -909,7 +941,7 @@ export class Stage {
       // exactly 0.30 and the arena five rounds of review signed off on does not
       // move by one pixel.
       const RIM_REF = 3.4;
-      const rimK = 0.30 * Math.min(1, Math.max(0.45, RIM_REF / Math.max(b.hx, b.hz)));
+      const rimK = 0.30 * Math.min(1, Math.max(0.45, RIM_REF / Math.max(b.hx, b.hz))) * arenaK;
       const ri = rectLoop(capX + 0.16, capZ + 0.16, b.top + 0.075, b.x, b.z, b.yaw || 0);
       const ro = rectLoop(capX + 0.26, capZ + 0.26, b.top + 0.075, b.x, b.z, b.yaw || 0);
       rims.push(flatTint(ringStrip(ri, ro, 1), emis.r * rimK, emis.g * rimK, emis.b * rimK));
@@ -1109,6 +1141,74 @@ export class Stage {
     this._struct = this._practicals = this._hazard = this._decals = null;
   }
 
+  /**
+   * DEFECT #14 — no obstacle has ever cast a shadow onto the deck — AND IT WAS
+   * NEVER THE EXTENT.
+   *
+   * An OrthographicCamera bakes left/right/top/bottom/near/far into its
+   * projection matrix, and three never re-bakes one for you. LightShadow's
+   * updateMatrices() puts the shadow camera at the light, aims it at the light's
+   * target, and stops; SpotLightShadow overrides it to call
+   * updateProjectionMatrix() because its fov tracks the cone angle, and
+   * DirectionalLightShadow — having nothing to track — calls it never. So every
+   * extent set below was written to a field nobody read, and the arena has been
+   * rendering its shadow map through DirectionalLightShadow's CONSTRUCTOR
+   * default: OrthographicCamera(-5, 5, 5, -5, 0.5, 500).
+   *
+   * That is a 10 m x 10 m column, centred on the camera focus, in an arena 32 m
+   * across. Both machines live at the focus, so their cast shadows and their
+   * self-shadowing landed correctly — which is exactly why five rounds missed
+   * it. The half of the system that visibly worked was the half being looked at.
+   * Every obstacle leaves a 10 m box the instant the fight moves off it, so no
+   * block has ever thrown anything onto the deck: the whole defect, from one
+   * missing call.
+   *
+   * It also explains why the shadows that DID land were unusually crisp. A 2048
+   * map over 10 m is 4.9 mm a texel; over the real frustum it is ~18 mm, so the
+   * filter radius and the normal bias are now doing the job they were written
+   * for instead of sitting on eight times the resolution they were tuned on.
+   *
+   * Called from setQuality too, because the same hole is open on the other path:
+   * a device that boots at LOW (shadows off) and climbs to MID used to turn
+   * castShadow on against a frustum nobody had ever configured.
+   */
+  _configureShadow(key) {
+    key.castShadow = true;
+    const s = this.settings.shadowMapSize;
+    if (key.shadow.mapSize.x !== s) {
+      key.shadow.mapSize.set(s, s);
+      // three allocates the depth target once and never re-reads mapSize, so a
+      // tier change only takes if the old target is dropped.
+      key.shadow.map?.dispose();
+      key.shadow.map = null;
+    }
+    const b = this.arena.bounds;
+    const ext = Math.max(b.hx, b.hz) * 1.15;
+    const c = key.shadow.camera;
+    c.left = -ext;
+    c.right = ext;
+    c.top = ext;
+    c.bottom = -ext;
+    c.near = 1;
+    c.far = 90;
+    c.updateProjectionMatrix();
+    key.shadow.bias = -0.0006;
+    key.shadow.normalBias = 0.022;
+    // Tight penumbra. A soft shadow on a dark floor is invisible; a crisp
+    // shadow on a bright deck is the contact cue the whole scene was missing.
+    // 1.2 was tight enough that the 2048 map's stair-stepping was visible on
+    // the long diagonal edge a block throws across the deck.
+    key.shadow.radius = 2.2;
+    // NOT 1.0. At full intensity the key is the only meaningful light on the
+    // deck, so a shadow removes ~90% of the value and the deck drops from 95
+    // to single digits: the shadow stops being shade and becomes a hole cut
+    // in the floor, and every pixel of it lands in the crushed-black mass.
+    // At 0.86 the shadowed deck still falls a long way — this is a hard-light
+    // arena, not an overcast one — but it keeps enough value to read as the
+    // same floor in shade, which is the whole point of casting it.
+    key.shadow.intensity = 0.86;
+  }
+
   _buildLights() {
     const t = this.theme;
     this.lights = {};
@@ -1116,34 +1216,7 @@ export class Stage {
     const key = new THREE.DirectionalLight(t.sunColour, t.sunIntensity);
     key.position.set(t.sunDir[0] * 30, t.sunDir[1] * 34, t.sunDir[2] * 30);
     key.target.position.set(0, 0, 0);
-    if (this.settings.shadows) {
-      key.castShadow = true;
-      const s = this.settings.shadowMapSize;
-      key.shadow.mapSize.set(s, s);
-      const b = this.arena.bounds;
-      const ext = Math.max(b.hx, b.hz) * 1.15;
-      key.shadow.camera.left = -ext;
-      key.shadow.camera.right = ext;
-      key.shadow.camera.top = ext;
-      key.shadow.camera.bottom = -ext;
-      key.shadow.camera.near = 1;
-      key.shadow.camera.far = 90;
-      key.shadow.bias = -0.0006;
-      key.shadow.normalBias = 0.022;
-      // Tight penumbra. A soft shadow on a dark floor is invisible; a crisp
-      // shadow on a bright deck is the contact cue the whole scene was missing.
-      // 1.2 was tight enough that the 2048 map's stair-stepping was visible on
-      // the long diagonal edge a block throws across the deck.
-      key.shadow.radius = 2.2;
-      // NOT 1.0. At full intensity the key is the only meaningful light on the
-      // deck, so a shadow removes ~90% of the value and the deck drops from 95
-      // to single digits: the shadow stops being shade and becomes a hole cut
-      // in the floor, and every pixel of it lands in the crushed-black mass.
-      // At 0.86 the shadowed deck still falls a long way — this is a hard-light
-      // arena, not an overcast one — but it keeps enough value to read as the
-      // same floor in shade, which is the whole point of casting it.
-      key.shadow.intensity = 0.86;
-    }
+    if (this.settings.shadows) this._configureShadow(key);
     this.group.add(key, key.target);
     this.lights.key = key;
 
@@ -1376,8 +1449,8 @@ export class Stage {
   setQuality(settings) {
     this.settings = settings;
     if (this.lights.key) {
-      this.lights.key.castShadow = settings.shadows;
-      if (settings.shadows) this.lights.key.shadow.mapSize.set(settings.shadowMapSize, settings.shadowMapSize);
+      if (settings.shadows) this._configureShadow(this.lights.key);
+      else this.lights.key.castShadow = false;
     }
     if (this.obstacles) {
       this.obstacles.castShadow = settings.shadows;
