@@ -20,6 +20,95 @@ disagreed with the section, and the fix is to stop having two of them.**
 ---
 
 
+## Round 9 (opens at `0594eb2`) — `#14` closes on one half and is re-opened on the other, and the phone stops being three incidents
+
+### `#14` cast shadows — the fix is real, it is large, and the story written around it is wrong
+
+Round 8 left `#14` with a stage agent mid-investigation, reporting "the fix is real but it has a
+cost" before being cut off. Both clauses needed checking. The fix landed inside `0594eb2` itself, as
+`Stage._configureShadow`, and the comment above it gives this account: an `OrthographicCamera` bakes
+its extents into its projection matrix, `DirectionalLightShadow.updateMatrices()` never calls
+`updateProjectionMatrix()`, so every extent the source set was written to a field nobody read and the
+arena rendered its shadow map through the constructor default `(-5, 5, 5, -5, 0.5, 500)` — a 10 m box
+in a 32 m arena.
+
+**The mechanism is correct and the fix works.** Probed at head, the extents the source sets and the
+extents actually encoded in the projection matrix now agree at ±18.4. Knocking each caster out in
+turn and diffing (`r8cast.mjs`, settled frame, VFX off, DOM hidden, tier 3):
+
+```
+  what vanishes when this stops casting     cov% of frame   mean lift   peak   bbox
+  grid     key light (all cast shadows)         3.07%          25.3     81.2   88,185 .. 1216,899
+           obstacles only                       2.78%          26.5     81.2   88,191 .. 1216,796
+           machines only                        0.29%          13.5     77.9   546,185 .. 867,899
+  foundry  key light                            4.45%          22.3     86.5   438,156 .. 1599,899
+           obstacles only                       3.74%          22.0     86.5   438,156 .. 1599,899
+           machines only                        0.45%          21.8     76.0   508,358 .. 808,845
+  orbital  key light                            6.54%          25.8    112.5   361,252 .. 1599,899
+           obstacles only                       6.35%          26.2    112.5   361,406 .. 1599,899
+           machines only                        0.20%          16.1    102.3   751,252 .. 973,879
+```
+
+`r9-obst-grid.png` is the obstacle-only difference, and it is unambiguous: hard-edged slabs of shadow
+lying across the deck in clear block shapes, with the deck's own plate seams still legible inside
+them. **The obstacle half of `#14` is closed on measurement and on the photograph.** Blocks account
+for 90% / 84% / 97% of every cast-shadow pixel in the frame.
+
+*(Instrument note: `r8cast.mjs`' fourth knockout, `noArchCast`, returns byte-identical frames in all
+three arenas. That is its setter finding no object named `architecture`, `walls` or `floor` — not a
+finding. The column is disregarded, not reported as a zero.)*
+
+**But the comment's account of the bug is wrong on its most quoted line**, and it matters because
+that line is what tells the next person the machines were fine. It reads: *"Both machines live at the
+focus, so their cast shadows and their self-shadowing landed correctly — which is exactly why five
+rounds missed it. The half of the system that visibly worked was the half being looked at."*
+
+That is checkable arithmetically, with no photograph. In the review frame the two machines stand
+**15.2 m apart**, and their positions in the shadow camera's own view space — the space `left/right/
+top/bottom` are compared against — are **x = −7.3 and x = +7.3**. The constructor box is ±5.
+**Neither machine is inside it.** Confirmed photographically by reverting only the ortho extent on
+the shipped build, which is a true A/B of the fix against the bug on one binary: at ext 5 the
+machines cast **0 pixels**; at ext 18.4 they cast 3976. Two machines fighting at normal separation
+can never both fit in a 10 m box centred between them.
+
+So before the fix **nothing in the frame cast a shadow at all** — which is exactly what this
+document's own ledger has said since round 2 (`#14`, *"nothing casts a shadow. The robots are decals
+on a floor"*). The review did not miss half a system. It described the defect correctly, and the
+commit that fixed it wrote down a more flattering history than the one that happened.
+
+**And the cost that was reported was never paid.** The comment's stated cost is resolution: a 2048
+map over 10 m is 4.9 mm a texel, over the real frustum ~18 mm, so the shadows that were crisp are now
+3.7x coarser. There were no crisp shadows. The frustum the fix replaced rendered nothing, so nothing
+lost sharpness. **Whatever this fix cost, it did not cost that**, and the claim should not be carried
+forward as though it had been measured.
+
+**The half of `#14` that is still open.** Knocking robot casting out and diffing does not measure
+what `#14` was filed for; most of what disappears is the machine shading its own plates, which
+grounds nothing. Split against a stencil of the machine's own pixels (`r9ground.mjs` — the stencil
+built by *differencing* a stage-hidden frame against a stage-and-machines-hidden one, because
+thresholding a stage-hidden frame marks 100% of it as machine):
+
+```
+  grid, tier 3        machine occupies 19,092 px (1.33% of frame)
+    shadow on its own body    2757 px   66.3% of the machine's cast shadow
+    shadow on the world       1399 px   33.7%  — and only 7.3% of the machine's own silhouette area
+```
+
+**The machine throws a shadow one twenty-ninth the size of what the blocks throw, covering 7.3% of
+its own footprint.** It is no longer zero, which is progress. It is nowhere near a machine that looks
+planted on a deck, and the "decals on a floor" complaint survives the fix in the specific place it
+was aimed. `#14` is therefore **half closed**: obstacles PASS, machine grounding stays open, and the
+ledger entry is rewritten below to say so rather than being ticked off whole.
+
+*(Three instrument faults were found and fixed inside this one measurement, which is now the running
+rate on this project. The first re-render audit omitted the settle call and reported a same-setting
+roundtrip differing on 95.78% of pixels; with the settle it differs on **0.00%**, and 18.4-vs-5
+differs on 2.2%. The first stencil thresholded luminance and returned "the machine occupies 100% of
+the frame". The second passed `() => {…}` to `page.evaluate` as a bare expression, so it was never
+invoked and returned "the machine occupies 0% of the frame". Every one of those would have been
+publishable as a finding.)*
+
+
 ## Round 8 (opens at `cc7cebb`) — the two stage residuals, measured at last, and one of them is worse than it was named
 
 Round 7's verdict left two residuals against the stage, both marked "not re-measured this round",
