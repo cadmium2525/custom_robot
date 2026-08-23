@@ -1999,7 +1999,26 @@
      scrollWidth 614 in a 362px box), with no scrollbar on iOS to say so: two
      of the five things you come to the garage to change looked like they did
      not exist. */
-  .garage__rail { flex-direction: row; flex-wrap: wrap; overflow: visible; gap: 4px; }
+  /* N2 AGAIN, BY ANOTHER ROUTE, AND THIS TIME ONLY ON THE PHONE.
+     The `.stage__eq` chip row was deleted from the markup because it printed
+     BODY / GUN / BOMB / POD / LEGS across the model's shins. This layout then
+     put the stage above the rail — which is the same five labels — and the
+     machine renders about 500px tall whatever box it is given (see
+     `.garage__stage` below), so it overhangs its 338px frame and lands on
+     them. Measured at 390x844 with an iPhone 12's insets: the machine's legs
+     run through the 4px gutters of the BODY/GUN/BOMB row, through the whole
+     of the POD/LEGS row, across `.rail__sep`, and a lit shin panel sits
+     directly behind the word P2.
+     `.garage__list` and `.garage__info` were already made opaque for exactly
+     this reason and the rail was missed. The ground goes on the ASIDE, not on
+     the chips: six opaque chips with transparent gutters is still a machine
+     seen through a grille, and the 4px gaps are where it showed. The machine
+     is now cut by the top edge of a solid panel, which reads as a frame. */
+  .garage__rail {
+    flex-direction: row; flex-wrap: wrap; overflow: visible; gap: 4px;
+    background: rgba(6, 10, 18, .94);
+    padding: 6px;
+  }
   .rail__b { flex: 1 1 30%; min-width: 0; min-height: 46px; }
   .rail__i { display: none; }
   .rail__eq { grid-column: 1 / -1; }
