@@ -105,6 +105,19 @@ const SLIDERS = {
   shakeAmount: [0, 1.5, 0.05, (v) => `${Math.round(v * 100)}%`],
 };
 
+/**
+ * The bindings table.
+ *
+ * There used to be a `LOCK / ロック / F / RB / LOCK` row here and every cell of
+ * it was false. `BTN.LOCK` is read by `core/input.js` and no system in
+ * `sim/` ever consumes it — `World.faceOpponents()` squares both machines up
+ * at their opponent every tick, unconditionally, which is what the note under
+ * this table already says. So the keyboard and pad bindings did nothing, and
+ * the TOUCH cell advertised a sixth thumb button that `touch.js` has never
+ * drawn: the one column a phone player can act on was the one promising a
+ * control that does not exist. A bindings table earns its place by being
+ * checkable against the game, and every row below is.
+ */
 const CONTROL_ROWS = [
   ['MOVE', '移動', 'W A S D', 'L-STICK', 'L-STICK (float)'],
   ['AIM / CAMERA', '照準', 'MOUSE', 'R-STICK', 'DRAG (right)'],
@@ -113,8 +126,7 @@ const CONTROL_ROWS = [
   ['POD', 'ポッド', 'Q / L', 'LB', 'POD'],
   ['JUMP', 'ジャンプ', 'SPACE', 'A / ✕', 'JUMP'],
   ['DASH', 'ダッシュ', 'SHIFT', 'B / ○', 'DASH'],
-  ['LOCK', 'ロック', 'F', 'RB', 'LOCK'],
-  ['PAUSE', 'ポーズ', 'ESC', 'START', 'PAUSE'],
+  ['PAUSE', 'ポーズ', 'ESC', 'START', '❙❙ TOP RIGHT'],
 ];
 
 /**
@@ -144,6 +156,31 @@ function h(tag, cls, html) {
 
 /** English label with the kana beneath it — the house lockup. */
 const bi = (en, kana) => `<b>${en}</b><i>${kana}</i>`;
+
+/**
+ * A hint that is true on the device reading it.
+ *
+ * Three of these shipped keyboard instructions to a phone, and one of them is
+ * the loudest line of text on the screen where you build your machine:
+ *
+ *   title      MOVE ↑↓ · SELECT ENTER · BACK ESC
+ *   garage     HOVER TO COMPARE · ENTER TO EQUIP
+ *   settings   ← → ADJUST
+ *
+ * An iPhone has no ↑↓, no ENTER, no ESC, no arrow keys and no hover. Every one
+ * of those lines names a control the reader does not have, on the one device
+ * this game is built for — and the garage's is worse than useless, because a
+ * tap on a part row equips it outright, so a player who believes the hint will
+ * think they are previewing while they are actually rebuilding their machine.
+ *
+ * Both variants ship in the markup and the stylesheet picks, on the same
+ * `(pointer: coarse) and (hover: none)` that `touch.js` uses to decide whether
+ * to raise the thumb pad — so the hint and the control layer cannot disagree
+ * about what kind of device this is.
+ */
+const hint = (kbEn, kbKana, tcEn, tcKana) =>
+  `<span class="hint--kb">${bi(kbEn, kbKana)}</span>` +
+  `<span class="hint--tc">${bi(tcEn, tcKana)}</span>`;
 
 /**
  * The house mark: an arena hexagon with a machine's visor inside it. Drawn
@@ -566,7 +603,9 @@ export class Menus {
 
         <footer class="title__foot">
           <span>SEASON 02 · BUILD 1.0</span>
-          <span class="title__hint">${bi('MOVE ↑↓ · SELECT ENTER · BACK ESC', '選択')}</span>
+          <span class="title__hint">${hint(
+            'MOVE ↑↓ · SELECT ENTER · BACK ESC', '選択',
+            'TAP TO SELECT', 'タップで選択')}</span>
         </footer>
       </div>`;
 
@@ -761,7 +800,9 @@ export class Menus {
       </div>
       <footer class="foot">
         <button class="btn btn--ghost" data-nav data-act="back">${bi('BACK', '戻る')}</button>
-        <span class="foot__hint">${bi('HOVER TO COMPARE · ENTER TO EQUIP', '比較・装備')}</span>
+        <span class="foot__hint">${hint(
+          'HOVER TO COMPARE · ENTER TO EQUIP', '比較・装備',
+          'TAP A PART TO EQUIP IT', 'タップで装備')}</span>
         <button class="btn btn--go" data-nav data-act="next">${bi('SELECT ARENA', 'アリーナへ')}</button>
       </footer>`;
 
@@ -1439,7 +1480,9 @@ export class Menus {
       </div>
       <footer class="foot">
         <button class="btn btn--ghost" data-nav data-act="back" data-default>${bi('BACK', '戻る')}</button>
-        <span class="foot__hint">${bi('← → ADJUST', '調整')}</span>
+        <span class="foot__hint">${hint(
+          '← → ADJUST', '調整',
+          'TAP THE BAR TO SET · ‹ › TO STEP', 'タップで調整')}</span>
         <button class="btn btn--ghost" data-nav data-act="reset">${bi('RESET DEFAULTS', '初期化')}</button>
       </footer>`;
 

@@ -1107,6 +1107,20 @@
 .foot__hint b { font-size: 9px; letter-spacing: .2em; color: var(--ink-dim); }
 .foot__hint i { font-size: 8px; margin-top: 2px; }
 
+/* Hints name a control the reader actually has. See `hint()` in menus.js:
+   the title told a thumb to press ENTER and ESC, the garage told it to HOVER,
+   settings told it to use the arrow keys. Both variants are in the markup and
+   this picks, on the SAME query `touch.js` uses to decide whether to raise the
+   thumb pad — one definition of "this is a phone" for both files, so the hint
+   and the control layer can never describe different devices.
+   Not `.crv2-touch-on`: that class is only up while a match is live, and every
+   one of these lines is on a menu. */
+.hint--tc { display: none; }
+@media (pointer: coarse) and (hover: none) {
+  .hint--kb { display: none; }
+  .hint--tc { display: block; }
+}
+
 .sub { font-size: 10px; letter-spacing: .26em; color: var(--ink-dim); margin-bottom: 8px; }
 .sub b { font-size: 10px; letter-spacing: .26em; }
 .sub i { font-size: 8px; }
