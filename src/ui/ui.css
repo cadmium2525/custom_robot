@@ -1516,6 +1516,12 @@
 .arena { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; align-content: start; }
 .arena__card {
   --c: var(--acc);
+  /* `.ac__sky` and `.ac__grid` are SIBLINGS — the grid is absolutely
+     positioned in the card, not inside the sky — so their two heights have to
+     be kept equal by hand or the grid rules stop where the gradient does not.
+     One property, so the portrait block can shorten the header once.
+     Not `--sky`: the markup already sets that inline, as a colour. */
+  --sky-h: 104px;
   position: relative;
   padding: 0;
   text-align: left;
@@ -1526,9 +1532,9 @@
 }
 .arena__card:hover, .arena__card:focus-visible { transform: translateY(-4px); box-shadow: inset 0 0 0 1px var(--c); outline: none; }
 .arena__card.is-sel { box-shadow: inset 0 0 0 2px var(--c), 0 0 30px color-mix(in srgb, var(--c) 35%, transparent); }
-.ac__sky { display: block; height: 104px; background: linear-gradient(180deg, var(--c), rgba(4, 6, 11, .9)); position: relative; }
+.ac__sky { display: block; height: var(--sky-h); background: linear-gradient(180deg, var(--c), rgba(4, 6, 11, .9)); position: relative; }
 .ac__grid {
-  position: absolute; inset: 0 0 auto; height: 104px;
+  position: absolute; inset: 0 0 auto; height: var(--sky-h);
   background:
     repeating-linear-gradient(90deg, transparent 0 15px, rgba(255, 255, 255, .09) 15px 16px),
     repeating-linear-gradient(0deg, transparent 0 15px, rgba(255, 255, 255, .06) 15px 16px);
@@ -2087,6 +2093,45 @@
   .step { margin-bottom: 10px; }
   .foot { padding-top: 10px; gap: 10px; }
   .btn { padding: 10px 16px; }
+
+  /* THE STICKY BAR IS OPAQUE AND FULL-BLEED, WHICH MEANS IT LOOKS EXACTLY
+     LIKE THE BOTTOM OF THE PHONE.
+     That is right when it is holding BACK and FIGHT over a long document —
+     and wrong the moment a screen overflows by less than the bar is tall,
+     because then the bar is parked on the last row of content and there is
+     nothing on screen to say the screen scrolls. Walked at 390x844 with an
+     iPhone 12's insets, by touch:
+
+       mode    900 of 844.  MASTER and LEGEND — two of the five difficulty
+               levels — are painted UNDER the bar and are not visible at all.
+               ROOKIE / PILOT / ACE are sliced across the middle by its top
+               edge, which reads as the end of the list rather than as an
+               overflow. A player picking a difficulty on a phone sees three
+               and there are five.
+       arena   902 of 844.  ORBITAL RING's lower half, including its name and
+               its size/ceiling line, is behind the bar. One of three arenas
+               is half a card.
+
+     Both are reachable after a swipe — measured, the swipe frees them by
+     exactly the 56px and 58px they overflow by — but a screen that looks
+     finished does not get swiped. So the fix is to stop overflowing rather
+     than to decorate the overflow: the two screens spend 82px and 67px of an
+     844px phone on internal padding for cards that carry one line of body
+     text each. `mode` gives back 23px per card, `arena` 20px per card, and
+     both now fit with slack to spare. No thumb target shrinks — the 46px
+     `.diff__b` and the 50px footer buttons are untouched, and nothing here
+     leaves the portrait block. */
+  .mode__grid { gap: 10px; }
+  .mode__card { padding: 14px; min-height: 96px; }
+  .card__b { margin-top: 8px; }
+  .card__go { margin-top: 7px; }
+  .mode__diff { margin-top: 14px; }
+
+  .arena { gap: 12px; }
+  .arena__card { --sky-h: 88px; }
+  .ac__body { padding: 11px 15px 13px; }
+  .ac__b { margin-top: 7px; }
+  .ac__meta { margin-top: 8px; }
 
   /* The two cycler rows — QUALITY and TOUCH LAYOUT — ran 38px off the right
      edge of a 390px phone with the `›` arrow entirely off-screen and the value
