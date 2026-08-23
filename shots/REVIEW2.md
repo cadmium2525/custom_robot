@@ -2,11 +2,13 @@
 
 Rolling document. Round 2 reviewed `10621f2`; round 4 reviewed `35d0e66`; round 5 opened at
 `b28ff8c` and closed at `da3253a`; round 6 opened at `1e49409` and named a cause; round 7 opened at
-`ac50610` and closed at `762d220`; **round 8 (this pass) opens at `cc7cebb`**, and its job is to
-re-measure the cause round 7 renamed — the light rig and the part count — and to close the two
-stage residuals round 7 carried forward without measuring.
+`ac50610` and closed at `762d220`; round 8 opened at `cc7cebb` and audited its own meters;
+**round 9 (this pass) opens at `0594eb2`**, and its job is the five things round 8 left open: the
+three-item prescription's mass measurement, `#14`'s cast shadows, the notch capture that six agents
+have now been assigned, and the systemic phone finding that three separate rounds have each filed as
+an incident.
 
-**STATUS: IN PROGRESS. The VERDICT section at the bottom of this file was rewritten for round 8
+**STATUS: IN PROGRESS. The VERDICT section at the bottom of this file was rewritten for round 9
 from existing evidence BEFORE this round's captures were taken, and is being revised as they land.
 It has never been allowed to read PENDING and does not now. That section, not this line, is what
 decides.**
@@ -1838,12 +1840,16 @@ is the behaviour you want. **Frame rate on this device remains unmeasured.**
 **NO.** Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
 picks CRV2.
 
-Round 8. Written at `cc7cebb` from round 7's evidence **before this round's captures were taken**,
+Round 9. Written at `0594eb2` from round 8's evidence **before this round's captures were taken**,
 then revised as they landed — the order round 6 established and every round since has kept. Round
-7's revisions went in both directions; round 8's go mostly one way, and it is not ours: **a residual
-reported closed is open, a residual filed against the wrong arena is twice as bad in the right one,
-a third arena has been carrying the same defect under a different colour with nobody counting it,
-and one clause of blind point 1 turns out never to have been measured in eight rounds.**
+8's revisions went mostly against us because two claims were measured for the first time. Round 9
+opened with four fails and a split on the board and one prescription out with a builder, and the
+measurement that decides points 3 and 4 is the one this round exists to take.
+
+*(Round 8's account, kept for the record: a residual reported closed was open, a residual filed
+against the wrong arena was twice as bad in the right one, a third arena had been carrying the same
+defect under a different colour with nobody counting it, and one clause of blind point 1 turned out
+never to have been measured in eight rounds.)*
 
 ### The reason, renamed, because round 6's name was half wrong
 
