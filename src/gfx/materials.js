@@ -61,6 +61,10 @@ uniform vec3  uFillUp;
 uniform vec3  uFillDown;
 uniform float uFillDark;
 uniform float uLightCeil;
+uniform float uLightKnee;
+uniform float uLightPivot;
+uniform float uFlat;
+uniform float uFlatFar;
 uniform float uSpecCap;
 uniform vec3  uTeamColor;
 uniform float uEnergy;
@@ -74,6 +78,8 @@ uniform float uRimSizeHi;
 uniform float uRimFar;
 uniform float uRimEdgeFar;
 uniform float uRimSoftFar;
+uniform float uMerge;
+uniform float uMergePivot;
 varying vec3 vWorldNormalX;
 varying vec3 vWorldPosX;
 /**
@@ -87,6 +93,17 @@ varying vec3 vWorldPosX;
  * that is 8% of the frame is equally illegible on a phone and on a desktop.
  */
 varying float vSizeX;
+
+/**
+ * The size gate, 0 at uRimSizeLo and 1 at uRimSizeHi.
+ *
+ * Declared once and shared, because TWO passes need it and they are injected at
+ * different points in the fragment shader — the light governor at
+ * lights_fragment_end, the rim at dithering_fragment. Computing it twice from
+ * two copies of the same smoothstep is how the near and far machines end up on
+ * different gates after somebody tunes one of them.
+ */
+float sizeGateX() { return smoothstep(uRimSizeLo, uRimSizeHi, vSizeX); }
 `;
 
 /**
@@ -191,9 +208,8 @@ const FILL_FRAG = /* glsl */`
 
     // --- the governor ---------------------------------------------------
     //
-    // A ceiling on how much light the machine is allowed to accept, and a lid
-    // on its specular. This is the machine's own light rig asserting itself
-    // over the arena's, and it is the largest single term in the mass count.
+    // The machine's own light rig, asserting itself over the arena's. Three
+    // terms: a lid on the specular, a fill-against-key flatten, and a shoulder.
     //
     // WHY. The same robot, with the same paint, spans 91 levels of luminance in
     // grid, 129 in foundry and 142 in orbital, and photographs at a median of
@@ -201,29 +217,71 @@ const FILL_FRAG = /* glsl */`
     // property of the model at all — the arena is deciding how many
     // quantisation bands the machine occupies, and a machine spread across four
     // bands arrives as four-plus masses however few colours are painted on it.
-    // In orbital the key drove the shell clean off the top of the scale, so its
-    // brightest third clipped into one flat white while its shadow side sat
-    // three bands lower: a toy lit like a chrome kettle.
     //
-    // Reinhard on the DIFFUSE TOTAL, hue preserved by scaling all three
-    // channels off the luminance. Under the knee (an arena that lights the
-    // machine gently) it is very nearly the identity, so nothing is taken away
-    // from a machine standing in shade; over it the response rolls off, so no
-    // arena can push the shell past uLightCeil. Combined with the bounce card
-    // above — which sets the FLOOR — the machine now lives in a known band in
-    // every arena, which is what "flat-lit toy" actually means.
-    //
-    // The specular lid is the second half. Two point practicals sweep the arena
-    // to give the robos moving highlights; on a 42px machine a moving highlight
-    // is not a highlight, it is a detached bright island in the middle of the
-    // body — measured, the far machine's band map was a field of them. Painted
-    // armour keeps a sheen, it does not keep a hotspot.
+    // The specular lid comes first and is the simplest. Two point practicals
+    // sweep the arena to give the robos moving highlights; on a 42px machine a
+    // moving highlight is not a highlight, it is a detached bright island in
+    // the middle of the body — measured, the far machine's band map was a field
+    // of them. Painted armour keeps a sheen, it does not keep a hotspot.
     reflectedLight.directSpecular *= uSpecCap;
     reflectedLight.indirectSpecular *= mix(1.0, uSpecCap, 0.5);
     {
+      // --- ILLUMINATION SPACE, and this is the whole trick ----------------
+      //
+      // three's reflectedLight.*Diffuse is irradiance x BRDF_Lambert, i.e. it
+      // is light TIMES PAINT. Every previous attempt at this compressed that
+      // product, which is why it kept costing what it bought: pulling the
+      // product toward a constant pulls a dark plate and a light plate toward
+      // the same value, so the machine flattens by DELETING THE PAINT — the
+      // exact value blocking that makes neighbouring plates separate. The
+      // review's experiment already proved the paint is not the defect; a fix
+      // that quietly removes it is the same mistake spelled backwards.
+      //
+      // So divide the albedo back out, compress the ILLUMINATION alone, and
+      // multiply the paint back in by scaling the original terms. What the
+      // machine is made of survives untouched; only how hard the arena is
+      // lighting it changes. material.diffuseColor and NOT diffuseColor,
+      // because the metalness map has already taken its bite out of the former.
       vec3 dTot = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
-      float lD = max(dot(dTot, lumaX), 1e-5);
-      float scaleD = (1.0 / (1.0 + lD / uLightCeil));
+      float albX = max(dot(material.diffuseColor, lumaX), 1e-3);
+      float lightX = max(dot(dTot, lumaX) / albX, 1e-4);
+
+      // 1. FILL AGAINST KEY. Pull the illumination toward a fixed pivot: the
+      //    shadow side comes UP by as much as the key side comes DOWN, so the
+      //    machine's median barely moves while the ratio across it collapses.
+      //    That is what "raise the fill against the key" is, done as one
+      //    expression instead of by re-aiming three arena lights this file does
+      //    not own — and unlike a hemisphere light it cannot leak onto the
+      //    stage, because it lives inside the shell's own shader.
+      //
+      //    The pivot is ABSOLUTE, which is what makes the machine stop being a
+      //    function of its backdrop: at flatten 1.0 every arena lights the
+      //    shell identically, and the 91/129/142 spread would be one number.
+      //    Below 1.0 it is a lerp toward that, so the knob really is "how much
+      //    of a toy".
+      //
+      //    Far machines get flattened HARDER than near ones. A 260px hero can
+      //    carry modelling that a 40px opponent cannot: at that size a value
+      //    step across a pauldron is a detached island, and the same step on the
+      //    hero is the shape of a pauldron.
+      float flatX = mix(uFlatFar, uFlat, sizeGateX());
+      float outX = mix(lightX, uLightPivot, flatX);
+
+      // 2. THE SHOULDER. Unity below the knee, asymptotic to uLightCeil above
+      //    it — so a machine standing in shade is not taxed a single level
+      //    (which is what the old whole-range Reinhard did, and it cost the
+      //    near machine 13 points of contour separation), and no arena can
+      //    drive the shell off the top of the scale either.
+      if (outX > uLightKnee) {
+        float headX = max(uLightCeil - uLightKnee, 1e-3);
+        outX = uLightKnee + headX * (1.0 - exp(-(outX - uLightKnee) / headX));
+      }
+
+      // Clamped because albX is a floor, not a measurement: on a fully metallic
+      // fragment the diffuse response is zero and the ratio is meaningless.
+      // Scaling zero by anything is still zero, but only if "anything" is
+      // finite.
+      float scaleD = clamp(outX / lightX, 0.0, 8.0);
       reflectedLight.directDiffuse *= scaleD;
       reflectedLight.indirectDiffuse *= scaleD;
     }
@@ -254,7 +312,7 @@ const RIM_FRAG = /* glsl */`
   // outer part of the turn rather than the last sliver of it.
   // ...and the band's width is itself a function of ON-SCREEN SIZE, which is
   // the whole of the mass fix. See the note under the size gate below.
-  float sizeKX = smoothstep(uRimSizeLo, uRimSizeHi, vSizeX);
+  float sizeKX = sizeGateX();
   float edgeX = mix(uRimEdgeFar, uRimEdge, sizeKX);
   float softX = mix(uRimSoftFar, uRimSoft, sizeKX);
   float rim = smoothstep(edgeX, min(edgeX + softX, 1.0), fres);
@@ -385,9 +443,15 @@ export function roboShell(maps, look, teamColor, opts = {}) {
     uFillUp: { value: new THREE.Color(opts.fillUp ?? 0x000000) },
     uFillDown: { value: new THREE.Color(opts.fillDown ?? 0x000000) },
     uFillDark: { value: opts.fillDark ?? 0.0 },
-    // The ceiling the arena's key rolls off toward, and the share of the
-    // specular response the shell keeps. See FILL_FRAG.
+    // The governor — see FILL_FRAG. All four of the light numbers are in
+    // ILLUMINATION units (irradiance x Lambert, albedo divided out), not in
+    // rendered pixels: 1.0 is roughly a surface square-on to a full-strength
+    // key, and the far machine standing in shade sits nearer 0.1.
     uLightCeil: { value: opts.lightCeil ?? 1.15 },
+    uLightKnee: { value: opts.lightKnee ?? 0.60 },
+    uLightPivot: { value: opts.lightPivot ?? 0.50 },
+    uFlat: { value: opts.flat ?? 0.0 },
+    uFlatFar: { value: opts.flatFar ?? (opts.flat ?? 0.0) },
     uSpecCap: { value: opts.specCap ?? 0.5 },
     uTeamColor: { value: new THREE.Color(teamColor) },
     uEnergy: { value: opts.energy ?? 0.10 },

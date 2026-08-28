@@ -2235,6 +2235,193 @@
   .net__status { flex-wrap: wrap; }
 }
 
+/* =========================================================================
+   LANDSCAPE PHONES — THE MENUS, WHICH HAVE NEVER BEEN LOOKED AT
+   =========================================================================
+   Every phone fix above is behind `(max-width: 780px), (orientation:
+   portrait)`. An iPhone 12 held sideways is **844x390**: too WIDE for the
+   first clause and the wrong ORIENTATION for the second, so it matches
+   neither and is served the 1600x900 desktop chrome — 22/26px screen padding,
+   a `.foot` whose only claim on the bottom of the frame is `margin-top: auto`,
+   full-height cards, and a title laid out as one tall column. The only
+   landscape rule this file had is the block below, and it touches the HUD and
+   the thumb pad exclusively. Turning the phone sideways has therefore never
+   been tested, in ten rounds.
+
+   Walked at 844x390 by touch with an iPhone 12's landscape insets
+   (top 0, bottom 21, left 47, right 47 — iOS rotates the sensor housing to
+   the side and shortens the home indicator):
+
+     title   560 of 390.  ONLINE MATCH, SETTINGS and CONTROLS — three of the
+             five things on the title screen — are below the fold, and the
+             footer that would have said "TAP TO SELECT" is below them, so
+             nothing on screen suggests the list continues.
+     mode    571 of 390.  ALL FIVE difficulty buttons and BOTH footer buttons
+             are off the bottom. The screen a player has to cross to reach the
+             garage shows four cards and no way onward.
+
+   Both are reachable after a blind swipe — measured, 181px of scroll frees
+   everything — which is exactly the state the portrait block was written to
+   end: "a screen that looks finished does not get swiped". So landscape gets
+   the same two answers at its own numbers. The footer becomes a bar that
+   holds the bottom of the scrollport whatever runs underneath it, and the
+   chrome is trimmed until the screens that CAN fit in 369 usable pixels do.
+
+   Width is not the problem here and nothing below pretends it is: at 844px
+   the controls table keeps all four of its columns, the option rows keep
+   their three, and the plates keep their kana. What changes is the vertical
+   budget and the direction things stack in.
+
+   `(max-height: 520px)` rather than 460 so the block also catches the 375px
+   and 414px-tall landscape phones, and a desktop window squashed to the same
+   shape gets the same improvement. Portrait can never match it. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .crv2-ui .screen {
+    padding: calc(10px + var(--safe-t)) calc(16px + var(--safe-r)) calc(10px + var(--safe-b)) calc(16px + var(--safe-l));
+    scroll-padding: calc(10px + var(--safe-t)) 0 calc(10px + var(--safe-b));
+  }
+
+  /* Same rule, same reasoning and the same three details as the portrait
+     footer — opaque ground, bleed to the edges, and a `box-shadow` standing in
+     for the bottom padding a sticky box is clamped out of. Only the numbers
+     differ, because this screen's padding is 16 across and 10 down. */
+  .foot {
+    flex-wrap: wrap;
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    background: #04070d;
+    margin-left: calc(-16px - var(--safe-l));
+    margin-right: calc(-16px - var(--safe-r));
+    padding: 8px calc(16px + var(--safe-r)) 0 calc(16px + var(--safe-l));
+    gap: 10px;
+    box-shadow: 0 calc(10px + var(--safe-b)) 0 0 #04070d;
+  }
+  /* NOT the portrait block's `flex-basis: 100%` for the hint. Portrait wraps
+     it because 362px cannot hold two buttons and a sentence; landscape has 718
+     and wrapping it cost the bar a second line — 87px of sticky, opaque
+     furniture on a 390px screen, which then sat on the LEGS chip and the P1/P2
+     switch. Inline, the bar is 54px and clears both. */
+  /* 46px is still a thumb target; the 50px floor was chosen for a screen with
+     844 pixels of height to spend, not 369. */
+  .foot .btn { min-height: 46px; }
+  .btn { padding: 8px 16px; min-height: 44px; }
+  .step { margin-bottom: 8px; }
+  .step__t i { display: none; }
+
+  /* THE TITLE BECOMES A ROW, because a landscape frame is 2.16:1 and the
+     lockup and the list were queued one above the other down the short axis.
+     Side by side the whole menu is on screen at rest with the build stamp
+     under it, which is what the screen is for. */
+  .title {
+    flex-direction: row; flex-wrap: wrap;
+    align-items: center; align-content: space-between;
+    gap: 0 clamp(20px, 4vw, 56px);
+  }
+  .logo { margin: 0; flex: 1 1 240px; min-width: 0; }
+  /* The word is painted with `background-clip: text` on a gradient that only
+     covers the element's own box, so a wordmark wider than its column does not
+     merely overflow — the letters past the box edge get no background and are
+     drawn in `transparent`. At 6.2vw beside a 400px menu, HOLOSSEUM measured
+     379px in a 296px column and the title screen read "HOLOSSE". The game's
+     own name, deleted three letters in, by a rule written one screen away.
+     Sized so nine characters fit the column at every landscape width this
+     block can match, and the menu gives back the difference. */
+  .logo__word { font-size: clamp(26px, 4.4vw, 46px); }
+  .logo__eyebrow { margin-bottom: 6px; }
+  .logo__kana { margin-top: 6px; }
+  .menu { flex: 0 1 auto; width: min(360px, 42vw); gap: 2px; }
+  .menu__item { min-height: 42px; padding: 8px 14px; }
+  .title__foot { flex-basis: 100%; margin-top: 0; padding-top: 8px; }
+
+  /* Four modes in one row instead of two, and the blurb tightened rather than
+     dropped — it is the only thing on the card that says what the mode does. */
+  .mode__grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .mode__card { padding: 12px; min-height: 0; }
+  /* `.card__tick` is `top: 14px; right: 14px` against the desktop card's 18px
+     padding, so it sits in the padding and the title never reaches it. Trim the
+     padding to 12 and the tick moves INSIDE the content box: measured at
+     844x390, the marker was drawn on the last letter of LOCAL VERSUS, TRAINING
+     and ONLINE MATCH — three of the four cards. The tick goes back into the
+     gutter and the title keeps a lane clear of it; a title that no longer fits
+     wraps, which costs one line and reads correctly. */
+  .card__tick { top: 9px; right: 9px; }
+  .card__t { padding-right: 16px; }
+  .card__b { margin-top: 7px; font-size: 10px; line-height: 1.5; }
+  .card__go { margin-top: 7px; }
+  .mode__diff { margin-top: 12px; }
+  .diff__b { min-height: 44px; padding: 7px 12px; }
+
+  /* Three arenas in one row. The sky panel is decoration and gives up the
+     most height for the least loss. */
+  .arena { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+  .arena__card { --sky-h: 54px; }
+  .ac__body { padding: 10px 12px 12px; }
+  .ac__b { margin-top: 6px; font-size: 10px; line-height: 1.5; }
+  .ac__meta { margin-top: 7px; }
+
+  /* THE LANDSCAPE GARAGE IS THE GARAGE `99aa611` FIXED, STILL BROKEN.
+     That commit found the portrait garage listing no parts at all, because
+     `.garage` is `flex: 1` of a fixed-height screen and its four panels were
+     being crushed into whatever was left. The cure was written inside
+     `(orientation: portrait)`, so sideways the disease is untouched. Walked at
+     844x390: the grid gets 257px for 376px of panels, the rail overflows its
+     own row by 207px and is painted over by the info panel below it, and the
+     screen has 24px of scroll to fix 200px of overlap. Measured by touch, at
+     the bottom of that scroll:
+
+       05 LEGS          covered — one of the five part categories cannot be
+                        opened at all
+       P1 / P2          covered — you cannot switch to the other machine
+       last row of
+       every category   covered — NOCTURNE, TEMPEST and CLUSTER are all
+                        unreachable, in a list of four or five
+       all five presets covered
+
+     Not "awkward": unreachable after scrolling to the end. So the same cure,
+     laid out for a frame that is short and wide instead of tall and narrow —
+     panels at their natural height, the SCREEN as the only scroller, and the
+     opaque grounds that stop the machine (which renders ~500px tall whatever
+     box it is given) from being read through. */
+  .garage {
+    grid-template-columns: 168px minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: start;
+    flex: none;
+    min-height: 0;
+    overflow: visible;
+    gap: 10px;
+  }
+  .garage__rail  { grid-column: 1; grid-row: 1; }
+  .garage__list  { grid-column: 2; grid-row: 1 / span 2; }
+  .garage__stage { grid-column: 3; grid-row: 1; flex: none; height: 300px; }
+  .garage__info  { grid-column: 3; grid-row: 2; max-height: none; overflow: visible; }
+  .garage__list, .garage__info { background: rgba(6, 10, 18, .94); }
+  .rail__b { background: rgba(10, 16, 26, .88); }
+  /* `flex: 1` with a zero basis inside a box with no free space is what zeroed
+     `.list__scroll` and hid every part; in a flowing column it sizes to its
+     rows and the screen scrolls instead. */
+  .list__scroll { flex: none; overflow: visible; }
+
+  /* Settings is 528px of option rows however they are stacked, so it scrolls
+     either way; two columns is what turns four screens of scrolling into
+     half of one. */
+  .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 22px; max-width: none; align-content: start; }
+
+  .ctls__note { margin-top: 10px; }
+
+  /* Results has no `.foot` — its three buttons are a `.res__actions` row in
+     the middle of a centred column — so the sticky rule above cannot help it
+     and the headline numbers have to give the room back instead. */
+  .results { justify-content: flex-start; }
+  .res__verdict { font-size: clamp(30px, 7vh, 54px); }
+  .res__kana { margin-top: 4px; }
+  .res__score { margin: 12px 0; }
+  .rs__w { font-size: clamp(30px, 8vh, 52px); }
+  .pause__t { font-size: clamp(22px, 8vh, 34px); margin-bottom: 12px; }
+  .menu--pause .menu__item { min-height: 42px; padding: 8px 14px; }
+}
+
 /* Landscape phones: the HUD has to stay out of the thumbs' way. */
 @media (max-height: 460px) {
   .hud__gear {

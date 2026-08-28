@@ -340,6 +340,14 @@ const bar = (pct, width = 28) => {
     g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: id, loadouts: g.loadouts, seed });
     g.setDemo(true);
     g.engine.paused = true;
+    // Pin the clock to a fixed absolute value, the way vfxsheet.mjs does.
+    // Pausing stops `elapsed` advancing, but it does not undo what accumulated
+    // during boot, and how much that is depends on how loaded the machine was.
+    // The limb animation is driven off this clock, so an unpinned value moves
+    // the machine's pose between runs — which is how a "pinned" frame returned
+    // a bounding box that changed shape, 37x66 one run and 37x67 the next.
+    // A pose change is not rasteriser noise.
+    if (g.engine.clock) g.engine.clock.elapsed = 1000;
   }, { id: ARENA, seed: SEED });
   await page.waitForTimeout(1200);
   await page.evaluate((n) => window.__game.fastForward(n), TICKS);

@@ -1941,7 +1941,8 @@ export class RoboModel {
       // deciding how many value bands the machine occupies; the specular lid is
       // what stops the two sweeping practicals writing bright islands onto a
       // machine forty pixels wide.
-      lightCeil: 1.15, specCap: 0.45,
+      lightCeil: 1.15, lightKnee: 0.60, lightPivot: 0.50,
+      flat: 0.0, flatFar: 0.0, specCap: 0.45,
       // Hemispheric bounce card — see FILL_FRAG. Deliberately cool above and
       // dim/warm below so it adds a top and a bottom rather than flattening the
       // machine out, and deliberately well under the key: at these values the
