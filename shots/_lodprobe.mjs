@@ -98,7 +98,14 @@ const READ_FN = `() => {
     }, Number(MINPX2));
   }
   await page.waitForTimeout(400);
-  const out = await page.evaluate(READ_FN);
+  // INSTRUMENT FAULT (the seventh on this project, found round 12). This read
+  // was `page.evaluate(READ_FN)`. Playwright evaluates a STRING argument as an
+  // expression and does not call it, so the page returned the function object,
+  // which serialises to `undefined`, and the probe died on "out is not
+  // iterable" — every time, for anyone who ran it. The round-11 note that "the
+  // LOD barely fires" therefore has no reading behind it from this tool. Every
+  // other evaluate in this file already wraps-and-calls; this one did not.
+  const out = await page.evaluate(`(${READ_FN})()`);
 
   console.log(`\nLOD — ${ARENA} @ tier ${TIER}${MINPX2 !== null ? `  minPx2=${MINPX2}` : ''}`);
   for (const m of out) {
