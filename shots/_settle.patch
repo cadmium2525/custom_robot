@@ -1,0 +1,82 @@
+diff --git a/tools/contour.mjs b/tools/contour.mjs
+index 3e5e9d7..c528dc4 100644
+--- a/tools/contour.mjs
++++ b/tools/contour.mjs
+@@ -59,6 +59,9 @@ const flag = (name, def = null) => {
+ };
+ 
+ const BASE = flag('base', 'http://127.0.0.1:4241/');
++// --drive: settle the MACHINES at the same dt as the camera (default), or 0 to
++// reproduce the pre-round-12 meter, whose pose was a function of wall-clock load.
++const DRIVE = flag('drive') === '0' ? 0 : 1 / 60;
+ const TIER = Number(flag('tier', 3));
+ const TICKS = Number(flag('ticks', 420));
+ const ARENA = flag('arena', 'grid');
+@@ -133,7 +136,7 @@ const STENCIL_FN = `(on) => {
+  * deterministic, so once it is frozen the rig converges to one pose — this just
+  * runs it there on a fixed 1/60 delta with nothing else moving.
+  */
+-const SETTLE_FN = `(n) => {
++const SETTLE_FN = `(n, dt) => {
+   const g = window.__game;
+   if (!g.rig || !g.world || !g.view) return false;
+   let t = (g.engine.clock && g.engine.clock.elapsed) || 0;
+@@ -142,7 +145,7 @@ const SETTLE_FN = `(n) => {
+     g.rig.update(g.world, views, g.localIndex, 1 / 60, t);
+     t += 1 / 60;
+   }
+-  g.view.update(0, 1, t);
++  g.view.update(dt, 1, t);
+ 
+   // Settling by hand is not enough on its own. \`paused\` gates only the fixed
+   // step; the engine still calls onRender every frame with the REAL wall-clock
+@@ -357,7 +360,7 @@ const bar = (pct, width = 28) => {
+     return { tick: w.tick, a: [r(w.robos[0].pos.x), r(w.robos[0].pos.z)], b: [r(w.robos[1].pos.x), r(w.robos[1].pos.z)] };
+   });
+   console.log(`  sim state: tick=${st.tick} p1=${st.a} p2=${st.b}`);
+-  const settled = await page.evaluate(`(${SETTLE_FN})(240)`);
++  const settled = await page.evaluate(`(${SETTLE_FN})(240, ${DRIVE})`);
+   if (!settled) throw new Error('camera rig unavailable — cannot pin the frame');
+   await page.evaluate(`(${VFX_OFF_FN})()`);
+   for (const id of ['ui-layer', 'hud-layer', 'splash']) {
+diff --git a/tools/mass.mjs b/tools/mass.mjs
+index 7f75477..8695759 100644
+--- a/tools/mass.mjs
++++ b/tools/mass.mjs
+@@ -52,6 +52,9 @@ const flag = (name, def = null) => {
+ };
+ 
+ const BASE = flag('base', 'http://127.0.0.1:4211/');
++// --drive: settle the MACHINES at the same dt as the camera (default), or 0 to
++// reproduce the pre-round-12 meter, whose pose was a function of wall-clock load.
++const DRIVE = flag('drive') === '0' ? 0 : 1 / 60;
+ const TIER = Number(flag('tier', 3));
+ const TICKS = Number(flag('ticks', 420));
+ const ARENA = flag('arena', 'grid');
+@@ -124,7 +127,7 @@ const NOPAINT_FN = `() => {
+   }
+ }`;
+ 
+-const SETTLE_FN = `(n) => {
++const SETTLE_FN = `(n, dt) => {
+   const g = window.__game;
+   if (!g.rig || !g.world || !g.view) return false;
+   let t = (g.engine.clock && g.engine.clock.elapsed) || 0;
+@@ -133,7 +136,7 @@ const SETTLE_FN = `(n) => {
+     g.rig.update(g.world, views, g.localIndex, 1 / 60, t);
+     t += 1 / 60;
+   }
+-  g.view.update(0, 1, t);
++  g.view.update(dt, 1, t);
+   g.engine.onRender = null;
+   if (g.engine.quality) g.engine.quality.auto = false;
+   return true;
+@@ -439,7 +442,7 @@ const ANALYSE_FN = async ({ nUri, hUri, steps, dump }) => {
+   }, { id: ARENA, seed: SEED });
+   await page.waitForTimeout(1200);
+   await page.evaluate((n) => window.__game.fastForward(n), TICKS);
+-  const settled = await page.evaluate(`(${SETTLE_FN})(240)`);
++  const settled = await page.evaluate(`(${SETTLE_FN})(240, ${DRIVE})`);
+   if (!settled) throw new Error('camera rig unavailable — cannot pin the frame');
+   const transient = await page.evaluate(`(${VFX_OFF_FN})()`);
+   if (transient && transient.length) console.log('  suppressed transients:', transient.join(', '));

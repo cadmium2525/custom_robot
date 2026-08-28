@@ -4,14 +4,14 @@ Rolling document. Round 2 reviewed `10621f2`; round 4 reviewed `35d0e66`; round 
 `b28ff8c` and closed at `da3253a`; round 6 opened at `1e49409` and named a cause; round 7 opened at
 `ac50610` and closed at `762d220`; round 8 opened at `cc7cebb` and audited its own meters;
 round 9 opened at `0594eb2` and half-closed `#14`; round 10 opened at `8b3208e` and found that the
-number the whole art prescription was written against had never existed; **round 11 (this pass)
-opens at `84d5401`**, and its job is to give the mass rule the one thing every previous round quoted
-it without — **a noise floor** — then re-run it on both machines in all three arenas against that
-floor, close or refuse the iPhone entry on the first real-inset evidence this project has ever had,
-and follow up the stage agent's finding that the frame all of this is measured on may be unfit to
-judge grounding.
+number the whole art prescription was written against had never existed; round 11 opened at
+`84d5401` and measured the mass meter's noise floor for the first time; **round 12 (this pass) opens
+at `c0202d1`**, and its job is to re-run the mass rule on both machines in all three arenas against
+that floor, re-score `#14` now that the frame it was argued on turns out to have no contact in it,
+verify the iPhone inset work and close what closes, and check the landscape menu restructure against
+`N8`.
 
-**STATUS: IN PROGRESS. The VERDICT section at the bottom of this file was rewritten for round 11
+**STATUS: IN PROGRESS. The VERDICT section at the bottom of this file was rewritten for round 12
 from existing evidence BEFORE this round's captures were taken, and is being revised as they land.
 It has never been allowed to read PENDING and does not now. That section, not this line, is what
 decides.**
@@ -23,7 +23,273 @@ disagreed with the section, and the fix is to stop having two of them.**
 ---
 
 
-## Round 11 (opens at `84d5401`) — the noise floor, measured at last, and the meter is still not pinned
+## Round 12 (opens at `c0202d1`) — the mass rule re-run in all six cells, and the ledger's two faults numbered six
+
+### The instrument audit, first, and this round it is short because the answer was already written down
+
+Round 11 ended with a one-line prescription: the settle drives the camera 240 times at a fixed `dt`
+and the machines once at `dt = 0`, every pose term in the model is a damper, and a damper does not
+move at `dt = 0`. The fix was to pass the same `dt` to the machines.
+
+**At `c0202d1` it has not landed.** `tools/mass.mjs:136` and `tools/contour.mjs:145` both still read
+
+```js
+g.view.update(0, 1, t);
+```
+
+That was checked before a single capture was taken this round, because it decides what the captures
+are worth. So the first thing this round did was apply it, behind a flag rather than as a silent
+edit, so both behaviours come out of one binary and the comparison is honest: `--drive 0` reproduces
+the meter as shipped, the default settles the machines at `1/60` alongside the camera. The A/B is
+**interleaved** — run *i* of both modes back to back before run *i+1* — because the fault under test
+is sensitivity to wall-clock load, and a floor taken for one mode at 19:15 and the other at 19:50
+would be comparing two ambient loads as well as two settle modes. A second agent's capture was
+running on another port for part of the window; interleaving is what makes that survivable, and it
+is disclosed rather than hidden.
+
+### Two faults are both numbered six, and one of them has to move
+
+`REVIEW2.md` round 11 closes its audit with *"this is the sixth instrument fault"*, meaning the
+unpinned settle. `c0202d1`'s commit message opens with *"the round's real finding, and it is the
+sixth instrument fault on this project"*, meaning the grounding frame. **They are different faults
+and they cannot both be six.** The settle was found first and keeps the number; the grounding frame
+is the **seventh**. The ledger is the only reason any of this is auditable and a ledger with two
+entries at the same index is not one.
+
+### `#14` — the open half is not open, it is unmeasured, and that is a worse finding
+
+The seventh fault is that on the standard pinned frame — grid, seed 1234567, tick 420, the frame
+`contour.mjs` and `mass.mjs` share — the player is **1.12 m airborne with its ground contact point
+95 px below the bottom of the frame**. A contact reads in the deck *around* the contact: the pool of
+occlusion the feet sit in. A contact point off-screen has had the whole measurement cropped away.
+
+Round 9 left `#14` as *"obstacles PASS, machine grounding stays open"*. **That verdict has to be
+withdrawn rather than kept.** Every reading behind the open half — round 9's "the machines are still
+barely grounded", round 8's, and my own repetition of it in the round-11 ledger — was taken on a
+frame in which the machines are not on the ground and the place they would touch is not in shot. The
+honest status is not FAIL and not PASS:
+
+> **`#14` machine grounding: NOT MEASURED. Eight rounds of readings are void, and the reason is that
+> nobody checked whether the frame had a contact in it before measuring the contact.**
+
+This also lands on blind point 1's composition clause. Round 4's entry says *"the player's feet end
+1 px from the bottom of the screen… you cannot see the ground the machine is standing on"* and files
+it as a framing defect. It is not framing. The feet are 1 px from the edge because **the machine is
+in the air**, and the deck under it is 95 px further down than the frame goes. The composition
+complaint and the grounding complaint are the same fact, counted twice, on a frame that cannot
+answer either.
+
+**What has to happen before `#14` can be scored at all:** `shots/_ground.mjs --survey` picks a tick
+at which both machines are grounded with clear viewport under their feet, and the grounding meter
+runs there. Until that tick exists in this document, no grounding number should be quoted, including
+a favourable one.
+
+### The mass rule, re-run — and round 11 captured all three arenas and published one
+
+The measurement this round exists to settle is whether the machines now read as four or five masses
+rather than eleven. Before taking anything new, the round-11 captures were read back in full. **They
+cover all three arenas at five runs each. Round 11's document prints orbital only.** Grid and
+foundry have been sitting on disk unread, and one of them is the answer.
+
+At `84d5401`, five identical runs per cell, `@51` (the rule's own five-band step), reported as
+observed range:
+
+```
+                  masses @51      curve mean      largest %        top4 %
+  grid   ROBOT 1   4.0 .. 4.3     4.3 .. 4.6    55.7 .. 65.7    88.3 .. 89.8
+         ROBOT 2   5.3 .. 5.5     6.1 .. 6.5    41.1 .. 42.3    83.8 .. 84.8
+  found. ROBOT 1   6.3 .. 7.5     7.5 .. 8.1    36.8 .. 45.3    76.5 .. 82.2
+         ROBOT 2   4.8 .. 5.8     5.1 .. 5.5    54.5 .. 59.3    84.3 .. 85.7
+  orbit. ROBOT 1   3.5 .. 4.3     4.3 .. 4.7    56.2 .. 63.2    86.6 .. 87.6
+         ROBOT 2   4.8 .. 5.3     5.6 .. 6.2    54.8 .. 57.9    89.5 .. 90.9
+```
+
+**Five of the six cells are inside the four-or-five band at the five-band step, and the sixth is
+not.** Foundry's player returns **6.3 to 7.5 masses with top4 coverage of 76.5-82.2%** — the only
+cell in the grid that is out, and the only cell nobody had quoted. The eleven-mass machine this
+document has argued about since round 6 is gone from every arena. That is a real and large
+improvement and it is the first thing this round should say.
+
+**But the cell that fails is failing for a reason the mass rule cannot see, and it is worth more
+than the five that pass.** Foundry's player is measured at **69x194 px**. The same machine is
+160x261 in grid and 173x273 in orbital: an aspect of 0.36 against 0.61 and 0.63. The player in
+foundry is not a smaller machine, it is a **sliver** — most of it is behind an occluder, and the
+meter's own doctrine is that *"a machine standing behind a pillar is measured on the part of it you
+can actually see"*. That is exactly right for a contour reading and it is wrong for a mass count: a
+third of a machine fragments into more pieces than the whole of it, at any quality of lighting. So
+foundry's 7.5 masses is not evidence that the light rig failed in foundry. It is evidence that the
+pinned frame puts the player behind a pillar in one of the three arenas, and that no mass count
+taken there means anything.
+
+**Two arenas' worth of frames are therefore unfit for the measurement they are used for** — grid for
+grounding, foundry for mass — and in both cases the fault is the same shape: the frame was pinned
+once, for the silhouette meter, and inherited by every meter since without anyone asking whether it
+suits them.
+
+### The iPhone 12's real insets — verified, closed on the layout, and the frame it closes on is a title card
+
+The eleven-rect arithmetic round 11 checked reproduces; I re-read both logs and both captures at
+1:1 rather than taking that on trust. `hi-p-log.txt` and `hi-l-log.txt` agree with the stylesheet in
+both orientations, `.hud__scrim` is the only rect entering a reserved band at rest and it is
+full-bleed by design, and `.tc__stick` enters the home band only in the LIVE two-finger state, where
+it is under a thumb. **The layout half of the entry is closed and should not be reopened.**
+
+**One thing nobody said about those two captures, and it matters for what they can be used to
+argue.** `hi-p-match.png`, `hi-l-match.png` and `hi-l-idle.png` are all photographs of the **ROUND 1
+READY card**, not of gameplay. The card's own glyphs are the brightest object in all three. The
+rects are unaffected — the HUD lays out identically — so the layout close stands. But no
+art-direction claim can be made from these frames without saying which frame it was made on, and
+the next round should capture a phone frame with the card gone.
+
+### What those captures do show, measured, and it is the first phone-side reading of blind point 1
+
+`N8` in this document says a fix verified on desktop is not a fix. The same sentence applies to a
+PASS, and blind point 1 — *"the robots are the brightest, most saturated things on screen"* — has
+only ever been measured at 1600x900. `shots/_framesal.mjs` (new this round, force-added) reports any
+frame's brightest-1% and visible-chroma shares against named rects, with no mask needed.
+
+```
+  hi-p-match.png  1170x2532 (390x844 @3x)      area%   bright1%    visible chroma%   chroma/area
+    .tc__pad   (FIRE/BOMB/DASH/JUMP/POD)        10.0      16.3          54.7            5.46x
+    .tc__stick (floating stick)                  5.3       1.3          13.1            2.48x
+  hi-l-idle.png   2532x1170 (844x390 @3x)
+    .tc__pad                                     7.4       8.1          49.7            6.70x
+    .tc__stick                                   5.3       0.0          11.7            2.22x
+```
+
+**The five touch buttons own two thirds of the portrait frame's visible chroma and 61% of the
+landscape frame's, off a seventh of its area, and in neither orientation does a machine appear
+anywhere in the top twelve salience tiles.** In landscape the top six tiles are the title card and
+tiles seven through twelve are all inside the button cluster. On a phone the most saturated thing on
+screen is a magenta ring that says POD.
+
+That is not a rendering defect and it is not fixable by a light rig. It is a statement about what
+this game looks like on the device it is aimed at, and it means blind point 1's PASS is a
+desktop-only PASS. It should be recorded as such rather than carried unqualified.
+
+### An instrument suspicion that came back negative, recorded because the negatives are what make the positives worth anything
+
+Blind point 1's chroma half fails on a filter of `S >= 0.35`, and `S = (max-min)/max` is scale-free:
+RGB (2,3,12) scores 0.75. On the phone captures that filter calls **73.9%** of the portrait frame
+and **81.5%** of the landscape frame saturated, which is plainly wrong for frames that read as
+monochrome blue-grey — gate it at `L >= 40` and the same frames return 9.1% and 6.1%. So the filter
+was put to the round-8 desktop dumps it was actually used on, expecting an eighth fault:
+
+```
+                    S>=0.35    S>=0.35 & L>=40    round-8 published
+    grid             59.2%          59.0%              58.5%
+    foundry          89.7%          89.6%              89.5%
+    orbital          59.5%          59.3%              59.2%
+```
+
+**The gate moves nothing — 0.3 points at worst — and round 8's published figures reproduce to within
+a point.** The filter is safe at the desktop dumps' exposure and unsafe only on frames dimmed by a
+title card and a scrim. There is no eighth instrument fault here. **Point 1's chroma FAIL survives a
+stricter instrument than the one that produced it**, which is the strongest thing that can be said
+for a measurement, and it is said here because the previous six audits all went the other way.
+
+### The landscape menus, against `N8`
+
+`L1-09-settings.png` at 1:1 (`shots/r12/c-set-sens.png`) photographs the defect exactly as round 11
+described it: on 844x390 the word **SENSITIVITY is cut horizontally through the middle of its own
+glyphs** by the footer bar's top edge, and the two options below it are entirely underneath. Round
+11 is right that the walk overstates this — the list scrolls 150 px and everything clears — and
+right that the real defect is that **at rest nothing on screen says the list continues**.
+
+**What the walk and round 11 both missed is next to it in the same photograph.** The screen is a
+two-column grid: AUDIO takes the left column with three sliders, VIDEO takes the right with two, and
+CONTROL starts a *third* row under AUDIO — so SENSITIVITY, INVERT Y and TOUCH LAYOUT are pushed
+under the footer **while the entire lower right quadrant of the screen is empty**. The content that
+does not fit and the space it would fit in are in the same frame. This is not a scrolling problem
+that needs an affordance; it is a column-balance problem, and the fix is to let the second column
+take the overflow rather than to teach the player to swipe.
+
+### `N8` — the landscape restructure is being written against a finding that is not true at head
+
+The brief for this round says a UI agent is restructuring the landscape garage *"after finding the
+category rail unreachable at 844x390 — all seven controls at negative coordinates, off the top, with
+nothing on screen saying so."* That is `_r10-walk.mjs`'s output, and round 11 already diagnosed why
+it says that: **the walk swipes to the extreme and re-tests there.** The garage scroller has 450 px
+of range in landscape; swipe it to the end and the rail is at negative y, because the walk put it
+there.
+
+Rather than re-run a tool I know overstates, this round replaces the reachability half of it.
+`shots/_reach.mjs` (new, force-added) hit-tests a **6 px grid across the whole control** instead of
+one point at its centre, sweeps the screen's real scroller instead of jumping to its extreme, reports
+the centre of the largest fully-hittable sub-rect so a fix has a target, and separates the three
+states this project has been filing as one: UNREACHABLE, needs a SCROLL, and hittable-but-its-own-
+centre-misses. It also skips controls that are in the DOM but not rendered — the first version of it
+scored eleven phantom `UNREACHABLE`s on SETTINGS because every screen's markup is present at once,
+which is very likely a second contributor to the walk's numbers.
+
+**Landscape garage, 844x390, iPhone 12 insets, at `c0202d1`, at rest:**
+
+```
+  01 BODY   [69,55,145,105]    100% visible   centre hits
+  02 GUN    [149,55,225,105]   100% visible   centre hits
+  03 BOMB   [69,109,145,159]   100% visible   centre hits
+  04 POD    [149,109,225,159]  100% visible   centre hits
+  05 LEGS   [69,163,225,213]   100% visible   centre hits
+  P1        [69,232,145,274]   100% visible   centre hits
+  P2        [149,232,225,274]  100% visible   centre hits
+```
+
+**All seven are at positive coordinates, fully on screen, and hittable at rest.** The premise of the
+restructure does not reproduce. Nineteen controls on that screen, **zero unreachable in either
+orientation**, and the same holds in portrait (390x844): the seven rail controls are 100% visible at
+rest there too.
+
+**What is actually wrong with that screen, and it is at the other end of it.** The defect is in the
+preset chips, which nobody has named:
+
+```
+  landscape 844x390, scroller range 450px, affordance at rest: NONE
+    NOCTURNE (part row)   [241,293,524,346]    44% visible, centre misses
+    ROOKIE                [255,385,320,423]    17% visible, centre misses
+    BULWARK               [325,385,401,423]    17% visible, centre misses
+    SWIFT                 [406,385,463,423]    17% visible, centre misses
+    ARTISAN               [255,428,326,466]     0% visible — scroll 168
+    NOCTURNE (preset)     [331,428,414,466]     0% visible — scroll 168
+  portrait 390x844, scroller range 682px, affordance at rest: NONE
+    all five presets                            0% visible — scroll 255..340
+```
+
+Five preset chips, three of them showing a 6 px sliver of a 38 px control and two showing nothing,
+and **the scroller reports no scrollbar and no fade mask**, so at rest the screen ends in a clean
+edge that looks deliberate. That is the defect the landscape block was written to end, stated
+correctly: not *"a player cannot reach the presets"* but *"a player is never told the presets are
+there."*
+
+**Landscape SETTINGS, same run, and here round 11's own numbers need updating.** Round 11 reported
+`SENSITIVITY`, `INVERT Y` and `TOUCH LAYOUT` half-buried and said the screen scrolls 150 px. The
+columns have since been rebalanced — those three now sit in the right-hand column at 100% visible —
+and the defect moved rather than closed:
+
+```
+  scroller range 105px, affordance at rest: NONE
+    QUALITY        [63,302,411,356]   22% visible at rest, centre misses, 100% after scroll
+    SCREEN SHAKE   [63,362,411,419]   44% visible at rest, centre misses, 100% after scroll
+```
+
+Eight of ten controls clean, two half under the footer with their natural tap points missing, none
+unreachable. **`N8` stays open, at the severity round 11 set** — *controls a player is not told are
+there* — and the recommendation to the UI agent is: the rail is fine, do not restructure it; put a
+scroll affordance on both screens and give the two clipped SETTINGS rows the 105 px they need.
+
+### The build, and a line the ledger did not have
+
+`c0202d1` fixed a stray `*/` in `ui.css` that left the tail of a comment parsing as bare CSS, so
+`lightningcss` failed the minify step and `npm run build` was broken while `npm test` passed.
+Verified at head in a clean worktree: **`npm run build` exits 0.** The entry the ledger needs is not
+about the semicolon:
+
+> **N9 — the test suite does not cover the build.** A build-only failure reached the tip of the
+> branch and was found by a human running the build, not by CI or by `npm test`. Every round of this
+> review has verified art from a `vite preview` of `dist/`, which cannot exist if the build is
+> broken; a broken build is therefore a review-blocking defect that the project's own gate does not
+> detect. One `npm run build` in the test script closes it.
+
+
 
 ### The instrument audit, first, because this round it invalidates the measurement it was meant to precede
 
@@ -1665,7 +1931,31 @@ Same frame: blocks now carry a panelled top face, a distinct darker side plane, 
 rim along the top edge and an orange under-trim at deck level. The lit-top/dark-side discipline
 that the robots still lack (#24) is present on the blocks.
 
-**14. Nothing casts a readable shadow.** — **ROUND 5 (`da3253a`): the round-4 diagnosis is now
+**14. Nothing casts a readable shadow.** — **ROUND 12 (`c0202d1`): the obstacle half is CLOSED
+(round 9). The machine-grounding half is not open and not closed — it is NOT MEASURED, and every
+reading behind it is void.**
+
+**ROUND 12 header, and it withdraws eight rounds of readings including my own.** The seventh
+instrument fault on this project is that the standard pinned frame — grid, seed 1234567, tick 420,
+the frame `contour.mjs` and `mass.mjs` share — has **the player 1.12 m airborne with its ground
+contact point 95 px below the bottom of the frame**. A contact reads in the deck *around* the
+contact; a contact point off-screen has had the entire measurement cropped away. So every probe
+under this entry that reported "no pool, no darkening" — round 5's 96.2-against-97.3 below, round
+9's, and my repetition of "the machines are still barely grounded" — was taken where there is
+nothing to measure. **They are withdrawn, not overturned: the machine may or may not ground
+correctly, and this document does not currently know.**
+
+Note what this does to (b) below, which reads *"the feet end at y=898 of a 900px frame… fixing the
+framing will expose whatever is already being cast"*. The feet are 2 px from the edge **because the
+machine is in the air**, and the deck it would stand on is 95 px further down than the frame goes.
+The framing complaint and the grounding complaint are one fact counted twice.
+
+**Before this entry can be scored at all:** `shots/_ground.mjs --survey` has to name a tick at which
+both machines are grounded with clear viewport under their feet, and the grounding meter has to run
+there. Until that tick is in this document, no grounding number should be quoted — including a
+favourable one.
+
+*Superseded round-5 header:* **ROUND 5 (`da3253a`): the round-4 diagnosis is now
 PROVEN on both halves. (b) was never a shadow bug and is closed. (a) is still open and is now
 isolated to the obstacle mesh alone.**
 
@@ -2081,6 +2371,29 @@ cheating past a control it cannot tap. Three changes turn it into a process:
 *Severity: BLOCKING for the process, in the same sense N1 is. Every art round this document has run
 has been spent on a 1600x900 frame, and the game's own premise is a phone.*
 
+**ROUND 12 — the recommendation is being followed, and the tool it is being followed with is
+wrong in a way that costs a whole screen's worth of work.** Item 2 above has been adopted: UI
+changes now land with a walk artefact, which is exactly right. But `_r10-walk.mjs` hit-tests the
+*centre of the full rect* and re-tests *after swiping to the extreme*, so it reports a control as
+NOT-HITTABLE while 20 px of it is exposed, and reports it UNREACHABLE at a negative y that the walk
+itself scrolled it to. A restructure of the landscape garage is in flight against one of those
+readings — *"the category rail is unreachable, all seven controls at negative coordinates"* — and at
+`c0202d1` **all seven are 100% visible and hittable at rest, in both orientations.** Measured with
+`shots/_reach.mjs`, which grid-tests the whole control, sweeps the real scroller instead of jumping
+to its end, and skips controls that are in the DOM but not rendered.
+
+The addendum to the recommendation: **a walk artefact only closes a defect if the walk is right.**
+Item 1 should promote `_reach.mjs` alongside the walk, and no reachability claim should be made from
+a rect at a negative coordinate — that is the tool describing its own swipe.
+
+**N9. The test suite does not cover the build.** *Filed round 12.* A stray `*/` in `ui.css` left the
+tail of a long comment parsing as bare CSS; `lightningcss` failed the minify step and `npm run build`
+was broken at the tip of the branch while `npm test` passed. It was found by a person running the
+build. Every round of this review verifies art from a `vite preview` of `dist/`, which cannot exist
+if the build is broken, so a broken build is review-blocking and the project's own gate does not
+detect it. **One `npm run build` in the test script closes it.** Verified at `c0202d1` in a clean
+worktree: the build exits 0.
+
 ---
 
 ## Ranked top-5 blocking the blind side-by-side bar
@@ -2263,19 +2576,29 @@ is the behaviour you want. **Frame rate on this device remains unmeasured.**
 **NO.** Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
 picks CRV2.
 
-Round 11. Written at `84d5401` from rounds 9 and 10's evidence **before this round's captures were
+Round 12. Written at `c0202d1` from rounds 10 and 11's evidence **before this round's captures were
 taken**, then revised as they landed — the order round 6 established and every round since has kept.
 
-**Written in advance, this verdict expected to close points 3 and 4 and had one reason to doubt it.**
-The lighting and LOD work landed in `84d5401`, and the one arena measured after it put orbital's
-opponent at 5.3 masses / largest 57.1% / top4 91.4% — inside the target band. If that held on both
-machines in all three arenas, the art list was empty and this verdict changed. The reason to doubt
-was written by the robot agent that did the work: *"the LOD barely fires and the deltas look like
-noise; before believing anything I need the noise floor."* Round 10 had already caught the meter
-returning a machine whose bounding box changed shape between two runs of a pinned frame, and quoted
-a single-run swing of 0.2 masses against deltas of 0.4 to 0.8. **No number in this document had ever
-been quoted against a noise floor, because nobody had ever measured one.** So this round measured it
-first and read everything else through it. What that did to the result is below.
+**Written in advance, this verdict expected the art list to empty and had two reasons to doubt it,
+one of which is already confirmed.** The claim carried into this round is that the lighting and LOD
+work put the machines inside the reference's four-or-five-mass band, and if that holds on both
+machines in all three arenas then points 3 and 4 close together and there is nothing left on the art
+list. The doubts, both written before a single capture:
+
+1. **Round 11 measured the meter's noise floor and the credited reading was the best draw in its own
+   set.** Five identical runs of one unchanged binary moved the largest-mass figure by **7.0
+   percentage points** and the curve mean by 0.4-0.8 masses — the size of every delta this document
+   has ever credited. The reading carried in, *orbital's opponent at 5.3 / 57.1% / 91.4%*, has 5.3
+   as the **maximum** of its own five-run range and a top4 of 91.4% that sits **outside that range
+   entirely**. A number that does not reproduce is not a result.
+2. **Round 11 prescribed a one-line fix for the cause of that floor, and I checked before measuring
+   anything: it has not landed.** At `c0202d1`, `tools/mass.mjs:136` and `tools/contour.mjs:145`
+   both still read `g.view.update(0, 1, t)`. The settle drives the camera 240 times at a fixed `dt`
+   and the machines **once, at `dt = 0`**, and every pose term in the model is a damper, which does
+   not move at `dt = 0`. **The meter being asked to re-run the mass rule this round is the same
+   meter round 11 disqualified**, and the round's first job became fixing it rather than reading it.
+
+What the corrected meter then said, and what it did to the verdict, is below.
 
 *(Rounds 8 and 9's account, kept for the record: a residual reported closed was open, a residual
 filed against the wrong arena was twice as bad in the right one, a third arena had been carrying the
