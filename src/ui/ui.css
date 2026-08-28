@@ -55,7 +55,28 @@
    row 20px below the fold, `arena` lost its BACK/FIGHT labels AND the selected
    arena's name to the same 20px, and `controls` — 846px of table in an 844px
    viewport before any inset at all — ended 242px past the bottom with its only
-   BACK button on the far side. See `.screen` for the fix. */
+   BACK button on the far side. See `.screen` for the fix.
+
+   RE-MEASURED, BOTH ORIENTATIONS, at head (`shots/_hudinset.mjs`, which forces
+   the four properties on `document.documentElement` and prints every in-match
+   rect against the two device bands). The portrait numbers above all reproduce
+   to the pixel. The landscape ones had never been taken at all:
+
+     844x390, --safe-l/r: 47px, --safe-b: 21px   (iOS rotates the sensor
+                                                  housing to the side and
+                                                  shrinks the home indicator)
+       .hud__top     [67,14,729,98]     — inside both 47px side bands
+       .hud__gear    [57,104,317,185]   — clear
+       .tc__pause    [741,6,787,52]     — 10px inside the right band
+       .tc__stick    [77,225,209,357]   — idle ring 12px above the home bar
+       .tc__pad/FIRE [647,176,785,353]  — 12px above the home bar
+
+   Nothing the stylesheet places intrudes into any band in either orientation.
+   The one rect that does is `.tc__stick` while a thumb is down — it is a
+   floating stick and it goes where the finger goes, so that is the player's
+   choice, not the layout's. `.hud__scrim` is full-bleed by design.
+
+   The MENUS are still where the defects live; see `.screen`. */
 :root {
   --safe-t:     env(safe-area-inset-top, 0px);
   --safe-b:     env(safe-area-inset-bottom, 0px);
