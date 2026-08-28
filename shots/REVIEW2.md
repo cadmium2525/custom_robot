@@ -21,6 +21,108 @@ disagreed with the section, and the fix is to stop having two of them.**
 ---
 
 
+## Round 10 (opens at `8b3208e`) — the mass rule, re-run on the corrected meter, and the number the whole prescription was written against turns out not to exist
+
+### The A/B, and it is as clean as this project has ever managed
+
+`8b3208e` is the first commit to carry any of my three-item prescription. It is one file. Against
+round 9's opening sha the entire diff is:
+
+```
+  src/gfx/materials.js   the size-gated rim   <- the measurement below is of this
+  src/ui/menus.js        phone menu text      <- DOM is hidden before the shutter
+  src/ui/ui.css          phone layout         <- ditto
+```
+
+So A = `0594eb2` and B = `8b3208e`, both built from `git archive`, both served by `vite preview`,
+measured with **one** copy of `tools/mass.mjs` (the corrected meter — absolute-step curve, four
+quantisation phases, shell event channels suppressed) pointed at each in turn. Nothing in the 3D
+path differs but the rim.
+
+The change itself: the shell's fresnel band is now a function of the machine's on-screen size,
+computed per-fragment off the perspective divide. Near, the band stays wide and shades the outer
+third of every plate. Far, it narrows to hug the last few degrees before the silhouette and is
+brightened by 1.45 to pay for the pixels it gave up. The stated reasoning is that the fresnel term
+cannot tell a silhouette from an interior chamfer, so on a 39px machine thirty interior chamfers
+arrive as a field of detached bright islands — which is precisely what a mass meter counts.
+
+**Curve-mean masses, and `spread` (the body's own p2..p98) beside it, because a count without the
+value range is the number you fake:**
+
+```
+                        A (0594eb2)          B (8b3208e)           delta
+  grid     R1 near     4.3  spread 151      4.2  spread 151       -0.1    0
+           R2 far      6.5  spread 149      6.0  spread 142       -0.5   -7
+  foundry  R1 near     7.5  spread 151      7.7  spread 151       +0.2    0
+           R2 far      5.3  spread 125      4.9  spread 117       -0.4   -8
+  orbital  R1 near     4.5  spread 159      4.6  spread 159       +0.1    0
+           R2 far      6.0  spread 139      5.2  spread 110       -0.8  -29
+```
+
+And the honest column round 8 made me promise never to drop — top-4 coverage at the five-band step,
+with the largest single mass beside it:
+
+```
+                     A top4%  largest      B top4%  largest
+  grid     R2 far      83.6    41.6%        87.7    44.1%
+  foundry  R2 far      85.2    56.0%        87.5    59.1%
+  orbital  R2 far      89.2    52.3%        94.1    67.1%
+  foundry  R1 near     80.6    41.3%        76.9    37.2%   <- the one that moved the wrong way
+```
+
+**It does exactly what it was aimed at and nothing else.** Every near-machine reading is flat to
+within a tenth of a mass; every far-machine reading improves; the far machine's four largest pieces
+now cover 88-94% of it where they covered 84-89%. Orbital's opponent went from six pieces spanning
+139 levels to five spanning 110. That is a machine getting simpler, not a machine getting darker —
+the median moved 93 to 89, four levels, so nothing was bought by crushing the body into one band.
+
+**The one regression is foundry's near machine**, which lost 3.7 points of top-4 coverage and gained
+0.2 masses. Foundry's player photographs at 189px of a 900px frame — 21% — and the gate fades between
+9% and 22%, so it is the one machine in the game that stands *inside* the transition. It is getting
+a partly-narrowed band with a partly-applied gain, which is the worst of both. Moving `uRimSizeHi`
+above 0.30 would put every near machine on the near band and cost nothing, and it is a one-number
+change.
+
+### The control that had to come first, and this time it came first
+
+Round 7's lesson was that a prescription must be preceded by the experiment that could rule it out.
+So before believing any row above: **the same measurement was taken again inside B's own binary,
+with the new feature switched off through its own uniforms** (`--u rimSizeLo=-2,rimSizeHi=-1`, which
+forces the size gate to 1 everywhere and reduces the new code exactly to the old code). One binary,
+one server, one meter, one flag:
+
+```
+                   A (old binary)   B, feature OFF   B, feature ON
+  grid     R2         6.5 / 149        6.3 / 149        6.0 / 142
+  foundry  R2         5.3 / 125        5.1 / 126        4.9 / 117
+  orbital  R2         6.0 / 139        5.9 / 138        5.2 / 110
+```
+
+**B-with-the-feature-off reproduces A to within 0.2 masses and 1 level of spread in all three
+arenas.** The A/B is therefore measuring the rim and not the build, the server, or the day.
+
+### And the instrument audit, which found a fault, as it now does every round
+
+`tools/mass.mjs` is not deterministic, and the claim at the top of this document that all four
+capture tools are has been false for this one the whole time. Two runs, same server, same seed, same
+tick count, same settle, nothing else on the machine:
+
+```
+  orbital R2   run 1:  37x66px at 795,248   curve mean 5.2   spread 110
+               run 2:  37x67px at 795,247   curve mean 5.4   spread 112
+```
+
+**The machine moved a pixel between two runs of a pinned frame.** That is not rasteriser noise — a
+bounding box changing shape is a pose change. It is **N5**, which this document filed in round 4
+against the *fight* capture path and has never re-tested here: the render clock advances on wall
+time during the settle window, so the number of pre-settle frames — and with it the phase of every
+animation the settle does not reset — depends on how busy the machine was.
+
+That matters because the deltas being claimed above are 0.4 to 0.8. A 0.2 single-sample swing is
+between a quarter and half of the effect. **Every mass claim in rounds 5 through 9 was quoted to a
+precision this path cannot deliver**, mine included. The noise band is measured below.
+
+
 ## Round 9 (opens at `0594eb2`) — `#14` closes on one half and is re-opened on the other, and the phone stops being three incidents
 
 ### `#14` cast shadows — the fix is real, it is large, and the story written around it is wrong
