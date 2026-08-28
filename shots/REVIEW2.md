@@ -3,12 +3,13 @@
 Rolling document. Round 2 reviewed `10621f2`; round 4 reviewed `35d0e66`; round 5 opened at
 `b28ff8c` and closed at `da3253a`; round 6 opened at `1e49409` and named a cause; round 7 opened at
 `ac50610` and closed at `762d220`; round 8 opened at `cc7cebb` and audited its own meters;
-**round 9 (this pass) opens at `0594eb2`**, and its job is the five things round 8 left open: the
-three-item prescription's mass measurement, `#14`'s cast shadows, the notch capture that six agents
-have now been assigned, and the systemic phone finding that three separate rounds have each filed as
-an incident.
+round 9 opened at `0594eb2` and half-closed `#14`; **round 10 (this pass) opens at `8b3208e`**, and
+its job is the one measurement round 9 could not take because the work had not landed — the mass
+rule, re-run with the corrected meter, against the prescription written for it — plus the three
+re-measurements round 8 left open and the phone finding that four rounds have each filed as an
+incident.
 
-**STATUS: IN PROGRESS. The VERDICT section at the bottom of this file was rewritten for round 9
+**STATUS: IN PROGRESS. The VERDICT section at the bottom of this file was rewritten for round 10
 from existing evidence BEFORE this round's captures were taken, and is being revised as they land.
 It has never been allowed to read PENDING and does not now. That section, not this line, is what
 decides.**
@@ -1929,16 +1930,24 @@ is the behaviour you want. **Frame rate on this device remains unmeasured.**
 **NO.** Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
 picks CRV2.
 
-Round 9. Written at `0594eb2` from round 8's evidence **before this round's captures were taken**,
-then revised as they landed — the order round 6 established and every round since has kept. Round
-8's revisions went mostly against us because two claims were measured for the first time. Round 9
-opened with four fails and a split on the board and one prescription out with a builder, and the
-measurement that decides points 3 and 4 is the one this round exists to take.
+Round 10. Written at `8b3208e` from rounds 8 and 9's evidence **before this round's captures were
+taken**, then revised as they landed — the order round 6 established and every round since has kept.
 
-*(Round 8's account, kept for the record: a residual reported closed was open, a residual filed
-against the wrong arena was twice as bad in the right one, a third arena had been carrying the same
-defect under a different colour with nobody counting it, and one clause of blind point 1 turned out
-never to have been measured in eight rounds.)*
+**The one measurement this round exists to take has been taken, and it does not say what either
+side expected.** The first item of my own three-item prescription landed as a size-gated rim in
+`8b3208e`; A/B'd against `0594eb2` on the corrected meter it does exactly what it was aimed at,
+moves the far machine and not the near one, and the movement is small. The larger finding is
+underneath it: **"eleven masses", the number this entire prescription was written to reduce, is not
+a number the corrected meter has ever produced.** It came from an instrument retired in round 7 and
+replaced in round 8. Re-measured properly, the build entered this round at 4.3 / 7.5 / 4.5 curve-mean
+masses on the player and 6.5 / 5.3 / 6.0 on the opponent. Four to five was already true for the
+player in two arenas out of three, before anybody fixed anything.
+
+*(Rounds 8 and 9's account, kept for the record: a residual reported closed was open, a residual
+filed against the wrong arena was twice as bad in the right one, a third arena had been carrying the
+same defect under a different colour with nobody counting it, one clause of blind point 1 turned out
+never to have been measured in eight rounds, and `#14` closed on the blocks and stayed open on the
+machines.)*
 
 ### The reason, renamed, because round 6's name was half wrong
 
