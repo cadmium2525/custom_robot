@@ -1746,7 +1746,60 @@ least-finished objects in the game and they read as placeholder geometry that wa
 **N5. Rendered frames are not reproducible even with a pinned seed and a frozen sim.** 26.1% of
 pixels differ by >8 levels between two runs at an identical sim state, because the effect clock
 advances on wall time during the settle window. `vfxsheet.mjs` solves this for effects; the fight
-capture path does not use it.
+capture path does not use it. **— ROUND 10: still open, and it reaches further than this entry
+says.** It is in the mass meter's path too, which is the instrument the art verdict turns on. See
+the noise-floor measurement in the round 10 section: two runs of `tools/mass.mjs` against the same
+server, same seed, same tick, same settle, return a machine whose bounding box has moved a pixel and
+whose curve-mean mass differs by 0.2. Every single-number mass claim in rounds 5 through 9 was
+quoted to a precision this path cannot deliver.
+
+**N8. A fix verified on desktop is not a fix, and this project has never walked its menus end to end
+on the device it is built for.** *Filed round 10. This is a process defect, not a screen defect, and
+it is filed as one because the current process will keep regenerating the screen defects below.*
+
+The premise of this game is an iPhone 12. Here is the complete list of what four rounds of phone
+sweeps have found, in the order it was found:
+
+| Round | Screen | What was actually wrong |
+|---|---|---|
+| 7 | CONTROLS | **P7** — BACK 194px below the fold with the insets at *zero*, nothing scrolled, `_back()` reachable only from a keyboard. Enterable from the in-match pause menu, so a phone player could leave their match and never get back to it. |
+| 7 | mode / arena | `TO GARAGE` 20px off-screen, `FIGHT` under the home indicator — **only** with real insets; clean at 0/0, which is the only layout this project had ever photographed. |
+| 8 | garage | Listed no parts at all on a phone, and the stage showed the other player's machine. |
+| 8 | CONTROLS | The table deleted its gamepad column and left an empty cell where it had been. |
+| 9 | every menu | Instructed a phone to press ENTER, ESC and the arrow keys, and to hover. |
+| 9 | difficulty | Two of the five levels painted underneath the footer bar — not merely ugly: **unselectable**, so a phone player could not choose them. |
+| 9 | garage | **N2 came back.** The category chips are standing on the machine's shins again, in the phone layout this time. |
+
+**N2 is the one that makes this an entry rather than a list.** It was filed in round 2, reported
+fixed in round 4, found NOT fixed by me in round 4, fixed again, and **verified closed by me** — on
+desktop. It has now returned in a viewport nobody was checking. A defect that can be closed and
+re-open without any commit claiming to touch it was never closed; it was closed *in the one place we
+look*.
+
+**The mechanism, and it is one line.** Headless Chromium resolves `env(safe-area-inset-*)` to `0`.
+Every capture this project has taken in ten rounds — every screenshot in `shots/`, every builder's
+self-check, every one of my own verifications before round 7 — was of the **no-notch layout on a
+desktop viewport**. "Verified" has meant "verified on a device configuration no player has". The two
+worst defects in the table above (`mode`, `arena`) are *invisible* at 0/0 insets and *flow-blocking*
+at 47/34. We were not unlucky. We were measuring the wrong thing, consistently, for nine rounds.
+
+**Recommendation, and it is cheap.** The instrument already exists: `shots/_r9-walk.mjs` drives the
+whole game at 390x844 @3x with `--safe-t: 47px` / `--safe-b: 34px` forced on `:root`, using real
+CDP touch events at real coordinates, no keyboard, no `menus.show()`, and it stops rather than
+cheating past a control it cannot tap. Three changes turn it into a process:
+
+1. **Promote it to `tools/menuwalk.mjs`.** It is a scratch file in `shots/` — the directory this
+   project's `.gitignore` excludes — which is why round 9 wrote it, used it, and left the next agent
+   to write it again. Six agents have now independently re-derived the inset-forcing trick.
+2. **No UI change is "fixed" without a walk artefact.** The walk emits a per-screen table of every
+   visible element's bottom edge against the fold and against the home indicator, plus a PNG. That
+   artefact, not a desktop screenshot, is what closes a phone defect.
+3. **Run it on every commit that touches `src/ui/`.** It takes one browser launch. `npm test`
+   already runs a sim test on every commit; this is the same shape of thing for the layer that has
+   produced seven defects in four rounds and one regression of a closed defect.
+
+*Severity: BLOCKING for the process, in the same sense N1 is. Every art round this document has run
+has been spent on a 1600x900 frame, and the game's own premise is a phone.*
 
 ---
 
