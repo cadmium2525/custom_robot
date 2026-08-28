@@ -8,11 +8,12 @@
 # Writes shots/_noise-<tag>-<arena>-<i>.txt. Summarise with _noise.mjs.
 N=${1:-3}
 TAG=${2:-base}
+BASE=${3:-http://127.0.0.1:4211/}
 cd "$(dirname "$0")/.." || exit 1
 for A in grid foundry orbital; do
   I=1
   while [ "$I" -le "$N" ]; do
-    node tools/mass.mjs --arena "$A" > "shots/_noise-$TAG-$A-$I.txt" 2>&1
+    node tools/mass.mjs --base "$BASE" --arena "$A" > "shots/_noise-$TAG-$A-$I.txt" 2>&1
     echo "  $TAG $A run $I done"
     I=$((I + 1))
   done

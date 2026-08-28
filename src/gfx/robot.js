@@ -2406,7 +2406,26 @@ export class RoboModel {
     const p = robo.stepPhase * 0.8;
     const sp = Math.sin(p), cp = Math.cos(p);
     const breatheAmp = this.preview ? 1 : 0.35;
-    this.breathe += dt * (this.preview ? 1.5 : 2.2);
+    // The idle bob is a function of the CLOCK, not an accumulator fed by dt.
+    //
+    // Same rate, same amplitude, and nothing on screen changes — but it is the
+    // sixth instrument fault in this project and it lives in this file. A
+    // dt-accumulator advances once per RENDERED FRAME, so its phase is a
+    // function of how many frames the browser managed between boot and the
+    // shutter, which is a function of how loaded the machine was. Every
+    // "pinned" frame the mass and contour meters take was photographing a
+    // machine bobbing at a slightly different point in its cycle: measured over
+    // three identical runs of an unchanged build, the near robot's bounding box
+    // came back 260, 261 and 264 px tall and its largest mass swung 57%..65%.
+    // Pinning engine.clock.elapsed — round 10's fix — could not close that,
+    // because this accumulator never reads the clock at all.
+    //
+    // Deriving it from `time` makes the pose a pure function of the pinned
+    // clock, which is what "pinned" was supposed to mean. The idle is a
+    // free-running oscillator with no state to preserve, so there is nothing to
+    // lose by recomputing it: the two machines were already in lockstep, since
+    // both accumulators started at zero on the same frame.
+    this.breathe = time * (this.preview ? 1.5 : 2.2);
     const bob = Math.sin(this.breathe) * 0.008 * breatheAmp;
 
     const air = this.fAir, dash = this.fDash, dwn = this.fDown, gu = this.fGetup;

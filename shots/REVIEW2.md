@@ -3,13 +3,15 @@
 Rolling document. Round 2 reviewed `10621f2`; round 4 reviewed `35d0e66`; round 5 opened at
 `b28ff8c` and closed at `da3253a`; round 6 opened at `1e49409` and named a cause; round 7 opened at
 `ac50610` and closed at `762d220`; round 8 opened at `cc7cebb` and audited its own meters;
-round 9 opened at `0594eb2` and half-closed `#14`; **round 10 (this pass) opens at `8b3208e`**, and
-its job is the one measurement round 9 could not take because the work had not landed — the mass
-rule, re-run with the corrected meter, against the prescription written for it — plus the three
-re-measurements round 8 left open and the phone finding that four rounds have each filed as an
-incident.
+round 9 opened at `0594eb2` and half-closed `#14`; round 10 opened at `8b3208e` and found that the
+number the whole art prescription was written against had never existed; **round 11 (this pass)
+opens at `84d5401`**, and its job is to give the mass rule the one thing every previous round quoted
+it without — **a noise floor** — then re-run it on both machines in all three arenas against that
+floor, close or refuse the iPhone entry on the first real-inset evidence this project has ever had,
+and follow up the stage agent's finding that the frame all of this is measured on may be unfit to
+judge grounding.
 
-**STATUS: IN PROGRESS. The VERDICT section at the bottom of this file was rewritten for round 10
+**STATUS: IN PROGRESS. The VERDICT section at the bottom of this file was rewritten for round 11
 from existing evidence BEFORE this round's captures were taken, and is being revised as they land.
 It has never been allowed to read PENDING and does not now. That section, not this line, is what
 decides.**
@@ -19,6 +21,182 @@ recorded. This header deliberately does not restate it — two earlier rounds sh
 disagreed with the section, and the fix is to stop having two of them.**
 
 ---
+
+
+## Round 11 (opens at `84d5401`) — the noise floor, measured at last, and the meter is still not pinned
+
+### The instrument audit, first, because this round it invalidates the measurement it was meant to precede
+
+Round 10 found `tools/mass.mjs` returning a machine whose bounding box changed shape between two runs
+of a pinned frame, named the cause as the effect clock advancing during boot, and fixed it by pinning
+`engine.clock.elapsed` to 1000 in both meters. I was asked to verify that independently. **It does not
+hold.** Three identical runs of `tools/mass.mjs` at `84d5401` — same server, same seed, same tick
+count, same settle, nothing changed between them but the wall clock:
+
+```
+  orbital        ROBOT 1 box        R1 @51 largest   R1 mean   ROBOT 2 box       R2 @51   R2 mean
+  run 1        173x273 at 719,608       62.7%          4.5     37x67 at 795,247   5.0       5.8
+  run 2        173x274 at 719,607       56.2%          4.3     37x66 at 795,248   5.3       6.2
+  run 3        171x276 at 720,605       63.1%          4.4     34x64 at 795,249   4.8       5.6
+```
+
+**The same symptom round 10 reported, at the same pixel, after the fix for it** — 37x67 at y=247 one
+run and 37x66 at y=248 the next is the identical signature quoted in round 10's audit — **and run 3
+is worse than anything round 10 saw.** The opponent came back **34x64 where the other two runs said
+37x67 and 37x66**: three pixels of width on a 37-pixel machine, an 8% change in the thing being
+measured, between two runs of a frame this document calls pinned. The pin did not close it.
+
+**Why the pin could not have closed it, and it is not the reason the fix's own comment gives.** The
+mechanism is in the *settle*, which both meters share verbatim:
+
+```js
+for (let i = 0; i < n; i++) {
+  const views = g.view.prepare(1);
+  g.rig.update(g.world, views, g.localIndex, 1 / 60, t);   // camera: 240 steps at a fixed dt
+  t += 1 / 60;
+}
+g.view.update(0, 1, t);                                     // machines: ONE step, at dt = 0
+```
+
+The settle drives the **camera** 240 times at a fixed `dt` and the **machines** once, at `dt = 0`.
+Every pose term in `RoboModel.update` is `damp(current, target, k, dt)` — `lean`, `bank`, `fAir`,
+`fMove`, `fDash`, `heat`, and each of the thirty-odd bone rotations, plus two integrators
+(`spinAngle += spinRate * dt`, `to.rotation.y += dt * (…)`). At `dt = 0` a damper does not move.
+**So the machine's pose at the shutter is not a function of the pinned frame at all — it is the
+low-pass residue of however many wall-clock render frames the browser managed between boot and the
+settle**, which is exactly the quantity the pin was supposed to remove. `clock.elapsed` only ever fed
+the terms written as functions of `time`; it was never in the dampers' path.
+
+**A builder is fixing this concurrently, on one term, and the arithmetic in its own comment shows one
+term is not enough.** `7e9d801` and the working tree at `robot.js` convert `this.breathe` from a
+`dt`-accumulator to `time * 2.2` — correct, and it is a genuine carrier. But the comment reports the
+swing it is closing as *"the near robot's bounding box came back 260, 261 and 264 px tall"*. The bob
+that change removes is `Math.sin(breathe) * 0.008 * 0.35` — a peak-to-peak root-Y travel of **5.6 mm**.
+At the near robot's scale (173 px across a 2.3 m machine, ~75 px/m) that is **0.4 px**, and it cannot
+produce a 4 px swing. It is a purely *vertical* term, so it cannot produce a horizontal change at
+all — and run 3 above lost **3 px of the opponent's width**. It accounts for the ±1 px of height and
+for nothing else. **The dampers are the rest of it, and they are untouched by that commit.**
+
+### The noise floor itself, which is the number this round exists to produce
+
+Five identical runs per arena, serially, one meter, one server, one build at `84d5401`. Mean, the
+observed range, and `r` = the width of that range — which is the quantity every delta in this
+document has to be bigger than before it is a result.
+
+```
+  ORBITAL, n=5
+                      mean      observed range    r
+    ROBOT 1  boxes 173x273 173x274 171x276 173x277 173x273
+             m51      3.84       3.5 .. 4.3      0.8
+             curve    4.44       4.3 .. 4.7      0.4
+             largest 61.6%      56.2 .. 63.2     7.0
+             top4    87.1%      86.6 .. 87.6     1.0
+    ROBOT 2  boxes  37x67  37x66  34x64  37x66  37x67
+             m51      5.08       4.8 .. 5.3      0.5
+             curve    5.92       5.6 .. 6.2      0.6
+             largest 56.7%      54.8 .. 57.9     3.1
+             top4    90.3%      89.5 .. 90.9     1.4
+```
+
+**The floor is the same size as every effect this document has credited.** Round 10's A/B deltas were
+0.4 to 0.8 curve-mean masses; the curve mean's own run-to-run range on an unchanged build is 0.4 on
+the player and 0.6 on the opponent. The largest-mass figure, which the blind comparison's point 4
+leans on, ranges **7.0 percentage points** on the player between two runs of the same binary.
+
+**And the reading I was asked to check is the most flattering draw in its own set.** The credit
+carried into this round was *orbital's opponent at 5.3 masses, largest 57.1%, top4 91.4%*. Against
+five runs: 5.3 is the **maximum** of the observed 4.8..5.3; 57.1% sits inside 54.8..57.9; and
+**91.4% top4 is outside the five-run range entirely**, above a maximum of 90.9. That is not a
+measurement that reproduces. It is one draw, and it is the best one.
+
+### Verdict on the instrument: `mass.mjs` and `contour.mjs` are not pinned, and the fix is one line
+
+The settle has to drive the machines the way it already drives the camera:
+
+```js
+g.rig.update(g.world, views, g.localIndex, 1 / 60, t);
+g.view.update(1 / 60, 1, t);      // <- the missing line
+```
+
+240 driven steps at k = 6..26 converges every damper in the model to the pinned frame's targets, and
+the pose stops being a function of the machine's load. **This is the sixth instrument fault, it is
+the fifth one re-opened rather than a new one, and it is the third consecutive round in which the
+number the art verdict turns on came from a meter that was not measuring what it said.**
+
+### The iPhone 12's real insets — the entry that has been open since round 7, and it half closes
+
+This is the first round in which the layout was measured on the device the game is aimed at, and the
+work is good. I verified it independently rather than reading the log: taking the four forced values
+and the stylesheet's own arithmetic, with no reference to the capture,
+
+```
+                          rule in ui.css                        predicted   logged
+  portrait 390x844, --safe-t 47 --safe-b 34
+    .hud__top     top    calc(8px  + var(--safe-t))                  55       55
+                  left   calc(10px + var(--safe-l))                  10       10
+                  right  390 - (10 + var(--safe-r))                 380      380
+    .hud__gear    top    calc(78px + var(--safe-t))                 125      125
+    .tc__pause    top    calc(84px + var(--safe-t))                 131      131
+    .hud__scrim   height calc(158px + var(--safe-t))                205      205
+  landscape 844x390, --safe-l/r 47 --safe-b 21
+    .hud__top     left   calc(20px + var(--safe-l))                   67       67
+                  right  844 - (68 + var(--safe-r))                  729      729
+    .crv2-touch-on .hud__gear  top calc(104px + var(--safe-t))       104      104
+    .hud__scrim   height calc(130px + var(--safe-t))                 130      130
+    .tc__pause    top 6, right 844 - (10 + var(--safe-r))          6/787    6/787
+```
+
+**Every one of the eleven reproduces.** The in-match HUD is clear of both reserved bands in both
+orientations, and the landscape figures had never been taken in ten rounds. That half of the entry
+is **closed**.
+
+**One correction to the claim as written.** *"The only rect that enters a reserved band is the
+floating stick while a thumb is down"* is not what the logs say. `.hud__scrim` enters the notch band
+by 47px in portrait and both side bands by 47px in landscape, in the tool's own output, on both
+runs. It is correct that it should — the stylesheet says so at line 77, *"`.hud__scrim` is full-bleed
+by design"* — but a document whose whole method is that claims are exact should not carry an absolute
+that its own instrument contradicts. The accurate sentence is: the only *control* that enters a band
+is the floating stick, and it follows the finger.
+
+**The other half does not close, and the reason is that the entry was never about the HUD.** N8 is
+about *every screen*. `_hudinset.mjs` measures the in-match HUD only; the screen walk is
+`_r10-walk.mjs`, and re-run at head in landscape (`r11L-log.txt`) it still reports:
+
+```
+  09-settings   844x390, insets 47/47/21, at rest (scrollTop 0 of 150)
+    opt "SENSITIVITY"    [63,295,411,345]   NOT-HITTABLE      centre under the sticky footer
+    opt "INVERT Y"       [63,351,411,401]   OFF-SCREEN
+    opt "TOUCH LAYOUT"   [63,407,411,464]   OFF-SCREEN NOT-HITTABLE
+  03-garage     every category screen, at rest
+    row "NOCTURNE" / "TEMPEST"  [241,283,524,336]  NOT-HITTABLE
+```
+
+`L1-09-settings.png` photographs it: the word SENSITIVITY is **cut through the middle of its own
+glyphs** by the footer bar's top edge, with two more options entirely under it. This is round 9's
+defect — *"two of the five difficulty levels painted under the footer bar"* — in a third place.
+
+**What `84d5401` did fix, and it is real.** The landscape garage's `P1`/`P2` switch was under the bar
+and is not any more; the two-column rail is the right answer and the walk now taps both. The commit
+found that with a walk artefact, which is exactly what N8 asked for. **N8's recommendation is being
+followed.** It is the one process item in this document that has gone from filed to practised inside
+one round.
+
+**But the walk overstates two of its own findings, and the next round should not quote them raw.**
+
+1. **It hit-tests the centre of the element's full rect.** For anything half under a sticky bar that
+   returns NOT-HITTABLE while 20px of the control is exposed and tappable — `SENSITIVITY` shows
+   295..315 above a footer whose box starts at ~315. The defect is real and it is narrower than the
+   label: the control's *natural* tap point misses, not the control.
+2. **It swipes to the extreme and re-tests there.** Every `STILL UNREACHABLE` line in `r11L-log.txt`
+   reports a rect at a *negative* y — the walk scrolled the element off the top and then declared it
+   unreachable. Settings scrolls 150px and all three options clear the bar at 150; the garage scrolls
+   485 and its presets clear it well before that. **Nothing in the landscape menus is unreachable.**
+   What is true, and is the defect the landscape block was written to end, is that at rest the screen
+   does not say it continues.
+
+**Ruling: the iPhone entry closes on the in-match HUD in both orientations and stays open on the
+menus, with its severity reduced from "controls a player cannot reach" to "controls a player is not
+told are there".** That is a real improvement and it is not a close.
 
 
 ## Round 10 (opens at `8b3208e`) — the mass rule, re-run on the corrected meter, and the number the whole prescription was written against turns out not to exist
@@ -2085,18 +2263,19 @@ is the behaviour you want. **Frame rate on this device remains unmeasured.**
 **NO.** Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
 picks CRV2.
 
-Round 10. Written at `8b3208e` from rounds 8 and 9's evidence **before this round's captures were
+Round 11. Written at `84d5401` from rounds 9 and 10's evidence **before this round's captures were
 taken**, then revised as they landed — the order round 6 established and every round since has kept.
 
-**The one measurement this round exists to take has been taken, and it does not say what either
-side expected.** The first item of my own three-item prescription landed as a size-gated rim in
-`8b3208e`; A/B'd against `0594eb2` on the corrected meter it does exactly what it was aimed at,
-moves the far machine and not the near one, and the movement is small. The larger finding is
-underneath it: **"eleven masses", the number this entire prescription was written to reduce, is not
-a number the corrected meter has ever produced.** It came from an instrument retired in round 7 and
-replaced in round 8. Re-measured properly, the build entered this round at 4.3 / 7.5 / 4.5 curve-mean
-masses on the player and 6.5 / 5.3 / 6.0 on the opponent. Four to five was already true for the
-player in two arenas out of three, before anybody fixed anything.
+**Written in advance, this verdict expected to close points 3 and 4 and had one reason to doubt it.**
+The lighting and LOD work landed in `84d5401`, and the one arena measured after it put orbital's
+opponent at 5.3 masses / largest 57.1% / top4 91.4% — inside the target band. If that held on both
+machines in all three arenas, the art list was empty and this verdict changed. The reason to doubt
+was written by the robot agent that did the work: *"the LOD barely fires and the deltas look like
+noise; before believing anything I need the noise floor."* Round 10 had already caught the meter
+returning a machine whose bounding box changed shape between two runs of a pinned frame, and quoted
+a single-run swing of 0.2 masses against deltas of 0.4 to 0.8. **No number in this document had ever
+been quoted against a noise floor, because nobody had ever measured one.** So this round measured it
+first and read everything else through it. What that did to the result is below.
 
 *(Rounds 8 and 9's account, kept for the record: a residual reported closed was open, a residual
 filed against the wrong arena was twice as bad in the right one, a third arena had been carrying the

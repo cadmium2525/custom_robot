@@ -2403,7 +2403,21 @@
      Sized so nine characters fit the column at every landscape width this
      block can match, and the menu gives back the difference. */
   .logo__word { font-size: clamp(26px, 4.4vw, 46px); }
-  .logo__eyebrow { margin-bottom: 6px; }
+  /* THE LEAGUE'S NAME WAS BROKEN 機甲競技連 / 盟 AND PRINTED ON THE MACHINE'S
+     SHOULDER. `.logo__eyebrow` is a nowrap-free flex ROW — the English label
+     and its kana side by side — and in this block the lockup column is only
+     330px wide. Measured at 844x390 with an iPhone 12's landscape insets:
+     "CUSTOM MACHINE COMBAT LEAGUE" wrapped to two lines and took 263 of the
+     330, which left the kana a 57px cell at x=336. Six characters do not fit
+     in 57px, and a kana string has a break opportunity between every
+     character, so it broke after the fifth and dropped 盟 onto a second line —
+     directly over the machine's left shoulder, which is the brightest thing on
+     the title screen and starts at x=337.
+     Wrapping the ROW puts the kana on a line of its own at the column's left
+     edge, clear of the machine and whole; `nowrap` on the kana itself means it
+     never breaks mid-word again whatever the column does to it. */
+  .logo__eyebrow { flex-wrap: wrap; margin-bottom: 6px; }
+  .logo__eyebrow i { white-space: nowrap; }
   .logo__kana { margin-top: 6px; }
   .menu { flex: 0 1 auto; width: min(360px, 42vw); gap: 2px; }
   .menu__item { min-height: 42px; padding: 8px 14px; }
@@ -2487,11 +2501,34 @@
      side by side in `auto 1fr` the five chips read BODY RA… / GUN VUL… /
      BOMB ST… / POD STIN…, which is the one piece of information the chip
      exists to carry, ellipsised on four of five. Stacked it fits inside the
-     50px the chip already had. */
+     50px the chip already had.
+
+     AND THE RAIL HAS TO STAY WHEN THE SCREEN MOVES.
+     Fitting it above the fold fixed the first paint and nothing else: this
+     screen is 715px of panels in a 265px band, so the SCREEN is the scroller
+     (as it is in portrait), and a rail that scrolls with it is a rail that is
+     gone the moment a player reaches anything below the fold. Re-walked by
+     touch at 844x390 after the two-column fix, swiped to the end of the
+     screen: `STILL UNREACHABLE ... 01 BODY / 02 GUN / 03 BOMB / 04 POD / 05
+     LEGS / P1 / P2` — all seven, at negative coordinates, off the top. To
+     change category from the presets or the spec sheet you had to swipe the
+     whole document back up first, and nothing on screen said so.
+     Column 1 holds nothing else, so the rail spans both rows, sizes to its own
+     content at the top of that area, and sticks. `top` matches the screen's
+     own padding so it parks under the sensor housing rather than in it, and
+     the ground goes on the ASIDE — six opaque chips with 4px transparent
+     gutters is a machine seen through a grille the instant anything passes
+     behind them (the portrait block's N2 note, which was written the last time
+     this was a `.rail__b`-only background). */
   .garage__rail {
-    grid-column: 1; grid-row: 1;
+    grid-column: 1; grid-row: 1 / span 2;
+    align-self: start;
+    position: sticky; top: calc(10px + var(--safe-t));
+    z-index: 2;
     display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
     align-content: start;
+    background: rgba(6, 10, 18, .94);
+    padding: 6px;
   }
   .rail__i { display: none; }
   .rail__eq { grid-column: 1 / -1; }
@@ -2520,6 +2557,27 @@
      either way; two columns is what turns four screens of scrolling into
      half of one. */
   .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 22px; max-width: none; align-content: start; }
+  /* THREE GROUPS IN A TWO-COLUMN *ROW* GRID PUTS ONE OF THEM UNDER THE FOLD
+     AND LEAVES A HOLE THE SIZE OF THE HOLE IT CAME OUT OF.
+     `.opts` holds AUDIO (3 rows), VIDEO (2 rows) and CONTROL (3 rows). Row
+     flow lays them AUDIO | VIDEO across row 1 and CONTROL alone in row 2, and
+     a grid row is as tall as its tallest item — so row 2 starts 207px down,
+     underneath VIDEO's 148, and the 59px of dead space under QUALITY is the
+     cheap half of the cost. Measured by touch at 844x390 with an iPhone 12's
+     landscape insets: SENSITIVITY sat at 295 against a footer whose top edge
+     is 314 and was sliced, INVERT Y and TOUCH LAYOUT were off the bottom
+     entirely, and the screen carried 150px of scroll to fix it — with the
+     right half of the frame empty the whole way down.
+     Column flow fills DOWN column 1 and then starts column 2, so CONTROL goes
+     to the top of the right column beside AUDIO, both are whole above the
+     fold, and only VIDEO's second row crosses the bar. Content 540 -> 405.
+     Guarded on width because the outer block also catches 480x320 landscape
+     phones, where `auto-fit` resolves to ONE column and a column-flow grid
+     with two explicit rows would push CONTROL into an implicit second column
+     the container has no room for. */
+  @media (min-width: 600px) {
+    .opts { grid-auto-flow: column; grid-template-rows: repeat(2, min-content); }
+  }
   /* The `›` OF `QUALITY` IS OFF THE SIDE OF THE PHONE.
      `db25e53` found this on a portrait phone and floored the two text tracks
      at 0 to fix it — inside the portrait block, so a landscape phone kept the
