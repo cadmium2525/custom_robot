@@ -68,8 +68,25 @@ uniform float uHitFlash;
 uniform float uCharge;
 uniform float uTime;
 uniform float uDissolve;
+uniform float uBodyH;
+uniform float uRimSizeLo;
+uniform float uRimSizeHi;
+uniform float uRimFar;
+uniform float uRimEdgeFar;
+uniform float uRimSoftFar;
 varying vec3 vWorldNormalX;
 varying vec3 vWorldPosX;
+/**
+ * On-screen size of THIS machine, as a fraction of frame height (0..1).
+ *
+ * Measured per-fragment off the perspective divide, so it costs nothing to
+ * plumb: no camera reference, no per-frame CPU update, and it is automatically
+ * per-machine because the near and far robot sit at different depths. It is a
+ * FRACTION and not a pixel count on purpose, for the same reason
+ * OUTLINE_WIDTH is in NDC units — the defect is angular size, and a machine
+ * that is 8% of the frame is equally illegible on a phone and on a desktop.
+ */
+varying float vSizeX;
 `;
 
 /**
@@ -123,6 +140,17 @@ const RIM_NORMAL_VERT = /* glsl */`
 const RIM_VERT = /* glsl */`
   vWorldNormalX = normalize(mat3(modelMatrix) * rimNormalX);
   vWorldPosX = (modelMatrix * vec4(transformed, 1.0)).xyz;
+  {
+    // View-space depth, NOT gl_Position.w — identical for a perspective camera
+    // but defined at both of this snippet's injection points. (The fallback
+    // path below splices RIM_VERT in BEFORE project_vertex, where gl_Position
+    // has not been written yet; reading .w there would have sampled whatever
+    // the previous stage left behind and made the gate depend on link order.)
+    float depthX = max(-(modelViewMatrix * vec4(transformed, 1.0)).z, 1e-3);
+    // P11 = 1/tan(fovY/2). NDC height spans 2.0, so halving gives the share of
+    // the frame's height this machine covers.
+    vSizeX = uBodyH * projectionMatrix[1][1] / depthX * 0.5;
+  }
 `;
 
 /**
@@ -224,7 +252,12 @@ const RIM_FRAG = /* glsl */`
   // invisible), because a correct rim nobody can see loses to an incorrect one
   // that at least lit whole side faces. So the band is opened up to cover the
   // outer part of the turn rather than the last sliver of it.
-  float rim = smoothstep(uRimEdge, min(uRimEdge + uRimSoft, 1.0), fres);
+  // ...and the band's width is itself a function of ON-SCREEN SIZE, which is
+  // the whole of the mass fix. See the note under the size gate below.
+  float sizeKX = smoothstep(uRimSizeLo, uRimSizeHi, vSizeX);
+  float edgeX = mix(uRimEdgeFar, uRimEdge, sizeKX);
+  float softX = mix(uRimSoftFar, uRimSoft, sizeKX);
+  float rim = smoothstep(edgeX, min(edgeX + softX, 1.0), fres);
 
   // Biased to the upper and outer edges. A rim that wraps the underside as
   // hard as the shoulders is an ambient wash with no direction in it, and the
@@ -239,6 +272,45 @@ const RIM_FRAG = /* glsl */`
   // pow() ramp; this one is a band a few degrees wide with a hard dark hull
   // drawn immediately outside it, which is a lit edge, not a glow through.
   rim *= 0.44 + 0.56 * clamp(nWorldX.y * 0.85 + 0.50, 0.0, 1.0);
+
+  // --- the rim becomes a LINE as the machine gets smaller ------------------
+  //
+  // Measured: zeroing the rim alone takes the far machine from 6.5 masses to
+  // 5.0 and its luminance spread from 150 levels to 112, while the near machine
+  // barely moves (4.3 -> 3.7). Nothing else in the shell's light path comes
+  // close — the diffuse ceiling, swept over a factor of three, moved the spread
+  // by nine levels. The rim is the largest single term in the mass count.
+  //
+  // WHY it is the far machine specifically. The fresnel term does not know the
+  // difference between the machine's silhouette and the turn-away of an
+  // interior plate, and the shell is thirty chamfered boxes. On the 260px hero
+  // each interior chamfer's rim is a legible drawn edge describing a real form.
+  // On the 39px opponent the SAME band is several percent of the body, there
+  // are thirty of them, and they arrive as a field of detached bright islands —
+  // exactly what the mass meter counts. Identical code; a lit edge at one size
+  // and noise at the other.
+  //
+  // WHAT DOES NOT WORK, and it was measured before it was believed: simply
+  // turning the rim DOWN at distance. At a far gain of 0.22 the mass count fell
+  // (grid 6.5 -> 5.7) and the contour went with it — the far machine's
+  // invisible fraction rose 9.4% -> 11.9% in grid, 25% -> 30.9% in foundry,
+  // 12.9% -> 15.1% in orbital, and separation dropped in all three. The rim is
+  // genuinely buying the far machine's edge, so the brightness has to stay.
+  //
+  // WHAT WORKS is to change the band's SHAPE rather than its level. Near, the
+  // band is wide (0.40..1.00) and reads as shading down the outer third of
+  // every plate — correct on a machine whose plates are 40px across. Far, it is
+  // narrowed to hug the last few degrees before the silhouette and brightened
+  // to pay for the pixels it gave up. That keeps the full value step exactly
+  // where the contour meter reads it — at the machine's edge — and takes it off
+  // the interior chamfers, which is where the mass meter reads it. The earlier
+  // finding that a narrow band was invisible (0.72/0.24) is not contradicted:
+  // that band was narrowed WITHOUT the compensating gain, so it gave up the
+  // pixels and bought nothing with them.
+  //
+  // Near the rim shades; far it draws a line. That is not a compromise between
+  // the two, it is what the reference does.
+  rim *= mix(uRimFar, 1.0, sizeKX);
 
   // Energy veins: a slow band travelling up the body, masked to creases.
   float band = sin(vWorldPosX.y * 5.5 - uTime * 2.4) * 0.5 + 0.5;
@@ -293,6 +365,23 @@ export function roboShell(maps, look, teamColor, opts = {}) {
     uRimSoft: { value: opts.rimSoft ?? 0.60 },
     uRimWash: { value: opts.rimWash ?? 0.0 },
     uRimStrength: { value: opts.rimStrength ?? 0.22 },
+    // The machine's height in world units — the reference length vSizeX is
+    // measured against. Not a tuning knob: it is a property of the model, and
+    // getting it wrong just re-scales the two thresholds below.
+    uBodyH: { value: opts.bodyH ?? 2.3 },
+    // Frame-height fractions the rim fades between. The near robot photographs
+    // at 24-29% of frame height and the far one at 4.8-8.8%, so a band from
+    // 0.09 to 0.22 puts the hero on the full rim, the opponent essentially off
+    // it, and the transition somewhere no machine in a duel actually sits.
+    uRimSizeLo: { value: opts.rimSizeLo ?? 0.09 },
+    uRimSizeHi: { value: opts.rimSizeHi ?? 0.22 },
+    // The far band, and the GAIN that pays for narrowing it. Above 1.0 on
+    // purpose: the band is roughly a third of its near width there, so without
+    // the gain the machine's edge loses the value step that the outline hull's
+    // dark side is supposed to be stepping against.
+    uRimEdgeFar: { value: opts.rimEdgeFar ?? 0.66 },
+    uRimSoftFar: { value: opts.rimSoftFar ?? 0.34 },
+    uRimFar: { value: opts.rimFar ?? 1.45 },
     uFillUp: { value: new THREE.Color(opts.fillUp ?? 0x000000) },
     uFillDown: { value: new THREE.Color(opts.fillDown ?? 0x000000) },
     uFillDark: { value: opts.fillDark ?? 0.0 },
