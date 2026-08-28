@@ -237,8 +237,32 @@
   /* Written every frame by hud.js on this exact element. */
   --charge: 0;
   z-index: 10;
+  /* Both directions. Declared on `.is-behind-menu` alone it only ran on the way
+     down, and the HUD snapped back the instant RESUME was tapped. */
+  transition: opacity .2s var(--ease);
 }
 .crv2-hud.is-hidden { display: none !important; }
+
+/* A MENU IS OPEN OVER THIS MATCH, so the HUD stops competing with it.
+   `.menus__bg` ramps from 28% opaque at the top of the frame to 86% at 78% of
+   its height — right over the arena on the title screen, and not nearly enough
+   over a live readout. Walked at 390x844 with an iPhone 12's insets, by touch:
+   SETTINGS-from-pause printed its own title through PLAYER and its AUDIO group
+   header through `900 /900`; CONTROLS-from-pause printed its title through
+   ROUND 1 / 1:39 / ACE. Both are entered from the pause menu, which is the only
+   way a phone can reach them mid-match, and on both the first thing the screen
+   says was the least legible thing on it.
+   0.14 rather than 0: through the menu ground the plates survive as a faint
+   trace, so the pause screen still reads as YOUR match held still. Measured
+   against the collision it fixes — the HUD's brightest pixel under a menu drops
+   from 216 to 40 while the menu's own text stays at 234.
+   `opacity` on the LAYER ROOT only. It never reaches a component class and it
+   never reaches an <i> — see the `:where(i)` note above, which is where a
+   blanket opacity shipped the crosshair, the win pips, the cooldown dial and
+   the hit markers 15% dim for five rounds. Not `display: none`, because the
+   damage-number pool and the plate animations run off live elements and a
+   display flip would restart every one of them on resume. */
+.crv2-hud.is-behind-menu { opacity: .14; }
 
 /* Ground for the top readout. Four stops instead of two: a linear ramp to
    transparent bands visibly against a flat scene, and the review caught the
@@ -1424,7 +1448,15 @@
 .row.is-eq .row__bar { background: var(--acc-2); box-shadow: 0 0 10px var(--acc-2); }
 .row__main { flex: 1; min-width: 0; }
 .row__n { font-size: 12px; font-weight: 700; letter-spacing: .1em; }
-.row__k { font-size: 8px; letter-spacing: .16em; color: var(--ink-dim); margin-top: 2px; }
+/* `nowrap`, because the name and the kana are inline siblings in a block and a
+   kana string has a break opportunity between every character. Whenever the
+   pair did not fit on one line — which is most of the list on a landscape
+   phone, where the panel is 283px wide — the row broke INSIDE the kana and
+   left one orphan character on line two: `SHELLBIT シェルビッ` / `ト`,
+   `AERIAL-Z エアリアル` / `Z`, `GRAND ISO グラ` / `ンイソ`. As a unit it wraps
+   whole, which is the two-line row `margin-top` was written for and never got,
+   vertical margins having no effect on an inline box. */
+.row__k { font-size: 8px; letter-spacing: .16em; color: var(--ink-dim); margin-top: 2px; white-space: nowrap; }
 .row__c { font-size: 8px; letter-spacing: .16em; color: var(--ink-faint); white-space: nowrap; }
 .row__eq {
   font-size: 8px; font-weight: 800; letter-spacing: .12em; white-space: nowrap;
@@ -2019,8 +2051,14 @@
     flex-direction: column;
     flex: none;
     overflow: visible;
-    gap: 12px;
+    /* 10, not 12. Two of these gaps sit above the parts list, so they are part
+       of the budget the list is losing — and the gaps are also the only place
+       the machine still shows between the opaque panels: measured, the panel
+       grounds hold flat at luminance 10 while the 12px seams between them read
+       up to 42, which is the machine's shin lit through a hole in the frame. */
+    gap: 10px;
   }
+  .list__head { padding: 8px 14px; }
   /* All five categories at once, in two rows. The horizontal scroller this
      replaces put POD half off the right edge and LEGS entirely off it (rail
      scrollWidth 614 in a 362px box), with no scrollbar on iOS to say so: two
@@ -2058,8 +2096,24 @@
      (`_renderPreview` maps the slot's CENTRE into the world and renders at a
      fixed size), so it always overhangs. Give it the top of the page, where
      the overhang has the header above it and its own panels below, and make
-     those panels opaque so no part of it is ever behind a number. */
-  .garage__stage { order: -1; flex: none; height: 40vh; min-height: 240px; }
+     those panels opaque so no part of it is ever behind a number.
+
+     THIRTY VH, NOT FORTY, AND THE REASON IS THE PARTS LIST.
+     Walked at 390x844 with an iPhone 12's insets, by touch: the screen's usable
+     box is 61..810, the sticky footer's top edge lands at 703, and above it the
+     column spent 47px on the step header, 338 on this stage, 162 on the rail
+     and the P1/P2 switch, and 53 on the list's own header — which leaves 15px
+     for the list itself. FIFTEEN. At rest the phone garage showed its "5 PARTS"
+     count over a 15px sliver of one row, and every row of every category was
+     behind the bar. That is `99aa611`'s defect — "the phone garage listed no
+     parts at all" — surviving its own fix: the parts are in the document now,
+     and the first paint still says there are none.
+     40vh of a 844px screen is 338px for a machine that overhangs its box by
+     ~180px in either direction anyway; the frame is not what makes it readable.
+     At 30vh the stage gives back 85px and the list clears two whole rows with a
+     third crossing the bar, which is the reading that says "this list runs on".
+     The 200px floor is for the short phones 30vh would starve. */
+  .garage__stage { order: -1; flex: none; height: 30vh; min-height: 200px; }
   .garage__list, .garage__info { flex: none; background: rgba(6, 10, 18, .94); }
   .rail__b { background: rgba(10, 16, 26, .88); }
   /* `flex: 1` with a zero basis is what zeroed this box; in a flowing column
@@ -2413,7 +2467,36 @@
     overflow: visible;
     gap: 10px;
   }
-  .garage__rail  { grid-column: 1; grid-row: 1; }
+  /* THE PLAYER SWITCH WAS STILL UNDER THE BAR, AND THAT IS THE ONE THING THE
+     ROUND-9 ENTRY SAID THIS BLOCK HAD FIXED.
+     Re-walked at 844x390 with an iPhone 12's landscape insets, by touch: the
+     rail ran 39..374 against a sticky footer whose top edge is 304, so `05
+     LEGS` ended exactly ON the fold and P1 / P2 were 28px past it — not
+     sliced, not hinted at, absent. The walk refused the tap: `TAP "P2":
+     something else is on top at that point`.
+     A single column cannot hold this. Five 44px chips, the rule, and a 42px
+     switch is 5H + 85, and 5H + 85 <= 265 wants 36px chips — under any thumb
+     minimum worth the name. Two columns is 3 chip rows instead of 5, which is
+     158px instead of 266, and the whole rail then ends at 266 with 38px to
+     spare. LEGS spans both cells so the odd chip is not an orphan next to a
+     hole, and the whole rail then ends at 258 with 46px to spare.
+     Two things have to move with it, or the cure is worse than the disease —
+     both photographed before they were fixed. The 01..05 index goes, as it
+     does in portrait: at an 82px cell it is the thing crowding the part name.
+     And the equipped name takes a line of its OWN, as it does in portrait:
+     side by side in `auto 1fr` the five chips read BODY RA… / GUN VUL… /
+     BOMB ST… / POD STIN…, which is the one piece of information the chip
+     exists to carry, ellipsised on four of five. Stacked it fits inside the
+     50px the chip already had. */
+  .garage__rail {
+    grid-column: 1; grid-row: 1;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+    align-content: start;
+  }
+  .rail__i { display: none; }
+  .rail__eq { grid-column: 1 / -1; }
+  .rail__b:nth-child(5), .rail__sep, .rail__pl { grid-column: 1 / -1; }
+  .rail__sep { margin: 6px 0 4px; }
   .garage__list  { grid-column: 2; grid-row: 1 / span 2; }
   .garage__stage { grid-column: 3; grid-row: 1; flex: none; height: 300px; }
   .garage__info  { grid-column: 3; grid-row: 2; max-height: none; overflow: visible; }
@@ -2423,11 +2506,34 @@
      `.list__scroll` and hid every part; in a flowing column it sizes to its
      rows and the screen scrolls instead. */
   .list__scroll { flex: none; overflow: visible; }
+  /* The list has 265px above the fold and spends 53 of it on its own header,
+     so five 54px rows put the LAST part of every category — NOCTURNE, TEMPEST,
+     CLUSTER — entirely behind the bar, which is the same list of names the
+     round-9 entry above says this block fixed. Five rows cannot all fit: 53 +
+     5x44 is 273 against 265, and 44 is the floor. Four can, with the fifth
+     crossing the bar by 20px — and a row cut by an opaque bar is the only
+     thing on a screen like this that says the list runs on. */
+  .list__head { padding: 8px 14px; }
+  .row { min-height: 48px; padding: 8px 14px; }
 
   /* Settings is 528px of option rows however they are stacked, so it scrolls
      either way; two columns is what turns four screens of scrolling into
      half of one. */
   .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 22px; max-width: none; align-content: start; }
+  /* The `›` OF `QUALITY` IS OFF THE SIDE OF THE PHONE.
+     `db25e53` found this on a portrait phone and floored the two text tracks
+     at 0 to fix it — inside the portrait block, so a landscape phone kept the
+     desktop rule and kept the defect. Two columns of 260px minimum means each
+     option row gets 348px here, and `minmax(130px, 1fr) minmax(120px, 1.4fr)
+     auto` floors the row at 130 + 120 + the cycler's own 146 min-content + 28
+     of gap + 28 of padding = 452. Grid does not shrink below a track minimum;
+     it overflows, and `.screen` is `overflow-x: hidden`, so it overflows into
+     nothing. Photographed at 844x390 with an iPhone 12's landscape insets:
+     `.opt__cy` ran 725..871 on an 844px screen and the forward arrow — the
+     only thing on the row that says which way it steps — was drawn entirely
+     past the right edge. QUALITY read as `‹ AUTO`.
+     Same floor, same reason, and the label wraps instead. */
+  .opt { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) auto; gap: 10px; padding: 10px 12px; }
 
   .ctls__note { margin-top: 10px; }
 

@@ -78,8 +78,6 @@ uniform float uRimSizeHi;
 uniform float uRimFar;
 uniform float uRimEdgeFar;
 uniform float uRimSoftFar;
-uniform float uMerge;
-uniform float uMergePivot;
 varying vec3 vWorldNormalX;
 varying vec3 vWorldPosX;
 /**

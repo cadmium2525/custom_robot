@@ -331,6 +331,22 @@ export class HUD {
     window.addEventListener('resize', this._onResize, { passive: true });
     window.addEventListener('orientationchange', this._onResize, { passive: true });
 
+    /* A menu screen can open over a LIVE match — pause, and SETTINGS and
+       CONTROLS entered from it — and `.menus__bg` is only 28% opaque at the top
+       of the frame, because over the title screen's arena that is the intended
+       depth. Over a HUD it is not enough, and the top of the frame is exactly
+       where both things put their headline: photographed at 390x844 with an
+       iPhone 12's insets, the word SETTINGS was drawn across PLAYER, its step
+       chip across the P1 portrait, the AUDIO group header across `900 /900`,
+       and on CONTROLS the screen title sat inside ROUND 1 / 1:39 / ACE. Three
+       screens whose own titles were unreadable.
+       The touch layer already stands down for a menu (`crv2:menu`); the HUD
+       never did. It recedes instead of vanishing so the pause screen still
+       reads as YOUR match, paused, rather than as a menu over an empty arena.
+       Class on the root, so nothing here can reach a component or an <i>. */
+    this._onMenu = (e) => this.el.classList.toggle('is-behind-menu', !!(e.detail && e.detail.open));
+    window.addEventListener('crv2:menu', this._onMenu);
+
     this._hitAnim = null;
     this._comboAnim = null;
     this._visible = true;
@@ -844,6 +860,7 @@ export class HUD {
   dispose() {
     window.removeEventListener('resize', this._onResize);
     window.removeEventListener('orientationchange', this._onResize);
+    window.removeEventListener('crv2:menu', this._onMenu);
     for (const d of this._dmgLive) if (d.anim) d.anim.cancel();
     for (const d of this._dmgPool) if (d.anim) d.anim.cancel();
     if (this._hitAnim) this._hitAnim.cancel();

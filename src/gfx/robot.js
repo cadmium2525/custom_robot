@@ -414,6 +414,56 @@ function taperBox(wTop, wBot, h, dTop, dBot, r, arc) {
 }
 
 /**
+ * MEAN PROJECTED AREA of one primitive, in square metres. The size number the
+ * silhouette LOD is built on.
+ *
+ * Cauchy's surface-area formula: averaged over all viewing directions, the area
+ * a CONVEX body projects is exactly one quarter of its surface area. Every
+ * primitive on this machine is a box, a taper, a cylinder, a sphere or a torus,
+ * so for all but the torus that is not an approximation — and it is the only
+ * cheap size metric that survives the shapes this model is actually made of.
+ *
+ * Why not the obvious ones, both of which were tried on paper against the parts
+ * list and both of which get the answer backwards on real pieces:
+ *
+ *   - Bounding-sphere DIAMETER. The head antenna is a 16 cm rod 6 mm thick; its
+ *     diameter is 0.16, the same as a hand-sized armour plate's. It would be
+ *     kept at every size, and it is the single worst greeble on the machine —
+ *     measured, it is 0.26 px wide on the far robot and stretches that robot's
+ *     silhouette 17% taller than its shell.
+ *   - SMALLEST extent. A chest plate is 39 x 36 x 9 cm; its smallest extent is
+ *     the 9 cm thickness, which is under a pixel at gameplay range. It would be
+ *     dropped, and it is most of the machine's front.
+ *
+ * Area gets both right because area is what "can you see it" actually means:
+ * the antenna projects 0.0021 m^2 and the chest plate 0.104, a factor of fifty,
+ * where the two extent metrics put them within a factor of two of each other.
+ *
+ * Non-convexity only costs accuracy on the tori (a ring's real projection is
+ * about a third of S/4, because Cauchy counts the hole's inner wall). That errs
+ * toward KEEPING a ring, which is the safe direction for a part that is often
+ * the only accent colour on a limb.
+ */
+function meanProjectedArea(g) {
+  const p = g.attributes.position;
+  if (!p || p.itemSize !== 3 || p.isInterleavedBufferAttribute) return Infinity;
+  const a = p.array;
+  const idx = g.index;
+  const n = idx ? idx.count : p.count;
+  const get = idx ? (i) => idx.array[i] * 3 : (i) => i * 3;
+  let s2 = 0;
+  for (let i = 0; i + 2 < n; i += 3) {
+    const o0 = get(i), o1 = get(i + 1), o2 = get(i + 2);
+    const ux = a[o1] - a[o0], uy = a[o1 + 1] - a[o0 + 1], uz = a[o1 + 2] - a[o0 + 2];
+    const vx = a[o2] - a[o0], vy = a[o2 + 1] - a[o0 + 1], vz = a[o2 + 2] - a[o0 + 2];
+    const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+    s2 += Math.sqrt(cx * cx + cy * cy + cz * cz);
+  }
+  // sum(|u x v|) is twice the surface area, and Cauchy wants a quarter of it.
+  return s2 * 0.125;
+}
+
+/**
  * Averaged ("welded") vertex normals, returned as a loose Float32Array.
  *
  * These are not for lighting — the shell wants its hard face normals, or every
@@ -531,6 +581,9 @@ class Build {
     // One shell bucket: with hue carried per-vertex there is no longer any
     // reason for torso/arms/legs to be three materials and three draw calls.
     this.buckets = { shell: [], frame: [], emis: [], flare: [] };
+    // Mean projected area of each primitive, index-parallel to its bucket. The
+    // silhouette LOD sorts on this; see buildLodTable().
+    this.areas = { shell: [], frame: [], emis: [], flare: [] };
   }
 
   /**
@@ -597,29 +650,35 @@ class Build {
     g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
   }
 
-  _push(list, g, bone, paint) {
+  /** Record a finished primitive in bucket `name`, with its LOD size. */
+  _keep(name, g) {
+    this.buckets[name].push(g);
+    this.areas[name].push(meanProjectedArea(g));
+    return g;
+  }
+
+  _push(name, g, bone, paint) {
     this._uv(g);
     this._skin(g, bone);
     this._paint(g, paint);
     // Only the shell carries an outline, so only the shell pays for the welded
     // normals. The frame is already the model's darkest value — drawing a dark
     // line around it would describe nothing.
-    if (list === this.buckets.shell) {
+    if (name === 'shell') {
       g.setAttribute('nweld', new THREE.BufferAttribute(weldedNormals(g), 3));
     }
-    list.push(g);
-    return g;
+    return this._keep(name, g);
   }
 
   // shellT/shellA/shellL all land in the same bucket now; they stay distinct so
   // the layout code still says which armour group a plate belongs to, and so the
   // per-group default paint is picked for you when a call site doesn't care.
-  shellT(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.def || this.pal.hull); }
-  shellA(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.def || this.pal.hull); }
-  shellL(g, bone, paint) { return this._push(this.buckets.shell, g, bone, paint || this.def || this.pal.leg); }
-  frame(g, bone) { return this._push(this.buckets.frame, g, bone, this.pal.frame); }
+  shellT(g, bone, paint) { return this._push('shell', g, bone, paint || this.def || this.pal.hull); }
+  shellA(g, bone, paint) { return this._push('shell', g, bone, paint || this.def || this.pal.hull); }
+  shellL(g, bone, paint) { return this._push('shell', g, bone, paint || this.def || this.pal.leg); }
+  frame(g, bone) { return this._push('frame', g, bone, this.pal.frame); }
 
-  _tinted(list, g, bone, hex, intensity) {
+  _tinted(name, g, bone, hex, intensity) {
     this._uv(g);
     this._skin(g, bone);
     const c = g.attributes.position.count;
@@ -628,18 +687,17 @@ class Build {
     const r = _col.r * intensity, gr = _col.g * intensity, b = _col.b * intensity;
     for (let i = 0; i < c; i++) { arr[i * 3] = r; arr[i * 3 + 1] = gr; arr[i * 3 + 2] = b; }
     g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
-    list.push(g);
-    return g;
+    return this._keep(name, g);
   }
 
   /** Solid unlit emissive — lenses, seams, nozzle throats. Drives the bloom. */
   emis(g, bone, hex, intensity = 2.0) {
-    return this._tinted(this.buckets.emis, g, bone, hex, intensity * EMIS_GAIN);
+    return this._tinted('emis', g, bone, hex, intensity * EMIS_GAIN);
   }
 
   /** Additive, depth-tested — thruster plumes, muzzle flash. */
   flare(g, bone, hex, intensity = 1.4) {
-    return this._tinted(this.buckets.flare, g, bone, hex, intensity * FLARE_GAIN);
+    return this._tinted('flare', g, bone, hex, intensity * FLARE_GAIN);
   }
 }
 
@@ -1829,6 +1887,119 @@ function padTextures() {
 }
 
 // ---------------------------------------------------------------------------
+// Silhouette LOD
+//
+// The machine is thirty-odd chamfered boxes with their own chamfers, and at
+// gameplay range most of them are not plates any more. Measured on the pinned
+// foundry frame the far robot is 38x42 px: the head antenna is 0.26 px wide,
+// the pelvic trim strips 0.22 px, the chest bolt columns 0.6 px across. None of
+// those is a shape at that size. Each is a fleck one or two levels off the
+// plate under it, and the mass meter counts flecks.
+//
+// So they are not drawn. This is the one item in the art prescription that is
+// FREE — it removes triangles rather than adding a term — and it is the reason
+// the phone gets faster rather than slower for the fix.
+//
+// HOW IT COSTS NOTHING AT RUNTIME. Each bucket's primitives are sorted by mean
+// projected area BEFORE the merge, so the merged index buffer runs
+// largest-first and every "drop the small stuff" cut is a contiguous prefix.
+// Choosing a detail level is then one binary search and one setDrawRange —
+// no rebuild, no second geometry, no extra memory, no pop from swapping
+// meshes, and it works per-machine because the near and far robot are simply
+// at different depths.
+// ---------------------------------------------------------------------------
+
+/**
+ * Drop a primitive once its mean projection falls under this many square
+ * pixels of the actual render target.
+ *
+ * In PIXELS and not in the frame-height fractions vSizeX and OUTLINE_WIDTH use,
+ * and the difference is deliberate. Those two are angular-size problems — a
+ * machine that is 8% of the frame is equally illegible on a phone and on a
+ * desktop, so its rim must not depend on the panel. This is a RESOLUTION
+ * problem: a primitive that lands on half a pixel is aliasing whatever the
+ * screen, and there is nothing to be gained by rasterising it. It also means a
+ * phone, which renders this scene at renderScale 0.72, drops strictly MORE than
+ * the desktop the numbers are measured on — so a count verified at 1600x900 is
+ * an upper bound on what a phone draws, never a claim made on its behalf.
+ *
+ * Two square pixels is where a piece stops being a shape and becomes a fleck.
+ * Swept against the mass meter over 0.5 / 2 / 6 / 12; see the round's notes.
+ */
+const LOD_MIN_PX2 = 2.0;
+
+/**
+ * The machine's height in world units — the reference length the on-screen size
+ * is measured against, shared with the shell shader's vSizeX so the geometry LOD
+ * and the light's size gate cannot drift apart.
+ */
+const BODY_H = 2.3;
+
+/**
+ * Sort one bucket largest-first and return the table the runtime cut uses.
+ *
+ *   need[k]  the reciprocal of primitive k's mean projected area — the value of
+ *            (pixels per metre)^2 per square pixel it wants. Ascending, because
+ *            area is descending. Kept free of the threshold itself so the
+ *            threshold stays a live number: sweeping it against the mass meter
+ *            costs one browser launch instead of one rebuild per value.
+ *   upto[k]  how many indices to draw to INCLUDE primitive k.
+ *
+ * Sorting is free of side effects: the merge concatenates in list order and
+ * every attribute — paint, UVs, skin binding, welded normals — is already baked
+ * per primitive, so reordering moves whole primitives and nothing else. All
+ * four buckets are depth-tested opaque or additive, and both are order
+ * independent.
+ */
+function buildLodTable(list, areas) {
+  const n = list.length;
+  const order = new Array(n);
+  for (let i = 0; i < n; i++) order[i] = i;
+  order.sort((a, b) => areas[b] - areas[a]);
+
+  const sorted = new Array(n);
+  const need = new Float64Array(n);
+  const upto = new Uint32Array(n);
+  let acc = 0;
+  for (let k = 0; k < n; k++) {
+    const g = list[order[k]];
+    sorted[k] = g;
+    const a = areas[order[k]];
+    need[k] = a > 0 ? 1 / a : 0;
+    acc += g.index ? g.index.count : g.attributes.position.count;
+    upto[k] = acc;
+  }
+  // A sort by area is not exactly a sort by `need` when an area is zero or
+  // non-finite (a degenerate primitive, or one this file could not measure).
+  // Force the table monotone rather than handing a binary search an array that
+  // is only nearly sorted.
+  for (let k = 1; k < n; k++) if (need[k] < need[k - 1]) need[k] = need[k - 1];
+  return { list: sorted, need, upto, total: acc };
+}
+
+/**
+ * Indices to draw at a given square-pixels-per-square-metre budget — that is,
+ * (pixels per metre)^2 divided by the minimum area a piece has to cover.
+ * Never drops everything.
+ */
+function lodDrawCount(t, budget) {
+  const { need, upto } = t;
+  if (!upto.length) return 0;
+  if (need[need.length - 1] <= budget) return t.total;
+  let lo = 0, hi = need.length;            // first k with need[k] > budget
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (need[mid] <= budget) lo = mid + 1; else hi = mid;
+  }
+  // Always keep the largest piece: a robot that renders as nothing is a bug,
+  // and frustum culling is the right tool for a machine that is genuinely gone.
+  return upto[Math.max(0, lo - 1)];
+}
+
+const _lodPos = new THREE.Vector3();
+const _lodSize = new THREE.Vector2();
+
+// ---------------------------------------------------------------------------
 // RoboModel
 // ---------------------------------------------------------------------------
 
@@ -1853,6 +2024,14 @@ export class RoboModel {
     this.lean = 0; this.bank = 0; this.breathe = 0;
     this.podOpen = 0; this.heat = 0; this.chargeAmt = 0;
     this.prevState = 0;
+
+    // --- silhouette LOD state. lodMinPx2 is per-model rather than a module
+    // constant so the meter can sweep it live; 0 disables the LOD entirely,
+    // which is the control every claim made about it has to be run against.
+    this.lod = [];
+    this._lodBudget = -1;
+    this.lodPx = Infinity;
+    this.lodMinPx2 = LOD_MIN_PX2;
 
     this._build();
   }
@@ -1935,6 +2114,9 @@ export class RoboModel {
     // machine read as blue glass. A rim is allowed to describe an edge. It is
     // not allowed to describe the whole robot.
     this.matShell = roboShell(maps, look, teamHex, {
+      // Shared with the geometry LOD, so the size gate the light reads and the
+      // size the greebles are dropped at cannot drift apart.
+      bodyH: BODY_H,
       rimStrength: 0.10, rimPower: 5.2, energy: 0.03,
       normalScale: 1.15, envMapIntensity: 0.5,
       // The governor — see FILL_FRAG. The ceiling is what stops the arena
@@ -1981,15 +2163,25 @@ export class RoboModel {
     this.shellMats = [this.matShell];
 
     const shadows = !!this.settings.shadows;
-    const mk = (list, mat, opts = {}) => {
+    // Geometries whose draw range the silhouette LOD moves, with the table that
+    // says where to cut. Populated by mk() below.
+    this.lod = [];
+    const mk = (name, mat, opts = {}) => {
+      const list = B.buckets[name];
       if (!list.length || !mat) return null;
-      const geo = mergeGeometries(list);
+      // Sorted largest-first so every LOD cut is a prefix of the index buffer.
+      // The flare bucket is deliberately NOT sorted or cut: muzzle flash and
+      // thruster plumes are gameplay tells, and a tell that disappears because
+      // the machine got small is a bug, not a level of detail.
+      const table = opts.noLod ? null : buildLodTable(list, B.areas[name]);
+      const geo = mergeGeometries(table ? table.list : list);
       ensureAOChannel(geo);
       geo.boundingSphere = _sphere.clone();
       const m = new THREE.SkinnedMesh(geo, mat);
       m.castShadow = shadows && !opts.noShadow;
       m.receiveShadow = shadows && !opts.noShadow;
       if (opts.order !== undefined) m.renderOrder = opts.order;
+      if (table) this.lod.push({ geo, table });
       this.group.add(m);
       this.meshes.push(m);
       return m;
@@ -2002,10 +2194,10 @@ export class RoboModel {
 
     // Four draw calls for the entire machine: painted shell, dark frame, lit
     // emissives, additive plumes.
-    const shellMesh = mk(B.buckets.shell, this.matShell);
-    mk(B.buckets.frame, this.matFrame);
-    mk(B.buckets.emis, this.matEmis, { noShadow: true, order: 1 });
-    mk(B.buckets.flare, this.matFlare, { noShadow: true, order: 3 });
+    const shellMesh = mk('shell', this.matShell);
+    mk('frame', this.matFrame);
+    mk('emis', this.matEmis, { noShadow: true, order: 1 });
+    mk('flare', this.matFlare, { noShadow: true, order: 3, noLod: true });
 
     // Fifth: the contour. Shares every buffer with the shell, so it costs one
     // draw call and no memory. Drawn FIRST so the shell's own front faces land
@@ -2019,6 +2211,20 @@ export class RoboModel {
       this.outline = om;
       this.group.add(om);
       this.meshes.push(om);
+      // The contour is drawn from the shell's own index buffer, so it has to be
+      // cut at the same place. Left out, the outline would keep drawing hulls
+      // around plates the shell had already stopped drawing — a machine trailing
+      // detached black flecks, which is worse than the greebles it removed.
+      const shellLod = this.lod.find((e) => e.geo === shellMesh.geometry);
+      if (shellLod) this.lod.push({ geo: om.geometry, table: shellLod.table });
+    }
+
+    // One hook per mesh rather than one for the model: three.js calls
+    // onBeforeRender per drawn object, and the frame mesh can be reached before
+    // the shell. _applyLod is idempotent and early-outs on an unchanged size, so
+    // paying for it five times a frame costs a comparison.
+    for (const m of this.meshes) {
+      m.onBeforeRender = (renderer, scene, camera) => this._applyLod(renderer, camera);
     }
 
     for (const m of this.meshes) m.bind(this.skeleton, m.matrixWorld);
@@ -2062,7 +2268,50 @@ export class RoboModel {
     this.pivotY = P.hipY * 0.65 + 0.35;
   }
 
+  /**
+   * Pick a detail level for the size this machine is actually being drawn at.
+   *
+   * Called from every LOD'd mesh's onBeforeRender, which is the only place that
+   * knows BOTH the camera the frame is being rendered from and the resolution it
+   * is being rendered at. Doing it in update() instead would need a camera this
+   * file has no reference to, and would get the garage's preview camera wrong.
+   *
+   * The size expression is the CPU twin of the shader's vSizeX and is kept
+   * identical to it on purpose — same uBodyH, same P11, same view-space depth,
+   * same halving of the 2.0-tall NDC range — so the geometry that gets dropped
+   * and the light that gets flattened are answering the same question about the
+   * same machine.
+   *
+   * Reads the bound render target's height, not the canvas': the quality tiers
+   * render this scene at renderScale 0.72 and 0.88 before the post chain
+   * upsamples it, and a LOD that measured the canvas would draw half-pixel
+   * greebles into a buffer that has no pixels for them.
+   */
+  _applyLod(renderer, camera) {
+    if (!this.lod || !this.lod.length) return;
+    let budget = Infinity;
+    // The garage is where a player inspects the parts they just bought, and it
+    // is one machine on the screen. Full detail, always.
+    if (!this.preview && camera && camera.isPerspectiveCamera && renderer && this.lodMinPx2 > 0) {
+      const rt = renderer.getRenderTarget();
+      const h = rt ? rt.height : renderer.getDrawingBufferSize(_lodSize).y;
+      _lodPos.setFromMatrixPosition(this.group.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
+      const depth = Math.max(1e-3, -_lodPos.z);
+      const px = BODY_H * camera.projectionMatrix.elements[5] / depth * 0.5 * h;
+      this.lodPx = px;
+      const perMetre = px / BODY_H;
+      budget = perMetre * perMetre / this.lodMinPx2;
+    } else {
+      this.lodPx = Infinity;
+    }
+    if (budget === this._lodBudget) return;
+    this._lodBudget = budget;
+    for (const e of this.lod) e.geo.setDrawRange(0, lodDrawCount(e.table, budget));
+  }
+
   _teardown() {
+    this.lod = [];
+    this._lodBudget = -1;
     for (const m of this.meshes || []) {
       m.geometry.dispose();
       this.group.remove(m);
