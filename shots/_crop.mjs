@@ -1,42 +1,51 @@
 #!/usr/bin/env node
 /**
- * Crop a PNG without an image library.
+ * Crop a capture so it can be READ AT 1:1.
  *
- * Reading a 1170x2532 phone capture through anything that downscales is how
- * five rounds of this project "checked" a layout and missed a clipped label:
- * the reviewer has to see device pixels, so a capture has to be cut into bands
- * small enough to survive at 1:1. There is no image module in this repo's
- * dependency tree, so the decode happens in the browser that is already here.
+ * The review's standing trap is that every measurement in this repo is a
+ * summary, and a summary can be gamed — the discarded explosion rework scored
+ * better than anything here while covering the fight in beige smoke. The only
+ * defence is looking at the pixels, and a 1600x900 PNG handed to a reader is
+ * downscaled before it is seen: the 90px opponent that the whole argument is
+ * about becomes 30px, which is precisely the size at which the defect hides.
  *
- *   node shots/_crop.mjs in.png out.png x y w h     # coords in DEVICE pixels
- *   node shots/_crop.mjs in.png out.png x y w h 3   # ...or in CSS px at dpr 3
+ *   node shots/_crop.mjs shots/foo.png 700,560,240,340 --zoom 2 --out shots/foo-crop.png
+ *
+ * Args: <src.png> <x,y,w,h> [--zoom n] [--out path]
  */
+
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
+import process from 'node:process';
 
-const [inp, outp, x, y, w, h, dpr = 1] = process.argv.slice(2);
-if (!inp || !outp) { console.error('usage: _crop.mjs in.png out.png x y w h [dpr]'); process.exit(1); }
-const s = Number(dpr) || 1;
+const args = process.argv.slice(2);
+const src = args[0];
+const rect = (args[1] || '0,0,400,400').split(',').map(Number);
+const flag = (n, d) => { const i = args.indexOf(`--${n}`); return i < 0 ? d : args[i + 1]; };
+const ZOOM = Number(flag('zoom', 1));
+const OUT = flag('out', src.replace(/\.png$/, '-crop.png'));
+const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
-const browser = await chromium.launch({
-  executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
-});
-const page = await browser.newPage();
-const b64 = await page.evaluate(async ({ uri, x, y, w, h }) => {
-  const img = new Image();
-  img.src = uri;
-  await img.decode();
-  const c = document.createElement('canvas');
-  c.width = Math.min(w, img.naturalWidth - x);
-  c.height = Math.min(h, img.naturalHeight - y);
-  c.getContext('2d').drawImage(img, x, y, c.width, c.height, 0, 0, c.width, c.height);
-  return c.toDataURL('image/png').split(',')[1];
-}, {
-  uri: 'data:image/png;base64,' + readFileSync(inp).toString('base64'),
-  x: Math.round(Number(x) * s), y: Math.round(Number(y) * s),
-  w: Math.round(Number(w) * s), h: Math.round(Number(h) * s),
-});
-writeFileSync(outp, Buffer.from(b64, 'base64'));
-console.log('wrote', outp);
-await browser.close();
+(async () => {
+  const browser = await chromium.launch({
+    executablePath: PINNED,
+    args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+  });
+  const page = await browser.newPage();
+  await page.goto('about:blank');
+  const uri = 'data:image/png;base64,' + readFileSync(src).toString('base64');
+  const out = await page.evaluate(async ({ uri, rect, zoom }) => {
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = uri; });
+    const [x, y, w, h] = rect;
+    const c = document.createElement('canvas');
+    c.width = w * zoom; c.height = h * zoom;
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.drawImage(img, x, y, w, h, 0, 0, w * zoom, h * zoom);
+    return { uri: c.toDataURL('image/png'), src: `${img.width}x${img.height}` };
+  }, { uri, rect, zoom: ZOOM });
+  writeFileSync(OUT, Buffer.from(out.uri.split(',')[1], 'base64'));
+  console.log(`${src} (${out.src}) -> ${OUT}  ${rect.join(',')} @ ${ZOOM}x`);
+  await browser.close();
+})().catch((e) => { console.error(e); process.exit(1); });
