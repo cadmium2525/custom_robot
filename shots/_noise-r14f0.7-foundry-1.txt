@@ -1,0 +1,17 @@
+  uniforms: frameFade=0.7
+
+MASSES — foundry @ tier 3, 1600x900
+  ROBOT 1  69x183px at 720,570   blur sigma 5.72
+     value  p2=49 median=115 p98=210   spread 160 levels
+     step      24    30    36    42    51    60    72    85
+     mass    12.5  11.0   9.5   7.8   7.5   6.3   5.3   4.5
+     top4%     44    53    61    69    75    84    90    92
+     @51 (five bands): 7.5 masses, largest 34.4%, top4 75.1%
+     curve mean: 8 masses
+  ROBOT 2  38x42px at 780,350   blur sigma 1.31
+     value  p2=55 median=103 p98=180   spread 125 levels
+     step      24    30    36    42    51    60    72    85
+     mass     6.0   5.5   5.3   4.5   4.3   4.0   3.5   3.3
+     top4%     67    76    79    84    88    91    92    94
+     @51 (five bands): 4.3 masses, largest 59.7%, top4 88.1%
+     curve mean: 4.6 masses
