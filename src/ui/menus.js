@@ -744,6 +744,23 @@ export class Menus {
        object on the screen the player came to look at. The rail keeps the
        reading; the stage column keeps the machine. */
 
+    /* Two pieces of grouping in the spec sheet below, both for the landscape
+       phone, where that panel is 540px wide and two columns — and both no-ops
+       everywhere else, where it is one column and this is the order it already
+       renders in.
+       `.info__livery` wraps the LIVERY label and its swatches so the pair can
+       move as one block into column 2, beside the blurb, instead of owning a
+       540px row for 114px of ink. A wrapper with no padding or border round two
+       blocks changes no spacing in a flex column: it is a flex item, so it
+       establishes its own formatting context and keeps `.info__sw`'s 16px
+       bottom margin inside itself.
+       `.info__legend` is the LAST CHILD of `.info__stats` rather than a sibling
+       under it, so in the two-up table it lands in the cell an odd stat count
+       leaves empty — five stats plus the key is six items, which is three full
+       rows. BODY, BOMB and POD all carry five. In a single column it is still
+       the last thing in the box; see the ui.css entry that measured that
+       quadrant on the pixels. */
+
     el.innerHTML = `
       ${stepHeader('02', 'GARAGE', 'ガレージ')}
       <div class="garage">
@@ -788,16 +805,6 @@ export class Menus {
             <span class="info__c"></span>
           </div>
           <p class="info__b"></p>
-          <!-- The two livery lines are one block, and the legend is the last
-               cell of the compare table rather than a row under it. Both are
-               grouping for the landscape spec sheet, which is 540px wide and
-               two columns: the wrapper gives LIVERY somewhere to go beside the
-               blurb, and a legend inside `.info__stats` lands in the leftover
-               cell that an odd stat count leaves in the bottom right — see the
-               ui.css entry that measured that quadrant. Everywhere else this is
-               the same flow it was: a wrapper with no padding round two blocks
-               changes no spacing, and the legend is still the last thing in a
-               column above the panel's own bottom padding. -->
           <div class="info__livery">
             <div class="info__swl">LIVERY<i>塗装</i></div>
             <div class="info__sw"><i></i><i></i><i></i></div>
