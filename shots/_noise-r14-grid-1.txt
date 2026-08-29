@@ -1,0 +1,17 @@
+  suppressed transients: robot 1 uCharge=0.05, robot 2 uCharge=0.02
+
+MASSES — grid @ tier 3, 1600x900
+  ROBOT 1  160x260px at 722,637   blur sigma 8.13
+     value  p2=46 median=115 p98=205   spread 159 levels
+     step      24    30    36    42    51    60    72    85
+     mass     6.3   4.8   4.8   5.0   4.5   3.8   3.0   3.0
+     top4%     67    75    81    83    88    90    95    95
+     @51 (five bands): 4.5 masses, largest 55.4%, top4 88.2%
+     curve mean: 4.4 masses
+  ROBOT 2  39x76px at 780,178   blur sigma 2.38
+     value  p2=51 median=105 p98=204   spread 153 levels
+     step      24    30    36    42    51    60    72    85
+     mass     9.5   8.0   7.3   5.8   5.3   4.5   4.3   3.5
+     top4%     59    67    74    81    86    92    95    96
+     @51 (five bands): 5.3 masses, largest 43.5%, top4 85.6%
+     curve mean: 6 masses

@@ -1,0 +1,16 @@
+
+LOD — foundry @ tier 3
+
+  --- minPx2 0 ---
+  ROBOT 1  on-screen height Infinitypx   minPx2 0   budget Infinity
+     bucket 0: prims 70/70   indices 21648/21648 (100.0%)
+     bucket 1: prims 64/64   indices 14760/14760 (100.0%)
+     bucket 2: prims 32/32   indices 8634/8634 (100.0%)
+     bucket 3: prims 70/70   indices 21648/21648 (100.0%)
+     TOTAL primitives drawn 236/236  (100.0%)  dropped 0
+  ROBOT 2  on-screen height Infinitypx   minPx2 0   budget Infinity
+     bucket 0: prims 70/70   indices 22176/22176 (100.0%)
+     bucket 1: prims 49/49   indices 12636/12636 (100.0%)
+     bucket 2: prims 35/35   indices 9906/9906 (100.0%)
+     bucket 3: prims 70/70   indices 22176/22176 (100.0%)
+     TOTAL primitives drawn 224/224  (100.0%)  dropped 0
