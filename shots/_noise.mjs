@@ -53,16 +53,49 @@ function parse(text) {
 const FIELDS = ['h', 'w', 'y', 'spread', 'median', 'm51', 'largest', 'top4', 'mean'];
 const ARENAS = ['grid', 'foundry', 'orbital'];
 
+/**
+ * Captures that exist but carry no reading, with the first line of each.
+ *
+ * INSTRUMENT FAULT 10, and it is this file's own. `load()` dropped every
+ * unparseable capture on the floor and the summary printed `foundry: no
+ * captures` — a phrase that reads as "you did not run it" when what happened is
+ * "you ran it three times and it failed three times". Round 12 lost eleven of
+ * twelve captures to a dead preview server and wrote its audit as though the
+ * sweep had succeeded; round 13 lost six of nine to the same cause — a
+ * `npm run build` under a live `vite preview`, which takes the server with it —
+ * and caught it only by listing the files by hand.
+ *
+ * A tool that cannot tell "no data" from "all errors" is a tool that reports a
+ * clean summary over missing data, which is the failure mode this ledger has
+ * now found ten times. So the two states are separated and the error text is
+ * printed, because the error text is what names the cause.
+ */
 function load(tag) {
   const out = {};
+  const bad = {};
   for (const a of ARENAS) {
     const files = readdirSync(DIR)
       .filter((f) => f.startsWith(`_noise-${tag}-${a}-`) && f.endsWith('.txt'))
       .sort();
-    const runs = files.map((f) => parse(readFileSync(join(DIR, f), 'utf8'))).filter((r) => r.length);
+    const runs = [];
+    for (const f of files) {
+      const text = readFileSync(join(DIR, f), 'utf8');
+      const r = parse(text);
+      if (r.length) runs.push(r);
+      else (bad[a] ||= []).push([f, (text.trim().split('\n')[0] || '(empty file)').slice(0, 110)]);
+    }
     if (runs.length) out[a] = runs;
   }
+  out.__bad = bad;
   return out;
+}
+
+/** Print the errored captures for one arena, if there are any. */
+function reportBad(data, a) {
+  const bad = data.__bad?.[a];
+  if (!bad || !bad.length) return;
+  console.log(`    ${bad.length} capture(s) present with NO reading in them:`);
+  for (const [f, first] of bad) console.log(`      ${f}: ${first}`);
 }
 
 const fmt = (v) => (Number.isInteger(v) ? String(v) : v.toFixed(2));
@@ -72,8 +105,14 @@ for (const tag of tags) {
   console.log(`\n=== ${tag} ===`);
   for (const a of ARENAS) {
     const runs = data[a];
-    if (!runs) { console.log(`  ${a}: no captures`); continue; }
+    if (!runs) {
+      const bad = data.__bad?.[a];
+      console.log(`  ${a}: NO READING${bad && bad.length ? ` — ${bad.length} capture(s) FAILED` : ' — no captures on disk'}`);
+      reportBad(data, a);
+      continue;
+    }
     console.log(`  ${a}  (${runs.length} identical runs)`);
+    reportBad(data, a);
     for (let b = 0; b < runs[0].length; b++) {
       const row = FIELDS.map((f) => {
         const vals = runs.map((r) => r[b]?.[f]).filter((v) => typeof v === 'number');

@@ -8,7 +8,17 @@
 # Writes shots/_noise-<tag>-<arena>-<i>.txt. Summarise with _noise.mjs.
 N=${1:-3}
 TAG=${2:-base}
-BASE=${3:-http://127.0.0.1:4211/}
+# The FULL base path, not the bare root. `vite preview` answers `/` with a 302
+# to `/custom_robot/` and playwright reports that as
+# ERR_HTTP_RESPONSE_CODE_FAILURE, which is how round 12 lost eleven of twelve
+# captures. Two further cautions, both bought the hard way:
+#   - do not `npm run build` while `vite preview` is serving the sweep. The
+#     build replaces dist/ underneath it, the server exits, and every remaining
+#     capture records ERR_CONNECTION_REFUSED. Serve a COPY of dist that the
+#     build never touches.
+#   - read `node shots/_noise.mjs <tag>` before believing a summary. It now
+#     names failed captures instead of calling them absent.
+BASE=${3:-http://127.0.0.1:4211/custom_robot/}
 cd "$(dirname "$0")/.." || exit 1
 for A in grid foundry orbital; do
   I=1
