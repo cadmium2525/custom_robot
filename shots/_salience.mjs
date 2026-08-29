@@ -36,11 +36,23 @@
  *              This is the half of the gate residual that is a LIGHTING bug
  *              rather than a paint one: "a practical is not allowed to out-light
  *              the sun" is only checkable by turning them off one at a time.
- *   --rect x0,y0,x1,y1   name a region to rank (default: auto — the frame's
- *              strongest non-machine cluster is found and reported).
+ *   --rect x0,y0,x1,y1   name a region to rank.
+ *   --gate     derive the gate rect from the SCENE instead of typing one in,
+ *              and rank that. The rect quoted for the gate residual since round
+ *              6 — `x 80-200, y 226-386` — is a hand-drawn box on ONE arena's
+ *              frame, which is exactly why the residual could never be carried
+ *              to another arena: nobody could say where foundry's gate was
+ *              without eyeballing a PNG, so for four rounds nobody did, and the
+ *              entry was argued on grid, which it was never about. This
+ *              re-derives `Stage._buildGates`'s own local frame from
+ *              `arena.bounds` + `arena.spawns`, projects the portal's eight
+ *              corners through the pinned camera, and reports the screen AABB.
+ *              Same definition in every arena, no eyeballing, and it prints the
+ *              rect it used so a later round can check it.
  *
  * Usage:
  *   node shots/_salience.mjs --arena grid
+ *   node shots/_salience.mjs --arena foundry --gate
  *   node shots/_salience.mjs --arena orbital --lights
  */
 
@@ -63,6 +75,7 @@ const SEED = Number(flag('seed', 1234567));
 const TICKS = Number(flag('ticks', 420));
 const LIGHTS = !!flag('lights');
 const KEEP = !!flag('keep');
+const GATE = !!flag('gate');
 const RECT = flag('rect', null);
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
@@ -150,6 +163,79 @@ const LIGHT_LIST_FN = `() => {
     distance: l.distance != null ? Math.round(l.distance * 10) / 10 : null,
     inStage: !!(v.stage && v.stage.gateLights && v.stage.gateLights.includes(l)),
   }));
+}`;
+
+/**
+ * The gate rect, taken from the scene rather than from a reader's eye.
+ *
+ * `Stage._buildGates` builds one portal per spawn: it picks the nearest wall,
+ * builds a local frame with +Z pointing into the arena, and lays out a W=5.0 x
+ * H=4.2 x D=1.6 recess with 0.9-wide jambs, a lintel 1.0 tall above it and a
+ * threshold chevron plane 2.4 deep on the deck in front. The same arithmetic is
+ * repeated here — deliberately, rather than reading it off the merged mesh,
+ * because every gate primitive is merged into `architecture` / `practicals` /
+ * `hazard` at flush time and cannot be picked out again.
+ *
+ * Returns every gate's screen AABB plus which one is in frame, so the caller
+ * ranks the portal the camera is actually looking at.
+ */
+const GATE_RECT_FN = `() => {
+  const v = window.__game.view;
+  const st = v.stage, cam = v.camera, a = st.arena, b = a.bounds;
+  cam.updateMatrixWorld(true);
+  const W = window.innerWidth, H = window.innerHeight;
+  const mvi = cam.matrixWorldInverse.elements, prj = cam.projectionMatrix.elements;
+  const mul = (e, x, y, z, w) => [
+    e[0] * x + e[4] * y + e[8] * z + e[12] * w,
+    e[1] * x + e[5] * y + e[9] * z + e[13] * w,
+    e[2] * x + e[6] * y + e[10] * z + e[14] * w,
+    e[3] * x + e[7] * y + e[11] * z + e[15] * w,
+  ];
+  const project = (x, y, z) => {
+    const c = mul(mvi, x, y, z, 1);
+    const p = mul(prj, c[0], c[1], c[2], c[3]);
+    if (p[3] <= 0) return null;                 // behind the camera
+    return [(p[0] / p[3] * 0.5 + 0.5) * W, (1 - (p[1] / p[3] * 0.5 + 0.5)) * H];
+  };
+
+  const GW = 5.0, GH = 4.2, GD = 1.6;
+  const out = [];
+  for (const sp of a.spawns) {
+    const toX = b.hx - Math.abs(sp.x), toZ = b.hz - Math.abs(sp.z);
+    const onX = toX < toZ;
+    const yaw = onX ? (sp.x > 0 ? -Math.PI / 2 : Math.PI / 2) : (sp.z > 0 ? Math.PI : 0);
+    const gx = onX ? Math.sign(sp.x) * b.hx : Math.max(-b.hx + 4, Math.min(b.hx - 4, sp.x));
+    const gz = onX ? Math.max(-b.hz + 4, Math.min(b.hz - 4, sp.z)) : Math.sign(sp.z) * b.hz;
+    const co = Math.cos(yaw), si = Math.sin(yaw);
+    const put = (lx, ly, lz) => [gx + co * lx + si * lz, ly, gz - si * lx + co * lz];
+
+    // Local extents of the portal AS BUILT: jambs sit at +-(W/2 + 0.45) and are
+    // 0.9 wide, the lintel is (W + 1.8) wide and reaches H + 1.0, the recess
+    // runs back to -D and the threshold plane forward to +2.2.
+    const hx = GW / 2 + 0.9, y0 = 0, y1 = GH + 1.0, z0 = -GD, z1 = 2.2;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, behind = 0, n = 0;
+    for (const lx of [-hx, hx]) for (const ly of [y0, y1]) for (const lz of [z0, z1]) {
+      const p = put(lx, ly, lz);
+      const s = project(p[0], p[1], p[2]);
+      n++;
+      if (!s) { behind++; continue; }
+      if (s[0] < minX) minX = s[0];
+      if (s[0] > maxX) maxX = s[0];
+      if (s[1] < minY) minY = s[1];
+      if (s[1] > maxY) maxY = s[1];
+    }
+    if (behind === n) { out.push({ spawn: sp, behind: true }); continue; }
+    const cx = Math.max(0, Math.min(W, minX)), cX = Math.max(0, Math.min(W, maxX));
+    const cy = Math.max(0, Math.min(H, minY)), cY = Math.max(0, Math.min(H, maxY));
+    out.push({
+      spawn: { x: sp.x, z: sp.z },
+      raw: [Math.round(minX), Math.round(minY), Math.round(maxX), Math.round(maxY)],
+      rect: [Math.round(cx), Math.round(cy), Math.round(cX), Math.round(cY)],
+      onScreen: Math.max(0, cX - cx) * Math.max(0, cY - cy),
+      clipped: behind > 0,
+    });
+  }
+  return out;
 }`;
 
 const ANALYSE_FN = async ({ nUri, hUri, rect }) => {
@@ -435,10 +521,29 @@ const pad = (v, n) => String(v).padStart(n);
     writeFileSync(`shots/sal-${ARENA}-t${TICKS}.png`, N);
   }
 
-  const rect = RECT ? String(RECT).split(',').map(Number) : null;
+  let rect = RECT ? String(RECT).split(',').map(Number) : null;
+  let gateNote = '';
+  if (GATE) {
+    const gates = await page.evaluate(`(${GATE_RECT_FN})()`);
+    console.log(`\nGATE RECTS — re-derived from arena.bounds + arena.spawns, projected through the pinned camera`);
+    for (const g of gates) {
+      if (g.behind) { console.log(`    spawn ${g.spawn.x},${g.spawn.z}   entirely behind the camera`); continue; }
+      const [x0, y0, x1, y1] = g.rect;
+      console.log(`    spawn ${pad(g.spawn.x, 5)},${pad(g.spawn.z, 6)}   rect ${x0},${y0},${x1},${y1}`
+        + `   ${x1 - x0}x${y1 - y0} on screen${g.clipped ? '  (partly behind camera)' : ''}`
+        + `   raw ${g.raw.join(',')}`);
+    }
+    const best = gates.filter((g) => !g.behind && g.onScreen > 0).sort((a, b) => b.onScreen - a.onScreen)[0];
+    if (!best) throw new Error('no gate is on screen in this frame — nothing to rank');
+    rect = best.rect;
+    gateNote = `  ranking the in-frame gate: ${rect.join(',')} (${rect[2] - rect[0]}x${rect[3] - rect[1]} px, `
+      + `${(((rect[2] - rect[0]) * (rect[3] - rect[1])) / (1600 * 900) * 100).toFixed(1)}% of frame)`;
+    console.log(gateNote);
+  }
   const out = await probe.evaluate(ANALYSE_FN, { nUri: b64(N), hUri: b64(Ms), rect });
 
   console.log(`\nATTENTION — ${ARENA} @ tier ${TIER}, tick ${TICKS}, ${out.screen}`);
+  if (gateNote) console.log(gateNote);
   console.log('  best rank of a >=50%-machine tile' + (rect ? ' / best rank inside the named rect [tiles in top 10]' : ''));
   console.log('\n   T  off  total       A          B          C');
   for (const r of out.sweep) {

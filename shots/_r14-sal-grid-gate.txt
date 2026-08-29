@@ -1,0 +1,50 @@
+  suppressed transients: robot 1 uCharge, robot 2 uCharge
+
+GATE RECTS — re-derived from arena.bounds + arena.spawns, projected through the pinned camera
+    spawn     0, -10.5   rect 0,148,330,410   330x262 on screen   raw -107,148,330,410
+    spawn     0,  10.5   rect 1600,273,1600,900   0x627 on screen  (partly behind camera)   raw 1821,273,5014,3566
+  ranking the in-frame gate: 0,148,330,410 (330x262 px, 6.0% of frame)
+
+ATTENTION — grid @ tier 3, tick 420, 1600x900
+  ranking the in-frame gate: 0,148,330,410 (330x262 px, 6.0% of frame)
+  best rank of a >=50%-machine tile / best rank inside the named rect [tiles in top 10]
+
+   T  off  total       A          B          C
+  32    0   1400    5/  2 [5]   5/  1 [6]   6/  1 [7]
+  32   16   1323    9/  2 [8]  11/  1 [9]   9/  1 [8]
+  40    0    880    7/  1 [5]   7/  1 [5]   5/  1 [5]
+  40   20    858    2/  1 [5]   4/  1 [6]   5/  1 [6]
+  48    0    594    5/  1 [4]   5/  1 [5]   5/  1 [5]
+  48   24    576    1/  2 [5]   1/  2 [5]   1/  2 [6]
+  64    0    350    4/  1 [4]   3/  1 [4]   2/  1 [4]
+  64   32    312    4/  1 [4]   4/  1 [4]   3/  1 [4]
+
+  top 20 tiles, model A at T=40 off=0   (m% = share of the tile that is machine)
+      160, 360   score    35.5   lum   98.1  chroma  0.362  m   0%
+       40, 360   score      35   lum   92.5  chroma  0.378  m   0%
+      120, 360   score    34.7   lum  100.6  chroma  0.345  m   0%
+       80, 360   score      34   lum   95.8  chroma  0.355  m   0%
+     1240, 840   score      34   lum   97.2  chroma   0.35  m   0%
+      200, 360   score    30.4   lum   93.7  chroma  0.325  m   0%
+      760, 800   score    25.2   lum  108.7  chroma  0.232  m  96%
+     1280, 840   score    24.5   lum   87.5  chroma   0.28  m   0%
+      800, 720   score      24   lum   96.1  chroma   0.25  m 100%
+      760, 720   score    23.9   lum   96.1  chroma  0.248  m  99%
+      800, 760   score      23   lum    101  chroma  0.227  m  99%
+      760, 760   score    22.7   lum  101.8  chroma  0.223  m  94%
+     1120, 360   score    22.5   lum  102.3  chroma   0.22  m   0%
+     1080, 360   score    22.3   lum  104.3  chroma  0.213  m   0%
+      240, 360   score      22   lum   90.1  chroma  0.244  m   0%
+      800, 800   score    21.3   lum  107.7  chroma  0.198  m  98%
+      320, 480   score    20.5   lum   98.2  chroma  0.209  m   0%
+      640, 440   score    20.3   lum  107.2  chroma  0.189  m   0%
+      400, 560   score    20.2   lum  101.5  chroma  0.199  m   0%
+      720, 680   score      20   lum  108.1  chroma  0.185  m  62%
+
+  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)
+                pct     lum     sat
+    cyan        0.2%     150   0.604
+    amber         3%   100.8   0.635
+    MACHINES    1.6%     112   0.337
+
+  brightest 1% of the frame (>= 153.6): machines 34.4%, cyan 2.8%, amber 11.8%
