@@ -1,0 +1,468 @@
+#!/usr/bin/env node
+/**
+ * ATTENTION METER — what does the eye land on before it lands on the fight?
+ *
+ * Two residuals in REVIEW2 have flipped between "closed" and "open" across four
+ * rounds, and the reason is written into the review itself: *"That file has
+ * since been rewritten and no tool in this tree can reproduce those numbers any
+ * more — which is the residual's real problem and is why a report that it 'no
+ * longer reproduces' could be made in good faith."* An agent closed the gate
+ * residual, the critic re-measured and re-opened it, and neither could hand the
+ * other a command to run. So this file exists to be RE-RUNNABLE, is force-added
+ * under shots/ (which is gitignored — eight agents have lost their instruments
+ * to that), and re-implements the sweep from round 6's written definition:
+ *
+ *   A = lum x chroma                      "colourful and bright"
+ *   B = (lum + 1.5 x local contrast) x chroma
+ *   C = local contrast x chroma           "busy and colourful"
+ *   T = 32/40/48/64 at offsets 0 and half-tile; machine pixels come from
+ *   contour.mjs's binary stencil, not from a hand-drawn box.
+ *
+ * Absolute ranks from this file will NOT match round 6's to the integer — its
+ * tool is gone and its chroma was never defined in writing. That does not
+ * matter for the job, and pretending otherwise is how the residual got stuck:
+ * what decides whether a fix worked is the SAME tool run before and after, and
+ * the review's own claim — "the gate takes rank 1 in ten of twenty-four cells"
+ * — is a statement about this build that this file can check today.
+ *
+ * chroma here is (max-min)/255 of the sRGB triple, in 0..1. Stated because it
+ * was not, last time.
+ *
+ * MODES
+ *   (default)  the 3-model x 4-tile x 2-offset sweep, plus the top-20 tiles of
+ *              model A, plus the colour-family table (cyan/amber/machines) on
+ *              REVIEW2's own definition: sat >= 0.35, hue 165-200 / 20-55.
+ *   --lights   knock each stage light out of the pinned frame in turn and diff.
+ *              This is the half of the gate residual that is a LIGHTING bug
+ *              rather than a paint one: "a practical is not allowed to out-light
+ *              the sun" is only checkable by turning them off one at a time.
+ *   --rect x0,y0,x1,y1   name a region to rank (default: auto — the frame's
+ *              strongest non-machine cluster is found and reported).
+ *
+ * Usage:
+ *   node shots/_salience.mjs --arena grid
+ *   node shots/_salience.mjs --arena orbital --lights
+ */
+
+import { chromium } from 'playwright';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import process from 'node:process';
+
+const args = process.argv.slice(2);
+const flag = (name, def = null) => {
+  const i = args.indexOf(`--${name}`);
+  if (i < 0) return def;
+  const v = args[i + 1];
+  return v && !v.startsWith('--') ? v : true;
+};
+
+const BASE = flag('base', 'http://127.0.0.1:4210/');
+const TIER = Number(flag('tier', 3));
+const ARENA = flag('arena', 'grid');
+const SEED = Number(flag('seed', 1234567));
+const TICKS = Number(flag('ticks', 420));
+const LIGHTS = !!flag('lights');
+const KEEP = !!flag('keep');
+const RECT = flag('rect', null);
+const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+
+/* Identical to contour.mjs / mass.mjs / _ground.mjs. */
+const STENCIL_FN = `(on) => {
+  const v = window.__game.view;
+  if (on) {
+    const MB = v.blobs[0].material.constructor;
+    const white = new MB({ color: 0xffffff, fog: false, toneMapped: false });
+    const black = new MB({ color: 0x000000, fog: false, toneMapped: false });
+    v.__hidden = [];
+    for (const b of v.blobs) if (b.visible) { v.__hidden.push(b); b.visible = false; }
+    for (const m of v.models) {
+      if (m.shadow && m.shadow.visible) { v.__hidden.push(m.shadow); m.shadow.visible = false; }
+    }
+    const shells = new Set();
+    for (const m of v.models) m.group.traverse((o) => { if (o.isMesh) shells.add(o); });
+    v.__swap = [];
+    v.scene.traverse((o) => {
+      if (!o.isMesh || !o.visible) return;
+      v.__swap.push([o, o.material]);
+      o.material = shells.has(o) ? white : black;
+    });
+    v.__bg = v.scene.background; v.__fog = v.scene.fog;
+    v.scene.background = null; v.scene.fog = null;
+  } else {
+    for (const [o, mat] of v.__swap || []) o.material = mat;
+    for (const o of v.__hidden || []) o.visible = true;
+    v.scene.background = v.__bg; v.scene.fog = v.__fog;
+    v.__swap = null; v.__hidden = null;
+  }
+}`;
+
+const SETTLE_FN = `(n) => {
+  const g = window.__game;
+  if (!g.rig || !g.world || !g.view) return false;
+  let t = (g.engine.clock && g.engine.clock.elapsed) || 0;
+  for (let i = 0; i < n; i++) {
+    const views = g.view.prepare(1);
+    g.rig.update(g.world, views, g.localIndex, 1 / 60, t);
+    t += 1 / 60;
+  }
+  g.view.update(0, 1, t);
+  g.engine.onRender = null;
+  if (g.engine.quality) g.engine.quality.auto = false;
+  return true;
+}`;
+
+const VFX_OFF_FN = `() => {
+  const v = window.__game.view;
+  const keep = new Set([v.stage.group, ...v.models.map((m) => m.group), ...v.blobs]);
+  for (const o of v.scene.children) {
+    if (keep.has(o) || o.isLight || o.isCamera) continue;
+    o.visible = false;
+  }
+  for (const k of ['motes', 'shafts', 'sweep']) if (v.stage[k]) v.stage[k].visible = false;
+  const was = [];
+  for (let i = 0; i < v.models.length; i++) {
+    const u = v.models[i].matShell && v.models[i].matShell.userData.u;
+    if (!u) continue;
+    for (const k of ['uHitFlash', 'uCharge', 'uRimWash', 'uDissolve']) {
+      if (u[k] && u[k].value > 0.001) { was.push('robot ' + (i + 1) + ' ' + k); u[k].value = 0; }
+    }
+  }
+  return was;
+}`;
+
+/**
+ * Every light in the scene, named, so a knock-out diff can say WHICH fixture is
+ * responsible for a bright region rather than "the lighting".
+ */
+const LIGHT_LIST_FN = `() => {
+  const v = window.__game.view;
+  const out = [];
+  v.scene.traverse((o) => { if (o.isLight) out.push(o); });
+  if (v.stage && v.stage.group) v.stage.group.traverse((o) => {
+    if (o.isLight && !out.includes(o)) out.push(o);
+  });
+  window.__lights = out;
+  return out.map((l, i) => ({
+    i,
+    type: l.type,
+    name: l.name || '',
+    intensity: Math.round((l.intensity || 0) * 100) / 100,
+    distance: l.distance != null ? Math.round(l.distance * 10) / 10 : null,
+    inStage: !!(v.stage && v.stage.gateLights && v.stage.gateLights.includes(l)),
+  }));
+}`;
+
+const ANALYSE_FN = async ({ nUri, hUri, rect }) => {
+  const load = async (uri) => {
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = uri; });
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(img, 0, 0);
+    return { d: g.getImageData(0, 0, c.width, c.height).data, W: c.width, H: c.height };
+  };
+
+  const N = await load(nUri);
+  const M = await load(hUri);
+  const W = N.W, H = N.H, NP = W * H;
+  const lumOf = (d, i) => 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+
+  const L = new Float32Array(NP);
+  const C = new Float32Array(NP);        // chroma 0..1
+  const S = new Float32Array(NP);        // HSV saturation 0..1
+  const Hue = new Float32Array(NP);      // degrees
+  const mask = new Uint8Array(NP);
+  for (let p = 0, i = 0; p < NP; p++, i += 4) {
+    const r = N.d[i], g = N.d[i + 1], b = N.d[i + 2];
+    L[p] = lumOf(N.d, i);
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+    C[p] = d / 255;
+    S[p] = mx > 0 ? d / mx : 0;
+    let h = 0;
+    if (d > 0) {
+      if (mx === r) h = 60 * (((g - b) / d) % 6);
+      else if (mx === g) h = 60 * ((b - r) / d + 2);
+      else h = 60 * ((r - g) / d + 4);
+    }
+    Hue[p] = (h + 360) % 360;
+    if (lumOf(M.d, i) > 128) mask[p] = 1;
+  }
+
+  /* Local contrast: |L - blur(L)| on a 9px box blur, the cheap standard. */
+  const blur = new Float32Array(NP);
+  {
+    const tmp = new Float32Array(NP);
+    const R = 4;
+    for (let y = 0; y < H; y++) {
+      let acc = 0, n = 0;
+      for (let x = -R; x <= R; x++) { const xx = Math.min(W - 1, Math.max(0, x)); acc += L[y * W + xx]; n++; }
+      for (let x = 0; x < W; x++) {
+        tmp[y * W + x] = acc / n;
+        const xa = Math.min(W - 1, Math.max(0, x - R)), xb = Math.min(W - 1, Math.max(0, x + R + 1));
+        acc += L[y * W + xb] - L[y * W + xa];
+      }
+    }
+    for (let x = 0; x < W; x++) {
+      let acc = 0, n = 0;
+      for (let y = -R; y <= R; y++) { const yy = Math.min(H - 1, Math.max(0, y)); acc += tmp[yy * W + x]; n++; }
+      for (let y = 0; y < H; y++) {
+        blur[y * W + x] = acc / n;
+        const ya = Math.min(H - 1, Math.max(0, y - R)), yb = Math.min(H - 1, Math.max(0, y + R + 1));
+        acc += tmp[yb * W + x] - tmp[ya * W + x];
+      }
+    }
+  }
+  const LC = new Float32Array(NP);
+  for (let p = 0; p < NP; p++) LC[p] = Math.abs(L[p] - blur[p]);
+
+  /* --- the sweep -------------------------------------------------------- */
+  const models = ['A', 'B', 'C'];
+  const scoreOf = (m, l, lc, c) => {
+    if (m === 'A') return l * c;
+    if (m === 'B') return (l + 1.5 * lc) * c;
+    return lc * c;
+  };
+
+  const sweep = [];
+  let topA40 = null;
+  for (const T of [32, 40, 48, 64]) {
+    for (const off of [0, T >> 1]) {
+      const cols = Math.floor((W - off) / T), rows = Math.floor((H - off) / T);
+      const tiles = [];
+      for (let ty = 0; ty < rows; ty++) {
+        for (let tx = 0; tx < cols; tx++) {
+          const x0 = off + tx * T, y0 = off + ty * T;
+          let sl = 0, slc = 0, sc = 0, mc = 0, n = 0;
+          for (let y = y0; y < y0 + T; y++) {
+            for (let x = x0; x < x0 + T; x++) {
+              const p = y * W + x;
+              sl += L[p]; slc += LC[p]; sc += C[p]; mc += mask[p]; n++;
+            }
+          }
+          tiles.push({ x: x0, y: y0, l: sl / n, lc: slc / n, c: sc / n, m: mc / n });
+        }
+      }
+      const row = { T, off, total: tiles.length, cells: {} };
+      for (const m of models) {
+        for (const t of tiles) t.s = scoreOf(m, t.l, t.lc, t.c);
+        const sorted = tiles.slice().sort((a, b) => b.s - a.s);
+        let robotRank = null, rectRank = null, rectTop10 = 0;
+        for (let i = 0; i < sorted.length; i++) {
+          const t = sorted[i];
+          if (robotRank === null && t.m >= 0.5) robotRank = i + 1;
+          const inRect = rect && t.x >= rect[0] && t.x < rect[2] && t.y >= rect[1] && t.y < rect[3];
+          if (inRect) {
+            if (rectRank === null) rectRank = i + 1;
+            if (i < 10) rectTop10++;
+          }
+        }
+        row.cells[m] = { robotRank, rectRank, rectTop10 };
+        if (m === 'A' && T === 40 && off === 0) {
+          topA40 = sorted.slice(0, 20).map((t) => ({
+            x: t.x, y: t.y,
+            s: Math.round(t.s * 10) / 10,
+            l: Math.round(t.l * 10) / 10,
+            c: Math.round(t.c * 1000) / 1000,
+            m: Math.round(t.m * 100),
+          }));
+        }
+      }
+      sweep.push(row);
+    }
+  }
+
+  /* --- colour families, REVIEW2's own definition ------------------------ */
+  const fam = (lo, hi) => {
+    let n = 0, sl = 0, ss = 0;
+    for (let p = 0; p < NP; p++) {
+      if (mask[p]) continue;
+      if (S[p] < 0.35) continue;
+      const h = Hue[p];
+      if (h < lo || h > hi) continue;
+      n++; sl += L[p]; ss += S[p];
+    }
+    return { pct: Math.round(n / NP * 1000) / 10, lum: n ? Math.round(sl / n * 10) / 10 : 0, sat: n ? Math.round(ss / n * 1000) / 1000 : 0, n };
+  };
+  let mn = 0, msl = 0, mss = 0;
+  for (let p = 0; p < NP; p++) if (mask[p]) { mn++; msl += L[p]; mss += S[p]; }
+
+  /* Who owns the brightest 1% of the frame. */
+  const sortedL = Float32Array.from(L).sort();
+  const thr = sortedL[Math.floor(NP * 0.99)];
+  let hotN = 0, hotMachine = 0, hotCyan = 0, hotAmber = 0;
+  for (let p = 0; p < NP; p++) {
+    if (L[p] < thr) continue;
+    hotN++;
+    if (mask[p]) { hotMachine++; continue; }
+    if (S[p] >= 0.35) {
+      const h = Hue[p];
+      if (h >= 165 && h <= 200) hotCyan++;
+      else if (h >= 20 && h <= 55) hotAmber++;
+    }
+  }
+
+  return {
+    screen: `${W}x${H}`,
+    sweep,
+    topA40,
+    families: {
+      cyan: fam(165, 200),
+      amber: fam(20, 55),
+      machines: { pct: Math.round(mn / NP * 1000) / 10, lum: mn ? Math.round(msl / mn * 10) / 10 : 0, sat: mn ? Math.round(mss / mn * 1000) / 1000 : 0 },
+    },
+    hot: {
+      threshold: Math.round(thr * 10) / 10,
+      machine: Math.round(hotMachine / hotN * 1000) / 10,
+      cyan: Math.round(hotCyan / hotN * 1000) / 10,
+      amber: Math.round(hotAmber / hotN * 1000) / 10,
+    },
+  };
+};
+
+/**
+ * Diff two frames: coverage of pixels this light actually moved, its mean
+ * contribution over those pixels, and its peak. The peak is the number that
+ * settles "a practical out-lights the sun".
+ */
+const DIFF_FN = async ({ aUri, bUri }) => {
+  const load = async (uri) => {
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = uri; });
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(img, 0, 0);
+    return { d: g.getImageData(0, 0, c.width, c.height).data, W: c.width, H: c.height };
+  };
+  const A = await load(aUri), B = await load(bUri);
+  const NP = A.W * A.H;
+  const lum = (d, i) => 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+  let n = 0, sum = 0, peak = 0;
+  for (let p = 0, i = 0; p < NP; p++, i += 4) {
+    const dv = lum(A.d, i) - lum(B.d, i);
+    if (dv > 2) { n++; sum += dv; if (dv > peak) peak = dv; }
+  }
+  return {
+    pct: Math.round(n / NP * 1000) / 10,
+    mean: n ? Math.round(sum / n * 10) / 10 : 0,
+    peak: Math.round(peak * 10) / 10,
+  };
+};
+
+const pad = (v, n) => String(v).padStart(n);
+
+(async () => {
+  const browser = await chromium.launch({
+    executablePath: PINNED,
+    args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+  });
+  const context = await browser.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+
+  await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.waitForFunction(() => window.__game && window.__game.engine?.running, null, { timeout: 90000 });
+  await page.evaluate((t) => { const q = window.__game.engine.quality; q.auto = false; q.setTier(t); }, TIER);
+  await page.waitForTimeout(400);
+
+  await page.evaluate(({ id, seed }) => {
+    const g = window.__game;
+    g.startMatch({ mode: 'solo', difficulty: 'ace', arenaId: id, loadouts: g.loadouts, seed });
+    g.setDemo(true);
+    g.engine.paused = true;
+    if (g.engine.clock) g.engine.clock.elapsed = 1000;
+  }, { id: ARENA, seed: SEED });
+  await page.waitForTimeout(1200);
+
+  await page.evaluate((n) => window.__game.fastForward(n), TICKS);
+  const settled = await page.evaluate(`(${SETTLE_FN})(240)`);
+  if (!settled) throw new Error('camera rig unavailable — cannot pin the frame');
+  const transient = await page.evaluate(`(${VFX_OFF_FN})()`);
+  if (transient && transient.length) console.log('  suppressed transients:', transient.join(', '));
+  for (const id of ['ui-layer', 'hud-layer', 'splash']) {
+    await page.evaluate((i) => { const el = document.getElementById(i); if (el) el.style.display = 'none'; }, id);
+  }
+  await page.waitForTimeout(700);
+
+  const probe = await context.newPage();
+  await probe.goto('about:blank');
+  const b64 = (buf) => 'data:image/png;base64,' + buf.toString('base64');
+
+  if (LIGHTS) {
+    const lights = await page.evaluate(`(${LIGHT_LIST_FN})()`);
+    const full = await page.screenshot({ timeout: 180000 });
+    console.log(`\nLIGHT KNOCK-OUT — ${ARENA} @ tier ${TIER}, tick ${TICKS}`);
+    console.log('  Each fixture switched off in turn and the frame diffed against the full rig.');
+    console.log('  "a practical is not allowed to out-light the sun" is a claim about PEAK.\n');
+    console.log('   # type              int   dist  gate |   cover     mean    peak');
+    console.log('  ' + '-'.repeat(66));
+    const rows = [];
+    for (const l of lights) {
+      await page.evaluate((i) => { const x = window.__lights[i]; x.__was = x.intensity; x.intensity = 0; }, l.i);
+      await page.waitForTimeout(320);
+      const off = await page.screenshot({ timeout: 180000 });
+      await page.evaluate((i) => { const x = window.__lights[i]; x.intensity = x.__was; }, l.i);
+      const d = await probe.evaluate(DIFF_FN, { aUri: b64(full), bUri: b64(off) });
+      rows.push({ l, d });
+      console.log(`  ${pad(l.i, 2)} ${(l.type + '            ').slice(0, 17)} ${pad(l.intensity, 5)} `
+        + `${pad(l.distance == null ? '-' : l.distance, 6)} ${l.inStage ? ' YES ' : '  -  '} |`
+        + `${pad(d.pct + '%', 7)} ${pad('+' + d.mean, 8)} ${pad('+' + d.peak, 7)}`);
+    }
+    const gates = rows.filter((r) => r.l.inStage);
+    const key = rows.filter((r) => r.l.type === 'DirectionalLight').sort((a, b) => b.d.pct - a.d.pct)[0];
+    if (gates.length && key) {
+      const worst = gates.sort((a, b) => b.d.peak - a.d.peak)[0];
+      console.log(`\n  gate practical peak ${worst.d.peak}  vs  key light peak ${key.d.peak}`
+        + `   -> ${worst.d.peak > key.d.peak ? 'THE PRACTICAL OUT-PEAKS THE SUN' : 'ok, the sun wins'}`);
+    } else if (!gates.length) {
+      console.log('\n  no gate practicals in this arena at this tier.');
+    }
+    if (errors.length) console.log('\npage errors:', errors.slice(0, 4));
+    await browser.close();
+    return;
+  }
+
+  const N = await page.screenshot({ timeout: 180000 });
+  await page.evaluate(`(${STENCIL_FN})(true)`);
+  await page.waitForTimeout(700);
+  const Ms = await page.screenshot({ timeout: 180000 });
+  await page.evaluate(`(${STENCIL_FN})(false)`);
+
+  if (KEEP) {
+    mkdirSync('shots', { recursive: true });
+    writeFileSync(`shots/sal-${ARENA}-t${TICKS}.png`, N);
+  }
+
+  const rect = RECT ? String(RECT).split(',').map(Number) : null;
+  const out = await probe.evaluate(ANALYSE_FN, { nUri: b64(N), hUri: b64(Ms), rect });
+
+  console.log(`\nATTENTION — ${ARENA} @ tier ${TIER}, tick ${TICKS}, ${out.screen}`);
+  console.log('  best rank of a >=50%-machine tile' + (rect ? ' / best rank inside the named rect [tiles in top 10]' : ''));
+  console.log('\n   T  off  total       A          B          C');
+  for (const r of out.sweep) {
+    const cell = (m) => {
+      const c = r.cells[m];
+      const a = pad(c.robotRank == null ? '-' : c.robotRank, 3);
+      return rect ? `${a}/${pad(c.rectRank == null ? '-' : c.rectRank, 3)} [${c.rectTop10}]` : `${a}       `;
+    };
+    console.log(`  ${pad(r.T, 2)} ${pad(r.off, 4)} ${pad(r.total, 6)}  ${cell('A')} ${cell('B')} ${cell('C')}`);
+  }
+
+  console.log('\n  top 20 tiles, model A at T=40 off=0   (m% = share of the tile that is machine)');
+  for (const t of out.topA40) {
+    console.log(`    ${pad(t.x, 5)},${pad(t.y, 4)}   score ${pad(t.s, 7)}   lum ${pad(t.l, 6)}  chroma ${pad(t.c, 6)}  m ${pad(t.m, 3)}%`);
+  }
+
+  const f = out.families;
+  console.log('\n  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)');
+  console.log('                pct     lum     sat');
+  console.log(`    cyan      ${pad(f.cyan.pct + '%', 6)} ${pad(f.cyan.lum, 7)} ${pad(f.cyan.sat, 7)}`);
+  console.log(`    amber     ${pad(f.amber.pct + '%', 6)} ${pad(f.amber.lum, 7)} ${pad(f.amber.sat, 7)}`);
+  console.log(`    MACHINES  ${pad(f.machines.pct + '%', 6)} ${pad(f.machines.lum, 7)} ${pad(f.machines.sat, 7)}`);
+  console.log(`\n  brightest 1% of the frame (>= ${out.hot.threshold}): machines ${out.hot.machine}%, cyan ${out.hot.cyan}%, amber ${out.hot.amber}%`);
+
+  if (errors.length) console.log('\npage errors:', errors.slice(0, 4));
+  await browser.close();
+})().catch((e) => { console.error(e); process.exit(1); });
