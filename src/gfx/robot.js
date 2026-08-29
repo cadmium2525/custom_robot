@@ -2094,15 +2094,33 @@ export class RoboModel {
     // --- silhouette LOD state. lodMinPx2 is per-model rather than a module
     // constant so the meter can sweep it live; 0 disables the LOD entirely,
     // which is the control every claim made about it has to be run against.
+    //
+    // Held in a `{ value }` box rather than as a plain field so it can be
+    // published on the shell's uniform bag next to the contour's knobs — see
+    // the note there. tools/mass.mjs' `--u` writes exactly that shape, and it
+    // is the difference between sweeping this threshold against the mass curve
+    // in one browser launch and sweeping it at one rebuild per value.
     this.lod = [];
     this._lodBudget = -1;
     this.lodPx = Infinity;
-    this.lodMinPx2 = LOD_MIN_PX2;
+    this._lodU = { value: LOD_MIN_PX2 };
 
     this._build();
   }
 
   // -------------------------------------------------------------------------
+
+  /**
+   * The silhouette LOD's threshold, in square pixels of the render target.
+   *
+   * An accessor over `_lodU.value` so the same number can be reached three
+   * ways — `model.lodMinPx2 = n` from a probe, `u.uLodMinPx2.value = n` from
+   * the mass meter's `--u`, and LOD_MIN_PX2 from the build — without any of
+   * them being a copy that can drift from the others.
+   */
+  get lodMinPx2() { return this._lodU.value; }
+
+  set lodMinPx2(v) { this._lodU.value = v; }
 
   get _low() {
     const s = this.settings;
@@ -2280,6 +2298,13 @@ export class RoboModel {
     // seven instrument faults, a knob the existing meter cannot reach is a knob
     // that gets tuned by argument.
     Object.assign(this.matShell.userData.u, this.matOutline.userData.u);
+    // The geometry LOD's threshold rides along on the same bag, for the same
+    // reason. It is not a GLSL uniform and never will be — the cut happens on
+    // the CPU — but it is the same `{ value }` shape, three.js ignores map
+    // entries with no matching program location, and it puts the third of the
+    // three size-dependent treatments inside the one meter that can sweep all
+    // of them together.
+    this.matShell.userData.u.uLodMinPx2 = this._lodU;
     if (shellMesh) {
       const om = new THREE.SkinnedMesh(outlineGeometry(shellMesh.geometry), this.matOutline);
       om.castShadow = false;

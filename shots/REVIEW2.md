@@ -289,7 +289,273 @@ about the semicolon:
 > broken; a broken build is therefore a review-blocking defect that the project's own gate does not
 > detect. One `npm run build` in the test script closes it.
 
+### The instrument ledger, enumerated at last, because three numbering schemes are now in circulation
 
+This document has been counting instrument faults since round 8 and has never written the list down,
+which is how it ended up with two number sixes and, at head, three mutually inconsistent counts: the
+one in this file, the one in the commit messages, and the one in the brief I was handed. A ledger
+that cannot be read back is not a ledger. Here is the whole list, in the order the faults were
+**found**, which is the only ordering that stays stable:
+
+| # | Fault | Found | Status at `ebea06d` |
+|---|---|---|---|
+| 1 | `measure.mjs` is load-dependent — the bug `10621f2` claimed to close | R4 | fixed |
+| 2 | that fix never reached `contour.mjs`, the tool measuring the #1 blocker | R4 | fixed |
+| 3 | `screenshot.mjs --shots` writes a garbage first frame (**N1**) | R4/R5 | OPEN |
+| 4 | `masses.mjs`' two modes disagree by 2x on one photograph; both retired | R7 | retired |
+| 5 | the effect clock advances during boot, so a "pinned" frame is not pinned | R10 | fixed (`984723e`), **insufficient** |
+| 6 | the settle drives the camera 240x at fixed `dt` and the machines **once at `dt = 0`**; every pose term is a damper | R11 | **OPEN at head** — `mass.mjs:136`, `contour.mjs:145`, and also `_lodprobe.mjs:50` and `_ground.mjs:123` |
+| 7 | the standard pinned frame has **no ground contact in it**; eight rounds of grounding readings void | R12 | frame condemned; replacement not yet chosen |
+| 8 | `shots/_lodprobe.mjs` never returned a reading (`1fac40d`) | R12 | OPEN |
+| 9 | anything that measures by **waiting** measures the renderer, not the game | R12 | characterised, below |
+
+**Where the other two schemes went wrong, stated so nobody re-derives it.** `c0202d1`'s message
+calls the grounding frame *"the sixth"* and `1fac40d` calls the LOD probe *"the seventh"*; both are
+one low, because neither counted the unpinned settle — the fault that was found first and is still
+open. The brief for this round inherits that offset and calls the clock clamp *"the eighth"*. It is
+the **ninth**. The commit messages are not being rewritten; this table is the index.
+
+**Nine faults in nine rounds, and the shape of them has not changed once.** Every single one is an
+instrument that returned a plausible number rather than an error. Not one was caught by a tool
+failing loudly; every one was caught by somebody distrusting a reading that looked fine. That is a
+worse record than "we found nine bugs" sounds, and it is the reason this document leads with the
+audit rather than closing with it.
+
+### The ninth fault, characterised: every capture in this repo that waits is timing the renderer
+
+The reading handed to me — the sim appearing to freeze at tick 8 — is an artefact, and the diagnosis
+is `engine.js:153`:
+
+```js
+if (dt > 0.25) dt = TICK_DT;    // a backgrounded tab resumes; it does not fast-forward a backlog
+```
+
+That guard is **correct game code**. Under SwiftShader a 1600x900 frame costs more than 250 ms, so
+the guard fires on *every* frame and the sim advances exactly one tick per rendered frame — about
+1.4 ticks/sec against a nominal 60. Probed directly, same build, same seed, sampling `world.tick`
+every 700 ms:
+
+```
+  iphone12   390x844     0 -> 7 -> 27 -> 47 -> 67 -> 87 -> 107 -> 127
+  desktop   1600x900     0 -> 1 ->  2 ->  3 ->  4 ->  5 ->   6 ->   7
+```
+
+`fastForward(200)` returns 200 and moves the tick 8 -> 208 on both. Nothing is frozen. The phone
+viewport is four times smaller, renders under the threshold, and runs normally — **the slower device
+behaved and the faster one did not**, which is the signature to remember.
+
+**Why this is a ledger entry and not a footnote.** It generalises past the one probe that found it:
+
+> **Any measurement in this repository whose method is "wait N milliseconds and then look" is
+> measuring the renderer's frame cost, not the game's clock.** On desktop capture that is a factor
+> of roughly forty. Tick-driven capture (`fastForward`, the pinned settle) is unaffected.
+
+Three families of capture in `shots/` wait: the walk scripts between taps, the VFX sheets between
+frames, and every "settle for N ms" in the older tools. None of their published numbers are
+withdrawn here — they were read as *pictures*, not as elapsed time — but any future claim of the
+form "after two seconds of play" has to be re-expressed in ticks before it means anything, and the
+one instrument that would have caught this class of fault earlier, a tick counter printed beside
+every capture, still does not exist.
+
+### And this round's own A/B, which produced one usable capture out of twelve and did not say so
+
+The audit at the top of this round says the settle fix was applied behind a flag and A/B'd
+interleaved against the stock meter. That is what was attempted. What is on disk is:
+
+```
+  shots/_noise-clockpose-grid-1.txt      851 bytes   a reading
+  shots/_noise-clockpose-{grid-2..4, foundry-1..4, orbital-1..4}
+                                         340 bytes each — page.goto: net::ERR_HTTP_RESPONSE_CODE_FAILURE
+```
+
+**Eleven of the twelve corrected-meter runs errored, and the round wrote its audit as though they
+had not.** The preview server the sweep was pointed at (`:4231`) went away after the first run and
+every subsequent capture recorded the failure instead of a measurement. `shots/_noise.mjs` silently
+reports `foundry: no captures` for a tag with four files in it, which is exactly the failure mode
+this ledger keeps finding: **a tool that returns a clean-looking summary over missing data.**
+
+This is mine and it is the reason the mass rule is re-run below from scratch rather than read back.
+Two corrections went in with it: the sweep now pins the full base path (`/custom_robot/`, not the
+bare root, which is a 302 the harness reports as a response-code failure), and it is genuinely
+interleaved per repeat rather than per tag.
+
+### The mass rule, re-run: both machines, all three arenas, corrected meter, noise floor first
+
+`shots/_r12sweep.sh` (new, force-added) runs `shots/_massdrive.mjs` and `tools/mass.mjs` back to
+back on each arena before advancing the repeat counter, three repeats, at `ebea06d`, one server, one
+build. `_massdrive.mjs` is `tools/mass.mjs` with one line added inside the settle loop —
+`g.view.update(1 / 60, 1, t)` — which is round 11's prescription and nothing else, so the pair is a
+clean single-variable A/B out of one binary each.
+
+**The floor first, because it is the only thing that licenses reading the deltas.** Round 11's five
+identical runs of the stock meter at `84d5401`, re-summarised here across all three arenas rather
+than the one that was published:
+
+```
+                     m51 range     curve range   largest range   top4 range   box
+   grid   ROBOT 1   4.0 .. 4.5     4.2 .. 4.4      55.1 .. 65.1   88.0 .. 89.7  160x260/261
+          ROBOT 2   5.3 .. 5.5     6.3 .. 6.5      40.0 .. 40.8   83.8 .. 85.2   39x76
+   found. ROBOT 1   6.5 .. 7.5     7.2 .. 8.0      32.1 .. 46.0   76.0 .. 82.6   69x183..216
+          ROBOT 2   5.0 .. 6.0     5.0 .. 5.6      53.5 .. 58.6   83.9 .. 85.5   38x42/43
+   orbit. ROBOT 1   3.8 .. 4.0     4.4 .. 4.7      62.7 .. 63.1   86.9 .. 87.4  173x273/274
+          ROBOT 2   5.5 .. 5.5     5.9 .. 6.0      56.4 .. 57.1   89.8 .. 90.2   37x66/67
+```
+
+**Foundry's player is the noisiest cell in the instrument by an order of magnitude** — a bounding box
+that moves **33 px of height, 183 to 216, between identical runs**, `largest` swinging 13.9 points
+and the curve mean swinging 0.8 masses. Everything else in the table is quiet. That is the unpinned
+settle showing up exactly where round 12's first pass said the frame was unfit for a different
+reason, and it means foundry's player is the one cell where **no** mass claim, favourable or not,
+clears its own noise.
+
+**And one figure this document has repeated for five rounds does not survive the re-summary.** Ranked
+item 2 — *"91 / 129 / 142 levels of spread for the same player robot in grid / foundry / orbital;
+the arena decides the machine"* — measured on the current meter reads:
+
+```
+   player value spread   grid 159    foundry 158..175    orbital 161..162 levels
+```
+
+**The arena no longer decides the machine's value spread.** Three arenas, one robot, 159 / 163 / 161
+mean — a 4-level span where the quoted figure was a 51-level span. Ranked item 2's spread clause is
+**CLOSED**, and it closed some rounds ago without anyone noticing, because the number kept being
+quoted from `cc7cebb` instead of re-measured. The mass-count half of that item is settled below.
+Note what is *not* being claimed: the spread is uniform at ~160 levels, which is high in absolute
+terms; the reference machines are flat toys. Uniformity across arenas is the clause that closed. The
+absolute figure is point 4 and stays open.
+
+<!-- R12-SWEEP -->
+
+### `#14` — the fit frame the entry was blocked on exists, and finding it turned up a bigger defect
+
+Round 12 opened by condemning the pinned frame for grounding and saying no number could be quoted
+until `shots/_ground.mjs --survey` named a tick that could carry one. It has now been run: grid, seed
+1234567, ticks 300 to 900, step 20, 31 samples. A frame is FIT when **both** machines are grounded
+**and** both have viewport under their ground contact point.
+
+```
+   tick |     ROBOT 1 (player)      |    ROBOT 2 (opponent)     | fit
+        |  air  gnd   hPx   below   |  air  gnd   hPx   below   |
+    300 |  0.00  Y    236    -66    | -2.54  -     75    790    |  -
+    340 |  0.00  Y    219    -15    |  2.75  -     66    568    |  -
+    380 |  0.00  Y    245    100    |  0.00  Y     83    459    | FIT
+    420 |  1.12  -    180    -95    |  3.11  -     69    513    |  -     <- the pinned frame
+    480 |  4.09  -     35   -135    |  0.00  Y     47    700    |  -
+    540 |  0.00  Y    260   -249    |  1.67  -     58    650    |  -
+    660 |  0.00  Y     47   -823    |  2.56  -     61    645    |  -
+    880 |  0.00  Y    209     39    |  0.15  -     86    602    |  -
+                                 (…31 rows, abridged; full table in
+                                  `shots/_r12-ground-survey-grid.txt`)
+
+  1 fit frame(s): 380
+```
+
+**Tick 380 is the only fit frame in thirty-one samples**, and the grounding meter is run there below.
+That closes the procedural blocker on `#14`.
+
+**But the column that matters is not the `fit` column, and nobody has been reading it.** `below` is
+the pixels of viewport under the machine's ground contact point. For the player it is **negative in
+twenty of thirty-one sampled ticks**, ranging to **-823 px** — nearly a full viewport height below
+the bottom edge — and it is negative in eleven of the sixteen ticks where the player is *grounded*.
+For the opponent it is never negative: 447 to 790 px, every sample.
+
+> **Two thirds of the time, this game's camera crops the point where the player machine meets the
+> floor out of the frame.** It is not a property of the pinned tick. It is a property of the camera.
+
+That is a much larger finding than the entry it came from. Round 4 filed *"the player's feet end 1 px
+from the bottom of the screen"* as a framing note and round 12 reassigned it to "the machine is in
+the air"; **both were partly wrong**. The machine is sometimes in the air, and the camera crops its
+contact anyway when it is not. A machine whose contact with the floor is off-screen for two thirds of
+a fight cannot read as standing on anything, and no amount of shadow work under it will show. **This
+is `#14`'s machine half, restated with an owner: it is a camera framing defect, not a shadow defect**,
+and it is why eight rounds of shadow probes kept returning nothing.
+
+### And with the fit frame in hand, `#14`'s machine half is measured — it passes
+
+`shots/_ground.mjs --arena grid --ticks 380`. Both machines grounded, 99 px and 464 px of viewport
+under their lowest vertices. The contact curve is deck luminance sampled outward from the machine's
+footprint on non-machine pixels only: **a machine standing on a floor sits in a pool** — darkest
+against the feet, recovering outward. A decal has a flat curve.
+
+```
+                     r    0.15  0.35   0.6   0.9   1.3   1.8   2.5   (footprint widths)
+  ROBOT 1 (player)  val     49  82.5  92.8  91.6  86.3  82.8  75.5   pool depth 26.5
+  ROBOT 2 (oppon.)  val   50.1  65.2  85.3  89.6  94.6 100.8    98   pool depth 47.9
+
+  foot contour, bottom 18% of the box, 7x7 value step
+  ROBOT 1   230 boundary px   invisible 1.7%   clean 79.6%   median 58.8
+  ROBOT 2    58 boundary px   invisible 0.0%   clean 63.8%   median 57.2
+```
+
+**Both machines sit in a deep, tight pool and neither has feet that dissolve.** The player's deck
+runs 49 against the feet and 92.8 two thirds of a footprint out — a **44-level** darkening at the
+contact, radius under one footprint width, which is the shape a real contact makes and not the
+four-footprint AO smudge this file's history caught once before. The opponent's is deeper still.
+Round 5's *"96.2 against 97.3"* — a 1.1-level difference, quoted as proof of no pool — was measured on
+the airborne frame, and it is the reading being replaced.
+
+**The control, which is what makes this a result rather than a nicer number.** The same tool, same
+arena, same build, same run of the harness, pointed at the frame every previous grounding claim was
+made on:
+
+```
+                          tick 380 (fit)          tick 420 (the pinned frame)
+  ROBOT 1  curve      49 -> 92.8 -> 75.5       83.6 -> 84.5 -> 82.8
+           pool depth        26.5                       -0.8
+  ROBOT 2  curve    50.1 -> 100.8 -> 98        52.1 -> 49.9 -> 50.7
+           pool depth        47.9                       -1.4
+```
+
+**A flat curve on one tick and a 44-level pool on another, forty ticks apart, in the same build.**
+That is not a marginal difference of opinion about a threshold; it is the difference between
+photographing a contact and photographing empty air. Every "the machines are decals" reading in this
+document reproduces exactly — at tick 420, and nowhere else.
+
+> **`#14` machine grounding: the contact itself PASSES.** The machines are not decals. Eight rounds
+> of "barely grounded" were an artefact of measuring a flying machine, and the entry is re-scored
+> from NOT MEASURED to **PASS on contact, FAIL on framing** — the pool is correct and the camera
+> crops it out of the frame for two thirds of the fight.
+
+That is the second entry in three rounds where a long-standing FAIL turned out to be an artefact of
+how it was measured rather than a property of the build, and it should be read the same way as the
+first: as a reason to distrust this document's open items, not as a win. **Three of the five things
+this review has spent the most rounds on — the impact effect, the mass count's named cause, and now
+grounding — were mis-measured rather than broken.**
+
+<!-- R12-GROUND -->
+
+### The phone frame this round asked for was captured, and it is another READY card
+
+Round 12's own text says of the round-11 phone captures: *"no art-direction claim can be made from
+these frames without saying which frame it was made on, and the next round should capture a phone
+frame with the card gone."* `shots/r12/gp-l-match.png` (2532x1170, 844x390 @3x) is that capture, and
+read at 1:1 in two halves it is **the ROUND 1 READY card again** — same card, same scrim, same
+chromatic-aberration title, drawn over the fight.
+
+So the phone-side reading of blind point 1 still has no gameplay frame behind it, three rounds after
+it was first asked for. What the frame does show, read rather than measured, is worse than the
+number was:
+
+- The single **brightest object in the entire frame is the floating thumbstick** — a white-cored
+  blue orb roughly 90 px across at 3x, sitting on the deck, brighter than anything the game renders.
+- **POD is a magenta ring, BOMB is an orange ring**, and they are the only two saturated hues on
+  screen that are not the title card's aberration fringes.
+- The opponent machine is at `1300,290` in that capture. Magnified 4x (`shots/r12b/gpl-mech.png`) it
+  is a **~60x65 device-pixel blue-grey smudge, darker than the amber deck rail it is standing on**.
+  At 1:1 it is not identifiable as a robot.
+
+The scrim is the card's, so the last bullet is not a clean gameplay reading and is not scored as one
+— but the first two are HUD chrome and are unaffected by the card. **On the device this game is
+aimed at, the brightest thing on screen is a thumbstick and the most saturated thing is a button
+that says POD.** That is round 4's inversion, alive, on the platform nobody had photographed.
+
+### The instrument audit, first, because this round it invalidates the measurement it was meant to precede
+
+*(This subsection and everything below it to the round-10 heading is **round 11's** section. It was
+committed without a `## Round 11` heading, so the file read as though round 12 ran for 450 lines; the
+heading below is added, and nothing in the text is changed.)*
+
+## Round 11 (opens at `84d5401`) — the noise floor, and the settle that was never pinned
 
 ### The instrument audit, first, because this round it invalidates the measurement it was meant to precede
 
@@ -2598,7 +2864,44 @@ list. The doubts, both written before a single capture:
    not move at `dt = 0`. **The meter being asked to re-run the mass rule this round is the same
    meter round 11 disqualified**, and the round's first job became fixing it rather than reading it.
 
+3. **A third doubt, which was not written in advance because it had not been found yet, and it is
+   mine.** The interleaved A/B the round opened with **produced one usable capture out of twelve** —
+   the preview server dropped after the first run and eleven captures recorded
+   `ERR_HTTP_RESPONSE_CODE_FAILURE` where a reading should be, while `shots/_noise.mjs` summarised
+   the survivors without saying the rest were missing. The round's own audit section was written as
+   though that sweep had succeeded. It is corrected in the body, the sweep was rebuilt
+   (`shots/_r12sweep.sh`), and the mass rule below is re-run from scratch rather than read back.
+
 What the corrected meter then said, and what it did to the verdict, is below.
+
+### What round 12 measured, and what it moves
+
+<!-- R12-VERDICT-RESULT -->
+
+### The one entry that got worse this round, and it got worse by being looked at
+
+`#14`'s machine-grounding half is **withdrawn to NOT MEASURED**. The standard pinned frame — grid,
+seed 1234567, tick 420, shared by `contour.mjs` and `mass.mjs` — has the player **1.12 m airborne
+with its ground contact point 95 px below the bottom of the frame**. Eight rounds of "the machines
+are still barely grounded", including my own repetitions of it, were taken where there is nothing to
+measure. They are withdrawn, not overturned: **this document does not currently know whether the
+machines ground correctly**, and that is a worse position than a FAIL, because a FAIL has an owner.
+
+The same fact collapses two entries into one. Blind point 1's composition clause — *"the player's
+feet end 1 px from the bottom of the screen; you cannot see the ground it stands on"* — is not a
+framing defect. The feet are at the edge **because the machine is in the air**. The framing complaint
+and the grounding complaint have been the same fact, counted twice, since round 4.
+
+**The caveat this raises for the readings that were NOT withdrawn.** Contour and mass are measured on
+that same airborne frame. For contour that is legitimate and always was — the silhouette meter reads
+an outline against whatever is behind it and does not care whether the machine is flying. For mass it
+is legitimate in grid and orbital and **not** in foundry, where the player is 69 px wide against
+160/173 elsewhere: an aspect of 0.36 against 0.61 and 0.63, because most of it is behind a pillar. A
+third of a machine fragments into more pieces than the whole of it at any quality of lighting, so
+foundry's player is the one cell in the six where the mass rule cannot be applied at all. Two of the
+three arenas' pinned frames are unfit for a meter they are being used with, and in both cases the
+cause is identical: **the frame was pinned once, for the silhouette meter, and inherited by every
+meter since without anyone asking whether it suited them.**
 
 *(Rounds 8 and 9's account, kept for the record: a residual reported closed was open, a residual
 filed against the wrong arena was twice as bad in the right one, a third arena had been carrying the
@@ -2641,7 +2944,7 @@ prescription implied, which is the honest thing to say rather than the comfortab
 
 | # | What a CRV2 frame does | R4 | R6 | R7 | Now | Evidence |
 |---|---|---|---|---|---|---|
-| 1 | The robots are the brightest, most saturated things on screen | **Inverted** | **PASS** | **PASS** | **SPLIT — PASS on value, FAIL on chroma** | The value half holds and is unchanged: machines own **36.6% / 17.3% / 86.6%** of the frame's brightest 1% off **1.6% / 0.5% / 1.8%** of its pixels in grid / foundry / orbital. The chroma half **has never been measured in eight rounds** and fails on measurement: same filter both sides, the machines own **0.7% / 0.2% / 0.3%** of the frame against a stage carrying **58.5% / 89.5% / 59.2%** saturated pixels. Round 6's single unconditional mean (0.382 vs 0.294) flattered us because most of the scene is near-black. |
+| 1 | The robots are the brightest, most saturated things on screen | **Inverted** | **PASS** | **PASS** | **SPLIT — PASS on value (desktop only), FAIL on chroma, UNSCORED on phone** | The value half holds on desktop and is unchanged: machines own **36.6% / 17.3% / 86.6%** of the frame's brightest 1% off **1.6% / 0.5% / 1.8%** of its pixels in grid / foundry / orbital. The chroma half **had never been measured in eight rounds** and fails: same filter both sides, machines own **0.7% / 0.2% / 0.3%** against a stage carrying **58.5% / 89.5% / 59.2%** saturated pixels — and round 12 re-derived that filter (`shots/_sal.mjs`, force-added) and re-ran it against a stricter `L >= 40` gate, which moves it by at most 0.3 points. The FAIL survives a stricter instrument than the one that produced it. **Round 12 adds the platform qualifier: this is a desktop score.** On the phone the five touch buttons take **54.7% of the portrait frame's visible chroma off 10.0% of its area**, no machine appears in the top twelve salience tiles in either orientation, and read at 1:1 the brightest object in the frame is the floating thumbstick. Three rounds after it was asked for there is still **no card-free phone gameplay capture**, so the phone half is UNSCORED rather than failed. |
 | 2 | The stage is quieter than the subjects | **Inverted** | **PASS** | **PASS** | **FAIL** | Both residuals round 7 declined to measure are open, and one of them is worse than its filed description. The warm gate takes **rank 1 in 10 of 24 model x tile cells** and **eleven of the top fourteen tiles**, identical between round 7's build and head; a report that it no longer reproduced does not survive re-measurement. Orbital's cyan is **3.5% of the frame at 144.9 against the machines' 1.8%**. Foundry's amber is **5.6% at saturation 0.813, eleven times the machines' coverage, owning 49.8% of the frame's brightest 1%.** |
 | 3 | Both machines legible at once | **Failed** | **FAIL** | **FAIL — cause reassigned** | **FAIL** | Unchanged and now with a baseline: opponent top-4 coverage **12.7% at W=10 in foundry** — thirty-plus regions, not one of them clearing 3% of the body. |
 | 4 | Very few, very large forms per machine | **Failed** | **FAIL** | **FAIL — fix aimed at the wrong file** | **FAIL** | Baselined at `cc7cebb` across three arenas on the absolute-step curve. Player spread **92 / 130 / 142 levels** in grid / foundry / orbital — the same machine, the same paint. The light-rig commit round 7 prescribed has not landed at the time of writing. |
@@ -2705,26 +3008,50 @@ change. It was not, the commit written to it was faithful, and the counts went u
 
 ### Ranked list of what stands between this build and the bar
 
-1. **The lighting on the machines, then their part count.** Points 3 and 4, one defect, in that
-   order of size. The materials table is ruled out by experiment and should not be touched again for
-   this reason.
-2. **The arena decides the machine.** 91 / 129 / 142 levels of spread and 5 / 8 / 7 masses for the
-   same player robot in grid / foundry / orbital. Until a machine looks like the same machine in
-   three arenas, (1) cannot be tuned — every fix will be a fix in one arena.
-3. **The cyan rail on orbital and its orange twin on foundry.** Round 4's defect, alive in two thirds
-   of the shipped arenas, with the stage agent.
-4. **The warm lit gate owning ranks 1-8 of the salience sweep.** Same owner.
+*Re-ranked at `ebea06d`. Two items moved down because they were re-measured and had shrunk; two
+moved up because they were measured for the first time.*
+
+1. **There is still no CRV2 frame in this repository.** Promoted from 8 to 1, and it should have been
+   here since round 4. Every mass number in this document is scored against *"a CRV2 robot reads as
+   four or five masses"* — a figure that has never been measured, on a reference nobody can point
+   at, with a tool whose two original modes disagreed by a factor of two and were both retired for
+   it. Round 12 spent its budget establishing that the meter's noise floor is the same size as every
+   delta ever credited. **The next round cannot spend its budget the same way and still be worth
+   running.** One PNG closes it.
+2. **The lighting on the machines, then their part count.** Points 3 and 4, one defect, in that order
+   of size. The materials table is ruled out by experiment and should not be touched again for this
+   reason. Where this stands after round 12's re-run is in the result block above; the direction is
+   good and the absolute value spread — ~160 levels on a machine the reference would draw flat — is
+   the term still open.
+3. **The pinned frame is wrong for two of the three meters using it.** Grid's frame has the player
+   1.12 m airborne with its contact point 95 px off the bottom, so `#14` cannot be scored there;
+   foundry's has the player 69 px wide behind a pillar, so the mass rule cannot be applied there.
+   One frame was chosen for the silhouette meter in round 4 and inherited by everything since.
+   **Until each meter names its own fit frame, a third of this document's measurements are being
+   taken in the dark**, and the ledger has nine instrument faults to show for it.
+4. **The cyan rail on orbital and its orange twin on foundry**, and **the warm lit gate owning the
+   top of the salience sweep**. Merged: they are one stage-brightness defect with one owner, they
+   are measured by one tool, and splitting them across two ranks has meant neither got re-measured
+   for four rounds. `shots/_sal.mjs` is now force-added in-tree with `shots/_dump.sh` beside it, so
+   the excuse that the ranks are unreproducible is gone.
 5. **N7 — the ordnance is still bare flat-shaded octahedra**, three in one frame, in a scene where
-   the crates carry rivets and wear. Unchanged for four rounds and the least-finished thing on
+   the crates carry rivets and wear. Unchanged for five rounds and the least-finished thing on
    screen.
-6. **On the phone: the HUD owns 24% of the screen and its largest element is an empty gauge** (P5),
-   and the touch cluster sits on the player character (P6).
-7. **N1 / the harness.** `screenshot.mjs --shots` writes a garbage first frame. *BLOCKING for the
-   review process.*
-8. **There is still no CRV2 frame in this repository.** Round 4 asked for one, round 7 needed one:
-   the "four or five masses" every mass measurement in this document is scored against has never
-   been measured against a reference, and this round had to retire both modes of the tool that
-   produced it. It remains the cheapest possible fix to this whole process.
+6. **The phone is a different game and it has never been art-directed.** The five touch buttons take
+   over half the frame's visible chroma off a seventh of its area; the brightest object on screen is
+   the thumbstick; no machine reaches the top twelve salience tiles in either orientation; the HUD
+   owns 24% of the screen and its largest element is an empty gauge (P5); the touch cluster sits on
+   the player character (P6). And **three rounds after it was asked for there is still no card-free
+   phone gameplay capture**, so none of this can be scored properly.
+7. **`N8` — controls a player is not told are there.** Five garage preset chips at 0-17% visible with
+   no scroll affordance in either orientation; two SETTINGS rows clipped by the footer. Not
+   unreachable — nineteen controls, zero unreachable — which is why the restructure being written
+   against "the rail is off-screen" should be stopped and re-aimed.
+8. **`N1` / the harness.** `screenshot.mjs --shots` writes a garbage first frame. **`N9`** — the test
+   suite does not cover the build, and a build-only failure reached the tip of the branch.
+   **Instrument fault 6** — the settle is still unpinned at head in four tools. *All three are
+   BLOCKING for the review process rather than for the game, and this round is the third in a row
+   whose largest finding was about the tools.*
 
 ### Instruments retired and replaced this round
 
