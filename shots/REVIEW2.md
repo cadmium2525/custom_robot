@@ -11,11 +11,15 @@ that floor, re-score `#14` now that the frame it was argued on turns out to have
 verify the iPhone inset work and close what closes, and check the landscape menu restructure against
 `N8`.
 
-**STATUS: ROUND 12 CLOSED. The VERDICT section at the bottom of this file was rewritten for round 12
-from existing evidence BEFORE this round's captures were taken, and then revised as they landed —
-the continuation at the end of that section is the revision, and it strikes out the round's own
-headline measurement. It has never been allowed to read PENDING and does not now. That section, not
-this line, is what decides.**
+**Round 13 opens at `a43d1c9`.** Its job was to recover two findings three predecessors were carrying
+uncommitted — the foundry fit-frame run and the first foundry salience sweep in thirteen rounds —
+re-run the mass rule on both machines in all three arenas, and rule on the review's own
+one-arena-and-generalise flaw. All four are done and all four are in the VERDICT.
+
+**STATUS: ROUND 13 CLOSED. The VERDICT section at the bottom of this file was written for round 13
+from evidence already in this repository BEFORE the round's harness was started, committed in that
+state, and then revised as the captures landed. It has never been allowed to read PENDING and does
+not now. That section, not this line, is what decides.**
 
 **VERDICT: see the VERDICT section at the bottom of this file, which is the only place a verdict is
 recorded. This header deliberately does not restate it — two earlier rounds shipped a header that
@@ -3697,9 +3701,15 @@ build:**
    244 px on the ground. **Rank 3 below — the opponent at 4.8% of frame height with 26.1% of its
    contour invisible — is a real defect whose magnitude has never been measured on a frame it could be
    measured on.** `#14`'s foundry half goes to NOT MEASURED; its orbital half was never attempted.
-5. **The one thing that got better stayed better.** The mass rule holds in all six cells on the meter
+5. ~~**The one thing that got better stayed better.** The mass rule holds in all six cells on the meter
    that reproduces: 4.0-5.5 masses, top-4 84.4-88.4%, spread 0.0 in four of six. Round 6's named
-   cause is gone. Nothing in this block touches it.
+   cause is gone. Nothing in this block touches it.~~
+   > **STRUCK OUT BY THE CRITIC, ROUND 13.** This clause repeats, verbatim, the four numbers that the
+   > strike-out block 350 lines above this one had *already* struck out in the same round — same
+   > document, same section, same author, opposite claim. It is the same failure the round was
+   > convened to name: a paragraph written from what the round hoped, checked against nothing.
+   > The correct statement of the mass result is in the round-13 continuation below, it is better
+   > than this one, and it is measured.
 
 **The ranked list, re-issued.** Two entries merge, one is withdrawn, one is added:
 
@@ -3728,3 +3738,289 @@ The build did not regress this round; three of this round's four findings are th
 it had been measuring the wrong frame, the wrong arena, or the wrong object. The gap to the bar is now
 **one light rig and one reference photograph** — and the honest reading of that is not that we are
 close, but that we finally know which single thing to point at.
+
+
+---
+
+### Round 13, continued (opens at `a43d1c9`) — the two notes three critics were carrying, the tenth instrument fault, and the machines come off the list
+
+*Written from evidence already in this repository, before a single new capture was taken, and
+committed before the harness was started — because three predecessors in a row were cut off at
+exactly this paragraph and the section they never reached is the only place this document records an
+answer. Revised below as the round's own captures landed. **It does not say PENDING.***
+
+**NO. Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
+picks CRV2.** Fourth round running, and the sentence under it is shorter than round 12's:
+
+> **The machines are fixed. Every remaining art defect in this document is a light or a camera, and
+> the largest of them is in the arena this review has run one meter in.**
+
+Two notes were left uncommitted by earlier passes, both of them decisive, both recovered here from
+files that were already on disk when they were written.
+
+#### Recovered note 1 — *"the fit-frame run just changed the picture completely"*
+
+It means `shots/_r12-mass-foundry760-{1,2,3}.txt` and `shots/_r12-contour-foundry760.txt`, captured
+29 Aug 10:22-10:28, the run round 12's body section prescribed in its last paragraph
+(*"the correct response is not to argue about 7.5; it is to re-measure at 760"*) and never read back.
+Same build, same meters, same arena, same seed. **Only the tick changes:**
+
+```
+  foundry, tier 3, 1600x900          tick 420 (the pinned frame)   tick 760 (fit)
+  ROBOT 1  size                          69 x 184 px                 159 x 251 px
+           masses @51                  7.3  7.3  7.5                4.0  4.0  3.8
+           top-4 coverage               75.1 - 79.6 %                89.5 - 91.0 %
+           largest mass                 34.4 - 43.9 %                67.0 - 68.5 %
+  ROBOT 2  size                          38 x 42 px                   42 x 70 px
+           masses @51                  5.5  5.8  5.5                4.0  4.3  4.3
+           top-4 coverage               83.5 - 85.3 %                90.5 - 91.5 %
+           frame height                     4.8 %                        7.4 %
+           contour invisible               23.0 %                        0.0 %
+           contour weak                    49.3 %                        4.6 %
+           contour clean                   29.6 %                       70.8 %
+           body vs background            92.2 / 59.0  (sep 33.2)    97.0 / 40.2  (sep 56.8)
+```
+
+**Yes, it changes the picture completely, and no, it does not change the verdict.** Both halves are
+load-bearing.
+
+**It is the tenth instrument fault, and it is the biggest one on the board.** Frame choice moves the
+project's headline art metric by **3.5 masses** and the opponent's invisible-contour fraction by
+**23 points**, on one build, with nothing else varied. Round 11 measured this meter's noise floor at
+0.55 masses and round 12 got it to 0.12. **No build change this document has ever credited is as
+large as one tick of the frame it was credited on.** Every number in this file taken at tick 420 —
+which is very nearly all of them — carries an unstated error bar the size of the whole effect.
+
+**The ruling on fit frames, and it is a ruling against using them as a general answer.** Grid has
+**one** fit frame in thirty-one samples; foundry has three. Between 90% and 97% of this game does not
+look like a fit frame, and a critic who measures only fit frames is doing the round-4 mistake with a
+nicer tick number. So the frame is chosen by the question, and the two questions have been conflated
+since round 4:
+
+- A **property** question — *how many masses does this machine read as; does it sit in a contact
+  pool; how much of its outline separates* — is a question about the machine, and the machine has to
+  be in the picture. **Fit frame, and quote the fit set, not one tick.**
+- A **composition** question — *what does a player actually see* — is a question about the frames the
+  game really produces. **Unfit frames are the honest sample**, and their answer is unchanged and
+  bad: the player's floor contact is cropped out of frame in twenty of thirty-one sampled ticks, and
+  in foundry the player is a 69 px sliver a third of the way through a fight.
+
+One frame, chosen in round 4 for a third question — silhouette — has been answering both ever since.
+
+**And the caveat extends to contour, where this document explicitly exempted it.** The round-12
+verdict says contour on the airborne frame *"is legitimate and always was — the silhouette meter
+reads an outline against whatever is behind it and does not care whether the machine is flying."*
+**That is wrong, and foundry is the disproof.** The opponent's invisible fraction goes 23.0% → 0.0%
+between two ticks of one build. The meter did not change and the machine did not change; **the
+background behind it went from luminance 59 to 40**, because the machine moved to a different part of
+the set. Contour is not less frame-sensitive than mass. It is *more*: mass moved 3.5 units on a scale
+where 4-5 is a pass, contour moved from a quarter of the outline gone to none of it.
+
+> **Ruling: every meter in this tree that photographs the machines inherits the tick-420 caveat —
+> mass, contour, grounding, salience and the mass rule's own noise floor.** The only readings exempt
+> are those that do not depend on where the machines are standing: the light knock-out's coverage
+> table, the LOD primitive counts, and the HUD/menu geometry. Everything else is a measurement of one
+> tick, and this document has been calling it a measurement of the game.
+
+#### Recovered note 2 — *"Foundry's salience has never been run before. The result is decisive"*
+
+`shots/_r12-sal-foundry.txt` is the first salience run on foundry in thirteen rounds. The meter's
+headline column is **the best rank achieved by a tile that is at least half machine**, over eight
+tile-size/offset configurations and three attention models:
+
+```
+  best rank of a >=50%-machine tile        range over 8 configs x 3 models
+    orbital        1  in every one of twenty-four cells                 1
+    grid           1 .. 11                                           1-11
+    foundry        3 .. 271                                          3-271
+```
+
+At the configuration the sweep prints its top-20 on (T=40, off=0, model A, 880 tiles): **orbital's
+best machine tile ranks 1st, grid's ranks 8th, foundry's ranks 70th.** In foundry's top twenty tiles
+the machine shares are `12% 1% 0% 0% 0% 28% 0% 0% 0% 0% 0% 48% 0% …`. Fourteen of the twenty
+brightest, most saturated tiles in that frame contain **no machine pixel at all**.
+
+And the highlight ownership, all three arenas, same meter, same tick:
+
+```
+                brightest 1% threshold    machines    cyan     amber
+    grid                153.6               34.1%     2.9%     11.8%
+    orbital             182.7               14.2%     1.7%      0.8%
+    foundry             139.7               16.7%     0.0%     50.9%
+```
+
+**In foundry the stage owns three times the machines' share of the frame's brightest 1%, off 5.4% of
+the pixels against the machines' 0.5%.** That is blind point 1 — *the robots are the brightest, most
+saturated things on screen* — **inverted**. It is the exact defect round 4 filed against the whole
+game and rounds 6 and 7 marked PASS. It was never fixed in foundry; it was never looked at in
+foundry.
+
+> **Blind point 1's value half is re-scored from PASS to PASS (grid), PASS (orbital), INVERTED
+> (foundry).** A property the reference has in every frame it ever drew, that we have in two arenas
+> out of three, is not a property we have.
+
+*One discrepancy recorded rather than resolved:* the round-12 verdict quotes the machines at
+**86.6%** of orbital's brightest 1%; the meter at head returns **14.2%**, and the threshold there is
+182.7 against grid's 153.6, so 84% of orbital's brightest pixels are something that is neither
+machine, cyan nor amber. That is either a regression or two different filters, it is not scored
+either way here, and it is on the round-14 list.
+
+#### The measurement that was supposed to decide the verdict — both machines, all three arenas
+
+Run at head on the settle-corrected meter (`shots/_massdrive.mjs`, round 11's one-line fix), three
+interleaved repeats per cell, against the stock meter in the same interleave, pinned tick 420:
+
+```
+  corrected meter (drive)      masses @51        top-4 %        largest %     spread
+    grid    ROBOT 1          3.5  4.0  4.0      90.1 - 91.2    57.4 - 65.8      0.5
+            ROBOT 2          5.0  4.8  5.3      87.4 - 89.1    46.1 - 52.5      0.5
+    foundry ROBOT 1          5.8  5.8  5.8      82.9 - 83.0    37.8 - 38.1      0.0   <- only cell out
+            ROBOT 2          4.8  5.0  4.8      87.6 - 88.0    50.1 - 57.0      0.2
+    orbital ROBOT 1          4.8  4.8  5.0      87.4 - 88.3    59.1 - 59.3      0.2
+            ROBOT 2          5.0  5.0  5.0      90.1 - 90.2    55.7 - 56.0      0.0
+
+  stock meter, same window     foundry ROBOT 1  7.3  7.3  7.5   top-4 75.1 - 79.6
+  corrected, tick 760 (fit)    foundry ROBOT 1  4.0  4.0  3.8   top-4 89.5 - 91.0
+```
+
+**Five of six cells are in the four-or-five band on the pinned frame, and the sixth is in it on a
+frame that has the machine in it.** The single failing cell was a 67 px airborne sliver; measured
+where the machine is, it reads 3.8-4.0. Run-to-run spread is 0.0-0.5 masses, which is the first time
+this project has had a meter quieter than the thing it measures.
+
+> **The mass rule is re-run and it holds: both machines, all three arenas, four or five masses.
+> Round 6's named cause — eleven masses against the reference's four or five — is closed.**
+
+Two things follow, and one of them is uncomfortable.
+
+**Points 3 and 4 close together, as the round-12 brief predicted.** Point 4 (*very few, very large
+forms*) passes on count in six of six cells, with the largest single mass carrying 38-68% of the body
+and the top four carrying 83-91%. Point 3 (*both machines legible at once*) was ruled in round 12 to
+be point 4 measured on the machine with the fewest pixels — and the opponent now reads 4.0-5.3 masses
+everywhere, with 65-66% of its body in one shape in foundry's fit frame. **The internal read is
+fixed. Both points come off the art list.**
+
+**And the prescription written underneath them was backwards.** The verdict's own fix list opens with
+*"flatten the lighting on the machines — their value spread is 91 / 129 / 142 levels depending only on
+which arena they stand in."* At head:
+
+```
+  player p98-p2 value spread            grid    foundry   orbital
+    round 7, quoted in this verdict       91      129       142
+    at head, stock meter                 159      159       161
+    at head, corrected meter             158      163       161
+```
+
+**The spread went up by about seventy levels, the arena-dependence that was the claim's second
+confirmation is gone — 158/163/161 is five levels of variation, not a tripling — and the mass count
+fell from eleven to four anyway.** Nobody flattened anything. The machines got substantially *more*
+contrasty and substantially *less* fragmented at the same time, which is what a Custom Robo toy
+actually is: hard light, high contrast, four shapes. **Value spread is not what fragments a machine;
+clustering is, and the two were being treated as the same number since round 6.** The "flatten the
+lighting" prescription is withdrawn. It is the third round in a row in which a prescription this
+document wrote was withdrawn on measurement, and the second in which the build improved by ignoring
+it.
+
+#### The methodological ruling, made rather than deferred
+
+**Named, in the ledger and not only here: reviewing one arena and generalising is this review's own
+methodological flaw.** It is not one of the ten instrument faults — those returned a wrong number.
+This one returns a *correct number about a third of the game* and is therefore invisible to every
+check the project has. Its mechanism is one line, five times over: every meter in this tree is
+`const ARENA = flag('arena', 'grid')`, and twelve rounds were conducted by running tools at their
+defaults.
+
+**The sibling finding on the UI half — `N8`, a fix verified on desktop is not a fix — is the same
+flaw on the other axis, and together they close the ledger.** Sorting all thirty-two numbered entries
+by which axis they are exposed on:
+
+- **Arena-exposed** (measured in a fight frame): `#1 #2 #4 #5 #7 #10 #12 #13 #14 #24 #32`.
+- **Form-factor-exposed** (measured on a title, garage, HUD or menu screen): `#3 #6 #8 #9 #11
+  #15`-`#23 #25`-`#31`.
+
+The two sets are disjoint and their union is every entry in the ledger. **There is no FIXED entry in
+this document that was verified across the whole surface it claims.** Thirty-two entries, two axes,
+zero exceptions. That is the finding, and it is one finding about the project's method, not two
+coincidences.
+
+**Which entries marked FIXED are therefore not safe — the call only the critic can make:**
+
+*Not safe. Re-scored, and a builder should not treat these as done:*
+
+1. **`#2` flat haze** — FIXED (grid), already known PARTIAL in foundry, **never checked in orbital**.
+   An entry that has already failed to generalise once is the definition of not safe.
+2. **`#12` the arena is a featureless box** — FIXED (grid), FIXED (foundry, by eye), **orbital never
+   asked**. Its evidence is a list of grid's furniture by name; orbital shares none of those objects.
+3. **`#13` obstacle blocks are untextured greybox** — same shape, same gap.
+4. **`#24` the robot silhouette is mushy — FIXED** *(the entry nobody had flagged, and the most
+   dangerous of the four)*. Closed in round 4 **by eye, at 1:1, on one grid frame**, and never
+   re-opened. It is the one entry in the ledger whose job is to catch a regression in exactly the
+   property points 3 and 4 are about. The contour meter at head says the opponent is **51.8% clean
+   with 22.0% weak in orbital** and 29.6% clean at the pinned frame in foundry — the two worst
+   silhouettes in the table, in the two arenas the entry was never opened in. **Re-scored FIXED
+   (grid); UNVERIFIED elsewhere, and orbital's opponent is the specific case to look at.**
+5. **`#14` shadows** — already correctly at grid PASS-on-contact / FAIL-on-framing, foundry NOT
+   MEASURED, orbital never attempted. Unchanged, and listed here so the count is honest: it is five
+   entries, not four.
+
+*Invalidated by instrument fault 10 rather than by the arena flaw, which is a different repair:*
+
+6. **`#1` robots too small.** This entry is arena-clean — round 6 measured all three. Every number in
+   it is a **tick-420** number, and the foundry one is now known to be wrong: the opponent is 4.8% of
+   frame height on the pinned frame and **7.4%** on foundry's fit frame. The entry does not need
+   another arena; it needs another frame.
+
+*Marked and left alone — grid-only, low risk, do not re-open on suspicion:*
+
+7. **`#4` explosion, `#5` translucent robots, `#7` shockwave rings, `#10` tracers, `#32` lens
+   flares** — all closed on grid VFX captures. These are material and effect properties that do not
+   plausibly depend on which set they are played in. **FIXED (grid); UNVERIFIED elsewhere.** Re-scoring
+   them to FAIL would be the same error with the sign flipped, which is what round 12 said and it was
+   right.
+
+**The base rate that makes this a real risk rather than a hypothetical one is still the only one we
+have: `N6`'s brightness half is the single entry ever checked in all three arenas, and it closed in
+exactly one of them.** One in three.
+
+#### The ranked list, re-issued
+
+*Two entries come off — the machines are done. One is promoted on measurement. The rest hold.*
+
+1. **There is still no Custom Robo V2 reference frame in this repository.** Rank 1 for a third round.
+   Every number above — including this round's six-of-six pass — is scored against *"four or five
+   masses"*, written from memory in round 6, never measured, on a reference nobody can point at. **The
+   round that just closed the project's largest art defect closed it against a remembered number.**
+   One PNG ends this and it has not been asked for hard enough.
+2. **Foundry's key light, and the fact that foundry has had one round of scrutiny against grid's
+   thirteen.** It owns 50.9% of the frame's brightest 1% off 5.4% of the pixels; its gate practical
+   peaks at **104.4 against the key's 118.4**, where the same practical peaks at 69.5 against 143.1 in
+   grid and does not appear in orbital at all; its best majority-machine salience tile ranks 70th of
+   880 where orbital's ranks 1st. **Blind point 1 is inverted in this arena and nowhere else, and that
+   is the largest thing between this build and the bar.** Promoted over the generic "arena key light"
+   entry, because the generic entry cannot be fixed by anyone and this one can: it is one arena's rig.
+3. **The camera crops the player's contact with the floor out of the frame in twenty of thirty-one
+   sampled ticks**, to a maximum of 823 px below the bottom edge. `#14`'s pool is measured and correct;
+   it is off-screen for two thirds of a fight. This is a rig defect, it is the true content of the
+   composition clause round 4 filed and round 12 reassigned twice, and no shadow work will ever show
+   until it is fixed.
+4. **The phone**, unchanged and now five rounds without a card-free gameplay capture. Every phone
+   art claim in this document is made on a frame with the ROUND 1 READY card drawn over the fight.
+5. **`N7`**, the bare octahedra, unchanged for seven rounds.
+6. **The review's own method**, ruled on above and now written into the ledger as a gate on closure
+   rather than a note: no entry closes on one arena or on one form factor, and every meter that
+   photographs a machine names the tick it photographed.
+
+*Off the list, and this is the round's good news:* **the machines' mass count and the opponent's
+internal read** — points 3 and 4, rank 2 of every list since round 6 — are closed on both machines in
+all three arenas. *Also off:* the silhouette LOD (withdrawn in round 12, built and firing and
+mistuned by an order of magnitude, and its A/B at `minPx2` 0 / 2 / 16 moves the mass count by less
+than the noise floor).
+
+#### What this verdict is, said plainly
+
+The build did not regress. The machines got materially better and this round is the first in five
+whose headline is a repair rather than a broken meter. **What keeps the answer at NO is that the two
+things now standing between this build and the bar are both things the review created: a reference
+photograph nobody has taken, and an arena nobody looked at.** The art gap has stopped being about
+what is on screen and started being about what has been measured — which is a better position, and a
+more embarrassing one.
