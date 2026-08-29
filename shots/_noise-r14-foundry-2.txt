@@ -1,0 +1,16 @@
+
+MASSES — foundry @ tier 3, 1600x900
+  ROBOT 1  69x183px at 720,570   blur sigma 5.72
+     value  p2=49 median=115 p98=209   spread 160 levels
+     step      24    30    36    42    51    60    72    85
+     mass    12.8  11.0   9.5   7.8   7.5   6.3   5.3   4.5
+     top4%     45    54    61    69    76    84    90    92
+     @51 (five bands): 7.5 masses, largest 35.2%, top4 75.9%
+     curve mean: 8.1 masses
+  ROBOT 2  38x42px at 780,350   blur sigma 1.31
+     value  p2=53 median=92 p98=179   spread 127 levels
+     step      24    30    36    42    51    60    72    85
+     mass     7.8   7.3   7.0   6.0   5.5   5.0   4.0   4.0
+     top4%     59    69    74    81    85    89    90    93
+     @51 (five bands): 5.5 masses, largest 59%, top4 85%
+     curve mean: 5.8 masses
