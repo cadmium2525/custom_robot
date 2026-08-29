@@ -1642,11 +1642,64 @@ const at = (g, x, y, z) => { g.translate(x, y, z); return g; };
  * the machine and starts reading as a halo behind it — a sticker pasted on the
  * arena, which is the exact failure the near-black-with-a-trace-of-hull colour
  * below is guarding against.
+ *
+ * ALL OF THAT IS ABOUT THE NEAR MACHINE, and it stays its number. See
+ * OUTLINE_WIDTH_FAR for why the far machine cannot have the same one.
  */
 const OUTLINE_WIDTH = 0.0068;
 
+/**
+ * The same line on the OPPONENT, which is where the argument above inverts.
+ *
+ * The inverted-hull contour does not only draw the machine's outer silhouette.
+ * Every plate's back faces are extruded too, so wherever one plate stands in
+ * front of another the line is drawn between them — that is deliberate, it is
+ * what stops touching plates fusing into one blob, and on a 260 px hero those
+ * interior seams are the model's line art.
+ *
+ * On a 40 px opponent they are the defect. A constant-screen-width line is 3.1
+ * px whatever the machine's size, so the same seam that is 1.2% of the hero's
+ * height is 7% of the opponent's, and there are thirty of them. The review
+ * named it exactly: *"at 42 px a 2 px black seam between plates is 5% of the
+ * body, so the line art is itself a mass generator."* A black band that wide,
+ * repeated across the body, is not line art at that size — it is a second set
+ * of masses drawn on top of the first, and the mass meter counts them.
+ *
+ * So the line is scaled by ON-SCREEN SIZE, over the same gate the shell's rim
+ * and the geometry LOD use, and for the same reason all three share it: the
+ * three treatments must agree about how big the machine is or they will fight.
+ * Near the contour keeps its full 3.1 px and nothing about the hero changes.
+ *
+ * What this number cannot be. Zero: the far machine's outer contour is the
+ * cheapest legibility it has, and the silhouette meter reads exactly there. The
+ * value below is the outcome of the sweep in the round notes, run against
+ * tools/contour.mjs on all three arenas — the interior seams have to lose most
+ * of their width, and the outer edge has to keep enough of the 7x7 window that
+ * the meter reads a step and not an average.
+ */
+const OUTLINE_WIDTH_FAR = 0.0030;
+
+/**
+ * The machine's ON-SCREEN SIZE gate, as a fraction of frame height, shared by
+ * every size-dependent treatment on the model: the shell's rim shaping and
+ * light governor (uRimSizeLo/Hi), and the contour width here.
+ *
+ * One band, declared once. Two copies of "how big is this machine" is how the
+ * rim ends up narrowing at a size the contour has not thinned at yet, and the
+ * far machine gets a hairline edge inside a fat seam. The near robot
+ * photographs at 24-29% of frame height and the far one at 4.8-8.8%, so 0.09
+ * to 0.22 puts the hero fully at one end, the opponent fully at the other, and
+ * the transition where no machine in a duel actually stands.
+ */
+const SIZE_GATE_LO = 0.09;
+const SIZE_GATE_HI = 0.22;
+
 const OUTLINE_PARS = /* glsl */`
 uniform float uOutlineWidth;
+uniform float uOutlineFar;
+uniform float uOutBodyH;
+uniform float uOutSizeLo;
+uniform float uOutSizeHi;
 `;
 
 const OUTLINE_VERT = /* glsl */`
@@ -1659,10 +1712,17 @@ const OUTLINE_VERT = /* glsl */`
     vec2 d = (projectionMatrix * vec4(nOut, 0.0)).xy;
     float dl = length(d);
     if (dl > 1e-5) {
+      // On-screen size of this machine as a fraction of frame height — the CPU
+      // twin of the shell's vSizeX, written the same way on purpose. For a
+      // perspective camera gl_Position.w IS the view-space depth, and this
+      // snippet is spliced in after project_vertex, so it is already to hand;
+      // NDC height spans 2.0, hence the halving.
+      float sizeO = uOutBodyH * projectionMatrix[1][1] / max(gl_Position.w, 1e-3) * 0.5;
+      float wO = mix(uOutlineFar, uOutlineWidth, smoothstep(uOutSizeLo, uOutSizeHi, sizeO));
       // x is squeezed by the aspect ratio so the contour is the same weight on
       // the sides as on the top; P00/P11 is exactly height/width.
       float ax = projectionMatrix[0][0] / projectionMatrix[1][1];
-      gl_Position.xy += (d / dl) * vec2(ax, 1.0) * uOutlineWidth * gl_Position.w;
+      gl_Position.xy += (d / dl) * vec2(ax, 1.0) * wO * gl_Position.w;
     }
   }
 `;
@@ -1713,7 +1773,13 @@ function outlineMaterial(hex) {
     polygonOffsetUnits: 2,
     dithering: true,
   });
-  const u = { uOutlineWidth: { value: OUTLINE_WIDTH } };
+  const u = {
+    uOutlineWidth: { value: OUTLINE_WIDTH },
+    uOutlineFar: { value: OUTLINE_WIDTH_FAR },
+    uOutBodyH: { value: BODY_H },
+    uOutSizeLo: { value: SIZE_GATE_LO },
+    uOutSizeHi: { value: SIZE_GATE_HI },
+  };
   m.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, u);
     shader.vertexShader = shader.vertexShader
@@ -2114,9 +2180,11 @@ export class RoboModel {
     // machine read as blue glass. A rim is allowed to describe an edge. It is
     // not allowed to describe the whole robot.
     this.matShell = roboShell(maps, look, teamHex, {
-      // Shared with the geometry LOD, so the size gate the light reads and the
-      // size the greebles are dropped at cannot drift apart.
+      // Shared with the geometry LOD and the contour, so the size gate the
+      // light reads, the size the greebles are dropped at and the size the line
+      // art thins at cannot drift apart.
       bodyH: BODY_H,
+      rimSizeLo: SIZE_GATE_LO, rimSizeHi: SIZE_GATE_HI,
       rimStrength: 0.10, rimPower: 5.2, energy: 0.03,
       normalScale: 1.15, envMapIntensity: 0.5,
       // The governor — see FILL_FRAG. The ceiling is what stops the arena
@@ -2203,6 +2271,15 @@ export class RoboModel {
     // draw call and no memory. Drawn FIRST so the shell's own front faces land
     // on top of it and the line only survives where it pokes past the machine.
     this.matOutline = outlineMaterial(outlineHex(look));
+    // The contour's knobs are published on the SHELL's uniform bag as well.
+    // They are the same uniform objects, not copies, so setting one moves the
+    // live shader — and tools/mass.mjs' `--u` sweeps exactly this bag. Without
+    // it, finding the far contour width costs one rebuild per value on a
+    // machine where a rebuild plus a capture is four minutes; with it, the
+    // whole sweep is one browser launch each. On a project that has now found
+    // seven instrument faults, a knob the existing meter cannot reach is a knob
+    // that gets tuned by argument.
+    Object.assign(this.matShell.userData.u, this.matOutline.userData.u);
     if (shellMesh) {
       const om = new THREE.SkinnedMesh(outlineGeometry(shellMesh.geometry), this.matOutline);
       om.castShadow = false;

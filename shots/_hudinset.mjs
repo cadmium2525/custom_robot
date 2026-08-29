@@ -21,6 +21,13 @@ const BASE = process.argv[2] || 'http://127.0.0.1:4213/custom_robot/';
 const PREFIX = process.argv[3] || 'shots/hi';
 const VW = Number(process.argv[4] || 390), VH = Number(process.argv[5] || 844);
 const SAFE = (process.argv[6] || '47,34,0,0').split(',').map(Number);
+// ROUND 12: how long to let the match run before the shutter. The default of
+// 2600ms is one second of match clock, which is inside the ROUND 1 READY card —
+// so all three captures this tool has ever produced are photographs of a title
+// card. The rects are unaffected (the HUD lays out identically) but no
+// art-direction claim can be made from them, so this is now settable.
+//   node shots/_hudinset.mjs <base> <prefix> <vw> <vh> <t,b,l,r> [holdMs]
+const HOLD = Number(process.argv[7] || 2600);
 
 const browser = await chromium.launch({
   executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
@@ -90,7 +97,7 @@ await tapNav('ENTER ARENA');
 await tapNav('TO GARAGE');
 await tapNav('SELECT ARENA');
 await tapNav('FIGHT');
-await page.waitForTimeout(2600);
+await page.waitForTimeout(HOLD);
 // Wake the touch layer with a real finger, then hold two down so the stick and
 // the pad are in their live state, not their idle one.
 await tap(VW * 0.25, VH * 0.8);
