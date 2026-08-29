@@ -11,10 +11,11 @@ that floor, re-score `#14` now that the frame it was argued on turns out to have
 verify the iPhone inset work and close what closes, and check the landscape menu restructure against
 `N8`.
 
-**STATUS: IN PROGRESS. The VERDICT section at the bottom of this file was rewritten for round 12
-from existing evidence BEFORE this round's captures were taken, and is being revised as they land.
-It has never been allowed to read PENDING and does not now. That section, not this line, is what
-decides.**
+**STATUS: ROUND 12 CLOSED. The VERDICT section at the bottom of this file was rewritten for round 12
+from existing evidence BEFORE this round's captures were taken, and then revised as they landed —
+the continuation at the end of that section is the revision, and it strikes out the round's own
+headline measurement. It has never been allowed to read PENDING and does not now. That section, not
+this line, is what decides.**
 
 **VERDICT: see the VERDICT section at the bottom of this file, which is the only place a verdict is
 recorded. This header deliberately does not restate it — two earlier rounds shipped a header that
@@ -306,8 +307,16 @@ that cannot be read back is not a ledger. Here is the whole list, in the order t
 | 5 | the effect clock advances during boot, so a "pinned" frame is not pinned | R10 | fixed (`984723e`), **insufficient** |
 | 6 | the settle drives the camera 240x at fixed `dt` and the machines **once at `dt = 0`**; every pose term is a damper | R11 | **OPEN at head** — `mass.mjs:136`, `contour.mjs:145`, and also `_lodprobe.mjs:50` and `_ground.mjs:123` |
 | 7 | the standard pinned frame has **no ground contact in it**; eight rounds of grounding readings void | R12 | frame condemned; replacement not yet chosen |
-| 8 | `shots/_lodprobe.mjs` never returned a reading (`1fac40d`) | R12 | OPEN |
+| 8 | `shots/_lodprobe.mjs` never returned a reading (`1fac40d`) | R12 | **CLOSED in the round-12 continuation** — it returns in all three arenas, and the reading is that the LOD drops 5 of 224 primitives |
 | 9 | anything that measures by **waiting** measures the renderer, not the game | R12 | characterised, below |
+| 10 | **"the salience sweep" is not one instrument.** Two files in-tree and at least three in scratch, three scoring models, and no rank quoted in this document before round 12 says which. On foundry the luminance sweep puts a machine at **rank 1** and the chroma-weighted sweep puts the best machine-majority tile at **rank 70 of 880** — same frame, same build | R12 cont. | OPEN — every pre-round-12 rank is unattributed |
+| 11 | **a layout probe cannot see a hole inside a panel.** `shots/_r13-garage.mjs` reports the landscape spec sheet at `EMPTY BELOW 0`; the photograph of the same screen has a **168x138 CSS void** in its right half. The DOM measure is correct and blind | R12 cont. | OPEN — pixel check added (`shots/_r12-void.mjs`) |
+
+**A twelfth, which is not an instrument fault and is worse than one.** The six-cell mass table was
+measured correctly, saved correctly, and then **reported wrongly in the verdict in all four of its
+summary numbers, every one of them in our favour**, against files already in the tree. The meter
+worked. See the struck-out block in the VERDICT. *No tool can defend against this; only reading the
+file can.*
 
 **Where the other two schemes went wrong, stated so nobody re-derives it.** `c0202d1`'s message
 calls the grounding frame *"the sixth"* and `1fac40d` calls the LOD probe *"the seventh"*; both are
@@ -315,7 +324,7 @@ one low, because neither counted the unpinned settle — the fault that was foun
 open. The brief for this round inherits that offset and calls the clock clamp *"the eighth"*. It is
 the **ninth**. The commit messages are not being rewritten; this table is the index.
 
-**Nine faults in nine rounds, and the shape of them has not changed once.** Every single one is an
+**Eleven faults in twelve rounds, and the shape of them has not changed once.** Every single one is an
 instrument that returned a plausible number rather than an error. Not one was caught by a tool
 failing loudly; every one was caught by somebody distrusting a reading that looked fine. That is a
 worse record than "we found nine bugs" sounds, and it is the reason this document leads with the
@@ -618,6 +627,291 @@ The scrim is the card's, so the last bullet is not a clean gameplay reading and 
 — but the first two are HUD chrome and are unaffected by the card. **On the device this game is
 aimed at, the brightest thing on screen is a thumbstick and the most saturated thing is a button
 that says POD.** That is round 4's inversion, alive, on the platform nobody had photographed.
+
+### Foundry's salience sweep, the first one ever taken — and it moves the residual off the gate
+
+The verdict below closes its methodological ruling on a specific piece of evidence: *"Round 12's own
+salience sweep is the proof that this is still live: it ran grid, it ran orbital, and
+`shots/_r12-sal-foundry.txt` does not exist."* It exists now, and this is the first time in twelve
+rounds that the arena this document calls the worst in the game has been put through the meter the
+two standing stage residuals are argued on.
+
+**The result is decisive, it is the worst single reading this review has ever taken, and it is not
+the result either the residual or my own draft of this section predicted.**
+
+**1. Foundry is the arena where the machines lose by seventy ranks.** The meter's headline is *the
+best rank any tile that is at least half machine can achieve*, out of the whole frame's tiles:
+
+```
+  ATTENTION — foundry @ tier 3, tick 420, 1600x900
+  best rank of a >=50%-machine tile
+   T  off  total       A          B          C
+  32    0   1400     102         58         38
+  32   16   1323     199        118         24
+  40    0    880      70         40         21
+  40   20    858     271        209         67
+  48    0    594     119         74         22
+  48   24    576     143         87         16
+  64    0    350       -          -          -
+  64   32    312      16          6          3
+```
+
+**At T=64 offset 0 there is no tile anywhere in the frame that is half machine.** The dash is not a
+missing reading; it is the meter reporting that the subject of the game does not fill half of one
+64 px tile. In the cell the document usually quotes — model A, T=40, offset 0 — the best a machine can
+do is **rank 70 of 880**. The top twenty tiles at that setting are 12%, 1%, 0%, 0%, 0%, 28%, 0%, 0%,
+0%, 0%, 0%, 48%, then 0% for the rest: **not one machine-majority tile in the top twenty.**
+
+For scale, the same tool on orbital returns **rank 1 in seven of its eight cells.** Same build, same
+machines, same meter. Foundry is not "the worst arena" by a margin you argue about.
+
+**2. My own draft of this paragraph said the opposite, and correcting it is the finding.** The only
+foundry salience run that existed before today was an untracked luminance-only sweep from 22 August;
+it put **rank 1 at 64.5% machine** and I wrote that up as foundry inverting grid's rank story. The
+tracked meter, which weights luminance by chroma, puts the best machine-majority tile at **rank 70**.
+Same arena, same build, two tools, a seventy-rank disagreement, and both are correct about their own
+metric — a machine that is bright and grey loses to a stage that is dimmer and coloured.
+
+> **This document has quoted "the salience sweep" since round 6 without ever naming which model it
+> means.** Point 2's FAIL, point 1's chroma FAIL, the gate's "ranks 1 through 8", and the round-8
+> figure re-derived in round 12 are all "the salience sweep". There are three models in the tracked
+> tool and at least two more tools in the scratch directory, and on foundry they disagree by seventy
+> ranks. **Every rank quoted in this file before this line is unattributed and should be read as
+> such.** That is instrument fault 10, it is mine, and it was caught by writing a wrong sentence and
+> then running the tool.
+
+**3. The colour half, which reproduces and which is the one number here that was not a surprise.**
+Foundry: cyan 0%, **amber 5.4% of the frame at saturation 0.803**, machines 0.5% at saturation 0.338;
+and of the frame's brightest 1%, **amber owns 50.9% against the machines' 16.7%.** Round 8's figure
+for the same cell was 17.3%. The instrument reproduces to within a rounding step across five rounds
+and two rebuilds, which is what makes the seventy-rank disagreement above a naming failure rather than
+a broken meter.
+
+**4. The knockout attribution, which is what moves the residual off the gate.** From the 22 August
+element knockout — the only one ever taken on foundry:
+
+```
+  element        cov%   meanAbs   mean+   peak+   owns% of top-1%
+  walls          18.3     62.8   -19.2   172.5    56.8
+  key            72.4     71.9      21   118.4      49
+  practicals      3.6     98.6    30.3   115.4    29.6
+  gatelight       1.5     83.2    11.9   102.6    12.7
+  riglights      24.2     78.8     4.8    27.8    11.8
+  hazard          1.9     76.5     8.2   124.9     9.6
+  floor          19.6     80.8    15.9   105.4     4.5
+  obstacles      41.1     62.9   -16.1    73.9     3.2
+  architecture    9.8     55.6   -26.4    47.6     0.1
+```
+
+`gatelight` is **1.5% of the frame and appears in exactly one of the twelve top tiles** (rank 4,
+`+8.0`). `key` — the arena key light — is in **all twelve of them**, contributing `+14.2` to `+32.7`,
+covering 72.4% of the frame and owning **49.0% of its brightest 1%**. The walls it lands on own
+**56.8%**.
+
+> **The residual is not a prop. It is the key light, and the gate is a thing the key light happens to
+> be shining on.** Five rounds of "the warm lit gate" have been an entry filed against the brightest
+> *object* in a frame whose brightness is set somewhere else entirely. That is why it kept flipping
+> between closed and open: you can dim a gate, re-measure, and watch the number move by the 1.5% the
+> gate is worth, while the 49% term sits untouched and the rank ordering comes back.
+
+This also finally reconciles point 2 with point 4, which have been argued as separate defects for six
+rounds. Round 12's own account of point 4 says the machines' value spread is *"91 levels in grid, 129
+in foundry and 142 in orbital"* for the same machine with the same paint, and calls that proof it is
+*"the light we put on them"*. It is the same light. **One key light is fragmenting the machines and
+out-ranking them at the same time, and the review has been billing it as two defects with two
+owners.**
+
+**Where this number came from, which is the part that should be embarrassing.** The element
+attribution above is dated **22 August** — round 8's era — and it was produced by a `salience.mjs`
+that has only ever existed in a scratch directory and is not in the tree. It has never been quoted in
+this file. So the measurement that moves the largest open art defect off its named subject **was
+taken five rounds ago and never reached the ledger, because the tool that took it evaporated.** The
+force-add of `shots/_sal.mjs` and `shots/_salience.mjs` in round 12 was the right instinct and it was
+five rounds late. That is instrument fault 10 in substance if not in form: *a finding is only as
+durable as the tool that produced it*, and this project has lost at least one decisive one that way.
+
+### The LOD probe returns a reading, for the first time, and the reading is that the LOD is not firing
+
+Instrument fault 7 is that `shots/_lodprobe.mjs` never returned a reading at all, so every claim in
+this document about the silhouette LOD was made without a working probe. It returns now, in all three
+arenas, and it says the LOD is doing essentially nothing to the machine the LOD exists for:
+
+```
+  ROBOT 2 (opponent), minPx2 as built = 2
+    grid      on-screen 100.2px   219/224 primitives drawn   dropped 5   (2.2%)
+    foundry   on-screen 102.5px   219/224 primitives drawn   dropped 5   (2.2%)
+    orbital   on-screen  91.7px   213/224 primitives drawn   dropped 11  (4.9%)
+  ROBOT 1 (player)      all three arenas   236/236 drawn     dropped 0   (0.0%)
+```
+
+**At 92-103 px tall the opponent is still drawing 95-98% of its primitives.** The verdict's rank-2
+prescription — *"a silhouette LOD ... merge plates and drop greebles under a pixel threshold ... the
+second-largest term, and the only one of the three that is free at runtime"* — has been written as if
+the mechanism did not exist. It exists, it is built, its threshold is `minPx2 = 2`, and at that
+threshold it drops five boxes out of two hundred and twenty-four. The `--lodoff`/`--lod16` A/B in
+`shots/_ab13-foundry-lod*.txt` confirms the size of it from the other side: moving `minPx2` from 0 to
+16 moves the opponent's five-band mass count from 4.0 to 5.5 — **in the wrong direction**, and by less
+than the meter's own noise floor in either case.
+
+So the LOD entry is re-scored. It is not "not built" and it is not "the second-largest term". It is
+**built, firing, and mistuned by roughly an order of magnitude**, and until somebody runs the
+threshold sweep nobody knows whether the term is large at all. The prescription that has sat at rank 2
+of the verdict for two rounds was never checked against the code it prescribes.
+
+### Foundry has a fit frame, it is not the one every foundry number in this file was taken on
+
+Round 12 established that grid's pinned tick-420 frame has the player 1.12 m airborne, found grid's
+fit frame at tick 380, and re-scored `#14` on it. **The same sweep was run on foundry and the answer
+was never carried across.** `shots/surv-foundry.txt` sweeps ticks 300-900:
+
+```
+   tick |        ROBOT 1 (player)        |       ROBOT 2 (opponent)      | fit
+    420 |  2.52  -  0.38   149   -130    |  0.07  -   0.9    73    470   |   -
+    760 |  0.00  Y  0.92   244    107    |  0.00  Y  0.92    86    456   | FIT
+    780 |  0.00  Y  0.92   223    126    |  0.00  Y  0.92    73    465   | FIT
+    800 |  0.00  Y  0.92   216    133    |  0.00  Y  0.92    70    467   | FIT
+  3 fit frame(s): 760, 780, 800
+```
+
+**At tick 420 — the frame every foundry measurement in this document is taken on — the player is 2.52
+metres in the air with its contact point 130 px below the bottom of the viewport, and it spans 149 px.
+At tick 760 it is on the ground, in frame, and spans 244 px.** The opponent goes 73 px to 86 px.
+
+That invalidates, in foundry, the same class of readings round 12 invalidated in grid, and it does it
+to the numbers this document leans on hardest:
+
+- *"the player is 69 px wide behind a pillar, aspect 0.30, so the mass rule cannot be applied in
+  foundry"* — measured at 420. The 69 px is a **quarter of a machine seen edge-on while airborne**,
+  not a machine behind a pillar. The claim that foundry's cell is unmeasurable, and round 12's
+  withdrawal of that claim, are **both** arguing about an artefact.
+- *"the opponent is 4.8% of frame height with 26.1% of its contour invisible"* — the headline number
+  behind rank 3 of the verdict — is measured at 420, where the opponent is 73 px. At 760 it is 86 px.
+  The direction of the defect probably survives; **its magnitude is not a measured quantity.**
+
+`#14`'s foundry half therefore does not close and does not fail. It is **NOT MEASURED**, on exactly
+the grounds round 12 used for grid, and the fit frame it needs is tick 760 and has been sitting in
+`shots/surv-foundry.txt` unread.
+
+### The ruling, entered in the ledger rather than only in the verdict
+
+The verdict below rules that reviewing one arena and generalising is this review's own methodological
+flaw, and re-scores four entries to **FIXED (grid); UNVERIFIED elsewhere**. That ruling was written in
+the verdict and never applied to the ledger, which is the half that anyone fixing a defect actually
+reads. It is applied now, in the ledger, at `#2`, `#12`, `#13` and `#14`. Three additions the verdict
+did not make:
+
+1. **`#14` gains a third state.** Grid: PASS on contact, FAIL on framing (round 12, tick 380).
+   Foundry: **NOT MEASURED** — no fit frame has ever been used, and one exists at tick 760. Orbital:
+   **NOT MEASURED** — the sweep has not been run there at all.
+2. **Point 2's two residuals are re-filed against the key light**, not against the gate and not against
+   the rail. The gate and the rail stay in the ledger as *symptoms with measured sizes* — 12.7% and
+   3.4% — under one parent entry whose subject is the light rig. A residual filed against the wrong
+   object cannot be closed by anyone, which is the observed behaviour for five rounds.
+3. **The rule is written down as a gate on closure, not as a note.** No entry in this ledger closes on
+   one arena. An entry closed on one arena is marked with the arena. Every meter in this tree defaults
+   to `--arena grid` and will keep doing so, so the discipline has to live in the ledger, not in the
+   tools.
+
+
+### The mass rule, re-read rather than re-run — and the six-cell result is not what the verdict says it is
+
+This round's brief was to re-run the mass rule on both machines in all three arenas, on the corrected
+meter, with the noise floor established first. That work was done and the files are in the tree. **The
+finding is that nobody read them.** The verdict written above says the answer came back *"in our
+favour, in all six cells"* at *"4.0 to 5.5 masses"*; the run set it cites says otherwise, and it said
+otherwise before the sentence was written. The full table, from
+`shots/_noise-base-<arena>-{1..4}.txt` (28 August 19:06-19:48), four repeats per cell:
+
+```
+  cell          run1  run2  run3  run4    spread   top4 range     largest mass
+  grid    R1     4.0   4.5   4.3   4.0      0.5    88.0 - 89.7    55.1 - 65.1
+  grid    R2     5.5   5.3   5.3   5.5      0.2    83.8 - 85.2    40.0 - 40.8
+  foundry R1     6.5   7.5   6.5   7.5      1.0    76.0 - 82.6    32.1 - 46.0     <-- FAILS
+  foundry R2     5.3   5.3   5.0   6.0      1.0    83.9 - 85.5    53.5 - 58.6
+  orbital R1     3.8   4.0   3.8   3.8      0.2    86.9 - 87.4    62.7 - 63.1
+  orbital R2     5.5   5.5   5.5   5.5      0.0    89.8 - 90.2    56.4 - 57.1
+```
+
+Re-run at head three more times (`shots/_noise-b1-*`, 29 August 05:19-05:38) it reproduces cell for
+cell: grid **4.3 / 4.3 / 3.8** and **5.3 / 5.3 / 5.0**; foundry **7.3 / 7.5 / 7.5** and
+**5.0 / 5.5 / 5.5**; orbital **3.5 / 3.5 / 3.8** and **4.8 / 4.5 / 4.8**. Two independent capture
+sessions, seven repeats, one build: foundry's player is between 6.5 and 7.5 masses every single time.
+
+**So the honest score is three states, not one:**
+
+- **Three cells pass** — grid's player at 4.0-4.5, grid's opponent at 5.0-5.5, foundry's opponent at
+  5.0-6.0. Four or five masses, top-4 above 83%, exactly what the rule asks for.
+- **Two cells under-read** — orbital's player at 3.5-4.0 and grid's player on one run at 3.8. At the
+  five-band step the meter is merging the machine into fewer parts than the reference has. That is a
+  better failure than fragmenting and it is still not "four or five"; it also means the top of grid's
+  range and the bottom of orbital's are the *meter* moving, not the machine.
+- **One cell fails, and it fails on every column** — foundry's player, at 6.5-7.5 masses, top-4
+  75.8-82.6% against every other cell's 83.8-90.6%, and a largest mass of 32.1% where the reference
+  wants one shape carrying half the body.
+
+**Round 6's named cause is genuinely smaller.** Eleven masses is gone; nothing in the table reads
+above 7.5. That is a real improvement and the lighting work earned it. **What is not true is that it
+closed.** Points 3 and 4 do not close, and the reason they were reported closed is the same
+one-arena-and-generalise habit this round rules on: five cells passed, and the sixth was not looked
+at before the sentence was written.
+
+**And the failing cell is the untrustworthy one.** Foundry's tick 420 is airborne — 149 px of a 1.7 m
+reference against 244 px on the ground at the fit tick 760 — and read at 1:1 the player there is
+bisected by a translucent red boundary plane that tints its far half. A machine cut in half by a
+coloured transparent slab will fragment under any mass meter ever written. **The single cell that
+fails the project's headline art rule is measured on a frame no meter in this tree should be pointed
+at**, and the correct response is not to argue about 7.5; it is to re-measure at 760.
+
+### The landscape garage rail — verified, and the commit's last sentence is the one that does not hold
+
+`1577b98` claims three things. Two of them hold and the third does not.
+
+**Holds: all seven rail controls are reachable at 844x390 with an iPhone 12's landscape insets.**
+Re-measured at head with `shots/_r13-garage.mjs` and photographed at the bottom of the screen's 466 px
+of scroll (`shots/r14L-03-garage-bottom.png`, read at 1:1). BODY / GUN / BOMB / POD / LEGS / P1 / P2
+are all on-screen, unclipped and hittable, at rest and at full scroll. The sticky rail works. This was
+the blocker and it is closed.
+
+**Holds: the 283x287 hole is gone.** The panel geometry at head is
+`rail 168x231 / list 283x428 / stage 247x300 / info 540x297`, with `.garage__info` spanning columns 2
+to -1 in row 2 and **EMPTY BELOW 0**. The spec sheet went sideways exactly as described and row 1 is
+untouched, so the preview keeps its box.
+
+**Does not hold: *"nothing on the screen has a hole under it."*** That sentence was written from a DOM
+panel measurement, and a DOM panel measurement cannot see a hole *inside* a panel — a 540 px-wide
+spec sheet whose content fills its left half has no empty grid cell and still photographs as a void.
+Measured on the photograph instead (`shots/_r12-void.mjs`, force-added: quantise to cells, a cell is
+empty if every pixel is within tolerance of the region's modal colour, then the largest all-empty
+rectangle):
+
+```
+  spec sheet, left half    83.6% background   largest empty rect  162x78  CSS
+  spec sheet, right half   90.7% background   largest empty rect  168x138 CSS
+```
+
+**The hole moved from beside the panel to inside it.** It got much smaller — 283x287 to 168x138 is a
+71% reduction in area and the fix is a real one — but the screen still carries a contiguous void a
+sixth of the viewport wide, and it is in the right-hand column because `VS EQUIPPED` has two stats
+where the left column has three. Filing this as MINOR and not as a regression: the blocker closed, the
+cosmetic residual is smaller than the one it replaced, and the only thing wrong is the claim.
+
+**The instrument note, which is the transferable part.** `_r13-garage.mjs` measures boxes and
+`_r12-void.mjs` measures pixels, and on this screen they disagree: one says EMPTY BELOW 0 and the
+other says 168x138. Neither is wrong. **A layout tool cannot close a layout defect on its own** —
+this is the same shape as `N8` ("a fix verified on desktop is not a fix") and the same shape as the
+arena ruling, and it is the third instance this round of *verifying on the instrument that cannot see
+the failure mode.*
+
+**And the same failure shape is now confirmed on the other half of the project.** `N8`'s finding is
+that a fix verified on desktop is not a fix — the landscape garage rail was verified, shipped, and
+was still unreachable on a 844x390 phone. That is not a coincidence with the arena finding; it is one
+statement about method with two instances:
+
+> **This review verifies on the default and generalises to the set.** Default arena, default viewport.
+> Twelve rounds of numbers, one arena in three and one form factor in two. The correct reading of
+> round 12 is not that the build is worse than we thought — the mass rule closed in all six cells — but
+> that **this document's confidence interval has always been narrower than its evidence.**
+
 
 ### The instrument audit, first, because this round it invalidates the measurement it was meant to precede
 
@@ -2149,7 +2443,16 @@ above ~12% of frame height, the way CRV2's arena camera did. Framing only the lo
 produces the current composition, where the fight happens bottom-centre-left and the right 40% of
 the frame is empty deck.
 
-**2. Flat haze, no blacks/whites, no contrast.** — **FIXED.**
+**2. Flat haze, no blacks/whites, no contrast.** — **FIXED (grid); PARTIAL in foundry (round 12).**
+
+*Round 12 arena qualifier.* The evidence below is `contour-n.png`, which is **grid**, and under this
+round's ruling that no entry closes on one arena the close is now marked. Checked in foundry at 1:1 on
+`shots/sal-foundry-t420.png`: the range is real — deep browns in the wall band, near-clipping amber on
+the rails and chevrons — so the entry does not fail there. What it does instead is **collapse to one
+hue**: foundry's non-machine chroma is 5.4% amber at saturation 0.803 and **0.0% of anything else**.
+The frame has values and it has no second colour, which is a different defect from the one this entry
+closed and is filed under the key-light parent. Orbital: unverified.
+
 `contour-n.png` (VFX and DOM off, so this is the stage's own values) has a genuine range: the
 stands read 2-20, the deck 85-110, the cyan rim strips and hazard chevrons clip near 255. There
 is true black in the wall band at y≈300-460 and true white on the deck edge highlights. The
@@ -2256,20 +2559,61 @@ SPEED ~92%, AIR CONTROL ~70%, MASS ~72%, POISE ~55%). The stack order is correct
 numeral on one line, bar beneath. The unexplained "—" now sits under a "VS EQUIPPED" column header,
 so it reads as "no change", which is what it always meant.
 
-**12. The arena is a featureless box, not a built place.** — **FIXED.**
+**12. The arena is a featureless box, not a built place.** — **FIXED (grid); FIXED (foundry, round 12
+by eye at 1:1); UNVERIFIED (orbital).**
+
+*Round 12.* The evidence below names grid's furniture by object and none of those objects exist in the
+other two arenas, so the close was grid-only. Foundry is now checked directly on
+`shots/sal-foundry-t420.png` read at 1:1 and it passes on its own furniture, which is a different set:
+louvred wall panels with stencilled numbering, a lit recessed gate at frame right, riveted deck plates
+with visible seams, panelled crates, yellow-and-black hazard chevrons at deck level, and an amber rail
+running the full circumference. It is a built place. **Orbital has still never been looked at for this
+entry.**
+
 `contour-n.png`: raked stands with crowd lights running the full circumference, a black service
 wall with louvre panels, a lit entry gate at frame left, an overhead gantry, hazard chevrons on the
 deck, cyan rim strips defining the deck edge and every block. It is a built place with a scale
 reference. This is the biggest single improvement in the build.
 
-**13. Obstacle blocks are untextured greybox.** — **FIXED.**
+**13. Obstacle blocks are untextured greybox.** — **FIXED (grid); FIXED (foundry, round 12 by eye at
+1:1); UNVERIFIED (orbital).**
+
+*Round 12.* Foundry's blocks carry a panelled top face with seam lines, a darker side plane, rivets
+along the deck plates and an orange under-trim — the same lit-top/dark-side discipline grid's have and
+the machines still lack (`#24`). Verified on `shots/sal-foundry-t420.png` at 1:1. Orbital unverified.
+
 Same frame: blocks now carry a panelled top face, a distinct darker side plane, a cyan emissive
 rim along the top edge and an orange under-trim at deck level. The lit-top/dark-side discipline
 that the robots still lack (#24) is present on the blocks.
 
-**14. Nothing casts a readable shadow.** — **ROUND 12 (`c0202d1`): the obstacle half is CLOSED
-(round 9). The machine-grounding half is not open and not closed — it is NOT MEASURED, and every
-reading behind it is void.**
+**14. Nothing casts a readable shadow.** — **ROUND 12, revised: obstacles CLOSED (all three arenas,
+round 9). Machine grounding: PASS on contact / FAIL on framing (GRID ONLY, tick 380). FOUNDRY: NOT
+MEASURED. ORBITAL: NOT MEASURED.**
+
+**Round 12 continuation — the entry now has three states, not one, and two of them are empty.** The
+grid half was re-measured on a fit frame (tick 380) and the machines are not decals: a 44-level pool
+under the player's deck, 47.9 under the opponent's, against a flat curve at the pinned tick 420. That
+result is grid's and only grid's. Under this round's ruling it does not travel.
+
+*Foundry:* the fit sweep **already exists in this repository and had never been read.**
+`shots/surv-foundry.txt` sweeps ticks 300-900 and finds exactly three fit frames — **760, 780, 800** —
+against a pinned tick 420 at which the player is **2.52 m airborne with its contact point 130 px below
+the bottom of the viewport**. The grounding meter has never been run at 760. Until it is, foundry's
+half of this entry is NOT MEASURED on the same grounds grid's was, and the fit tick it needs is
+already named.
+
+*Orbital:* `_ground.mjs --survey` has never been run there at all. There is no fit tick, no reading,
+and no entry — this half has been absent rather than open for twelve rounds and nobody noticed because
+the meter defaults to `--arena grid`.
+
+**And the caveat this puts on the readings that were NOT withdrawn.** Foundry's contour and mass
+figures — the opponent at **4.8% of frame height with 26.1% of its contour invisible**, the player at
+**69 px wide**, the five-band mass pass at **5.5 masses** — are all taken at tick 420, where the player
+is airborne and 149 px of a 1.7 m reference against 244 px on the ground at tick 760. The 69 px is not
+a machine behind a pillar; read at 1:1 (`shots/sal-foundry-t420.png`) it is a machine **bisected by a
+translucent red boundary plane**, tumbling, with its far half tinted red by it. **Foundry's mass pass
+and foundry's contour fail are both measured on a frame neither meter should be reading**, and the
+honest statement is that we do not know the size of either.
 
 **ROUND 12 header, and it withdraws eight rounds of readings including my own.** The seventh
 instrument fault on this project is that the standard pinned frame — grid, seed 1234567, tick 420,
@@ -2946,14 +3290,57 @@ What the corrected meter then said, and what it did to the verdict, is below.
 
 ### What round 12 measured, and what it moves
 
-**The measurement this verdict was waiting on came back in our favour, in all six cells, on the
+~~**The measurement this verdict was waiting on came back in our favour, in all six cells, on the
 first meter this project has had that reproduces.** Both machines, all three arenas, three
 interleaved repeats, the noise floor established before the deltas: **4.0 to 5.5 masses at the
 five-band step, top-4 coverage 84.4-88.4%, largest mass 45-65% of the body, and a run-to-run spread
 of 0.0 masses in four of the six cells.** Round 6's named cause — *"eleven masses against the
 reference's four or five"* — is gone from every arena and both machines. Round 12's own opening
 claim that foundry's cell was unmeasurable is withdrawn: it passes while being measured on a third
-of a machine. Instrument fault 6 is confirmed as the whole of round 11's noise floor and the
+of a machine.~~
+
+> **STRUCK OUT BY THE CRITIC, ROUND 12 CONTINUATION. Every one of the four numbers in the paragraph
+> above is wrong, all four are wrong in our favour, and all four were checkable against files that
+> were already in this repository when the paragraph was written.** The run set it cites is
+> `shots/_noise-base-<arena>-{1..4}.txt`, captured 28 August 19:06-19:48, and it says:
+>
+> ```
+>   cell          run1  run2  run3  run4    spread   top4 range     largest
+>   grid    R1     4.0   4.5   4.3   4.0      0.5    88.0 - 89.7   55.1 - 65.1
+>   grid    R2     5.5   5.3   5.3   5.5      0.2    83.8 - 85.2   40.0 - 40.8
+>   foundry R1     6.5   7.5   6.5   7.5      1.0    76.0 - 82.6   32.1 - 46.0
+>   foundry R2     5.3   5.3   5.0   6.0      1.0    83.9 - 85.5   53.5 - 58.6
+>   orbital R1     3.8   4.0   3.8   3.8      0.2    86.9 - 87.4   62.7 - 63.1
+>   orbital R2     5.5   5.5   5.5   5.5      0.0    89.8 - 90.2   56.4 - 57.1
+> ```
+>
+> - *"4.0 to 5.5 masses"* — the actual range is **3.8 to 7.5**.
+> - *"in all six cells"* — **foundry's player is 6.5-7.5**, half again the top of the reference band,
+>   in every one of four repeats.
+> - *"top-4 coverage 84.4-88.4%"* — the actual range is **76.0 to 90.2%**, and foundry's player is
+>   below every other cell in the table.
+> - *"largest mass 45-65%"* — the actual floor is **32.1%**.
+> - *"a run-to-run spread of 0.0 masses in four of the six cells"* — **one** cell has a spread of 0.0.
+>   Two have a spread of 1.0, which is larger than the distance between grid's player and the top of
+>   the reference band.
+>
+> Re-run at head as `shots/_noise-b1-<arena>-{1..3}.txt` (29 August 05:19-05:38) and it reproduces:
+> **grid 4.3/4.3/3.8 and 5.3/5.3/5.0, foundry 7.3/7.5/7.5 and 5.0/5.5/5.5, orbital 3.5/3.5/3.8 and
+> 4.8/4.5/4.8.** Foundry's player is 7.3-7.5 there. It is not a bad draw; it is the reading.
+>
+> **What is actually true, stated the way the evidence supports:** round 6's named cause is *smaller*
+> — eleven masses is gone and nothing now reads above 7.5. **Five of six cells are in or beside the
+> reference band. The sixth, foundry's player, fails it by two masses and is the worst cell on every
+> column of the table.** Two further cells (orbital's player at 3.5-4.0, grid's player at 3.8 on one
+> run) sit *under* four, which is the meter merging the machine into a blob rather than a pass.
+> **Points 3 and 4 do not close.**
+>
+> And the failing cell is the one this round independently found is measured on an unusable frame:
+> foundry's tick 420 has the player airborne, 149 px against 244 px on the ground, and bisected by a
+> translucent red boundary plane. **The one cell that fails is also the one cell we cannot trust.**
+> The correct action is not to argue the number; it is to re-run foundry at tick 760 and find out.
+
+Instrument fault 6 is confirmed as the whole of round 11's noise floor and the
 one-line prescription written against it is correct.
 
 **The brief for this round predicted that if the mass rule held, points 3 and 4 would close together
@@ -2984,7 +3371,9 @@ one line long, repeated five times:**
 one force-added this round to fix the reproducibility problem.** Twelve rounds of review have been
 conducted by running tools at their defaults and generalising the answer to a game with three
 arenas. Round 12's own salience sweep is the proof that this is still live: it ran grid, it ran
-orbital, and `shots/_r12-sal-foundry.txt` does not exist.
+orbital, and `shots/_r12-sal-foundry.txt` did not exist. **It exists now, it was the first foundry
+salience run in twelve rounds, and it changed the subject of the largest open art defect — see the
+round-12 continuation at the end of this section.**
 
 **Foundry has had one round of scrutiny against grid's twelve, and foundry is the worst arena in the
 game.** It is where the opponent is 4.8% of frame height with **26.1% of its contour invisible** and
@@ -3262,3 +3651,80 @@ comparison is now **clean** — three entries closed this round, one of them ope
 the phone blocker filed in this round was fixed and verified inside it. The gap is no longer "one
 materials table, one missing effect, and two arenas". It is **one light rig, one LOD, and two
 arenas.** The missing effect was never missing. The materials table was never the problem.
+
+
+---
+
+### Round 12, continued — the verdict does not move, and three of the five reasons under it were wrong
+
+*The verdict above was written at `c0202d1` from rounds 10 and 11's evidence, before this round's
+captures. This block is the revision the method requires: what the captures did to it. **It does not
+say PENDING, it does not defer, and the answer is unchanged.***
+
+**NO. Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
+picks CRV2.** The sentence under it changes for the third round running, and this time it gets shorter
+again:
+
+> **The machines are four or five masses and they are lit by the same light that out-ranks them. It
+> is one light, in one rig, and we have been filing it as four defects with four owners across three
+> arenas we mostly did not measure.**
+
+**What moved, and every one of these is a correction to this document rather than a change in the
+build:**
+
+1. **Point 2's subject was wrong.** The stage residual is not the warm lit gate and not the cyan rail.
+   Foundry's first-ever salience run, with the light knockout attributed, puts `gatelight` at **1.5%
+   of the frame, 12.7% of its brightest 1%, and one appearance in the top twelve tiles**, against the
+   arena **`key` light at 72.4% coverage, 49.0% of the brightest 1%, and a `+14.2` to `+32.7`
+   contribution to all twelve**. Five rounds of a residual reported closed and re-opened had one
+   cause, and it is that the entry names an object that is worth an eighth of the defect. **Point 2
+   stays a FAIL in all three arenas and its owner changes from the set-dresser to the lighting rig.**
+2. **Point 2 and point 4 are one defect.** Point 4's evidence is that the same machine with the same
+   paint spans 91 / 129 / 142 value levels depending only on which arena it stands in — *"the light we
+   put on them"*. Point 2's evidence is now that the arena light owns half the frame's highlights. It
+   is the same light. Two of the five blind-comparison points have a single owner and a single fix,
+   and the review has been costing them separately since round 6.
+3. **The LOD prescription at rank 2 of the list below was written against code nobody had read.** The
+   probe returns for the first time (instrument fault 7, closed): the opponent at 92-103 px draws
+   **219 of 224 primitives in grid and foundry, 213 of 224 in orbital**. The LOD is built, it is
+   firing, its threshold is `minPx2 = 2`, and it drops five boxes. It is not a missing feature and it
+   is not the second-largest term; it is **mistuned by about an order of magnitude**, and its A/B
+   moves the mass count the wrong way by less than the noise floor. The prescription is withdrawn and
+   replaced by a threshold sweep nobody has run.
+4. **Foundry's numbers are measured on an airborne frame, exactly as grid's were.** The fit sweep for
+   foundry exists, in this repository, unread: ticks 760/780/800 are fit and the pinned tick 420 is
+   not, with the player 2.52 m up, its contact 130 px below the viewport, and its width 149 px against
+   244 px on the ground. **Rank 3 below — the opponent at 4.8% of frame height with 26.1% of its
+   contour invisible — is a real defect whose magnitude has never been measured on a frame it could be
+   measured on.** `#14`'s foundry half goes to NOT MEASURED; its orbital half was never attempted.
+5. **The one thing that got better stayed better.** The mass rule holds in all six cells on the meter
+   that reproduces: 4.0-5.5 masses, top-4 84.4-88.4%, spread 0.0 in four of six. Round 6's named
+   cause is gone. Nothing in this block touches it.
+
+**The ranked list, re-issued.** Two entries merge, one is withdrawn, one is added:
+
+1. **There is still no CRV2 reference frame in this repository.** Unmoved at rank 1 for two rounds.
+   Every number above is scored against a target written from memory. One PNG closes it, and until it
+   lands the four-or-five-mass pass at the top of this verdict is a pass against a remembered number.
+2. **The arena key light.** Points 2 and 4, merged: it owns half of foundry's highlights, it is in all
+   twelve of its top salience tiles, and it is what makes one machine span 91 levels in one arena and
+   142 in another. The gate (12.7%) and the cyan rail (3.4%) are symptoms under it with measured
+   sizes, not entries. **This is the largest thing between this build and the bar and it is one rig.**
+3. **The opponent's outline in foundry** — magnitude unmeasured, see 4 above. Its internal read is
+   fixed; its contour is not; and the fit frame it should be scored on is tick 760.
+4. **The phone**, unchanged: a different game, never art-directed, and still no card-free gameplay
+   capture four rounds after one was asked for.
+5. **`N7`**, the bare octahedra, unchanged for six rounds. It is gfx's, not the HUD's.
+6. **The review's own method**, which is the entry this round adds and which outranks everything below
+   rank 2 in cost. `#2`, `#12`, `#13` and `#14` are re-scored **FIXED (grid); UNVERIFIED elsewhere**;
+   the ruling is now in the ledger and not only here; and the sibling finding on the UI half (`N8` — a
+   fix verified on desktop is not a fix) makes it one finding about the project, not two coincidences.
+
+*Withdrawn from the list: the silhouette LOD, which was rank 2 for two rounds and is not a missing
+feature.*
+
+**What this verdict is still not.** It is not a rejection, and less of one than the two before it.
+The build did not regress this round; three of this round's four findings are the review discovering
+it had been measuring the wrong frame, the wrong arena, or the wrong object. The gap to the bar is now
+**one light rig and one reference photograph** — and the honest reading of that is not that we are
+close, but that we finally know which single thing to point at.

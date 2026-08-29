@@ -2092,6 +2092,37 @@
      makes the rule do in a row what it does in a column: break the line. */
   .rail__sep { flex-basis: 100%; margin: 6px 0 2px; }
   .rail__pl { flex-basis: 100%; }
+  /* THE RAIL SCROLLS AWAY IN PORTRAIT — THE EXACT DEFECT THE LANDSCAPE BLOCK
+     BELOW WAS WRITTEN TO CURE, LEFT STANDING ON THE OTHER HALF OF THE DEVICE.
+     `1577b98` made the landscape rail sticky after a touch walk found all seven
+     of its controls at negative coordinates at the end of the scroll. That walk
+     was run at 844x390 and the cure was written inside `(orientation:
+     landscape)`. Re-walked at 390x844 with an iPhone 12's insets, by touch,
+     swiped to the end of this screen's 682px of scroll:
+
+       STILL UNREACHABLE [20,-314,134,-268]  01 BODY
+       STILL UNREACHABLE [138,-314,252,-268] 02 GUN
+       STILL UNREACHABLE [256,-314,370,-268] 03 BOMB
+       STILL UNREACHABLE [20,-264,193,-218]  04 POD
+       STILL UNREACHABLE [197,-264,370,-218] 05 LEGS
+       STILL UNREACHABLE [20,-201,193,-159]  P1
+       STILL UNREACHABLE [197,-201,370,-159] P2
+
+     All seven, off the top, with the presets and the whole spec sheet on
+     screen — so the player who has scrolled down to read a part's stats has to
+     swipe 682px back up to change category, and nothing on screen says so.
+     Same cure, same reason: the rail sizes to its own content, sticks to the
+     top of the scrollport, and carries the opaque ground it already has so the
+     list runs under it instead of through it. `top` matches the screen's own
+     padding, so it parks below the notch rather than in it.
+     Cost measured at 390x844: the rail is 155px of a 749px usable column, so
+     the parts list keeps 518px between it and the sticky footer — two rows more
+     than the four the unstuck layout showed at its best scroll position, and it
+     never loses the control that changes what is in the list. */
+  .garage__rail {
+    position: sticky; top: calc(14px + var(--safe-t));
+    z-index: 2;
+  }
   /* The machine is ~500px tall on a 390px-wide phone whatever box it is given
      (`_renderPreview` maps the slot's CENTRE into the world and renders at a
      fixed size), so it always overhangs. Give it the top of the page, where
