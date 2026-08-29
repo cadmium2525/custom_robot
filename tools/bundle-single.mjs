@@ -10,10 +10,36 @@
  */
 
 import { readFile, writeFile, readdir } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
-const DIST = process.argv[2] || 'dist-single';
-const OUT = process.argv[3] || 'dist-single/holosseum.html';
+const args = process.argv.slice(2).filter((a) => a !== '--no-build');
+const NO_BUILD = process.argv.includes('--no-build');
+const DIST = args[0] || 'dist-single';
+const OUT = args[1] || 'dist-single/holosseum.html';
+
+// Run the build this inlines, rather than trusting whatever is on disk.
+//
+// This tool used to only READ `dist-single/`, with the required
+// `SINGLE=1 vite build --outDir dist-single` documented in the header and
+// available nowhere else — no npm script, and no check. Running the tool on its
+// own therefore succeeded and produced a perfectly valid single-file bundle of
+// whatever build happened to be sitting in that directory. It was found
+// inlining one that was a fortnight old: the artifact was stale, the tool
+// reported success, and the only symptom was a bug that had already been fixed
+// still reproducing in the bundle and nowhere else.
+// `--no-build` keeps the old behaviour for anyone who really has staged a build
+// by hand.
+if (!NO_BUILD) {
+  const r = spawnSync('npx', ['vite', 'build', '--outDir', DIST], {
+    stdio: 'inherit',
+    env: { ...process.env, SINGLE: '1' },
+  });
+  if (r.status !== 0) {
+    console.error('single-file build failed; not inlining a stale bundle');
+    process.exit(r.status ?? 1);
+  }
+}
 
 const html = await readFile(path.join(DIST, 'index.html'), 'utf8');
 const assets = await readdir(path.join(DIST, 'assets')).catch(() => []);

@@ -550,7 +550,12 @@ class Game {
     for (let i = 0; i < ticks; i++) {
       this._fixedStep();
       n++;
-      if (this.world.phase === PHASE.MATCH_END) break;
+      // A step can END the match, and tearing the match down clears `world`.
+      // Re-checking it here rather than only on entry is what stops a
+      // fast-forward that runs all the way to a result from throwing on the
+      // frame after the last one — which is exactly what a playthrough test
+      // does, and why nothing caught this until one was written.
+      if (!this.world || this.world.phase === PHASE.MATCH_END) break;
     }
     return n;
   }
