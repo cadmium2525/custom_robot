@@ -1421,9 +1421,30 @@ export function wallTexture(theme, size = 512) {
 
       let r = base.r * l, g = base.g * l, b = base.b * l;
       r = mix(r, 0.52, paint); g = mix(g, 0.54, paint); b = mix(b, 0.56, paint);
-      r = mix(r, warn.r * 0.85, hz);
-      g = mix(g, warn.g * 0.85, hz);
-      b = mix(b, warn.b * 0.85, hz);
+      // THE THIRD HAZARD SURFACE, AND THE ONE NOBODY HELD TO THE RULE.
+      //
+      // The deck's chevron plates were argued down to `HAZ_PAINT` and the
+      // obstacle skirts to 0.62 for one stated reason — "warning paint on a real
+      // deck is a mid-value ochre that reads by HUE and by its hard stripe
+      // rhythm, not by out-glowing the floor it is painted on". This band is the
+      // same paint on the same rule and it was left at 0.85, i.e. 46% over the
+      // deck's ceiling, on the one hazard surface that runs the ENTIRE
+      // perimeter of every arena and sits at exactly the height a standing
+      // machine is read against.
+      //
+      // It is also, on measurement, the object the review has spent five rounds
+      // calling "the warm lit gate". `_salience.mjs` at head ranks the top eight
+      // tiles of model A on grid at x 40-240, y 320-360 and the top four on
+      // foundry at x 1120-1240, y 320: read at 1:1 (`r13-g-hot1.png`,
+      // `r13-f-hot1.png`) every one of them is this plinth band with the kerb
+      // strip lying along its top edge — the gate recess is not in any of them.
+      // That is why cutting the gate lamp from 26 to 7 closed the LIGHTING half
+      // of the residual (the sun now out-peaks the practical on foundry, +118.4
+      // to +104.4) and moved the ranks by nothing: the paint half was never the
+      // gate's.
+      r = mix(r, warn.r * HAZ_PAINT, hz);
+      g = mix(g, warn.g * HAZ_PAINT, hz);
+      b = mix(b, warn.b * HAZ_PAINT, hz);
 
       albedo[o] = clamp01(r) * 255;
       albedo[o + 1] = clamp01(g) * 255;

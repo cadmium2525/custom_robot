@@ -487,6 +487,116 @@ export function roboShell(maps, look, teamColor, opts = {}) {
 }
 
 // ---------------------------------------------------------------------------
+// The dark frame — the model's line art
+// ---------------------------------------------------------------------------
+
+/**
+ * The third size-dependent treatment on the machine, and the one the review
+ * named that had no owner: *"scale the dark frame line art by on-screen size.
+ * At 42px a 2px black seam between plates is 5% of the body, so the line art is
+ * itself a mass generator."*
+ *
+ * The contour got this treatment in `OUTLINE_WIDTH_FAR` — the inverted hull is
+ * a screen-space extrusion, so it can literally be drawn thinner. The frame
+ * cannot: it is real geometry, forty-nine to sixty-four merged primitives of
+ * recess, strut, vent and seam, and its width on screen is whatever the
+ * perspective divide says it is. There is no thickness knob to turn.
+ *
+ * What there is instead is CONTRAST. A seam is line art because it is darker
+ * than the plate beside it; the number of masses it generates is a function of
+ * how many quantisation bands that step crosses, not of its width. So at
+ * gameplay distance the frame is lifted toward the body's own hull tone, and
+ * the step it makes against the plate collapses without a single piece of the
+ * machine going missing. Near, at the size a hero is inspected at, nothing
+ * happens at all and the line art is exactly what it was.
+ *
+ * It is an ALBEDO change and not a light: it lands at `color_fragment`, before
+ * the lighting, so the frame still takes the arena's key, still self-shadows,
+ * still catches its env reflection, and still darkens in its own creases. What
+ * changes is what colour it was painted, at the one distance where that colour
+ * was doing damage.
+ *
+ * Same gate, same body height and the same fraction-of-frame-height units as
+ * the shell's light governor, the rim, and the geometry LOD — see
+ * SIZE_GATE_LO in robot.js. Four treatments now read "how big is this machine",
+ * and they read it off one band on purpose.
+ */
+const FRAME_PARS = /* glsl */`
+uniform float uFrameBodyH;
+uniform float uFrameSizeLo;
+uniform float uFrameSizeHi;
+uniform float uFrameFade;
+uniform vec3  uFrameFadeCol;
+varying float vFrameSizeX;
+`;
+
+/**
+ * Spliced in AFTER project_vertex, where gl_Position has been written. For a
+ * perspective camera gl_Position.w is the view-space depth, and NDC height
+ * spans 2.0 — the same expression as the contour's `sizeO` and the shell's
+ * `vSizeX`, written out rather than shared because the three materials do not
+ * share a shader.
+ */
+const FRAME_VERT = /* glsl */`
+  vFrameSizeX = uFrameBodyH * projectionMatrix[1][1] / max(gl_Position.w, 1e-3) * 0.5;
+`;
+
+const FRAME_FRAG = /* glsl */`
+  {
+    float farF = 1.0 - smoothstep(uFrameSizeLo, uFrameSizeHi, vFrameSizeX);
+    diffuseColor.rgb = mix(diffuseColor.rgb, uFrameFadeCol, uFrameFade * farF);
+  }
+`;
+
+/**
+ * The machine's dark frame, with the size-gated line-art fade above.
+ *
+ * Returns a MeshStandardMaterial whose `userData.u` holds the live uniforms, so
+ * the fade can be swept against the mass meter in one browser launch instead of
+ * one rebuild per value — see the note in RoboModel._build() about publishing
+ * this bag on the shell's.
+ */
+export function roboFrame(opts = {}) {
+  const mat = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(opts.color ?? 0x333a44),
+    roughness: opts.roughness ?? 0.52,
+    metalness: opts.metalness ?? 0.68,
+    envMap: opts.envMap || null,
+    // The frame is the model's line art. A hot env reflection turns black
+    // line art into chrome highlight and the lines stop being lines.
+    envMapIntensity: opts.envMapIntensity ?? 0.55,
+    vertexColors: true,
+    dithering: true,
+  });
+
+  const u = {
+    uFrameBodyH: { value: opts.bodyH ?? 2.3 },
+    uFrameSizeLo: { value: opts.sizeLo ?? 0.09 },
+    uFrameSizeHi: { value: opts.sizeHi ?? 0.22 },
+    uFrameFade: { value: opts.fade ?? 0.0 },
+    uFrameFadeCol: {
+      value: opts.fadeColor instanceof THREE.Color
+        ? opts.fadeColor.clone()
+        : new THREE.Color().setRGB(0.32, 0.34, 0.38),
+    },
+  };
+
+  mat.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, u);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', `#include <common>\n${FRAME_PARS}`)
+      .replace('#include <project_vertex>', `#include <project_vertex>\n${FRAME_VERT}`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\n${FRAME_PARS}`)
+      .replace('#include <color_fragment>', `#include <color_fragment>\n${FRAME_FRAG}`);
+  };
+
+  mat.userData.u = u;
+  mat.customProgramCacheKey = () => 'roboFrame';
+  return mat;
+}
+
+// ---------------------------------------------------------------------------
 // Energy / additive materials
 // ---------------------------------------------------------------------------
 

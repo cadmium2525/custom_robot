@@ -21,7 +21,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from './stage.js';
 import { armorTexture } from './textures.js';
-import { roboShell, additive, ensureAOChannel } from './materials.js';
+import { roboShell, roboFrame, additive, ensureAOChannel } from './materials.js';
 import { clamp, clamp01, lerp, damp, angleDelta, smoothstep, TAU } from '../core/mathx.js';
 // GLSL-style three-argument edge ramp. mathx's smoothstep takes ONE argument,
 // so `smoothstep(0.0, 0.62, r)` silently evaluates smoothstep(0.0) — a
@@ -1694,6 +1694,20 @@ const OUTLINE_WIDTH_FAR = 0.0030;
 const SIZE_GATE_LO = 0.09;
 const SIZE_GATE_HI = 0.22;
 
+/**
+ * How far the dark frame is lifted toward the hull tone on a machine that is
+ * fully at the far end of the gate. See roboFrame() in materials.js for what
+ * this is and why it is a contrast term rather than a width one.
+ *
+ * Not 1.0. At 1.0 the frame IS the hull at gameplay distance and the machine
+ * loses its recesses entirely — the pelvic block, the jaw and the thigh rears
+ * are frame, and a robot with no darks in it is a cutout. The value below is
+ * the outcome of the sweep in the round notes, taken against the mass curve on
+ * all three arenas with the light governor's flatten already landed, and it is
+ * the largest lift whose contour reading did not move.
+ */
+const FRAME_FADE_FAR = 0.0;
+
 const OUTLINE_PARS = /* glsl */`
 uniform float uOutlineWidth;
 uniform float uOutlineFar;
@@ -2226,16 +2240,21 @@ export class RoboModel {
     this.matShell.envMap = this.envMap;
 
     const tr = TRIM[look.trim] || TRIM.gunmetal;
-    this.matFrame = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(tr.color),
+    this.matFrame = roboFrame({
+      color: tr.color,
       roughness: tr.rough,
       metalness: tr.metal,
       envMap: this.envMap,
-      // The frame is the model's line art. A hot env reflection turns black
-      // line art into chrome highlight and the lines stop being lines.
-      envMapIntensity: 0.55,
-      vertexColors: true,
-      dithering: true,
+      // Shared with the shell's light governor, the rim and the geometry LOD:
+      // four size-dependent treatments, one band.
+      bodyH: BODY_H, sizeLo: SIZE_GATE_LO, sizeHi: SIZE_GATE_HI,
+      fade: FRAME_FADE_FAR,
+      // Where the line art goes when the machine is too small to carry it. The
+      // hull is the value the body is judged on, so lifting the frame toward it
+      // is exactly "stop this seam crossing a quantisation band" and nothing
+      // else — not a wash, not a desaturation, and not a lightening of the
+      // machine, because the plates it borders do not move at all.
+      fadeColor: new THREE.Color().setRGB(pal.hull.r, pal.hull.g, pal.hull.b),
     });
 
     this.matEmis = new THREE.MeshBasicMaterial({
@@ -2305,6 +2324,12 @@ export class RoboModel {
     // three size-dependent treatments inside the one meter that can sweep all
     // of them together.
     this.matShell.userData.u.uLodMinPx2 = this._lodU;
+    // And so does the frame's line-art fade, for the third time and the same
+    // reason. The mass meter's `--u` reaches exactly one bag — the shell's — so
+    // a knob that is not on it is a knob that gets argued about instead of
+    // swept. These are the same uniform objects the frame's shader holds, not
+    // copies, so writing one moves the live material.
+    Object.assign(this.matShell.userData.u, this.matFrame.userData.u);
     if (shellMesh) {
       const om = new THREE.SkinnedMesh(outlineGeometry(shellMesh.geometry), this.matOutline);
       om.castShadow = false;

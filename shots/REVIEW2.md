@@ -424,7 +424,77 @@ Note what is *not* being claimed: the spread is uniform at ~160 levels, which is
 terms; the reference machines are flat toys. Uniformity across arenas is the clause that closed. The
 absolute figure is point 4 and stays open.
 
-<!-- R12-SWEEP -->
+### The mass rule, re-run in all six cells on a meter that reproduces — and it holds
+
+Three interleaved repeats per cell at `ebea06d`, one server, one build, `shots/_r12sweep.sh` running
+`tools/mass.mjs` (stock) and `shots/_massdrive.mjs` (round 11's one-line settle fix and nothing else)
+back to back before the repeat counter advances. Eighteen files, **eighteen readings, zero
+`ERR_HTTP_RESPONSE_CODE_FAILURE`** — the failure that ate eleven of the previous sweep's twelve
+captures does not recur, and the base-path fix is why.
+
+```
+                     STOCK METER (settle at dt=0)              CORRECTED (settle at 1/60)
+                  m51       curve      largest    top4      m51      curve    largest   top4
+  grid   ROBOT 1  4.0..4.5  4.3..4.4  55.1..65.1 88.1..89.8  4.8      5.3       59.4    85.8
+         ROBOT 2  5.3       6.0..6.3  43.5..43.8 84.8..85.1  5.0      5.6       52.3    88.1
+  found. ROBOT 1  6.8..7.5  7.5..8.1  40.3..44.6 77.1..81.7  5.3      6.1       45.2    84.4
+         ROBOT 2  4.8..5.8  5.1..5.9  52.7..59.6 84.1..87.2  5.5      6.3       57.8    85.7
+  orbit. ROBOT 1  3.5..4.3  4.4..4.7  62.5..63.1 86.9..87.1  4.0..4.5 4.3..4.5  64.7    86.8
+         ROBOT 2  4.5..4.8  5.6..5.8  56.3..56.6 89.4..90.7  5.3..5.5 5.3..5.7  59.6    88.1
+```
+
+**Two results, and the second is what licenses the first.**
+
+**1. The mass rule holds in all six cells.** Every one lands between **4.0 and 5.5 masses** at the
+rule's own five-band step, with top-4 coverage of **84.4-88.4%** and a largest mass of **45-65%** of
+the body. The eleven-mass machine this document has argued about since round 6 does not exist in any
+arena, on either machine, on either meter. **The mass-count clause of points 3 and 4 is closed on
+measurement.**
+
+**2. The noise floor round 11 spent itself characterising was the unpinned settle, and fixing it
+removes it.** Run-to-run spread of `m51` across three identical repeats, per cell:
+
+```
+   stock   0.5  0.0  0.7  1.0  0.8  0.3     mean 0.55 masses
+   drive   0.0  0.0  0.0  0.0  0.5  0.2     mean 0.12 masses
+```
+
+Four of six cells return **identical mass counts three times running** on the corrected meter. And
+the cell round 12 opened by condemning — foundry's player, whose bounding box moved **40 px of
+height between identical runs** of the stock meter, 184 to 224 — returns **59x200 px, three times
+out of three**. Instrument fault 6 is no longer a hypothesis: it was the entire noise floor, round
+11's one-line prescription was right, and this is a single-variable A/B out of one binary each.
+
+**What that does to this round's own opening finding, which was mine and is now withdrawn.** The top
+of round 12 said foundry's player was *"a sliver, 69 px wide behind a pillar, and no mass count taken
+there means anything"*, reported at 6.8-7.5 masses — the one cell out of the band. On the corrected
+meter the same cell reads **5.3 masses, three times, with zero spread**. The occlusion is real: 59 px
+wide against 156 in grid and 183 in orbital for the same machine, an aspect of 0.30 against 0.55 and
+0.71. But the doctrine cuts the other way now. **Foundry's player passes the rule while being
+measured on a third of itself**, which is a harder test than the other two cells face, not an easier
+one. The exclusion is withdrawn and the cell counts.
+
+**And one figure this document has quoted for five rounds does not survive the re-run.** Ranked item
+2's spread clause — *"91 / 129 / 142 levels for the same player robot in grid / foundry / orbital;
+the arena decides the machine"* — on the corrected meter reads **158 / 157 / 153**, with the opponent
+at 128 / 125 / 128. A **five-level span where a fifty-one-level span was quoted**. The arena does not
+decide the machine. **CLOSED**, and it closed some rounds ago without anyone noticing, because the
+figure kept being re-quoted from `cc7cebb` instead of re-measured.
+
+**Do not let the spread close point 4 by association, and do not let it re-open it either.** The
+player still spans ~156 levels where round 7's no-paint control spanned 73-83, and this document has
+treated spread as a proxy for fragmentation since round 6. That link is now measured on the same
+frames and it is **false**: the same machine spans 156 levels *and* reads as 4.8 masses. A form with
+a lit top and a dark side spans a lot of value and still reads as one form — which is what a CRV2
+robot does too. **The spread proxy is retired.** Point 4 is scored on mass count and top-4 coverage,
+which measure its claim directly rather than by correlation, and on those it passes.
+
+**The caveat that keeps this from being a win, and it is ranked item 1.** *Four or five masses* has
+never been measured on a Custom Robo V2 frame. It was written down in round 6 from memory, and every
+number above is scored against it. What closed this round is that the machines now satisfy a target
+this project invented and has never checked. That is worth much less than it reads, and it stays at
+rank 1 of the list until one PNG lands in this repository.
+
 
 ### `#14` — the fit frame the entry was blocked on exists, and finding it turned up a bigger defect
 
@@ -2876,7 +2946,116 @@ What the corrected meter then said, and what it did to the verdict, is below.
 
 ### What round 12 measured, and what it moves
 
-<!-- R12-VERDICT-RESULT -->
+**The measurement this verdict was waiting on came back in our favour, in all six cells, on the
+first meter this project has had that reproduces.** Both machines, all three arenas, three
+interleaved repeats, the noise floor established before the deltas: **4.0 to 5.5 masses at the
+five-band step, top-4 coverage 84.4-88.4%, largest mass 45-65% of the body, and a run-to-run spread
+of 0.0 masses in four of the six cells.** Round 6's named cause — *"eleven masses against the
+reference's four or five"* — is gone from every arena and both machines. Round 12's own opening
+claim that foundry's cell was unmeasurable is withdrawn: it passes while being measured on a third
+of a machine. Instrument fault 6 is confirmed as the whole of round 11's noise floor and the
+one-line prescription written against it is correct.
+
+**The brief for this round predicted that if the mass rule held, points 3 and 4 would close together
+and there would be nothing left on the art list. The first half happened. The second did not, and
+the reason is this round's largest finding, which is about the review and not the build.**
+
+### The methodological finding, and it invalidates more of this document than any defect in it
+
+Two standing art residuals — the warm lit gate and the cyan floor rail — have each been reported
+closed, re-opened on re-measurement, and re-filed, across four rounds. `9b2531f` found the cause
+and it is not a rendering fault: **the empirical confirmation that opened the gate entry was
+measured on foundry and the entry was filed, argued and half-fixed on grid.** The cyan rail has the
+same history in the opposite direction. Four rounds of a residual flipping had one cause, and it was
+never the arena's.
+
+That is not an isolated mis-filing. **It is the shape of this entire review, and the mechanism is
+one line long, repeated five times:**
+
+```
+  tools/mass.mjs:57       const ARENA = flag('arena', 'grid');
+  tools/contour.mjs:64    const ARENA = flag('arena', 'grid');
+  shots/_ground.mjs:74    const ARENA = flag('arena', 'grid');
+  shots/_lodprobe.mjs:55  const ARENA = flag('arena', 'grid');
+  shots/_salience.mjs:61  const ARENA = flag('arena', 'grid');
+```
+
+**Every meter in this tree measures grid unless somebody remembers to say otherwise, including the
+one force-added this round to fix the reproducibility problem.** Twelve rounds of review have been
+conducted by running tools at their defaults and generalising the answer to a game with three
+arenas. Round 12's own salience sweep is the proof that this is still live: it ran grid, it ran
+orbital, and `shots/_r12-sal-foundry.txt` does not exist.
+
+**Foundry has had one round of scrutiny against grid's twelve, and foundry is the worst arena in the
+game.** It is where the opponent is 4.8% of frame height with **26.1% of its contour invisible** and
+34% clean — against 8.8% and 47% clean in grid. It is where the stage carries **89.5% saturated
+pixels** and the amber family owns **49.8% of the frame's brightest 1%** off 5.6% coverage. It is
+where the player stands behind a pillar at an aspect of 0.30. Every one of those numbers is worse
+than grid's and every one of them was found in a single round that thought to pass the flag.
+
+**So the ruling, and it is against this document rather than against the build:**
+
+> **Reviewing one arena and generalising is the review's own methodological flaw. It is the ninth
+> instrument fault in shape, but it is worse than the other nine, because those returned a wrong
+> number and this one returns a right number about the wrong third of the game.** From this round
+> on, no entry closes on one arena, and any entry already closed on one is marked as such.
+
+**Which entries does that catch? The audit was run and the answer is four, plus a precedent that
+should have warned us.**
+
+The precedent first, because it settles whether this is a real risk or a hypothetical one. **N6's
+brightness half is the one entry in this ledger that was ever checked in all three arenas, and it
+closed in exactly one of them** — the entry itself says *"and on orbital and foundry none of this
+landed"*. The base rate for a grid-only close surviving contact with the other two arenas is, on the
+only sample we have, **one in three**.
+
+Caught by the audit, all closed on `contour-n.png` — a single grid frame — and never re-checked:
+
+- **`#2` flat haze, no blacks/whites, no contrast — FIXED on grid only.**
+- **`#12` the arena is a featureless box — FIXED on grid only.** The evidence is a list of grid's
+  furniture: raked stands, crowd lights, a service wall with louvre panels, a lit entry gate, an
+  overhead gantry, hazard chevrons, cyan rim strips. Foundry and orbital have none of those objects
+  by name; whether they are built places was never asked.
+- **`#13` obstacle blocks are untextured greybox — FIXED on grid only.**
+- **`#14`'s machine-grounding half** — the round 9 stencil measurement that produced *"the machine
+  throws a shadow one twenty-ninth the size of what the blocks throw"* is a grid-only reading, and
+  so is round 12's replacement of it at tick 380. (The obstacle half is clean: round 9's knockout
+  table covers all three arenas.)
+
+None of the four is re-scored to FAIL on suspicion — that would be the same error with the sign
+flipped. They are re-scored to **FIXED (grid); UNVERIFIED elsewhere**, which is what the evidence
+supports, and `#2`/`#12`/`#13` are checked in the body of this round.
+
+### What is left, now that the art list's headline item has closed
+
+**Nothing on the art list closed the list.** What the mass work removed was the largest *machine*
+defect. What remains is, in order:
+
+1. **No CRV2 reference frame exists.** Every number above is scored against a target written from
+   memory in round 6. Rank 1 since round 12 opened and it did not move.
+2. **The stage is still louder than the machines, and now that is the whole of the art gap.** Grid's
+   warm gate takes ranks 1 through 8 of the salience sweep at T=40 with **no machine pixel in any of
+   them** — measured this round on a meter that reproduces round 8's figures to within a rounding
+   step. Orbital's cyan is 3.4% of the frame at luminance 141.7 against the machines' 1.8% at 110.6.
+   Foundry's amber owns half the frame's brightest 1%. **This is point 2, it is a FAIL in all three
+   arenas, and it is now the largest thing between this build and the bar.**
+3. **The opponent in foundry**, at 4.8% of frame height with a quarter of its contour invisible. Its
+   internal read is fixed — 5.5 masses, 85.7% top-4 — and its outline is not.
+4. **The phone**, which is a different game and has never been art-directed, and for which there is
+   still no card-free gameplay capture three rounds after one was asked for.
+5. **`N7`**, the bare octahedra, unchanged for six rounds.
+
+**The verdict does not move.** Shown this frame and a real CRV2 frame side by side, a person still
+picks CRV2 — but the sentence that explains why is different from every previous round's, and it is
+shorter:
+
+> **The machines are now four or five masses. The stage is still the brightest, most saturated,
+> highest-ranked thing in the frame, and in the arena nobody reviewed it owns half the highlights.
+> We fixed the subject and left the set.**
+
+That is a better position than round 11's and it is the first round in five where the reason changed
+because something was *repaired* rather than because a measurement was found to be broken.
+
 
 ### The one entry that got worse this round, and it got worse by being looked at
 
