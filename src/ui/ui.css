@@ -2534,9 +2534,38 @@
   .rail__eq { grid-column: 1 / -1; }
   .rail__b:nth-child(5), .rail__sep, .rail__pl { grid-column: 1 / -1; }
   .rail__sep { margin: 6px 0 4px; }
-  .garage__list  { grid-column: 2; grid-row: 1 / span 2; }
+  /* THE STICKY RAIL WORKS, AND WHAT IT UNCOVERED IS A HOLE THE SIZE OF THE
+     PARTS LIST.
+     Re-walked at 844x390 with an iPhone 12's landscape insets, by touch: all
+     seven rail controls — BODY / GUN / BOMB / POD / LEGS / P1 / P2 — are
+     on-screen and hittable at rest AND at the end of the scroll, which is what
+     the entry above set out to do. The photograph at the end of that scroll is
+     still wrong, and obviously so. Measured:
+
+       .garage__rail    168x231 in a 715px column   484 empty below (sticky)
+       .garage__list    283x428 in a 715px column   287 EMPTY BELOW
+       .garage__stage   247x300 in row 1            (the machine)
+       .garage__info    247x405 in row 2
+
+     `.garage__list` spanned both rows to sit beside a column that is 300 of
+     stage plus 405 of spec sheet, so the middle third of the frame is a
+     283x287 void from the moment the player swipes past the last part. On a
+     screen whose whole argument is "the panels are opaque so the machine is
+     never read through them", the panel that is not there any more is the
+     loudest thing on it.
+     The spec sheet is what fills it, by going sideways instead of downwards:
+     the list takes row 1 only, and the sheet spans BOTH content columns
+     underneath it at 540px instead of 247. Nothing moves in row 1 — the stage
+     keeps its exact box, so the preview, which maps the slot's CENTRE into the
+     world, renders the machine in the same place it did before.
+     540px is more than twice the width the compare table was laid out for, so
+     the table goes two-up: six stats in three rows instead of six, which is
+     what pays for the row the list gave up. Measured after: grid 715 -> 611,
+     screen scroll 446 -> 342, and no panel with a hole under it. */
+  .garage__list  { grid-column: 2; grid-row: 1; }
   .garage__stage { grid-column: 3; grid-row: 1; flex: none; height: 300px; }
-  .garage__info  { grid-column: 3; grid-row: 2; max-height: none; overflow: visible; }
+  .garage__info  { grid-column: 2 / -1; grid-row: 2; max-height: none; overflow: visible; }
+  .info__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px 24px; }
   .garage__list, .garage__info { background: rgba(6, 10, 18, .94); }
   .rail__b { background: rgba(10, 16, 26, .88); }
   /* `flex: 1` with a zero basis inside a box with no free space is what zeroed
