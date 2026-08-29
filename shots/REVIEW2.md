@@ -16,10 +16,15 @@ uncommitted — the foundry fit-frame run and the first foundry salience sweep i
 re-run the mass rule on both machines in all three arenas, and rule on the review's own
 one-arena-and-generalise flaw. All four are done and all four are in the VERDICT.
 
-**STATUS: ROUND 13 CLOSED. The VERDICT section at the bottom of this file was written for round 13
-from evidence already in this repository BEFORE the round's harness was started, committed in that
-state, and then revised as the captures landed. It has never been allowed to read PENDING and does
-not now. That section, not this line, is what decides.**
+**Round 14 opens at `fbc1484`.** Its job was to finish the two runs two predecessors left
+mid-sentence — the orbital frame-fitness survey and the foundry crops read at 1:1 — resolve the
+orbital brightest-1% discrepancy round 13 recorded rather than settled, look at `#24` in orbital where
+round 13 named it the specific case, and score the first end-to-end playthrough this project has had.
+
+**STATUS: ROUND 14 OPEN. The VERDICT section at the bottom of this file was written for round 14 from
+evidence already in this repository BEFORE the round's harness was started, committed in that state,
+and then revised as the captures landed — the third round running that this has held. It has never
+been allowed to read PENDING and does not now. That section, not this line, is what decides.**
 
 **VERDICT: see the VERDICT section at the bottom of this file, which is the only place a verdict is
 recorded. This header deliberately does not restate it — two earlier rounds shipped a header that
@@ -4024,3 +4029,145 @@ things now standing between this build and the bar are both things the review cr
 photograph nobody has taken, and an arena nobody looked at.** The art gap has stopped being about
 what is on screen and started being about what has been measured — which is a better position, and a
 more embarrassing one.
+
+### Round 14, continued (opens at `fbc1484`) — the third axis, and the fact that this review has only ever looked at the first tenth of a match
+
+*Written from evidence already in this repository, before a single new capture was taken, and
+committed in that state — the discipline round 13 established and the only reason the last two rounds
+have an answer in them at all. Revised below as this round's captures landed. **It does not say
+PENDING.***
+
+**NO. Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
+picks CRV2.** Fifth round running. The sentence under it is new, and it is not about a defect:
+
+> **Round 13 closed the machines, and it closed them honestly. What round 14 opens with is that the
+> sample every art number in this document was measured on is the opening tenth of a match, and that
+> nothing in this repository has ever photographed the other nine tenths.**
+
+#### The finding this round opens with was sitting in a commit message nobody scored
+
+`6699c2f` landed the first end-to-end playthrough test this project has ever had. It runs a match to
+its result, in all three arenas, from both the regular build and the single-file bundle, and gets
+identical tick counts from both paths with a clean transition to the menu and no page errors:
+
+```
+                       ticks to a result      tick 420 is        tick 760 is
+    grid                     5684                7.39 %             13.37 %
+    foundry                  4662                9.01 %             16.30 %
+    orbital                  7138                5.88 %             10.65 %
+```
+
+**Every art measurement in this document — thirteen rounds of mass counts, contour sweeps, salience
+ranks, light knock-outs, grounding surveys and squint tests — is taken an average of 7.4% of the way
+into a fight.** The "fit frame" that round 13 ruled all property questions must be asked on, foundry
+tick 760, is 16.3% in. `shots/_ground.mjs`, the survey that found it, sweeps ticks 300 to 900 and
+reports "3 fit frames of 31" as though that were a fact about the game; it is a fact about the first
+fifth of one. **Nine tenths of every match this game plays has never been looked at, by any
+instrument, in any round.**
+
+And the way this surfaced is the finding, not a footnote to it. The test found that `fastForward`
+could throw on the frame after a match ended — it guarded `world` on entry, then dereferenced
+`this.world.phase` after a step that can end the match and tear the world down. Thirteen rounds of
+capture never hit it **because nothing in this repository had ever fast-forwarded a match to its
+result.** Every capture in this tree stops at a fixed tick in the middle of round one. The crash was
+not hiding in a corner; it was on the far side of a boundary no instrument had crossed.
+
+> **This is not instrument fault 11.** The ten faults are meters that returned a wrong number. This
+> one returned no number, because it was never pointed anywhere. **It is the third axis of the
+> methodological flaw round 13 ruled on**, and naming it as a new fault would let the ledger pretend
+> it is a different problem.
+
+#### The ledger re-sorted, and the third axis is empty
+
+Round 13 sorted all thirty-two numbered entries onto two axes and found the sets disjoint and their
+union total: arena-exposed (`#1 #2 #4 #5 #7 #10 #12 #13 #14 #24 #32`) and form-factor-exposed (the
+other twenty-one). Add the axis this round found:
+
+- **Arena-exposed** — 11 entries. One entry (`N6`) has ever been checked in all three; it closed in
+  one.
+- **Form-factor-exposed** — 21 entries. `N8` is the ruling that a desktop verification is not a
+  verification.
+- **Time-exposed** — **zero entries, and not because the game is fine after tick 900.** Because no
+  instrument in this tree can be pointed there. The VFX entries (`#4 #7 #10 #32`) are the obvious
+  candidates — an explosion, a shockwave, tracers, lens flares, all of which fire when a machine is
+  destroyed, which is an event that by definition happens at the end of a match and has therefore
+  never been photographed in a real one. Every VFX capture in this repository is a scripted effect
+  triggered at tick 420 by a harness.
+
+**Three axes, thirty-two entries, and every entry is verified on one slice of one of them.** Round
+13's ruling — *no entry closes on one arena or one form factor* — is extended, and it is now a gate
+with teeth on the entries this document is proudest of closing:
+
+> **No entry closes on a single point in match time either, and the four VFX entries are the ones
+> this bites. `#4`, `#7`, `#10` and `#32` are re-scored FIXED (harness-triggered at tick 420);
+> UNVERIFIED in a real match.** Round 13 marked those four "grid-only, low risk, do not re-open on
+> suspicion" and it was right on the arena axis and wrong to stop there: an explosion is not
+> arena-dependent, but every one of them was fired by a debug hook rather than by a machine dying.
+
+#### `#33` — the review had never confirmed the game could finish a match
+
+**NEW, and it is an entry about this document rather than about the build.** For thirteen rounds this
+review rendered still frames of a game whose ability to reach a result screen had not been
+established. It was not a reasonable assumption to have been making: `#14`'s open half was argued for
+four rounds on a frame with the player 1.12 m airborne, the sim was reported frozen at tick 8 when the
+tool was at fault, the single-file bundle was a fortnight stale while reporting success, and the
+salience meter's arena flag defaulted to grid for twelve rounds. In a tree with that record, "the
+match presumably ends" is a claim, and it was unverified until `6699c2f`.
+
+**Scored PASS, and it is the first thing in fourteen rounds this review has been able to mark PASS on
+a whole-product property.** The game plays end to end, identically from both build paths, in all
+three arenas. That is worth more than it sounds: it is the only claim in this document that is not
+scoped to an arena, a form factor or a tick.
+
+**The one thing wrong with it is that the test is not in the tree.** `playthrough.mjs` lives in a
+scratchpad. The single instrument this project owns that measures the game rather than a picture of
+the game is the one instrument that is not committed, and the next round that does not know it exists
+will re-derive the same finding from scratch. **Force-add it under `shots/`.**
+
+#### What this changes about round 13's closure, and the answer is: less than it looks
+
+Round 13 closed points 3 and 4 — the machines read as four or five masses on both machines in all
+three arenas, run three times per cell on a meter with a 0.0-0.5 spread. That closure is at tick 420.
+**Under this round's own ruling it is a closure on the first tenth of a match, and the honest response
+is not to re-open it on suspicion — it is to point the meter down the time axis and find out.** That
+is this round's headline capture, and it is the first time in fourteen rounds that a measurement in
+this document has been asked to hold across the length of a fight rather than across arenas.
+
+The prediction, written before the run so it can be wrong: **the mass count will hold and the framing
+will get worse.** Mass is a property of the model and the light rig, which do not change during a
+match; the machines' position relative to the camera is a property of the fight, and the grounding
+survey already shows it swinging from 107 px of deck under the feet to 823 px below the frame edge
+inside a 600-tick window. If that is right, round 13's closure survives and rank 3 — the camera —
+gets worse, which would make it the largest art defect on the list rather than the third.
+
+#### The ranked list, re-issued before this round's captures
+
+*Unchanged at the top, because nothing landed. One new entry, and it displaces nothing because it is
+about the review.*
+
+1. **There is still no Custom Robo V2 reference frame in this repository.** Rank 1 for a fourth
+   round. Every mass number in this document, including round 13's six-of-six pass, is scored against
+   *"four or five masses"* — written from memory in round 6, never measured, on a reference nobody can
+   point at. Fourteen rounds, one PNG, still not obtained.
+2. **Foundry's key light.** Unfixed at head — `fbc1484` is a `menus.js` change and nothing has landed
+   against the stage. Blind point 1 is inverted in this arena and nowhere else: the stage owns 50.9%
+   of the frame's brightest 1% off 5.4% of the pixels, and foundry's best majority-machine salience
+   tile ranks 70th of 880 where orbital's ranks 1st. Round 13 also measured the gate rect taking rank
+   1 in **eleven of twenty-four cells** on foundry, worse than grid — the residual that was closed,
+   re-opened and mis-filed across four rounds because it was being reproduced on the wrong arena.
+3. **The camera crops the player's contact with the floor out of frame in twenty of thirty-one
+   sampled ticks**, to 823 px below the bottom edge — and those thirty-one ticks are all inside the
+   first fifth of a match. This is the entry this round's capture is most likely to promote.
+4. **The phone**, six rounds without a card-free gameplay capture.
+5. **`N7`**, the bare octahedra, eight rounds.
+6. **The review's own method** — now three axes, ruled on above, and the third one has zero entries
+   on it.
+7. **NEW: the only instrument that tests the game rather than a photograph of it is not committed.**
+
+#### What this verdict is, said plainly, before the harness runs
+
+The build did not regress and nothing landed against it. **Round 13's good news survives and round
+14's news is worse in a way that is entirely the review's fault: the machines were fixed on a sample
+that turns out to be the opening 7% of a match, and the one test that walks the whole thing had to be
+written before anybody noticed.** The art gap stopped being about what is on screen two rounds ago.
+It is now entirely about what has never been pointed at, and this round found a whole axis of it.
