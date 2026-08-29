@@ -788,13 +788,27 @@ export class Menus {
             <span class="info__c"></span>
           </div>
           <p class="info__b"></p>
-          <div class="info__swl">LIVERY<i>塗装</i></div>
-          <div class="info__sw"><i></i><i></i><i></i></div>
+          <!-- The two livery lines are one block, and the legend is the last
+               cell of the compare table rather than a row under it. Both are
+               grouping for the landscape spec sheet, which is 540px wide and
+               two columns: the wrapper gives LIVERY somewhere to go beside the
+               blurb, and a legend inside `.info__stats` lands in the leftover
+               cell that an odd stat count leaves in the bottom right — see the
+               ui.css entry that measured that quadrant. Everywhere else this is
+               the same flow it was: a wrapper with no padding round two blocks
+               changes no spacing, and the legend is still the last thing in a
+               column above the panel's own bottom padding. -->
+          <div class="info__livery">
+            <div class="info__swl">LIVERY<i>塗装</i></div>
+            <div class="info__sw"><i></i><i></i><i></i></div>
+          </div>
           <div class="info__statl"><span>PERFORMANCE<i>性能</i></span><span>VS EQUIPPED</span></div>
-          <div class="info__stats">${statRows}</div>
-          <div class="info__legend">
-            <span class="lg lg--a">EQUIPPED</span>
-            <span class="lg lg--b">CANDIDATE</span>
+          <div class="info__stats">
+            ${statRows}
+            <div class="info__legend">
+              <span class="lg lg--a">EQUIPPED</span>
+              <span class="lg lg--b">CANDIDATE</span>
+            </div>
           </div>
         </section>
       </div>

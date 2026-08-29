@@ -1558,7 +1558,10 @@
   transform: translateX(calc((var(--v, 0) - 1) * 100%));
 }
 
-.info__legend { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 14px; font-size: 8px; letter-spacing: .16em; color: var(--ink-faint); }
+/* 5, not the 16 this used to carry: the legend is now the last child of
+   `.info__stats`, which is a column with an 11px gap, so 11 + 5 is the same
+   16px of air under the last bar that it had as a sibling of that box. */
+.info__legend { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 14px; font-size: 8px; letter-spacing: .16em; color: var(--ink-faint); }
 .lg { display: flex; align-items: center; gap: 6px; }
 .lg::before { content: ''; width: 14px; height: 6px; flex: none; }
 .lg--a::before { background: linear-gradient(90deg, #2f8fd8, var(--acc)); }
@@ -2592,11 +2595,56 @@
      540px is more than twice the width the compare table was laid out for, so
      the table goes two-up: six stats in three rows instead of six, which is
      what pays for the row the list gave up. Measured after: grid 715 -> 611,
-     screen scroll 446 -> 342, and no panel with a hole under it. */
+     screen scroll 446 -> 342, and no panel with a hole under it.
+
+     THE LAST SENTENCE ABOVE IS NOT TRUE, AND THE REASON IT IS NOT IS THE
+     TRANSFERABLE PART: IT WAS MEASURED ON THE BOXES.
+     `_r13-garage.mjs` reads `getBoundingClientRect` and reports "EMPTY BELOW
+     0", and that is correct and useless — a DOM panel measurement cannot see a
+     hole INSIDE a panel. A 540px-wide spec sheet whose content fills its left
+     half leaves no empty grid cell and still photographs as a void.
+     Re-measured on the PIXELS instead (`shots/_void.mjs`, at 844x390 with an
+     iPhone 12's landscape insets, at the bottom of the screen's 466px of
+     scroll — quantise to 8px cells, a cell is flat when every channel's range
+     across it is within 10, then the largest all-flat rectangle):
+
+       VOID 328x 72 at 360, 64   the blurb row's right half, above the table
+       VOID 272x 72 at 504,224   the compare table's bottom-right quadrant
+
+     Both are the same defect as the one this entry set out to fix, one level
+     down. The panel is two columns wide and only its TABLE is two columns:
+     everything above the table is a single left-hand stack, so the right half
+     of the sheet starts 130px late; and five stats in a two-column table fill
+     three cells and two, so `POISE` sits alone with a dead quadrant beside it
+     and the key printed under it in the same left column. BODY, BOMB and POD
+     all carry five stats — three of the five categories.
+
+     So the sheet goes two-up the whole way down, not just at the table. The
+     blurb keeps column 1 and the LIVERY block moves up beside it into column
+     2, which is the row it was leaving empty and saves the row it used to
+     own; the key moves INTO the table as its last cell, which for an odd stat
+     count is exactly the quadrant that was dead. Six items in a two-column
+     grid is three full rows: nothing beside `POISE`, nothing under the key.
+     Guarded at 600px like the settings grid two blocks down, and for the same
+     reason: this block also catches 480x320, where a 309px sheet split in two
+     gives the blurb a 142px measure. */
   .garage__list  { grid-column: 2; grid-row: 1; }
   .garage__stage { grid-column: 3; grid-row: 1; flex: none; height: 300px; }
   .garage__info  { grid-column: 2 / -1; grid-row: 2; max-height: none; overflow: visible; }
   .info__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px 24px; }
+  @media (min-width: 600px) {
+    .garage__info {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 24px; align-content: start;
+    }
+    .info__head, .info__statl, .info__stats { grid-column: 1 / -1; }
+    /* No row-gap and no margin changes: the blurb keeps `10px 0 14px` and the
+       livery block is 10 + label + swatch + the 16 `.info__sw` already had, so
+       both cells of row 2 come out 43px tall and the vertical rhythm above the
+       table is the one this panel has everywhere else. */
+    .info__b { grid-column: 1; }
+    .info__livery { grid-column: 2; margin-top: 10px; }
+  }
   .garage__list, .garage__info { background: rgba(6, 10, 18, .94); }
   .rail__b { background: rgba(10, 16, 26, .88); }
   /* `flex: 1` with a zero basis inside a box with no free space is what zeroed
