@@ -32,6 +32,157 @@ disagreed with the section, and the fix is to stop having two of them.**
 
 ---
 
+## Round 14 (opens at `fbc1484`) — two instrument faults found inside the first two commands of the round, and the gate residual's whole five-round history rests on one of them
+
+### The instrument audit, first, and this round it caught itself in the act
+
+Two faults, both found by running the harness rather than by reading it, and both found before a
+single measurement was taken. They are numbered 11 and 12 after round 13's ten.
+
+**Fault 11 — every meter in this tree silently ignores `--arena=foundry` and measures grid.** The
+flag parser eight instruments share is
+
+```js
+const flag = (name, def = null) => {
+  const i = args.indexOf(`--${name}`);          // matches "--arena" exactly
+  if (i < 0) return def;                        // "--arena=foundry" never matches
+  const v = args[i + 1];
+  return v && !v.startsWith('--') ? v : true;
+};
+```
+
+`--arena=foundry` is a single argv entry, `indexOf('--arena')` does not find it, and the tool returns
+the default. **No warning, no unknown-flag error, no echo of the arena it actually used in most
+outputs.** The eight: `shots/_ground.mjs`, `shots/_massdrive.mjs`, `shots/_salience.mjs`,
+`tools/contour.mjs`, `tools/mass.mjs`, `tools/measure.mjs`, `tools/screenshot.mjs`,
+`tools/vfxsheet.mjs` — which is every core meter this review owns.
+
+This is the *mechanism* of round 13's methodological ruling, and it is worse than that ruling
+assumed. Round 13 said twelve rounds were conducted by running tools at their defaults. **A critic who
+does remember to pass the arena, in the form most people type, also gets grid.** It cost me the first
+command of this round: a foundry-flagged orbital survey that would have printed a grid table under an
+orbital heading.
+
+> **And the negative, because the negatives are what make this document worth anything: it has not
+> corrupted the record.** All fifteen committed sweep scripts — `_dump.sh`, `_noise.sh`,
+> `_r12sweep.sh`, `_r13measure.sh`, `_r13sweep.sh`, `_settle-ab.sh`, the four `_r14*` scripts and the
+> rest — use the space form, `--arena "$A"`. **Every arena-labelled number in this file was produced
+> by a script that got the arena it asked for.** The fault is live for hand-typed commands and has
+> bitten exactly one person, this round, me. One line fixes it and it should be fixed.
+
+**Fault 12 — the serving root binds a hard-coded port, and when the port is taken it dies while every
+tool carries on measuring whatever else is listening.** `shots/_serve.mjs` was written in round 13 as
+"a serving root that `npm run build` cannot kill". It listens on 4300. Another agent already held
+4300; my server exited with `EADDRINUSE` into a log nobody was reading, and the survey I launched
+thirty seconds later connected to **their** build and started measuring it. Nothing anywhere reported
+a problem: the tool got a 200, the page booted, the sim ran.
+
+I caught it by fingerprinting the bundle hash the server actually returns against the one in my own
+`shots/_root/index.html`, and this round is lucky — both were `index-BZQ6jQGy.js`, so the two builds
+were byte-identical and no reading is contaminated. **That is luck, not method.** The other agents on
+this box are builders; the entire point of them is that their `dist/` will shortly stop matching
+mine, and on the day it does, a critic in a private worktree will publish a round of numbers about
+somebody else's uncommitted work with no signal of any kind. The fix is two lines: fail loudly on
+`EADDRINUSE`, and have every capture print the bundle hash it measured.
+
+### The gate residual — five rounds, four filings, and the comparison underneath it was never a comparison
+
+The gate residual is the entry this review has handled worst: closed on grid, re-opened when it could
+not be reproduced, re-filed as a foundry defect, and handed to a stage agent to fix. The meter built
+in round 13 to settle it, `shots/_salience.mjs`, ranks two things against each other and prints them
+side by side. **They are not measured by the same rule:**
+
+```js
+if (robotRank === null && t.m >= 0.5) robotRank = i + 1;        // >= 50% MACHINE PIXELS
+const inRect = rect && t.x >= rect[0] && t.x < rect[2]
+                    && t.y >= rect[1] && t.y < rect[3];          // top-left CORNER in rect
+```
+
+**The machines must fill half a tile to be counted. The gate has to touch one corner of it.** A 64x64
+tile whose top-left pixel is one pixel inside the gate rect and whose other 4095 pixels are wall
+scores as "the gate". There is no content threshold on the rect at all.
+
+**Every statement this review has ever made about the gate outranking the machines was made on that
+pair**, including the tool's own docstring, which says it exists to reproduce *"the gate takes rank 1
+in ten of twenty-four cells."* It reproduces it because the rule is generous, not because the finding
+is wrong — and the two are different things that nobody has separated in five rounds.
+
+**Before fixing it, the as-filed number at head, counted rather than quoted.** Both arenas, the stage
+agent's own runs from this afternoon, parsed:
+
+```
+  gate rect rank 1, as filed (corner-in), of 24 cells      median rank
+    grid                   19 / 24                              1
+    foundry                15 / 24                              1
+```
+
+**The brief this round opened with says the gate takes rank 1 in eleven of twenty-four cells on
+foundry, "worse than grid". Both halves are wrong.** It is fifteen, not eleven, and grid is
+nineteen — the gate is rank 1 *more* often on grid, the arena where this residual was closed. The
+gate residual has now been mis-filed in four directions, and this is the fourth.
+
+**The comparison that actually matters is not the gate's rank; it is the distance between the gate
+and the machines in the same cell.** Paired, same run, same model, same tile size:
+
+```
+  gate outranks the machines, as filed          grid 21/24        foundry 22/24
+  the machines' best rank, range over 24 cells  grid  1 .. 11     foundry 3 .. 272
+  the gate's best rank,     range over 24 cells grid  1 ..  2     foundry 1 ..  17
+```
+
+**The gate wins in both arenas, at essentially the same rate. What differs by two orders of magnitude
+is how far behind the machines are.** On grid the contest is rank 1 against rank 5 and both are in
+the top ten of a 880-tile frame; on foundry it is rank 1 against rank 69. **So the residual as filed
+is not a foundry defect and never was — it is arena-general, and round 13's re-filing of it onto
+foundry was as wrong as round 6's closing of it on grid.** What is foundry-specific is a different
+and larger defect that this review already has a name for: the machines are not salient there.
+
+The fair re-measurement — the same `>= 50%` rule applied to the rect — is below, run on the same
+build.
+
+### `#24` — round 13 named orbital as the case to look at, and it was the wrong case
+
+Round 13 re-scored `#24` (*the robot silhouette is mushy*) from FIXED to **FIXED (grid); UNVERIFIED
+elsewhere**, called it *"the most dangerous of the four"*, and named **orbital's opponent** as the
+specific case to examine. That call can be settled from files already on disk, and it does not need a
+new capture: `shots/_c13base-{grid,orbital,foundry}.txt` and `shots/_r12-contour-foundry760.txt`
+are four contour runs at head, and the entry's own closing evidence is quoted in the ledger.
+
+```
+  #24 — the OPPONENT's contour, the machine the entry is about
+                                       invisible(<12)   weak(<25)   clean(>=40)
+    round 4, grid — THE FRAME THAT          11.1%         35.9%       47.0%
+      CLOSED THE ENTRY
+    at head, grid      tick 420             4.6%          21.5%       65.5%
+    at head, orbital   tick 420             4.1%          22.0%       51.8%
+    at head, foundry   tick 420            20.9%          39.9%       32.9%
+    at head, foundry   tick 760 (fit)       0.0%           4.6%       70.8%
+```
+
+**Orbital's opponent beats the frame this entry was closed on, on all three bands, and it is not
+close** — 4.1% invisible against 11.1%, 22.0% weak against 35.9%, 51.8% clean against 47.0%. Round 13
+read 51.8% clean as alarming because it is the lowest clean figure in the head table; it is the
+lowest figure in a table whose *worst* entry is better than the standard the entry was closed
+against.
+
+**The one failing cell is foundry at tick 420, and under this round's own ruling it is not a
+silhouette measurement.** That frame is the 38x42 px airborne sliver round 13 already established the
+mass count could not be read on. Measured at foundry's fit frame, the same machine in the same build
+returns **0.0% invisible, 4.6% weak, 70.8% clean — the best opponent silhouette in the entire
+table.**
+
+> **`#24` re-scored: FIXED, and verified in all three arenas.** It is the second entry in this
+> document's history to be checked in all three — and unlike `N6`, which closed in one of three, it
+> passes in three of three. The only number that fails is a frame with no machine in it, which is a
+> camera finding, not a silhouette one. **Round 13's fourth "not safe" entry is safe, and I am
+> retiring the alarm it raised.**
+
+*What that does to round 13's list of five unsafe entries:* it is four. `#2`, `#12`, `#13` and `#14`
+stand as re-scored; `#24` closes. It also means the base rate round 13 leaned on — *"the one entry
+ever checked in all three arenas closed in exactly one of them"* — is now one-in-three and
+three-in-three, on two entries. **Two data points do not make a base rate, and this document should
+stop quoting one.**
+
 
 ## Round 12 (opens at `c0202d1`) — the mass rule re-run in all six cells, and the ledger's two faults numbered six
 

@@ -140,9 +140,21 @@ const SETTLE_FN = `(n) => {
   for (let i = 0; i < n; i++) {
     const views = g.view.prepare(1);
     g.rig.update(g.world, views, g.localIndex, 1 / 60, t);
+    // Drive the MACHINES on the same clock as the camera, inside the loop.
+    //
+    // This used to be a single g.view.update(0, 1, t) after the loop, and that
+    // one argument was the root cause of every "the meter is noisy" round this
+    // project has had. Every pose blend term in RoboModel.update is a damper,
+    // and damp(a, b, lambda, dt) = lerp(a, b, 1 - exp(-lambda*dt)) is exactly
+    // exactly a at dt = 0 — the dampers do not move. So the camera converged 240
+    // iterations while the limbs were left wherever the pre-fastForward frames
+    // had dragged them, and how far that was depended on how many frames the
+    // box had managed to render, i.e. on load. The machine was drawn at tick
+    // 420's POSITION in a load-dependent POSE: root pinned to 720,565..570
+    // while the stencil box ranged 183 to 245px tall.
+    g.view.update(1 / 60, 1, t);
     t += 1 / 60;
   }
-  g.view.update(0, 1, t);
 
   // Settling by hand is not enough on its own. \`paused\` gates only the fixed
   // step; the engine still calls onRender every frame with the REAL wall-clock
