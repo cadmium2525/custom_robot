@@ -104,10 +104,24 @@ export class Engine {
   }
 
   resize(force = false) {
-    const dpr = this.quality.pixelRatio;
-    const scale = this.quality.effectiveScale;
+    /**
+     * The canvas's box is the STYLESHEET'S to decide, not this method's.
+     *
+     * This used to end with `canvas.style.width = '100%'` and the same for
+     * height, which is fine while the canvas is full-bleed and fatal the moment
+     * it is not: `#view` is absolutely positioned, so an explicit `height:100%`
+     * beats the `bottom` offset that would otherwise reserve a band, and the
+     * canvas silently runs under the controls again. The letterboxed portrait
+     * layout is a pair of custom properties on `#view`'s top and bottom, and it
+     * only works if this method reads the box rather than writing it.
+     */
     const cssW = this.canvas.clientWidth || window.innerWidth;
     const cssH = this.canvas.clientHeight || window.innerHeight;
+    // Told BEFORE pixelRatio is read: on mobile the ratio is derived from the
+    // area actually being drawn, so a smaller canvas buys back resolution.
+    this.quality.setViewport(cssW, cssH);
+    const dpr = this.quality.pixelRatio;
+    const scale = this.quality.effectiveScale;
 
     const w = Math.max(2, Math.floor(cssW * dpr * scale));
     const h = Math.max(2, Math.floor(cssH * dpr * scale));
@@ -118,11 +132,13 @@ export class Engine {
 
     this.renderer.setPixelRatio(1);       // we manage the backing store manually
     this.renderer.setSize(w, h, false);
-    this.canvas.style.width = '100%';
-    this.canvas.style.height = '100%';
 
     this.camera.aspect = cssW / Math.max(1, cssH);
     // Widen the FOV a touch on tall phone screens so the arena still reads.
+    // 68 degrees is for the full-bleed portrait column at aspect 0.46, where it
+    // buys a 35-degree horizontal field; once the game is letterboxed into a
+    // band at aspect ~0.87 that same 68 gives 59 horizontal, which is a normal
+    // game frame, so the number is left alone and the ASPECT does the work.
     this.camera.fov = this.camera.aspect < 1 ? 68 : 56;
     this.camera.updateProjectionMatrix();
 

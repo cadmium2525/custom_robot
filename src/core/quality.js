@@ -198,8 +198,59 @@ export class QualityManager {
     for (const fn of this.listeners) fn(this.settings, this.tier);
   }
 
+  /**
+   * The canvas's CSS size, handed over by Engine.resize before it reads
+   * `pixelRatio`. Null until the first resize, which is why the getter below
+   * falls back to the flat cap.
+   */
+  setViewport(w, h) {
+    this.viewW = w;
+    this.viewH = h;
+  }
+
+  /**
+   * ---------------------------------------------------------------------------
+   * THE PIXEL RATIO IS A BUDGET, NOT A CONSTANT — and this is the answer to
+   * "there is no configuration of this build in which the machine is as sharp
+   * as the button sitting on top of it".
+   * ---------------------------------------------------------------------------
+   * The complaint is exact and it was true. `sample()` caps mobile at HIGH,
+   * HIGH's `maxPixelRatio` was 2.0, so on a 3x phone the arena was drawn at
+   * two-thirds linear resolution — 44% of the device's pixels — while the touch
+   * buttons and the HUD are DOM and draw at the full 3.
+   *
+   * The obvious fix, raising the cap, spends GPU time nobody here can measure:
+   * this box runs swiftshader and an iPhone 12's frame budget cannot be
+   * inferred from it. So the cap is not raised on its own. Instead the tier
+   * carries a `maxPixels` BUDGET — the backing-store pixel count it is allowed
+   * to ask for — and the ratio is whatever exactly fills it:
+   *
+   *     ratio = sqrt(budget / (cssW * cssH * renderScale^2))
+   *
+   * Each tier's budget is set to EXACTLY what that tier already asked for on a
+   * full-bleed iPhone 12 portrait (390 x 844 CSS at 3x), so this changes
+   * nothing at all on the layout that shipped — HIGH still resolves to 2.0
+   * there, to the digit. What it changes is what happens when the game is asked
+   * to fill LESS of the screen: the letterboxed portrait band is 390 x 449, and
+   * the same budget over that area resolves to 2.7-2.8. The letterbox pays for
+   * its own sharpness, in pixels already in the budget, and the DOM's 3x stops
+   * being 1.5 linear steps ahead of the render.
+   *
+   * `dynamicScale` is deliberately NOT in the formula. It is the adaptive
+   * controller's own lever and it must stay free to spend below the budget when
+   * a real device says the budget was too generous.
+   */
   get pixelRatio() {
-    return Math.min(window.devicePixelRatio || 1, this.settings.maxPixelRatio);
+    const dpr = window.devicePixelRatio || 1;
+    const cap = Math.min(dpr, this.settings.maxPixelRatio);
+    const budget = this.settings.maxPixels;
+    if (!budget || !this.viewW || !this.viewH) return cap;
+    const area = this.viewW * this.viewH * this.settings.renderScale * this.settings.renderScale;
+    if (area <= 0) return cap;
+    const fit = Math.sqrt(budget / area);
+    // Never below 1: a backing store under one device-independent pixel per CSS
+    // pixel is not a resolution decision, it is a broken frame.
+    return Math.max(1, Math.min(cap, fit));
   }
 
   get effectiveScale() {
