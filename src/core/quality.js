@@ -91,25 +91,80 @@ const PRESETS = {
   },
 };
 
+/**
+ * Pick a starting tier from what the browser will actually tell us.
+ *
+ * ---------------------------------------------------------------------------
+ * THE `deviceMemory` NO-OP, AND WHY IT MATTERED ON THE ONE DEVICE THIS FILE
+ * NAMES IN ITS HEADER
+ * ---------------------------------------------------------------------------
+ * This used to read:
+ *
+ *     const mem = navigator.deviceMemory || (mobile ? 4 : 8);
+ *     tier = cores >= 6 && mem >= 4 ? TIER.MID : TIER.LOW;
+ *
+ * `navigator.deviceMemory` is a Chromium-only API. WebKit has never shipped it
+ * and has said it will not, so on EVERY iOS device the fallback supplied the
+ * literal 4 and `mem >= 4` compared that literal to itself: always true, never
+ * a test. The gate read as a two-term check on memory and cores and was, on
+ * Safari, a one-term check on cores — on the one browser this project's target
+ * device runs and the one nobody had run it on.
+ *
+ * Two things are wrong with that beyond the dead term. It hides which signal
+ * decided the tier, so a wrong tier on an iPhone cannot be diagnosed from the
+ * outside; and it publishes `mem: 4` on the device object, a number nobody
+ * measured, for anything downstream to believe.
+ *
+ * So: memory is only consulted where it exists, `memKnown` says whether it did,
+ * and iOS is gated on the signal WebKit does implement.
+ *
+ * WHAT `hardwareConcurrency` IS WORTH ON iOS. Safari has exposed it since 10.1
+ * and reports the physical core count, and Apple's core counts happen to
+ * separate the classes cleanly: A9 and earlier are dual-core, A10 is quad, and
+ * every hexa-core iPhone is A11 (2017) or newer — which is exactly the line
+ * between "starts at MID" and "starts at LOW and climbs". The iPhone 12's A14
+ * reports 6. It is a coarse signal and it is named as such below rather than
+ * dressed up as a memory check.
+ *
+ * None of this is load-bearing for very long: `sample()` measures real frame
+ * times and moves the tier within a few seconds either way. What it decides is
+ * the first few seconds, and which way a device that cannot be identified errs.
+ */
 export function detectTier() {
   const ua = navigator.userAgent || '';
   const isIOS = /iPad|iPhone|iPod/.test(ua) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const isAndroid = /Android/.test(ua);
   const mobile = isIOS || isAndroid || /Mobi/.test(ua);
-  const cores = navigator.hardwareConcurrency || (mobile ? 4 : 8);
-  const mem = navigator.deviceMemory || (mobile ? 4 : 8);
 
-  let tier;
+  const coresKnown = typeof navigator.hardwareConcurrency === 'number' &&
+    navigator.hardwareConcurrency > 0;
+  const cores = coresKnown ? navigator.hardwareConcurrency : (mobile ? 4 : 8);
+  // Chromium-only. Absent on every WebKit browser, which is every browser on
+  // iOS. `null`, not a fabricated default, so nothing downstream can mistake
+  // the fallback for a reading.
+  const memKnown = typeof navigator.deviceMemory === 'number' && navigator.deviceMemory > 0;
+  const mem = memKnown ? navigator.deviceMemory : null;
+
+  let tier, why;
   if (mobile) {
-    // iPhone 12 and up comfortably run MID; older/weaker phones start LOW and
-    // the adaptive loop lifts them if they can take it.
-    tier = cores >= 6 && mem >= 4 ? TIER.MID : TIER.LOW;
+    if (memKnown) {
+      // Android/Chromium: both signals are real, so use both.
+      tier = cores >= 6 && mem >= 4 ? TIER.MID : TIER.LOW;
+      why = `mobile cores=${cores} mem=${mem}GB`;
+    } else {
+      // iOS and any other WebKit: cores is the only real signal there is.
+      tier = cores >= 6 ? TIER.MID : TIER.LOW;
+      why = `mobile cores=${cores} mem=unavailable(WebKit)`;
+    }
   } else {
-    tier = cores >= 8 && mem >= 8 ? TIER.HIGH : TIER.MID;
+    // Desktop keeps the memory term where it exists; where it does not
+    // (Safari on a Mac) an 8-core machine is not asked to prove it twice.
+    tier = cores >= 8 && (!memKnown || mem >= 8) ? TIER.HIGH : TIER.MID;
+    why = `desktop cores=${cores} mem=${memKnown ? mem + 'GB' : 'unavailable(WebKit)'}`;
   }
 
-  return { tier, mobile, isIOS, isAndroid, cores, mem };
+  return { tier, mobile, isIOS, isAndroid, cores, mem, coresKnown, memKnown, why };
 }
 
 export class QualityManager {
