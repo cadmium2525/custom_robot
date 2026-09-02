@@ -274,6 +274,30 @@ function buildPalette(look, legColour) {
     // hull off to 0.74 and asking for the chroma back doubles it (0.22 -> 0.45
     // measured on RAY's blue) for 14% of the luminance, and 14% is affordable
     // because the white plates carry the top of the machine.
+    //
+    // TWO WAYS OF CHASING MORE CHROMA HAVE BEEN TRIED HERE AND BOTH FAILED.
+    // Raising the saturation FLOORS alone moved measured machine chroma 0.324
+    // to 0.327 — nothing — because at these lightnesses the ceiling binds
+    // whatever S asks for. Translating the whole ladder DOWN by 0.26, on the
+    // reasoning that the ladder is relative while the ceiling is absolute, does
+    // triple the available chroma and still fails: measured on grid it moved
+    // realized chroma 0.449 -> 0.473 while clean contour fell 81.5% -> 73.8%,
+    // body-to-background separation fell 67.2 -> 42.2, and the machines' share
+    // of the frame's brightest 1% collapsed 66.8% -> 13.2%.
+    //
+    // The rule both failures point at: chroma is capped by the RENDERED
+    // lightness, and that is set by the key light, not by this table. Lowering
+    // albedo lowers the lit result proportionally, so the pixel sits lower on
+    // the value axis at the same distance from its own ceiling — the colour
+    // does not appear, and the separation and the highlights, which are bought
+    // with rendered lightness, are spent for nothing.
+    //
+    // The one case that DID yield is the counter-example: orbital's machines
+    // measured saturation 0.171 because they were CLIPPING, and dropping that
+    // arena's key un-clipped them and took saturation to 0.353 with the contour
+    // unchanged. So: lower the LIGHT where the machines clip, never lower this
+    // table. Where they do not clip, chroma has to come from hue and from what
+    // surrounds the machine, not from value.
     hull: tone(look.primary, 0.74, 0.82),
     // Same hue, a breath of shade. Carries the upper arms, the forearm cuffs,
     // the rear skirt and the whole backpack — which is to say the pieces that
