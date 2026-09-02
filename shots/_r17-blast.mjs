@@ -210,7 +210,22 @@ const INSTALL_FN = `(cfg) => {
         const v = new THREE_V(x, y, z).project(g.camera);
         out[k] = { x: (v.x * 0.5 + 0.5) * window.innerWidth, y: (1 - (v.y * 0.5 + 0.5)) * window.innerHeight, z: v.z };
       };
-      if (p) put('blast', p.x, p.y, p.z);
+      if (p) {
+        put('blast', p.x, p.y, p.z);
+        // How BIG the blast is on screen, which is the whole of what separates
+        // this capture from the phone frame the review failed. A four-metre
+        // detonation thirty metres away is a spark; the same detonation eight
+        // metres away is the third of the frame RULING 3 was written about, and
+        // picking one at random picks the first far more often than the second.
+        const cam = g.camera.position;
+        const d = Math.hypot(p.x - cam.x, p.y - cam.y, p.z - cam.z);
+        const f = window.innerHeight / (2 * Math.tan(g.camera.fov * Math.PI / 360));
+        // The fireball cluster reaches about 1.5 R at its widest (core R*0.72
+        // plus lobes thrown to about R*0.8), so this is the radius of the whole
+        // mass, not of the core.
+        out.blast.dist = d;
+        out.blast.rpx = (p.radius || 3) * 1.5 / Math.max(d, 0.001) * f;
+      }
       for (let i = 0; i < 2; i++) {
         const r = g.world.robos[i];
         put('robo' + i, r.pos.x, r.pos.y + 0.9, r.pos.z);
@@ -339,6 +354,7 @@ for (let done = 0; done < SCAN; done += 30) {
       && pr.robo1.x > 0 && pr.robo1.x < VW && pr.robo1.y > 0 && pr.robo1.y < VH;
     say(`  blast @tick ${b.tick} R=${b.radius.toFixed(2)} kind=${b.kind} ` +
         `screen=(${pr.blast.x.toFixed(0)},${pr.blast.y.toFixed(0)}) ` +
+        `d=${pr.blast.dist.toFixed(1)}m rpx=${pr.blast.rpx.toFixed(0)} ` +
         `p1=(${pr.robo0.x.toFixed(0)},${pr.robo0.y.toFixed(0)}) p2=(${pr.robo1.x.toFixed(0)},${pr.robo1.y.toFixed(0)}) ` +
         `${ok ? 'QUALIFIES' : 'skip'}`);
     if (ok && !chosen) {
