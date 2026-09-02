@@ -215,6 +215,20 @@ const CONTACT_FN = `() => {
       }
     });
     const deckY = v._groundUnder(r.pos.x, r.pos.z);
+    // `_groundUnder` takes the top of any box whose footprint contains the
+    // point WITH A 0.4 m MARGIN, so a machine standing on the deck beside a
+    // pillar resolves to the pillar's cap. Recorded, because the renderer parks
+    // the contact blob on exactly this number.
+    const deckStrict = (() => {
+      let best = 0;
+      for (const b of g.world.arena.boxes) {
+        if (b.top <= best) continue;
+        const dx = r.pos.x - b.x, dz = r.pos.z - b.z;
+        const lx = b.cos * dx - b.sin * dz, lz = b.sin * dx + b.cos * dz;
+        if (Math.abs(lx) <= b.hx && Math.abs(lz) <= b.hz) best = b.top;
+      }
+      return best;
+    })();
     const mm = (y) => (y > 1e8 ? null : Math.round((y - deckY) * 1000));
     const foot = toScreen(r.pos.x, deckY, r.pos.z);
     const head = toScreen(r.pos.x, deckY + 1.7, r.pos.z);
@@ -223,7 +237,15 @@ const CONTACT_FN = `() => {
     // works in world space and never needs it.
     const east = toScreen(r.pos.x + 1, deckY, r.pos.z);
     out.push({
+      // WALKER or HOVER. A HOVER-V chassis never puts a foot on the deck — its
+      // legs are turbine pods and RoboModel's walk cycle is switched off for
+      // it — so "a foot within 45 mm" is not a test it can ever pass and a tool
+      // that applies it anyway is measuring the part number, not the frame.
+      legs: m.legStyle,
+      hover: m.legStyle === 'hover',
       air: Math.round((r.pos.y - deckY) * 1000) / 1000,
+      deckStrict,
+      deckSnapped: Math.abs(deckStrict - deckY) > 0.01,
       grounded: !!r.grounded,
       state: r.state,
       stepPhase: Math.round((r.stepPhase || 0) * 100) / 100,
@@ -401,6 +423,11 @@ const NANG = 192;
   await restart();
 
   const tierName = await page.evaluate(() => window.__game.engine.quality.settings.name);
+  /* Four agents build into this tree at once; a capture that does not name the
+   * bundle it photographed is not reproducible. */
+  const bundle = await page.evaluate(() => [...document.querySelectorAll('script[src]')]
+    .map((s) => s.getAttribute('src')).join(' ') || document.title);
+  console.log(`  bundle: ${bundle}   base: ${BASE}`);
 
   /* ------------------------------------------------------------- the survey */
   let picked = TICKS;
@@ -421,8 +448,13 @@ const NANG = 192;
       await page.evaluate(`(${SETTLE_FN})(240)`);
       const f = await page.evaluate(`(${CONTACT_FN})()`);
       const rs = f.robots;
-      const touch = (x) => x.grounded && Math.min(
-        x.gapL == null ? 1e9 : x.gapL, x.gapR == null ? 1e9 : x.gapR) <= EPS_MM;
+      if (tk === FROM) {
+        console.log(`  (chassis: robot 1 ${rs[0].legs}${rs[0].hover ? ' — HOVER, never plants a foot' : ''}`
+          + `, robot 2 ${rs[1].legs}${rs[1].hover ? ' — HOVER, never plants a foot' : ''})`);
+      }
+      const touch = (x) => x.grounded && (x.hover
+        ? x.air < 0.08                                     // at rest hover height
+        : Math.min(x.gapL == null ? 1e9 : x.gapL, x.gapR == null ? 1e9 : x.gapR) <= EPS_MM);
       const framed = (x) => x.below >= Math.round(x.hPx * 0.33) && x.hPx >= 55;
       const ok = rs.every((x) => touch(x) && framed(x));
       if (ok) hits.push({ tick: tk, r: rs });
@@ -466,7 +498,9 @@ const NANG = 192;
   frame.robots.forEach((x, i) => {
     const g = Math.min(x.gapL == null ? 1e9 : x.gapL, x.gapR == null ? 1e9 : x.gapR);
     if (!x.grounded) bad.push(`robot ${i + 1} is not grounded (${x.air.toFixed(2)} m up)`);
-    else if (g > EPS_MM) bad.push(`robot ${i + 1} has no foot on the deck (nearest sole ${g} mm up)`);
+    else if (x.hover) {
+      if (x.air >= 0.08) bad.push(`robot ${i + 1} (HOVER) is not at rest height (${x.air.toFixed(2)} m up)`);
+    } else if (g > EPS_MM) bad.push(`robot ${i + 1} has no foot on the deck (nearest sole ${g} mm up)`);
   });
 
   for (const id of ['ui-layer', 'hud-layer', 'splash']) {
@@ -514,8 +548,10 @@ const NANG = 192;
     for (const b of bad) console.log('      ' + b);
   }
   frame.robots.forEach((x, i) => {
-    console.log(`\n  ROBOT ${i + 1}  air ${x.air.toFixed(3)} m  grounded=${x.grounded}`
-      + `  soles L/R ${x.gapL}/${x.gapR} mm  lowest ${x.gapMin} mm`);
+    console.log(`\n  ROBOT ${i + 1}  legs=${x.legs}${x.hover ? ' (HOVER — no foot contact exists)' : ''}`
+      + `  air ${x.air.toFixed(3)} m  grounded=${x.grounded}`
+      + `  soles L/R ${x.gapL}/${x.gapR} mm  lowest ${x.gapMin} mm`
+      + (x.deckSnapped ? `  *** deck snapped to ${x.deckStrict.toFixed(2)} m by a neighbouring box ***` : ''));
     console.log(`     ${x.hPx}px tall, ${x.mPx}px per deck metre, ${x.below}px of viewport below the contact`
       + `   blob=${x.blob} disc=${x.disc}`);
     const R = rings[i];
@@ -538,7 +574,7 @@ const NANG = 192;
   console.log('\n  JSON ' + JSON.stringify({
     arena: ARENA, tier: tierName, tick: picked, contact: !bad.length,
     robots: frame.robots.map((x, i) => ({
-      gapL: x.gapL, gapR: x.gapR, hPx: x.hPx, below: x.below,
+      legs: x.legs, gapL: x.gapL, gapR: x.gapR, hPx: x.hPx, below: x.below,
       pd: r1((rings[i][RINGS.length - 2].none ?? 0) - (rings[i][0].none ?? 0)),
       cdBlob0: r1(rings[i][0].dBlob), cdMap0: r1(rings[i][0].dMap), cdAll0: r1(rings[i][0].dAll),
       cdAllPeak: r1(Math.max(...rings[i].map((r) => r.dAll ?? 0))),
