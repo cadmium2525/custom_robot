@@ -1,0 +1,14 @@
+
+PHONE CAPTURE — 390x844@3x  insets t=47 b=34 l=0 r=0
+  tap "ENTER ARENA" at 178,378
+  tap "TO GARAGE" at 171,781
+  tap "SELECT ARENA" at 187,748
+  tap "FIGHT" at 144,748
+  + 25878ms phase=0 tick=2  CARD .hud__banner.is-on@1"ROUND 1 READY"
+  + 88872ms phase=1 tick=150  CARD .hud__banner.is-on@1"FIGHT"
+  + 89772ms phase=1 tick=151  (clear)
+  + 89922ms first clear frame at tick 152; dwelling 110 sim ticks
+  clear + 110 sim ticks after 107957ms of wall clock
+  CAPTURING  state=match phase=1 tick=262 round=1  touchOn=true padUp=true  cards=NONE
+  rects (device px): pad=654,1764,480,618  stick=90,1896,396,396  pause=996,393,138,138  hudtop=30,165,1110,183  hudgear=30,375,655,243  buttons=654,1764,480,618
+  wrote shots/r16p-match.png and shots/r16p-rects.txt

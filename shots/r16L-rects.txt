@@ -1,0 +1,1 @@
+node shots/_framesal.mjs shots/r16L-match.png --tile 60 --rect pad:1942,528,413,531 --rect stick:231,675,396,396 --rect pause:2223,18,138,138 --rect hudtop:201,42,1986,252 --rect hudgear:171,312,780,243 --rect buttons:1942,528,413,531
