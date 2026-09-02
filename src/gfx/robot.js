@@ -287,7 +287,7 @@ function buildPalette(look, legColour) {
     // Hero plates: chest crest, shoulder caps, shin faces. This role stays
     // near-white on purpose — a toy robot's white plastic is white, and it is
     // what gives the saturated plates something to be saturated against.
-    light: tone(look.secondary, 0.93, 0.10),
+    light: tone(look.secondary, 0.93, 0.52),
     // The model's line art: recesses, seams, the wash behind every hero plate.
     // This is the one role that stays genuinely dark — it keeps its hue so a
     // recess reads as shadowed machinery rather than as a hole cut in the model.
@@ -312,17 +312,17 @@ function buildPalette(look, legColour) {
     // the garage and invisible as a separate mass at 40px, which is the right
     // answer at both distances.
     accent: tone(look.accent, 0.74, 1.0),
-    leg: tone(legColour, 0.88, 0.10),
+    leg: tone(legColour, 0.88, 0.62),
     // Formerly a full stop under the leg, which split every leg into a light
     // front and a dark side and gave the machine four masses below the waist.
     // Held just under `leg` so the thigh and shin plates still turn against
     // their own greebles without the leg group coming apart.
-    legLo: tone(legColour, 0.84, 0.14),
+    legLo: tone(legColour, 0.84, 0.66),
     // Weapons are hardware: a neutral grey that belongs to no part's colour
     // scheme, so the gun reads as bolted-on rather than moulded in. It matches
     // the hull's VALUE — desaturation is what separates it, and desaturation
     // survives being 40 pixels tall in a way a value step does not.
-    gunmetal: tone(0x9aa6b4, 0.74, 0.06),
+    gunmetal: tone(0x9aa6b4, 0.74, 0.28),
     frame: { r: PAINT_GAIN, g: PAINT_GAIN, b: PAINT_GAIN },
   };
 }

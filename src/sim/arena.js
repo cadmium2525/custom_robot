@@ -132,7 +132,7 @@ export const ARENAS = [
       key: 'foundry',
       floor: 0x352a22,
       deck: 0x7a6f62,
-      floorAccent: 0xff6a1a,
+      floorAccent: 0xb2500f,
       // The cold counter-note this theme declares — a 0x3f7fd0 fill and a
       // 0x5c9ad8 bounce — was being aimed at brown. 0x4b3b2e has a linear BLUE
       // albedo of 0.027, so the block faces that the counter-kick exists to
@@ -157,9 +157,9 @@ export const ARENAS = [
       // the mercury wash is the counter-note this theme's own comment asks for
       // and never got.
       wall: 0x383c4a,
-      accent: 0xff8c2a,
-      emissive: 0xff5a10,
-      hazard: 0xffd24a,
+      accent: 0xb26a20,
+      emissive: 0xbc470c,
+      hazard: 0xcfa63c,
       crowdWarm: 0x8fd0ff,
       fog: 0x120705,
       fogDensity: 0.0072,
