@@ -31,7 +31,7 @@
 import * as THREE from 'three';
 import {
   floorTexture, wallTexture, structureTexture, galleryTexture,
-  screenTexture, hazardTexture, sprites,
+  screenTexture, hazardTexture, sprites, hazPaint,
 } from './textures.js';
 import { pbr, ensureAOChannel, makeSkyMaterial, bakeEnvironment, additive } from './materials.js';
 import { Noise } from './noise.js';
@@ -716,6 +716,41 @@ export class Stage {
    * Recessed portals in the wall behind each spawn. They give the arena an
    * inside and an outside — you came in from somewhere — and their warm throat
    * light is the one place a hot colour spills onto the deck.
+   *
+   * READ THIS BEFORE TUNING ANYTHING IN HERE — FIVE ROUNDS WERE SPENT ON
+   * SURFACES THE MATCH CAMERA CANNOT SEE.
+   *
+   * `_buildWalls` builds the boundary as four unbroken `PlaneGeometry` walls.
+   * There is no opening cut in them, and every piece of this portal except the
+   * threshold and the lamp is built at a NEGATIVE local z — that is, on the far
+   * side of that wall plane:
+   *
+   *   recess back    z = -1.60      behind the wall
+   *   jambs, lintel  z = -0.80      behind the wall
+   *   throat glow    z = -1.42      behind the wall
+   *   threshold mat  z = -0.20 .. +2.20   IN FRONT, on the deck
+   *   throat lamp    z = +0.60      IN FRONT, and it lights the deck and wall
+   *
+   * Verified by removal on the pinned grid frame (`shots/_own/grid-base.png`
+   * against `grid-no-walls.png`): hide the walls and a large flat orange
+   * rectangle appears where the throat glow is. It is not in the base frame at
+   * all. So the two levers this file has pulled at the residual — the throat
+   * glow's 0.85 -> 0.62, and its own comment claiming "the strongest single
+   * region of the frame on every model that weights brightness is this panel"
+   * — were aimed at an invisible quad. That is the mechanical reason four
+   * filings landed nothing: the argument was correct about the picture and
+   * wrong about which object was in it.
+   *
+   * What the camera actually sees of a gate is the threshold mat, the warm
+   * spill the lamp throws on the deck and the wall plinth behind it, and the
+   * wall's own plinth chevrons and kerb strip running through the same tiles.
+   * Those are the three surfaces the residual is about, and they are tuned
+   * here, in `_buildWalls`, and in `textures.js`'s `hazPaint`.
+   *
+   * The dead geometry is left standing rather than deleted: the portal reads
+   * from the results camera and from the garage, deleting it is a composition
+   * change rather than a salience one, and this note is worth more to the next
+   * round than the vertex count is.
    */
   _buildGates() {
     const b = this.arena.bounds;
@@ -796,6 +831,22 @@ export class Stage {
 
       // Hazard chevrons painted across the threshold — warm paint on the white
       // deck, at exactly the spot the player's robot stands at round start.
+      //
+      // THIS SLAB IS THE GATE RESIDUAL. Five rounds of REVIEW2 have argued the
+      // entry against the recess, the throat glow and the gate lamp, and it was
+      // none of them — see the occlusion note at the top of this method. Knock
+      // the `hazard` mesh out of the pinned grid frame and the bright orange
+      // chevron band at frame left disappears; knock the `walls` mesh out
+      // instead and the band is still there. It is a 6.4 x 2.4 m mat of the
+      // most saturated paint in the arena, laid on the deck, IN FRONT of the
+      // wall rather than behind it, and it is the only part of the portal the
+      // match camera can see.
+      //
+      // Two thirds of the paint's remaining chroma, on top of the batch-wide
+      // value ceiling and saturation pull. It still reads as a threshold — the
+      // stripes are the same stripes and the hue does not move — and it stops
+      // being the most chromatic object in a frame that contains two robots.
+      const GATE_THRESHOLD_TINT = 0.66;
       const th = new THREE.PlaneGeometry(W + 1.4, 2.4);
       th.rotateX(-Math.PI / 2);
       th.rotateY(yaw);
@@ -803,7 +854,7 @@ export class Stage {
       th.translate(tp[0], tp[1], tp[2]);
       const uv = th.attributes.uv;
       for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 3, uv.getY(i));
-      this._hazard.push(th);
+      this._hazard.push(flatTint(th, GATE_THRESHOLD_TINT));
 
       // Throat lamp. A PRACTICAL, and a practical is not allowed to out-light
       // the sun — which this one did, by a factor of eight at the surface it
@@ -954,7 +1005,10 @@ export class Stage {
         rectLoop(b.hx + 0.012, b.hz + 0.012, b.bottom + skirtH, b.x, b.z, b.yaw || 0),
         0.9, 1
       );
-      this._hazard.push(sk);
+      // Unmodified: the skirt is a 0.34 m band round a block, it is not what
+      // the gate residual is filed against, and it takes the batch's own
+      // saturation cut like everything else on this material.
+      this._hazard.push(flatTint(sk, 1));
 
       // Contact darkening on the deck. Even with shadow maps on, a block needs
       // an ambient occlusion pool to stop reading as a decal — and at LOW tier
@@ -1086,7 +1140,18 @@ export class Stage {
       // it is painted on. Two thirds of the albedo keeps every bit of the
       // information — the chevrons are exactly as legible — and gives the top of
       // the value range back to the robots.
-      const paint = new THREE.Color(this.theme.hazard ?? 0xffb01f).multiplyScalar(0.62);
+      //
+      // And the saturation half, which is the half that was never applied.
+      // Three rounds took value off this paint and the residual did not move,
+      // because on the authority meter (`shots/_salience.mjs`, model A, T=40,
+      // off=0) the stage tiles that outrank the machines do it at a LOWER
+      // luminance and a higher chroma — 92-101 at 0.324-0.378 against the
+      // machines' 103-117 at 0.190-0.320. `hazPaint` takes the value ceiling
+      // this line already had and then pulls the chip toward its own luminance
+      // at constant hue, which is the axis the paint was actually winning on.
+      const chip = new THREE.Color(this.theme.hazard ?? 0xffb01f);
+      const q = hazPaint({ r: chip.r, g: chip.g, b: chip.b }, 0.62);
+      const paint = new THREE.Color(q.r, q.g, q.b);
       const mat = pbr(htex, {
         color: paint,
         emissive: 0x000000,
@@ -1096,6 +1161,10 @@ export class Stage {
         side: THREE.DoubleSide,
       });
       mat.envMap = this.envMap;
+      // Per-surface tint, so the one hazard surface the residual is actually
+      // filed against can be taken down without dragging every obstacle skirt
+      // in the arena with it. See GATE_THRESHOLD_TINT in _buildGates.
+      mat.vertexColors = true;
       const g = mergeGeometries(this._hazard);
       ensureAOChannel(g);
       const m = new THREE.Mesh(g, mat);

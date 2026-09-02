@@ -352,6 +352,51 @@ const cellRand = (i) => ((Math.imul(i, 2654435761) >>> 0) % 65536) / 65536;
 const HAZ_PAINT = 0.58;
 
 /**
+ * How far the hazard chip is pulled toward its own luminance, at constant hue.
+ *
+ * THE VALUE LEVER WAS THE WRONG ONE, AND THE MEASUREMENT SAYS SO IN ONE LINE.
+ * `HAZ_PAINT` above, `0.62` on the hazard material in stage.js and `0.62` on
+ * the obstacle skirts are three separate value knock-downs applied over three
+ * rounds to the same paint, and the authority meter (`shots/_salience.mjs`,
+ * model A, T=40, off=0, grid, tier 3, tick 420) says they moved the residual by
+ * nothing:
+ *
+ *   gate tiles     lum  92 - 101   chroma 0.324 - 0.378
+ *   machine tiles  lum 103 - 117   chroma 0.190 - 0.320
+ *
+ * The stage tiles that outrank the machines are DARKER than the machines and
+ * win anyway, because model A scores luminance TIMES chroma and the paint is
+ * carrying two thirds more chroma than the robots it is competing with. Taking
+ * more value off it does not close that gap; it just moves an already-dark
+ * saturated band further down the value axis, and a dark saturated hole is a
+ * worse frame than a bright one.
+ *
+ * So the knock-down goes on SATURATION, and it is taken at constant hue by
+ * mixing toward the chip's own luminance rather than toward white or toward
+ * grey-at-a-different-value. Hue is preserved in exactly the space the meter
+ * reads it in — the meter derives hue and chroma from the sRGB triple, and this
+ * mix is in sRGB — so a chevron stays the same amber it always was, keeps its
+ * hard stripe rhythm and keeps its black counter-stripe. What it gives up is
+ * the one axis it was beating the robots on.
+ *
+ * 0.45 takes the chip from a saturation of 0.88 to 0.55: still unmistakably
+ * warning paint, no longer the most chromatic surface in the arena.
+ */
+const HAZ_DESAT = 0.45;
+
+/**
+ * The hazard chip as painted: value ceiling first, then the saturation pull.
+ * One function so the deck plates, the wall plinth and the gate threshold
+ * cannot drift apart again — they are the same paint and they were being
+ * argued three separate times.
+ */
+export function hazPaint(warn, value = HAZ_PAINT, desat = HAZ_DESAT) {
+  const r = warn.r * value, g = warn.g * value, b = warn.b * value;
+  const y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return { r: r + (y - r) * desat, g: g + (y - g) * desat, b: b + (y - b) * desat };
+}
+
+/**
  * Value ceiling for the plain deck plate.
  *
  * Quieting the deck made it BRIGHTER, which is the trap in this kind of work
@@ -501,9 +546,10 @@ export function floorTexture(theme, size = 1024) {
         const s = ((cu + cv * 0.6) * 4) % 1;
         const stripe = smoothstep(0.46, 0.54, s) * smoothstep(0.9, 0.78, Math.abs(cv - 0.5) * 2);
         const worn = smoothstep(0.55, 0.9, grime);
-        r = mix(r, warn.r * HAZ_PAINT, stripe * (1 - worn * 0.45));
-        g = mix(g, warn.g * HAZ_PAINT, stripe * (1 - worn * 0.45));
-        b = mix(b, warn.b * HAZ_PAINT, stripe * (1 - worn * 0.45));
+        const hp = hazPaint(warn);
+        r = mix(r, hp.r, stripe * (1 - worn * 0.45));
+        g = mix(g, hp.g, stripe * (1 - worn * 0.45));
+        b = mix(b, hp.b, stripe * (1 - worn * 0.45));
         // Counter-stripe. It was a 0.55 crush, i.e. a black bar next to a white
         // one — maximum local contrast, on the floor, in the middle of a fight.
         r *= 1 - (1 - stripe) * 0.42; g *= 1 - (1 - stripe) * 0.42; b *= 1 - (1 - stripe) * 0.42;
@@ -1442,9 +1488,13 @@ export function wallTexture(theme, size = 512) {
       // of the residual (the sun now out-peaks the practical on foundry, +118.4
       // to +104.4) and moved the ranks by nothing: the paint half was never the
       // gate's.
-      r = mix(r, warn.r * HAZ_PAINT, hz);
-      g = mix(g, warn.g * HAZ_PAINT, hz);
-      b = mix(b, warn.b * HAZ_PAINT, hz);
+      // ...and the saturation half of the same argument is `HAZ_DESAT`: the
+      // authority meter has this band, the kerb strip above it and the gate's
+      // threshold slab winning on CHROMA at a luminance below the machines'.
+      const hpw = hazPaint(warn);
+      r = mix(r, hpw.r, hz);
+      g = mix(g, hpw.g, hz);
+      b = mix(b, hpw.b, hz);
 
       albedo[o] = clamp01(r) * 255;
       albedo[o + 1] = clamp01(g) * 255;
