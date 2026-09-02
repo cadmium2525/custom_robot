@@ -28,6 +28,30 @@
  * chroma here is (max-min)/255 of the sRGB triple, in 0..1. Stated because it
  * was not, last time.
  *
+ * ---------------------------------------------------------------------------
+ * THIS FILE IS THE AUTHORITY METER FOR SALIENCE AND COVERAGE. `shots/_sal.mjs`
+ * IS NOT.
+ * ---------------------------------------------------------------------------
+ *
+ * Instrument fault 13 in REVIEW2: the repository carries two committed salience
+ * meters that suppress different scene elements before they look and disagree
+ * by about 2.7 points on the same build, and neither was labelled. That is
+ * settled here rather than left to the next round to trip over. This one wins
+ * on three counts and one of them is decisive:
+ *
+ *   - it takes the machine mask from `contour.mjs`'s binary stencil, so a
+ *     "machine" pixel is a machine pixel and not a colour key;
+ *   - it carries the dt-corrected settle (see INSTRUMENT FAULT #12 below), so
+ *     the machines are drawn in the pose that belongs to the tick;
+ *   - it is the file the gate residual has been argued on since round 13, so
+ *     keeping it is what makes this round's before/after comparable with the
+ *     five rounds of filings behind it.
+ *
+ * `_sal.mjs` stays in the tree because round 12 derived it and round 16 used it
+ * to cross-check a top-1% figure, and a second opinion is worth having. It is a
+ * SECOND opinion. No figure may be carried from one of these files to the other
+ * inside a comparison; name the meter in the sentence, every time.
+ *
  * MODES
  *   (default)  the 3-model x 4-tile x 2-offset sweep, plus the top-20 tiles of
  *              model A, plus the colour-family table (cyan/amber/machines) on
@@ -345,21 +369,50 @@ const ANALYSE_FN = async ({ nUri, hUri, rect }) => {
           tiles.push({ x: x0, y: y0, l: sl / n, lc: slc / n, c: sc / n, m: mc / n });
         }
       }
+      /**
+       * INSTRUMENT FAULT #14 — the two things this sweep ranks against each
+       * other were never counted by the same rule. A tile scored as "machine"
+       * only if HALF ITS PIXELS were machine; a tile scored as "gate" if its
+       * top-left CORNER landed in the rect, with no content threshold at all,
+       * so a 64x64 tile whose other 4095 pixels are bare wall counted as the
+       * gate. Every "the gate outranks the machines" figure in REVIEW2 was
+       * taken on that pair.
+       *
+       * Both rules are computed here and both are reported. `area` is the fair
+       * one — the same >= 50% test the machines have always been held to,
+       * applied to the rect — and it is the one a closure argument may use.
+       * `corner` is kept only so this round's numbers stay comparable with the
+       * five rounds of filings that were taken on it.
+       */
+      const cover = (t) => {
+        if (!rect) return 0;
+        const ox = Math.max(0, Math.min(t.x + T, rect[2]) - Math.max(t.x, rect[0]));
+        const oy = Math.max(0, Math.min(t.y + T, rect[3]) - Math.max(t.y, rect[1]));
+        return (ox * oy) / (T * T);
+      };
+      for (const t of tiles) {
+        t.rc = cover(t);
+        t.rcorner = rect ? (t.x >= rect[0] && t.x < rect[2] && t.y >= rect[1] && t.y < rect[3]) : false;
+      }
       const row = { T, off, total: tiles.length, cells: {} };
       for (const m of models) {
         for (const t of tiles) t.s = scoreOf(m, t.l, t.lc, t.c);
         const sorted = tiles.slice().sort((a, b) => b.s - a.s);
         let robotRank = null, rectRank = null, rectTop10 = 0;
+        let cornerRank = null, cornerTop10 = 0;
         for (let i = 0; i < sorted.length; i++) {
           const t = sorted[i];
           if (robotRank === null && t.m >= 0.5) robotRank = i + 1;
-          const inRect = rect && t.x >= rect[0] && t.x < rect[2] && t.y >= rect[1] && t.y < rect[3];
-          if (inRect) {
+          if (t.rc >= 0.5) {
             if (rectRank === null) rectRank = i + 1;
             if (i < 10) rectTop10++;
           }
+          if (t.rcorner) {
+            if (cornerRank === null) cornerRank = i + 1;
+            if (i < 10) cornerTop10++;
+          }
         }
-        row.cells[m] = { robotRank, rectRank, rectTop10 };
+        row.cells[m] = { robotRank, rectRank, rectTop10, cornerRank, cornerTop10 };
         if (m === 'A' && T === 40 && off === 0) {
           topA40 = sorted.slice(0, 20).map((t) => ({
             x: t.x, y: t.y,
@@ -367,6 +420,8 @@ const ANALYSE_FN = async ({ nUri, hUri, rect }) => {
             l: Math.round(t.l * 10) / 10,
             c: Math.round(t.c * 1000) / 1000,
             m: Math.round(t.m * 100),
+            r: Math.round(t.rc * 100),
+            k: t.rcorner ? 1 : 0,
           }));
         }
       }
@@ -465,6 +520,15 @@ const pad = (v, n) => String(v).padStart(n);
   page.on('pageerror', (e) => errors.push(String(e)));
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  /**
+   * Round 14 asked for this in one line and nobody added it: "have every
+   * capture print the bundle hash it measured." Four agents build into the same
+   * tree concurrently, so a sweep that does not name the bundle it photographed
+   * is a set of numbers about somebody else's uncommitted work.
+   */
+  const bundle = await page.evaluate(() => [...document.querySelectorAll('script[src]')]
+    .map((s) => s.src.split('/').pop()).filter((s) => /^index-/.test(s)).join(',') || '(inline)');
+  console.log(`  bundle: ${bundle}   base: ${BASE}`);
   await page.waitForFunction(() => window.__game && window.__game.engine?.running, null, { timeout: 90000 });
   await page.evaluate((t) => { const q = window.__game.engine.quality; q.auto = false; q.setTier(t); }, TIER);
   await page.waitForTimeout(400);
@@ -560,7 +624,8 @@ const pad = (v, n) => String(v).padStart(n);
 
   console.log(`\nATTENTION — ${ARENA} @ tier ${TIER}, tick ${TICKS}, ${out.screen}`);
   if (gateNote) console.log(gateNote);
-  console.log('  best rank of a >=50%-machine tile' + (rect ? ' / best rank inside the named rect [tiles in top 10]' : ''));
+  console.log('  best rank of a >=50%-machine tile'
+    + (rect ? ' / best rank of a tile >=50% INSIDE the named rect [tiles in top 10]' : ''));
   console.log('\n   T  off  total       A          B          C');
   for (const r of out.sweep) {
     const cell = (m) => {
@@ -571,9 +636,28 @@ const pad = (v, n) => String(v).padStart(n);
     console.log(`  ${pad(r.T, 2)} ${pad(r.off, 4)} ${pad(r.total, 6)}  ${cell('A')} ${cell('B')} ${cell('C')}`);
   }
 
-  console.log('\n  top 20 tiles, model A at T=40 off=0   (m% = share of the tile that is machine)');
+  if (rect) {
+    /* The two sentences the residual has actually been filed in, counted. */
+    const cells = out.sweep.flatMap((r) => ['A', 'B', 'C'].map((m) => r.cells[m]));
+    const n = cells.length;
+    const cnt = (f) => cells.filter(f).length;
+    const top14 = out.topA40.slice(0, 14);
+    console.log('\n  THE FILED CLAIM, COUNTED — "rank 1 in N of 24 cells; M of the top 14 tiles"');
+    console.log('                                     rank 1   outranks the machines   of top 14 (A,T=40,off=0)');
+    console.log(`    tile >=50% inside the rect (fair) ${pad(cnt((c) => c.rectRank === 1), 5)} /${pad(n, 3)}`
+      + `        ${pad(cnt((c) => c.rectRank != null && (c.robotRank == null || c.rectRank < c.robotRank)), 5)} /${pad(n, 3)}`
+      + `             ${pad(top14.filter((t) => t.r >= 50).length, 5)} / 14`);
+    console.log(`    top-left corner in the rect (as filed) ${pad(cnt((c) => c.cornerRank === 1), 1)} /${pad(n, 3)}`
+      + `        ${pad(cnt((c) => c.cornerRank != null && (c.robotRank == null || c.cornerRank < c.robotRank)), 5)} /${pad(n, 3)}`
+      + `             ${pad(top14.filter((t) => t.k).length, 5)} / 14`);
+    console.log(`    a >=50%-machine tile              ${pad(cnt((c) => c.robotRank === 1), 5)} /${pad(n, 3)}`);
+  }
+
+  console.log('\n  top 20 tiles, model A at T=40 off=0   (m% = machine share of the tile;'
+    + ' r% = share of the tile inside the rect)');
   for (const t of out.topA40) {
-    console.log(`    ${pad(t.x, 5)},${pad(t.y, 4)}   score ${pad(t.s, 7)}   lum ${pad(t.l, 6)}  chroma ${pad(t.c, 6)}  m ${pad(t.m, 3)}%`);
+    console.log(`    ${pad(t.x, 5)},${pad(t.y, 4)}   score ${pad(t.s, 7)}   lum ${pad(t.l, 6)}  chroma ${pad(t.c, 6)}`
+      + `  m ${pad(t.m, 3)}%  r ${pad(t.r, 3)}%`);
   }
 
   const f = out.families;
