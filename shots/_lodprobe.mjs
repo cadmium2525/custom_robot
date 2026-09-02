@@ -61,7 +61,20 @@ const COST = !!flag('cost');
 const COST_S = Number(flag('costs', 8));
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
-/* Byte-identical to tools/mass.mjs's settle — same pinned frame. */
+/*
+ * Byte-identical to tools/mass.mjs's settle — same pinned frame.
+ *
+ * AND IT WAS NOT, until round 17. This file carried the pre-`52625c7` settle:
+ * the 240-iteration loop drove only the camera and the machines were driven
+ * once, afterwards, by `g.view.update(0, 1, t)`. `damp(a, b, l, dt)` is exactly
+ * `a` at dt = 0, so every pose damper stood still and the machine was posed by
+ * whatever the boot transient left behind — the exact fault house rule 5 was
+ * written from, sitting inside the instrument that certifies the LOD. It
+ * matters here and not only in the mass meter: `_applyLod` measures the model's
+ * on-screen size off `group.matrixWorld`, which `view.update` writes, so an
+ * unsettled machine is one whose REPORTED PIXEL HEIGHT — the input to every
+ * budget in this file — comes from a frame nobody pinned.
+ */
 const SETTLE_FN = `(n) => {
   const g = window.__game;
   if (!g.rig || !g.world || !g.view) return false;
@@ -69,9 +82,9 @@ const SETTLE_FN = `(n) => {
   for (let i = 0; i < n; i++) {
     const views = g.view.prepare(1);
     g.rig.update(g.world, views, g.localIndex, 1 / 60, t);
+    g.view.update(1 / 60, 1, t);
     t += 1 / 60;
   }
-  g.view.update(0, 1, t);
   g.engine.onRender = null;
   if (g.engine.quality) g.engine.quality.auto = false;
   return true;
