@@ -4840,3 +4840,389 @@ never photographed, and an effect it had only ever seen in a tool that composes 
    between round 7's build and head. Five rounds, four filings, nothing landed.
 7. **The time axis**, round 14's finding, still zero entries verified on it.
 8. **`N7`**, the bare octahedra, ten rounds.
+
+---
+
+### Round 17 (opens at `1c34325` / `f83c2b2`) — the reference frame stops being a demand and becomes a specification, and the gate gets worse under a fair meter
+
+*Written from evidence already in this repository — the round-16 card, `e516a41`/`a45ada3`/`e1cf1b6`,
+`851d077`, `1c34325`, `f83c2b2`, `src/gfx/robot.js:270-300`, `shots/_salience.mjs:28-42`, and the
+instrument inventory — **before I took a single new capture of my own**, and committed in that state.
+Sixth round running. Revised below as this round's captures land. **It does not say PENDING.***
+
+**NO. Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
+picks CRV2.** Eighth round running. Nothing on the card moves up, because almost everything that has
+landed since round 16 closed is *correction* rather than build: two of my own filed rows have been
+withdrawn by the people who filed the evidence for them, one of my own rulings has been executed,
+measured and found wrong, and the one defect that got a fairer instrument this round **got worse under
+it, by 70%**.
+
+**Two things landed that are not corrections and both deserve saying before the bad news.**
+`1c34325` makes every capture print **the bundle hash it measured** — round 14 asked for that in one
+line and it took three rounds; it is the single cheapest guard in this repository against the class of
+error that had `bundle-single.mjs` verifying a fortnight-old tree. And `f83c2b2` adds
+`tools/deploycheck.mjs`, a playthrough gate pointed at **a URL rather than a source tree**: full match
+in all three arenas plus a page-error check, passing at head — grid 5203, foundry 9637, orbital 7146
+ticks, zero page errors, single-file bundle to title in 2.1s. **That is the first time a shipped
+artifact in this project has had a committed verifier rather than a hand-run one**, and it retires a
+whole family of "we verified something, but not the thing anybody opens" faults. *(One question it
+raises and nobody has answered: foundry's match ran **4662** ticks under `6699c2f` and **9637** here.
+Match length on one arena has roughly doubled between two builds. That is either a balance change
+nobody wrote down or a bot that has stopped closing. Filed, unranked, because I have not looked.)*
+
+> **The change in this round's verdict is that the standard finally exists.** For six rounds the top
+> of this list has been a demand for a photograph that is never going to be legally obtainable, and
+> every mass number in 4800 lines has been scored against a phrase written from memory. That is
+> resolved below, not by getting the photograph, but by writing down what the photograph would have
+> shown in terms this repository can measure. **Eight clauses, eight meters, eight thresholds.** Three
+> of the eight have no instrument at all, which is itself the largest finding in this round's verdict
+> and was invisible while the standard was a sentence.
+
+---
+
+#### RULING 6 — the CRV2 reference, resolved. **The standard is a written specification, not a photograph, and this section says so loudly enough that nobody after me can mistake it for a measurement.**
+
+**The demand, restated, and why it is being retired rather than met.** Six rounds have opened with
+*"there is no Custom Robo V2 reference frame in this repository; one PNG, sixteen rounds."* The
+complaint is fair — a scorecard whose top row is *"four or five masses"* written from memory in round
+6 is a scorecard with no zero point. It is also **unsatisfiable as stated**: CRV2 is copyrighted
+commercial game footage, this repository is public, and no correct version of this project scrapes a
+frame of it into `shots/`. Six rounds of restating an impossible instruction is six rounds of a
+review refusing to do its own job.
+
+So it gets resolved the way it can be. **Below is an explicit, checkable specification of what a CRV2
+frame does, derived from documented properties of the Nintendo 64's rendering hardware and from the
+game's own design, with every clause stated as a claim about *rendering*, given a meter this
+repository already has (or a named meter it lacks), and marked `FACT` or `JUDGEMENT`.**
+
+> **READ THIS BEFORE QUOTING ANY NUMBER BELOW IT.** `SPEC-CRV2` is a **written specification**. It is
+> not a measurement of Custom Robo V2, no frame of that game has been measured by anyone in this
+> project at any point, and no figure derived from this spec may ever be described as a comparison
+> against CRV2. It is a statement of *what the platform forced its renderer to do*, plus my judgement
+> about what that looks like. The `FACT` clauses are properties of N64 hardware. The `JUDGEMENT`
+> clauses are mine and are exactly as fallible as the "four or five masses" they replace — the
+> difference is that they are now written down, numbered, and falsifiable by anyone who does obtain a
+> frame. **If a clause marked `JUDGEMENT` is ever contradicted by an actual frame, the frame wins and
+> the clause is struck.**
+
+##### The platform facts the spec is derived from
+
+| # | Documented property of the N64 renderer | Consequence for the frame |
+|---|---|---|
+| P1 | TMEM — the RDP's texture cache — is **4 KB total**. A typical in-game texture is 32x32 or 64x32 at 16-bit, or 64x64 at 4-bit CI. | There is no fine surface detail anywhere. Every large form is a flat or near-flat region of colour. |
+| P2 | Lighting is **per-vertex (Gouraud) on the RSP**. The RDP has no programmable per-pixel shading stage. Specular exists only as a faked sphere/reflection-map texture. | Value is a property of a *form*, not of a view angle. A face is one value; the step happens at the edge between faces. |
+| P3 | Geometry throughput is on the order of **1500-4000 triangles per frame** in a real N64 title; a character model of the era is typically **300-1000 triangles**. | A machine cannot be made of many small forms. It is a handful of chamfered convex blocks. |
+| P4 | Colour is **16-bit RGBA5551** in the common framebuffer/texture modes — **32 levels per channel**. | A large palette of close values is not representable. Saturated, well-separated colours read; subtle grades band. |
+| P5 | There is **no depth-texture read available to a sprite**. Soft particles — the modern depth-aware fade that makes a billboard dissolve into the scene — are **not implementable on this hardware**. | An effect is a small number of large camera-facing quads whose edges are the edges of their own alpha texture. |
+| P6 | There is **no framebuffer post-processing** of the modern kind: no bloom, no HDR, no tonemap. Fog is fixed-function and per-vertex. | Nothing in the frame glows outside its own geometry. |
+| P7 | Output is **320x240**, through the VI's hardware anti-alias/de-dither filter, which softens edges by roughly a pixel. | Edges are soft by *about one pixel*, uniformly, everywhere. This is a video filter, not a falloff. |
+| P8 | Custom Robo V2 is a 3D arena duel between two customisable machines in an enclosed stage, played from a third-person camera. | Both machines are framed at once; the opponent is the aiming target and must be resolvable. |
+
+P1-P7 are properties of the hardware and are `FACT`. P8 is the game's own design and is `FACT` as a
+description of the game; every inference I draw from it about *framing* is `JUDGEMENT`.
+
+##### `SPEC-CRV2` — eight clauses, eight meters
+
+| Clause | The claim about rendering | Derived from | Threshold | Meter in this repository | Basis |
+|---|---|---|---|---|---|
+| **A. Few, large masses** | Each machine's silhouette resolves into **4-6** distinct large forms, and the largest four cover most of it. | P1, P3 | mass count in `[4,6]`; **top-4 coverage >= 85%** of silhouette area | `shots/_massdrive.mjs` (+ `shots/_lodprobe.mjs` to confirm the LOD fired) | budget `FACT`; the band and 85% are `JUDGEMENT` |
+| **B. The silhouette carries everything** | With no rim light, no specular and no contact shadow to separate the machine from the stage, **the outline is the only cue**, so it may not go missing anywhere. | P2, P6 | **>= 90%** of silhouette boundary above the legibility floor | `tools/contour.mjs` / `shots/_contourdrive.mjs`; `shots/_invis.mjs` for *where* | mechanism `FACT`; the 90% floor is `JUDGEMENT` and is **stricter than anything this document has ever scored against** |
+| **C. Value belongs to form, not to view** | Within one mass the value is near-constant; between masses it **steps**. No gradient inside a face, no view-dependent highlight travelling across one. | P2 | per-mass luminance **sd < half the between-mass step** | **NO METER EXISTS.** One addition to `shots/_massdrive.mjs`: report per-region mean and sd, which it already segments for | mechanism `FACT`; the ratio is `JUDGEMENT` |
+| **D. The machines are the colour in the frame** | The machines are **more saturated than the stage**, not less. | P4 | **machine median chroma > stage median chroma**, machine pixels from the stencil | `shots/_r16chroma.mjs` | `JUDGEMENT`, but the direction is forced: a 32-level channel cannot carry a low-chroma subject against a high-chroma stage and keep either |
+| **E. The machines own the top of the value range** | The brightest pixels in the frame belong to the machines. | P6 (nothing else glows) | **machines >= 50% of the brightest 1%**, quoted **with** the saturation and clipped fraction of the pixels that won it (round 16's standing rule) | `shots/_salience.mjs` (**the authority meter**), `shots/_owner.mjs` for attribution | `JUDGEMENT`; the 50% is mine |
+| **F. Effects are large, few and hard-edged** | An effect is a handful of big quads with **texture-edge boundaries**, not a volumetric falloff, and it does not swallow the opponent. | P5, P7 | **10-90% radial luminance falloff < 10% of the effect's own radius** (P7's video filter is ~1px, i.e. <1% on a large effect); **< 25% of the opponent's stencil altered** by the effect | **NO METER EXISTS.** Specified below | mechanism `FACT` and the strongest clause in the spec; the two thresholds are `JUDGEMENT` |
+| **G. The opponent is resolvable** | The opponent is large enough **in rendered pixels** for clause A's masses to be distinct regions. | A + P8 | 5 masses at **>= 6 rendered px** each plus gaps → **machine >= 36 rendered px tall**, measured on the backing store, not in CSS px | stencil box height from `shots/_contourdrive.mjs` / `shots/_framesal.mjs`, divided by `renderScale x pixelRatio` | derivation `JUDGEMENT`, arithmetic sound |
+| **H. The stage is quiet** | No stage element competes with the machines for either the top of the value range or the top of chroma. | P4, P6 | **stage < 50% of the brightest 1%**; **no single stage element ranks 1 in more than 25% of salience cells** | `shots/_salience.mjs`, `shots/_owner.mjs` (attribution by removal) | `JUDGEMENT` |
+
+##### The one thing the spec is *not*, stated so it is not misused
+
+The product goal is to **win** a blind side-by-side, not to be mistaken for an N64 game. These clauses
+describe what the hardware *forced*; we are not obliged to inherit the limitation, only to beat the
+**result**. So clause C is not "delete the bloom" — it is *the mass reading must not be broken by
+view-dependent shading*. Clause F is not "use 4KB textures" — it is *the effect must read as a drawn
+shape*. Any builder who reads `SPEC-CRV2` as an instruction to downgrade the renderer has read it
+backwards, and I will score that as a regression.
+
+##### The five blind points, re-expressed as spec clauses — which is what makes the numbers mean something
+
+```
+    blind point 1  robots brightest and most saturated   =  D + E
+    blind point 2  stage quieter than subjects           =  H (+ D on the stage side)
+    blind point 3  both machines legible at once         =  G
+    blind point 4  very few, very large forms            =  A + B + C
+    blind point 5  effects enormous, hard-edged, drawn   =  F
+```
+
+##### Scored against the spec, from figures already on the record — no new measurement
+
+| Clause | Threshold | Where head stands | Meter that says so | Verdict |
+|---|---|---|---|---|
+| A masses | 4-6, top-4 >= 85% | 4-6 on six of six cells, desktop | `_massdrive.mjs` (reproducing since `52625c7`) | **MET on desktop.** Top-4 coverage has never been quoted against 85% — **unscored clause** |
+| B contour | >= 90% clean | **81-88%** at best; 73.8% under the reverted ladder | `_contourdrive.mjs` | **NOT MET.** Nearest approach 88%, and this is the first round the figure has had a threshold to miss |
+| C value/form | sd < half the step | **never measured** | none | **UNMEASURABLE TODAY** |
+| D chroma | machine > stage | machines **0.449**, stage **0.748** | `_r16chroma.mjs` | **NOT MET, and inverted by 1.7x.** The stage is 66% more saturated than the machines |
+| E highlights | >= 50% of top 1% | grid **46.1% at saturation 0.346** on the fixed authority meter (tier 3, tick 420); foundry **17.2%**, orbital **19.3%**, both on the old meter | `_salience.mjs` (authority) | **NEAR MISS on grid, NOT MET on the other two.** See the correction below — the grid figure is better than the 36.6% this document has been quoting, and it is **not** a clip |
+| F effects | falloff < 10% of radius; < 25% occlusion | eyeballed on one frame: gradient everywhere, opponent fully occluded | none | **NOT MET on an eyeball, UNMEASURABLE TODAY** |
+| G opponent scale | >= 36 rendered px | desktop **~79 px** (8.8% of 900); phone portrait **115 device px x 0.72 renderScale ≈ 27 rendered px** with `maxPixelRatio` 2.0 on a 3x screen | `_contourdrive.mjs` box / `quality.js:12-31,54,186` | **MET on desktop. NOT MET on phone**, by arithmetic rather than by eye |
+| H stage quiet | stage < 50% of top 1%; no element > 25% of cells | grid stage owns **53.9%** of the top 1%; the gate ranks 1 in **17 of 24 cells = 71%** and outranks the machines in **18 of 24 = 75%** | `_salience.mjs` (authority, fair rule) | **NOT MET on both sub-clauses, and the cell figure is 70% worse than filed** (RULING 9) |
+
+**One clause of eight is met outright, one is met on desktop only, two cannot be measured by any
+instrument in this repository, and four are missed with numbers.** That is a fair statement of where
+this build is, it is the first such statement in this document that is not scored against a
+remembered phrase, and it is worse than the five-point card because the spec asks eight questions
+where the card asked five.
+
+> **The rank-1 item is retired.** Not satisfied — *retired*. It is replaced at rank 1 by the thing the
+> spec exposed the moment it was written: **three of the eight clauses have no instrument** (C, F, and
+> the top-4 coverage half of A), and the two with none at all are the two carrying the only PASS this
+> card ever had (F) and the mechanism the whole look rests on (C).
+
+##### The meter clause F needs, specified, because point 5 was downgraded on an eyeball and cannot be re-scored without it
+
+Round 16 moved point 5 PASS -> FAIL on one visual reading of one LOW-tier frame. I said at the time
+that I would normally refuse to score on that, and I stand by doing it — but it must not stay there
+on an eyeball, in either direction. **`_hard.mjs`, to be built:**
+
+1. Capture the pinned frame **with** the effect and **without** it (`_bleed.mjs` and `_owner.mjs`
+   already do exactly this difference-capture, on panels and on stage meshes respectively — this is
+   the same instrument pointed at a VFX emitter).
+2. The difference mask is the effect's own footprint; its centroid and equivalent radius `r` come free.
+3. Walk **radial luminance profiles** out from the centroid. Report the **10-90% falloff width** as a
+   fraction of `r`. **< 10% = drawn. > 25% = volumetric.**
+4. Intersect the difference mask with the opponent's stencil: report **% of the opponent altered**.
+5. Report at **both `TIER.LOW` and `TIER.HIGH`**, because round 16's frame was LOW (`particleBudget`
+   260 vs 1400, `bloomQuality` 0) and the shipped desktop effect has never been photographed in a
+   real match at all.
+
+Clause F is unscorable until this exists, and it is the clause standing between this card and having
+any PASS on it.
+
+---
+
+#### RULING 7 — the foundry row is **withdrawn**, my rank 4 collapses with it, and the withdrawal costs this document more than the row did
+
+`e516a41`, `a45ada3` and `e1cf1b6` retract *"foundry is the outlier, 47% clean vs 81%"* — the row I
+promoted to **rank 4** in round 16 and called *"the only art defect in this document with a clean,
+reproducing, three-arena-comparative measurement behind it."* The retraction is accepted in full, and
+it is the third time in four commits that a builder has taken down his own filing.
+
+**What the row actually was.** Foundry's near machine in that frame is **61 x 200 px and four-fifths
+behind a block** — **651** boundary pixels against grid's **1325**. A contour percentage computed on
+a fifth of a robot is a statement about *one frame's occlusion*, not about an arena. And the
+six-seed sweep settles the direction: **foundry is the BEST arena on both figures at seed 11, and the
+between-arena spread is roughly one fifth of the between-seed spread.**
+
+**What that costs, which is much more than one rank.** It is not that the row was wrong. It is what
+made it wrong:
+
+> **INSTRUMENT FAULT 15 — every single-seed arena comparison in this document is uninterpretable.**
+> If between-seed spread is ~5x between-arena spread, then any two arenas compared at one seed are
+> being compared through a term five times larger than the one being measured. **This document is
+> built on single-seed arena comparisons.** "Foundry 47% vs grid 81%", "36.6 / 17.3 / 86.6",
+> "grid 4.7% invisible vs foundry 22.0%" — every one of them is one draw from a distribution whose
+> width nobody measured until `e1cf1b6`. This is the fifteenth instrument fault on file and it is
+> the widest-reaching: it does not invalidate one conclusion, it invalidates a **class** of them.
+
+**Standing rule, effective now:** *no arena-versus-arena figure may be quoted in this document
+without either a multi-seed spread beside it or an explicit note that it is a single draw.* That
+applies retroactively to every such figure above, and to me.
+
+**Rank 4 is struck.** Foundry is not a defect; it is a seed. What survives is narrower and still
+worth having: **a machine can end up four-fifths occluded by stage geometry at a plausible seed**,
+which is a *spawn-and-camera* problem, not an art problem, and it belongs on the list at a much lower
+rank under a different name.
+
+---
+
+#### RULING 8 — machine chroma: **both routes are closed, my own prescription was the one that failed, and I am ruling the clause renderer-limited only under a condition nobody has tested yet**
+
+`851d077` executed **RULING 4** — my ruling, from round 15, in my words: translating the value ladder
+down the L axis *"costs the mass count nothing and multiplies the available chroma by three."*
+
+It was applied and measured on grid:
+
+```
+    available chroma ceiling      x3            <- my prediction, CORRECT
+    realized machine chroma       0.449 -> 0.473   <- +0.024. The prediction was worthless
+    clean contour                 81.5% -> 73.8%   <- clause B, already short, lost 7.7pt
+    body/background separation    67.2  -> 42.2    <- lost a third
+    machines' share of top 1%     66.8% -> 13.2%   <- clause E collapsed by a factor of five
+```
+
+**I got it wrong, and I got it wrong in the specific way this document exists to catch: I reasoned
+about a ceiling and predicted a floor.** Tripling the *available* chroma says nothing about the
+*realized* chroma, because nothing in the materials table was pushing against the ceiling in the first
+place. Three rounds of rulings were spent on one lever at a time and the fourth was mine.
+
+**The mechanism, now written into `src/gfx/robot.js:288-300` where the next person will find it
+before they retry it:** chroma is capped by **rendered** lightness, and rendered lightness is set by
+the **key light**, not by the materials table. Lowering albedo lowers the lit result proportionally,
+so the pixel slides *down the value axis at the same distance from its own ceiling* — the colour never
+appears, and the separation (clause B) and the highlights (clause E) that were paid for it are spent
+for nothing.
+
+> **Ruled: lower the LIGHT where the machines clip. Never lower the paint.** Orbital is the
+> counter-example that proves the mechanism rather than merely illustrating it — its machines measured
+> saturation **0.171 because they were clipping**, and dropping that arena's key **3.2 -> 2.85** took
+> them to **0.353 with contour unchanged**. That is the only intervention in four rounds that bought
+> chroma and paid nothing for it.
+
+**And here is the ruling on the clause itself, because "it is as good as this renderer allows" is now
+an available answer and it must not be given cheaply.** Clause D is missed by 1.7x and *inverted* —
+the stage is more saturated than the machines. Two routes are closed. The route that is **not** closed
+is the one the orbital result points at and which has been run on exactly one arena:
+
+> **I will accept "renderer-limited" for clause D only on this evidence: a per-arena key-light sweep
+> showing, for all three arenas, machine-pixel clipped fraction below 1% *and* machine chroma still
+> below stage chroma at every step of the sweep.** Until that sweep exists, clause D is FAIL with a
+> live, measured, un-run route, not a limitation. And there is a second lever in the clause that
+> nobody has touched at all, because every round has read clause D as a question about the machines:
+> **the comparison is a ratio, and the stage's 0.748 is the larger of the two numbers.** Grid's stage
+> is 66% more saturated than its machines. **Desaturating the stage moves clause D and costs the
+> machines nothing** — it is the same "the stage gives" move that round 15 ruled for value and that
+> `36db0e8` and `eef15ed` both proved out, and it has never once been tried on chroma.
+
+---
+
+#### RULING 9 — the gate, measured for the first time by a rule that counts it the same way it counts the machines: **it is 70% worse than filed, it is not an instrument artifact, and after six rounds of filings the mechanism is finally named**
+
+`1c34325` found **instrument fault 14** and it is a real one, of the kind that normally ends a
+finding: *the gate and the machines were never counted by the same rule.* A tile scored as **machine**
+only if **at least half its pixels** were machine; a tile scored as **gate** if its **top-left corner**
+landed in the rect, with **no content threshold at all**. Every "the gate outranks the machines"
+figure in this ledger — five rounds of them, four separate filings — was taken on that unmatched pair,
+and the bias runs in the direction of the conclusion. **By the ordinary rules of this document that
+retires the finding.**
+
+**It does not, and this is the important part: both rules are now computed and printed side by side,
+and on grid at tier 3 / tick 420 they return *identical* numbers.** The unfairness was real in
+principle and did not bite on this frame.
+
+> **The gate residual is NOT an instrument artifact and must never be written up as one.** I want that
+> sentence in the ledger in those words, because the last three instrument faults each dissolved a
+> finding and the reflex by now is to expect the fourth to do the same. This one did not. The finding
+> survived a fair re-count, which is more than most of the numbers in this document have done.
+
+**And it survived worse.** On the authority meter with the fair rule:
+
+```
+    gate rank 1 in              17 / 24 cells       (filed: 10 / 24)   <- 70% worse
+    gate outranks machines in   18 / 24 cells       (never measured)
+    machines rank 1 in           5 / 24 cells
+    gate tiles in the top 14     5 / 14             (filed: 11 / 14)   <- better on this leg
+
+    gate tiles (y=360, x=40..240)   lum  92 - 101    chroma 0.324 - 0.378
+    machine tiles                   lum 103 - 117    chroma 0.190 - 0.320
+    families: cyan 0.2%, amber 3.0%, MACHINES 1.7% (sat 0.346)
+    brightest 1%: machines 46.1%, cyan 2.2%, amber 11.1%
+```
+
+**The diagnosis five rounds of filings never had, and it is worth more than the count:**
+
+> **The gate is DARKER than the machines and outranks them anyway, because it is more saturated.**
+> Gate luminance 92-101 against the machines' 103-117 — the machines win the value comparison
+> outright. Gate chroma 0.324-0.378 against the machines' 0.190-0.320 — the gate wins chroma, and
+> chroma is what the salience score ranks by. **Every intervention aimed at this defect for five
+> rounds has been a value intervention: dim the gate, lift the machines, dim the stage. All of them
+> were aimed at the axis this defect does not live on.** That is why four filings landed nothing.
+
+**This collapses two ranked items into one, and it is the most useful thing in this round's verdict.**
+Clause **D** (machines more saturated than the stage — currently inverted, machines 0.449 against
+stage 0.748) and clause **H** (no stage element outranks the machines — the gate, 18 of 24 cells) are
+**not two defects. They are one defect measured two ways.** The gate outranks the machines *by the
+exact quantity clause D says is inverted*. A single intervention — **take the chroma out of the stage,
+starting with the gate** — moves both, and RULING 8 already established that it costs the machines
+nothing because it does not touch them. Three rounds of chroma work aimed at the machines' materials
+table; the number that needed moving was always the other one.
+
+**One correction that runs in the build's favour and must be recorded as carefully as the ones that
+do not.** This meter puts grid's machines at **46.1% of the brightest 1% at saturation 0.346**. This
+document has been quoting **36.6%**. Under round 16's own standing rule the figure must be read with
+the saturation of the pixels that won it, and 0.346 is nowhere near the clip signature (>80% share at
+S<0.2) that made orbital's 92.8% a false positive. **This is an honest 46.1% and it is the best
+evidence blind point 1's value half has ever had.** Against clause E's 50% threshold it is a **near
+miss**, not a failure — and it is the only clause in the spec that head is close to passing on merit.
+It does not change the verdict, because clause D is inverted by 1.7x and point 1 needs both halves.
+
+---
+
+#### The standing rules, restated — with two closed and one added
+
+- `npm run build` before every commit; `npm test` passes on code the build rejects.
+- Determinism: seed **1234567**, `engine.paused`, tick-at-a-time advance, `view.update(1/60, ...)`
+  inside the settle loop — `damp()` is a no-op at `dt=0`.
+- `shots/` is gitignored. Instruments must be `git add -f`-ed or they are lost. **This has happened
+  three times.**
+- Audit the instrument before believing the number. **Fifteen** instrument faults are on file;
+  several *invalidated* the conclusion they were built to support. **One of the fifteen did not** —
+  fault 14, this round, and that is worth as much as the ones that did.
+- **CLOSED — instrument fault 13.** I was ready to file the two-meter authority problem for a **third**
+  time. It is fixed: `shots/_salience.mjs:32` now reads *"THIS FILE IS THE AUTHORITY METER FOR
+  SALIENCE AND COVERAGE. `shots/_sal.mjs` IS NOT"*, with the reasoning under it, and it is committed.
+  The rule stands — no figure compares two builds through two tools, every coverage number names its
+  meter in the same sentence — but the fault is closed and I am not filing it again.
+- **CLOSED — instrument fault 14**, the unmatched gate/machine tile rule (RULING 9). Both rules are
+  now computed and printed side by side, which is the correct fix: it does not pick a rule, it makes
+  the disagreement visible in every future run.
+- **CLOSED — the bundle hash.** Round 14 asked, in one line, that every capture print the hash of the
+  bundle it measured. `1c34325` does it. Three rounds for one line, and it is the guard that would
+  have caught `bundle-single.mjs` inlining a fortnight-old tree.
+- **NEW — no arena-versus-arena figure without a seed spread beside it** (RULING 7, fault 15).
+- **NEW — no figure derived from `SPEC-CRV2` may be described as a comparison against Custom Robo V2**
+  (RULING 6).
+
+---
+
+#### The card, entering this round's measurement
+
+| # | Clauses | R15 | R16 | **R17 entering** |
+|---|---|---|---|---|
+| 1 | D + E | SPLIT | FAIL | **FAIL, and now split cleanly between its halves** — E is a near miss on grid at **46.1% at S 0.346**, honestly measured and not a clip, the best evidence this half has ever had. D is **inverted by 1.7x** and two of its three routes are closed. Point 1 needs both |
+| 2 | H (+ D on the stage) | FAIL | FAIL | **FAIL, and worse than filed** — the gate ranks 1 in **17 of 24** cells against a 25% threshold and outranks the machines in **18 of 24**, on a fair re-count (RULING 9) |
+| 3 | G | CLOSED | CLOSED desktop / RE-OPENED phone | **CLOSED desktop (79 rendered px) / FAIL phone (~27 rendered px)** — now arithmetic, not eyeball |
+| 4 | A + B + C | CLOSED | CLOSED desktop / UNVERIFIED phone | **A met desktop; B missed at 88% vs 90%; C unmeasurable** — the point is no longer a single verdict |
+| 5 | F | PASS | FAIL | **FAIL, and unscorable until `_hard.mjs` exists** |
+
+**Five concurrent builder jobs are in flight against the round-16 list. What each must show to move
+this card — stated before any of them lands, so a good result cannot be re-read as a discovery:**
+
+1. **Explosion at desktop HIGH** — moves clause F only with the falloff number and the occlusion
+   number, both tiers. A screenshot that "looks hard-edged" moves nothing; that is precisely how
+   point 5 held a PASS for four rounds.
+2. **Portrait layout + mobile tier caps** — moves clause G only if the opponent clears **36 rendered
+   px on the backing store**. Shrinking the FIRE button changes the 3.8x ratio and does not change the
+   arithmetic; the ratio was a symptom.
+3. **Gate residual + N7** — moves clause H only with the gate below **25% of cells** (it is at **71%**,
+   not the filed 42%), on the authority meter, with both tile rules printed and a seed spread.
+   **And per RULING 9 it must be a chroma intervention.** The gate is already darker than the
+   machines; another value edit will land nothing, as four have.
+4. **Silhouette LOD + line-art scaling** — moves clause A only if mass count stays in `[4,6]` *and*
+   top-4 coverage is quoted; that half of clause A has never been reported.
+5. **`#14` grounding + LOW-tier contact shadow** — moves clause B if clean contour rises toward 90%.
+   Note against it: LOW ships `shadows: false` (`quality.js:12-31`), so a contact shadow on LOW is a
+   new render path on the weakest tier and must be shown not to cost frame time on the device the
+   product goal names.
+
+#### The ranked list, re-issued — rank 1 retired, rank 4 struck
+
+1. **Three of the eight spec clauses have no instrument.** `C` (value belongs to form) and `F`
+   (effect hardness) have none at all, and the top-4-coverage half of `A` has never been reported.
+   **`F` is the one blocking a re-score of the only point that ever read PASS.** This replaces six
+   rounds of asking for a photograph, and unlike that item it can be closed in one round.
+2. **The explosion**, pending this round's desktop HIGH capture — clause F.
+3. **Portrait phone**, clause G, now with a numeric floor: 36 rendered px.
+4. **The stage's chroma — clauses D and H together, which RULING 9 shows are one defect.** The gate
+   outranks the machines because it is *more saturated* than they are, and clause D says the same
+   thing about the whole stage (0.748 against 0.449). **Take the chroma out of the stage, starting
+   with the gate.** It costs the machines nothing, it is the only one of clause D's three routes never
+   attempted, and it is the only intervention that can move a six-round defect that four value edits
+   could not touch. Formerly two separate ranks; merged, and promoted above everything except the
+   missing instruments.
+5. **Clause B's last 2 points** — 88% against a 90% floor, now that it has a floor.
+6. **Clause E's last 4 points** — 46.1% against 50% on grid, and 17-19% on the other two arenas, which
+   is where the real gap is. Grid is nearly there; foundry and orbital are not close.
+7. **The time axis**, round 14's finding, still zero entries verified on it.
+8. **`N7`**, the bare octahedra, **eleven rounds**.
+9. **Spawn-and-camera occlusion** — a machine four-fifths behind a block at a plausible seed
+   (the surviving fragment of the withdrawn foundry row).
+10. **Foundry's match length**, 4662 ticks at `6699c2f` against 9637 at `f83c2b2`. Unlooked-at.
