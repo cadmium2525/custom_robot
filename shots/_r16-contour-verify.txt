@@ -1,0 +1,33 @@
+R16 VERIFICATION — the silhouette cost of the amber dim, same tool, same session
+  tools/contour.mjs --arena foundry, pre (b024378) once, head (36db0e8) three times.
+  Contour is NOT bit-exact run to run on this renderer; the head spread below is
+  the error bar, and it is what makes the filed cost look bigger than it is.
+
+  foundry OVERALL          pre     head r1   head r2   head r3
+    invisible (<12)      20.0%      21.4%     22.0%     21.8%
+    weak      (<25)      39.3%      39.5%     39.5%     39.6%
+    clean     (>=40)     46.5%      47.5%     48.2%     47.9%
+    body                 118.4      116.9     116.8     116.8
+    background            53.4       48.5      48.5      48.6
+    separation            65.0       68.4      68.3      68.2
+
+  foundry ROBOT 1 (the 200px machine)   pre     head
+    invisible            15.9%     18.3%
+    clean                52.0%     52.4%
+    separation            85.2      85.2
+  foundry ROBOT 2 (the 39px machine)   pre     head
+    invisible            33.6%     31.5%
+    clean                28.0%     30.8%
+    separation            21.8      27.2
+
+VERDICT
+  The trade is real and the DIRECTION filed is right, but the magnitude is not:
+    filed   invisible 19.7 -> 22.4  (+2.7)   clean 47.0 -> 48.4   sep 65.0 -> 68.6
+    here    invisible 20.0 -> 21.7  (+1.7)   clean 46.5 -> 47.9   sep 65.0 -> 68.3
+  Head's own run-to-run spread is 0.6pt on invisible and 0.7pt on clean, so the
+  filed +2.7 was one run read as a point estimate.
+
+  Where the cost actually is: ROBOT 1 loses 2.4pt of invisible contour while
+  ROBOT 2 GAINS 2.1pt and 5.4 of separation. It is not a whole-arena regression;
+  it is the big near machine losing edge against the part of the frame that got
+  darker. That is the thing to fix, and it is local.

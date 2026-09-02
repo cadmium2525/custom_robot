@@ -1,0 +1,27 @@
+R16 VERIFICATION — foundry amber dim (36db0e8) re-measured independently
+  pre  = b024378 built into a separate root, served on :4301
+  head = 36db0e8 built by shots/_snap.sh, served on :4300
+  Both measured with the SAME tool in the same session.
+
+shots/_salience.mjs --arena foundry     (online meter, VFX suppressed)
+                        pre      head
+  amber, % of frame     5.4%     4.2%
+  amber mean lum        97.1     88.6
+  amber share top 1%   55.0%    19.0%
+  machine share top 1% 12.9%    17.2%
+  top-1% threshold     138.7    114.2
+
+shots/_sal.mjs (offline, from tools/contour.mjs dumps — VFX suppressed by contour)
+                        pre      head
+  amber, % of frame     8.2%     6.9%      <- pre from shots/_r15-sal-foundry-base.txt
+  amber share top 1%   55.1%    19.8%
+  machine share top 1% 13.3%    17.6%
+  stage sat pixels     89.8%    81.3%
+
+VERDICT
+  The top-1% result REPRODUCES and is the real win: amber 55 -> 19, machines 13 -> 17.
+  Both tools agree on it to within 0.8pt, so it is not a tool artefact.
+  The headline '8.2% -> 4.2%' is TOOL-CROSSED: 8.2% is _sal.mjs's number and 4.2%
+  is _salience.mjs's. Measured with one tool the coverage drop is 5.4 -> 4.2 or
+  8.2 -> 6.9, i.e. about a quarter, not a half. The two tools disagree on amber
+  coverage by ~2.7pt on the SAME build, so amber-% is not comparable across them.
