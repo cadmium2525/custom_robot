@@ -5291,3 +5291,103 @@ of blind point 2 as well — is measured by exactly one instrument, and that ins
 it a fourth time and leaving it: `_r16chroma.mjs` and `_invis.mjs` are committed with this entry,
 `git add -f`, content untouched. They are not mine and I have changed nothing in them; preserving a
 meter is not editing it.
+
+---
+
+#### RULING 11 — **the gate residual is closed on grid.** Six rounds, four filings, and it went in one commit once somebody aimed it at the right axis — which was not the axis any of my four filings named
+
+Measured by me, not reported to me. Pinned worktree at **`4e632e0`**, `npm run build` clean,
+`npm test` ALL PASS, `vite preview` on its own port, authority meter only:
+
+```
+$ node shots/_salience.mjs --arena grid --gate --tier 3 --base http://127.0.0.1:4210/custom_robot/
+  bundle: index-DWdvMdN2.js
+  ranking the in-frame gate: 0,148,330,410 (330x262 px, 6.0% of frame)
+
+  THE FILED CLAIM, COUNTED — "rank 1 in N of 24 cells; M of the top 14 tiles"
+                                          rank 1   outranks machines   of top 14
+    tile >=50% inside the rect (fair)      2 / 24        2 / 24            4 / 14
+    top-left corner in the rect (as filed) 2 / 24        2 / 24            4 / 14
+    a >=50%-machine tile                  22 / 24
+```
+
+Against the same meter, same arena, same tier, same tick, same seed, on the build immediately before
+`4e632e0`:
+
+```
+    gate rank 1 in              17 / 24   ->    2 / 24      threshold: <= 6 / 24 (25%)   MET
+    gate outranks the machines  18 / 24   ->    2 / 24
+    MACHINES rank 1 in           5 / 24   ->   22 / 24
+```
+
+**One tool, one arena, one seed, before and after — no tool crossing, and the fair rule and the filed
+rule return identical numbers on both sides.** Clause **H**'s second sub-clause is **MET** for the
+first time in this document: 2 of 24 is 8.3% against a 25% threshold.
+
+**And the top-20 table shows the mechanism doing exactly what RULING 9 said it would**, which matters
+more than the count because it is what makes the result transferable:
+
+```
+    tile          score    lum    chroma   m%    r%
+     800, 760      36.6   116.1   0.315   100%    0%     <- machines, ranks 1
+     760, 800      30.1   113.4   0.266    93%    0%
+     800, 720      27.7   104.6   0.265   100%    0%
+     800, 800      26.7   116.9   0.228   100%    0%
+     760, 760      24.5   114.1   0.215    75%    0%
+     160, 360      24.0    93.1   0.257     0%  100%     <- best gate tile, now rank 6
+```
+
+Before: gate chroma **0.324-0.378** against machine chroma **0.190-0.320**, gate lum 92-101 against
+machine lum 103-117 — the gate was darker and won anyway. After: gate chroma **0.227-0.257**, and
+**the machines' 0.315 now exceeds the gate's best 0.257**. The luminances barely moved (gate 87-95).
+**The gap was closed on the chroma axis at near-constant value, which is the one intervention four
+rounds of value knock-downs could not perform.**
+
+##### What this costs me, and it is the largest single correction to my own record in this document
+
+`4e632e0`'s attribution — by removal, on the pinned frame — is that the gate residual was never the
+recess, the throat glow panel or the gate lamp. `_buildWalls` builds the boundary as **four unbroken
+planes with no opening cut in them**, and every piece of `_buildGates` except the threshold mat and
+the lamp sits at **negative local z — the far side of that plane.** Hide the walls and a large flat
+orange rectangle appears where the throat glow is; **it is not in the base frame at all.**
+
+> **The throat glow knock-down, `0.85 -> 0.62`, which this ledger argued at length across several
+> rounds, was aimed at a quad the match camera cannot see.** Four filings against "the gate" named
+> objects that do not render. What the camera actually sees at frame left is a **6.4 x 2.4 m threshold
+> mat** — the most saturated paint in the arena, lying on the deck *in front of* the wall — plus the
+> plinth chevrons and the kerb strip. Five rounds of this defect were a description of geometry
+> nobody had checked was on screen.
+
+That is a worse error than any I have caught in a builder's work this round, and it is the direct
+cause of the six-round stall. **New standing rule: no defect may be filed against a named object
+until a removal diff shows that object contributes pixels to the frame being scored.**
+`shots/_owner.mjs` has been able to answer that question since round 15 and I never once pointed it at
+my own filing.
+
+##### What is NOT closed, stated so this cannot be read as more than it is
+
+- **One arena, one seed.** Grid at 1234567. Foundry and orbital are unmeasured at this pin, and my own
+  fault-15 rule says a single draw does not generalise. **The gate is closed on grid. It is not closed
+  in the game.**
+- **Clause H's first sub-clause still fails.** Brightest 1% of the frame: **machines 46.8%**, cyan
+  2.4%, amber 6.8% — so the stage still owns **53.2%** against a **< 50%** threshold. It is 3.2
+  points away, and it is the smallest gap on the card.
+- **Clause D is not re-measured by this.** The family table above (amber sat 0.543, cyan 0.604,
+  machines 0.346) is a different statistic on a different population from `_r16chroma.mjs`'s
+  machine-vs-stage medians (0.449 vs 0.748). **Quoting one against the other would be exactly the
+  tool-crossing this document banned in RULING 5.** Whether the stage desaturation moved clause D is
+  an open question and it needs `_r16chroma.mjs` run at this same pin.
+- **The `hazPaint()` change touches the deck plates and the wall plinth, not just the gate.** The
+  claim is that it moves chroma at constant luminance. If that is true, clause **B**'s contour figure
+  must be **unchanged**. **If contour has moved materially at `4e632e0`, the constant-luminance claim
+  is false and this result is partly a value edit wearing a chroma edit's name.** That check is not
+  optional and it is not done.
+
+##### Clause E, independently confirmed, and it is the one number on this card that is close
+
+**Machines hold 46.8% of the frame's brightest 1% at machine saturation 0.346 and median luminance
+117.** Per round 16's own standing rule the share is quoted with the saturation of the pixels that won
+it, and 0.346 is nowhere near the clip signature (>80% share at S < 0.2) that made orbital's 92.8% a
+false positive. **This is an honest 46.8% against a 50% threshold**, it independently reproduces the
+46.1% reported to me on the previous build, and it is the best evidence blind point 1's value half has
+ever had. It does not pass. It is 3.2 points short, on one arena.
