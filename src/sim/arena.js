@@ -211,7 +211,7 @@ export const ARENAS = [
       // outranking the muzzle flash. Saturated so the same fixture reads as the
       // colour it is supposed to be and stops competing for the top of the
       // value range.
-      floorAccent: 0x55cdf5,
+      floorAccent: 0x3a8ba8,
       // Mirror of the foundry's problem. Orbital declares a sodium counter-kick
       // (0xff9a4a bounce over a 0x4b3826 ground term) and then points it at a
       // blue-grey whose linear RED albedo is 0.036, so the one warm light in
@@ -228,8 +228,8 @@ export const ARENAS = [
       // ring is painted steel under sodium service lamps; the cyan belongs to
       // the rails and the deck.
       wall: 0x443b2f,
-      accent: 0x55cdf5,
-      emissive: 0x4ad0ff,
+      accent: 0x3f96b5,
+      emissive: 0x3593b8,
       hazard: 0xff9a2e,
       crowdWarm: 0xffb066,
       fog: 0x02040a,
@@ -238,7 +238,15 @@ export const ARENAS = [
       skyBottom: 0x010206,
       sunDir: [0.2, 0.5, -0.84],
       sunColour: 0xe8f0ff,
-      sunIntensity: 3.2,
+      // Orbital's machines measured mean luminance 178.5 at saturation 0.171 —
+      // the least chromatic in the game — while owning 92.8% of the frame's
+      // brightest 1%. Both facts are the same fact: chroma in HSL is
+      // (1 - |2L - 1|) x S, so a machine driven that light has almost no room
+      // to be coloured however saturated its paint is. With 92.8% of the top 1%
+      // there is enormous headroom to give, so the key comes down here rather
+      // than the paint coming down everywhere — the ruling being that when
+      // chroma and the highlights compete, the stage gives.
+      sunIntensity: 2.85,
       rimColour: 0x3a6cc0,
       // Coldest arena of the three, so its counter-kick is the warmest — a
       // sodium service light bouncing off the ring's own deck.
