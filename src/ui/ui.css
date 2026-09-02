@@ -1803,8 +1803,64 @@
 .crv2-touch {
   z-index: 15;
   --tb: 62px;          /* satellite diameter */
-  --tb-fire: 88px;     /* FIRE, deliberately the biggest thing on screen */
+  --tb-fire: 88px;     /* FIRE, the biggest CONTROL on screen — see below */
   --tb-gap: 10px;      /* 62 + 10 = 72px centre spacing, > a 70px thumb pad */
+
+  /* -----------------------------------------------------------------------
+     THE CONTROL SURFACE'S OWN PALETTE, AND WHY IT IS NOT THE GLOBAL ONE
+     -----------------------------------------------------------------------
+     Measured on the first card-free phone gameplay frame this project has ever
+     taken (shots/r16p-match.png, iPhone 12 portrait), the five buttons held
+     29.2% of the frame's visible chroma off 10.0% of its area — 2.91x their
+     share — and on the carded capture the critic actually scored,
+     shots/hi-p-match.png, the same rect held 54.7% off the same 10.0%, i.e.
+     5.46x. Per button the card-free frame reads FIRE 3.91x, BOMB 3.94x,
+     DASH 3.41x, JUMP 2.82x, POD 4.07x. No machine appeared in the top twelve
+     salience tiles in either orientation. The art direction is that the eye
+     lands on the machines; on a phone it was landing on a thumb cluster.
+
+     The lever is LUMINANCE, not saturation. S = (max-min)/max is scale-free,
+     so desaturating-by-flooring does nothing a measurement can see (recorded
+     on the stage side the same week); scaling a colour toward black drops L,
+     which is what both the brightest-1% percentile and the visible-chroma gate
+     (S >= 0.35 AND L >= 40) are actually counting. So every value below is the
+     shipped colour multiplied by a constant, which preserves its hue and its
+     saturation exactly and takes only its light away. Nothing has moved, no
+     control has changed size, position or contrast polarity; the surface is
+     the same surface, turned down.
+
+     The scale is not uniform, because the pieces do different jobs:
+       .45 on the two FILLS — they are ~85% of a button's pixels and carried
+            most of the chroma. The 0.45 is shared by the satellites and by
+            FIRE, so FIRE stays exactly 1.5x their fill luminance and the
+            designed hierarchy survives the dim.
+       .84 on the two RIMS — the rim is the affordance, the line that says
+            "this is a button" on a night arena. It is 1.5-2px, it costs almost
+            nothing in area, and it is the last thing that should be taken.
+       .72 on the LABELS, .85/.88 on the two coloured ones — #eaf2fd peaked at
+            L=241 and was the brightest object anywhere in the cluster. They
+            land in a 160-175 band, under the 183 that the card-free frame
+            reports as its brightest-1% threshold, and stay 6:1 on the fill.
+       .64 on the three RING accents — a full-circle conic gauge in pure
+            --acc-2 / --acc-3 sits under the thumb for most of a round, which
+            is the phone's version of "amber peaked at 255". They stay
+            coloured, because the ring is the only live state a button has.
+       .62 on the STICK — read at 1:1 on a dark arena the floating stick was
+            the brightest object in the frame; its nub highlight was L=217.
+     The globals (--acc-2, --acc-3, --warn, --ink) are untouched: they are the
+     HUD's and the menus', and this is a fault in the touch layer only. */
+  --tb-fill:      rgba(15, 31, 50, .96);     /* was rgba(34,70,112,.94)  L 65 -> 29 */
+  --tb-fill-2:    rgba(2, 5, 8, .96);        /* was rgba(5,10,18,.92) */
+  --tb-fill-fire: rgba(23, 47, 71, .96);     /* was rgba(52,104,158,.95) L 96 -> 44 */
+  --tb-fill-fire2: rgba(3, 6, 12, .96);      /* was rgba(6,14,26,.94) */
+  --tb-rim:       rgba(126, 175, 214, .52);  /* was rgba(150,208,255,.5) */
+  --tb-rim-fire:  rgba(143, 185, 214, .6);   /* was rgba(170,220,255,.62) */
+  --tb-label:     #a8aeb6;                   /* was --ink #eaf2fd        L 241 -> 173 */
+  --tb-label-2:   #d99c65;                   /* was #ffb877              L 193 -> 165 */
+  --tb-label-3:   #bc92e0;                   /* was #d6a6ff              L 183 -> 161 */
+  --tb-warn:      #a37c11;                   /* was --warn  #ffc21a      L 195 -> 125 */
+  --tb-acc-2:     #a34e11;                   /* was --acc-2 #ff7a1a      L 143 ->  92 */
+  --tb-acc-3:     #7131a3;                   /* was --acc-3 #b14cff      L 110 ->  71 */
 }
 .crv2-touch.is-hidden { display: none; }
 
@@ -1837,18 +1893,32 @@
   transform: none;
   opacity: .38;
 }
+/* Read at 1:1 on a dark arena, the idle stick was the brightest object in the
+   whole phone frame — its nub highlight is a specular white-blue that measured
+   L=217 before compositing, with a 22px glow under it. The ring and the nub are
+   both scaled .62 at constant hue and the glow is pulled in and softened: a
+   parked stick is a hint, not a light source.
+
+   The `.38` idle opacity above is deliberately UNCHANGED. It is the whole
+   reason the resting mark exists — a floating stick that is invisible until
+   touched asks the player to guess that the left half of the screen does
+   anything — and dimming the colour AND the alpha compounds into a control
+   nobody can find. The colour carries this fix on its own: the nub's peak goes
+   L=89 -> 52 on a night arena and 181 -> 156 on a bright deck, which is enough
+   to stop it being the brightest object in the frame without taking a single
+   step off the affordance. `.is-on` (thumb down) is still full opacity. */
 .stick__ring {
   position: absolute; inset: 0;
-  border: 2px solid rgba(140, 200, 255, .4);
+  border: 2px solid rgba(101, 144, 184, .42);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(20, 50, 90, .3), transparent 68%);
+  background: radial-gradient(circle, rgba(12, 31, 56, .3), transparent 68%);
 }
 .stick__nub {
   position: absolute; left: 50%; top: 50%;
   width: 54px; height: 54px; margin: -27px 0 0 -27px;
   border-radius: 50%;
-  background: radial-gradient(circle at 38% 32%, rgba(180, 225, 255, .95), rgba(45, 110, 180, .75));
-  box-shadow: 0 0 22px rgba(89, 183, 255, .55);
+  background: radial-gradient(circle at 38% 32%, rgba(112, 140, 158, .95), rgba(28, 68, 112, .75));
+  box-shadow: 0 0 18px rgba(53, 110, 153, .4);
   will-change: transform;
 }
 
@@ -1868,17 +1938,23 @@
   pointer-events: auto;
   touch-action: none;
   display: grid; place-content: center;
-  /* Solid enough to read over a near-white arena floor. A translucent chip on
-     a bright deck is a smudge, and the deck is getting brighter. */
-  background: radial-gradient(circle at 40% 34%, rgba(34, 70, 112, .94), rgba(5, 10, 18, .92));
-  box-shadow: inset 0 0 0 1.5px rgba(150, 208, 255, .5), 0 3px 16px rgba(0, 0, 0, .6);
+  /* Opaque enough to read over a near-white arena floor. A translucent chip on
+     a bright deck is a smudge, and the deck is getting brighter — so the alpha
+     went UP (.94 -> .96) in the same pass the colour came down, which is what
+     keeps the dimmed chip from picking the deck's light back up. */
+  background: radial-gradient(circle at 40% 34%, var(--tb-fill), var(--tb-fill-2));
+  box-shadow: inset 0 0 0 1.5px var(--tb-rim), 0 3px 16px rgba(0, 0, 0, .6);
   transition: transform .09s var(--ease), background .09s var(--ease), box-shadow .09s var(--ease);
 }
 /* 12/9, not 11/7. These are read at arm's length on a phone held in two hands,
    over a moving arena; 7px kana on a 62px chip was decoration, not a label. */
-.tb__l { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-align: center; text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
+.tb__l { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-align: center; color: var(--tb-label); text-shadow: 0 1px 3px rgba(0, 0, 0, .9); }
 .tb__k { font-size: 9px; letter-spacing: .02em; color: var(--ink-dim); text-align: center; margin-top: 1px; }
-.tb.is-down { transform: scale(.92); background: radial-gradient(circle at 40% 34%, rgba(150, 216, 255, .96), rgba(24, 74, 130, .94)); box-shadow: inset 0 0 0 1.5px #d6efff, 0 0 26px rgba(89, 183, 255, .8); }
+/* The pressed state is a 90ms transient and it is the only confirmation a
+   thumb ever gets, so it is dimmed by .78-.8 rather than by .45 — it still has
+   to flash. It is also the one part of the cluster that is lit under a thumb
+   for most of a fight, which is why it is dimmed at all. */
+.tb.is-down { transform: scale(.92); background: radial-gradient(circle at 40% 34%, rgba(120, 173, 204, .96), rgba(19, 59, 104, .94)); box-shadow: inset 0 0 0 1.5px #a7bac7, 0 0 22px rgba(71, 146, 204, .6); }
 .tb.is-down .tb__l, .tb.is-down .tb__k { color: #04121f; text-shadow: none; }
 
 /* FIRE anchors the corner; the rest sit on a ring around it, each pair kept
@@ -1886,8 +1962,8 @@
 .tb--fire {
   right: 0; bottom: 0;
   width: var(--tb-fire); height: var(--tb-fire);
-  background: radial-gradient(circle at 40% 34%, rgba(52, 104, 158, .95), rgba(6, 14, 26, .94));
-  box-shadow: inset 0 0 0 2px rgba(170, 220, 255, .62), 0 4px 20px rgba(0, 0, 0, .62);
+  background: radial-gradient(circle at 40% 34%, var(--tb-fill-fire), var(--tb-fill-fire2));
+  box-shadow: inset 0 0 0 2px var(--tb-rim-fire), 0 4px 20px rgba(0, 0, 0, .62);
 }
 .tb--fire .tb__l { font-size: 15px; letter-spacing: .1em; }
 .tb--fire .tb__k { font-size: 10px; }
@@ -1904,10 +1980,10 @@
 
 /* Slot colour-coding, so the cluster is read by shape and hue rather than by
    stopping to read five words mid-fight. */
-.tb--bomb { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--acc-2) 62%, transparent), 0 3px 16px rgba(0, 0, 0, .6); }
-.tb--bomb .tb__l { color: #ffb877; }
-.tb--pod { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--acc-3) 62%, transparent), 0 3px 16px rgba(0, 0, 0, .6); }
-.tb--pod .tb__l { color: #d6a6ff; }
+.tb--bomb { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tb-acc-2) 74%, transparent), 0 3px 16px rgba(0, 0, 0, .6); }
+.tb--bomb .tb__l { color: var(--tb-label-2); }
+.tb--pod { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--tb-acc-3) 74%, transparent), 0 3px 16px rgba(0, 0, 0, .6); }
+.tb--pod .tb__l { color: var(--tb-label-3); }
 
 /* Every button has carried a `.tb__ring` in its markup since the layer was
    written and nothing has ever fed one: `setCharge()` has no caller in this
@@ -1916,23 +1992,38 @@
    on the three buttons that have a state — and BOMB/POD stop being drawn twice
    in two different visual languages, once as a thumb button with no state and
    once as a ring gauge in the opposite corner of the screen. The ring takes
-   each slot's own colour, so the cluster is still read by hue. */
-.tb { --c: 0; --rc: var(--warn); }
-.tb--bomb { --rc: var(--acc-2); }
-.tb--pod  { --rc: var(--acc-3); }
+   each slot's own colour, so the cluster is still read by hue.
+
+   The ring accents are the touch layer's own dimmed copies of --warn /
+   --acc-2 / --acc-3, not the globals: BOMB and POD are ready for most of a
+   round, so a full 360deg conic gauge in the undimmed accent is a permanent
+   max-chroma annulus sitting under the thumb. `--rc` also feeds the `.is-ready`
+   rim below, so one token fixes both. */
+.tb { --c: 0; --rc: var(--tb-warn); }
+.tb--bomb { --rc: var(--tb-acc-2); }
+.tb--pod  { --rc: var(--tb-acc-3); }
 .tb__ring {
   position: absolute; inset: -5px;
   border-radius: 50%;
   background: conic-gradient(var(--rc) calc(var(--c, 0) * 360deg), transparent 0);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
-  opacity: .95;
+  opacity: .88;
   pointer-events: none;
 }
 /* Only the charge blinks. BOMB and POD are ready most of a round, and two
    permanently-strobing rings under the thumb is a fault light, not feedback. */
 .tb--fire.is-ready .tb__ring { animation: readyBlink .4s steps(2) infinite; }
 .tb--bomb.is-ready, .tb--pod.is-ready { box-shadow: inset 0 0 0 1.5px var(--rc), 0 3px 16px rgba(0, 0, 0, .6); }
+/* A gauge that has been full for twenty seconds is not telling anyone anything.
+   BOMB and POD are ready for most of a round, so at rest their ring was a
+   permanent 360deg annulus of accent under the thumb — the single loudest
+   object in the cluster on the measured frame, and the reason POD read 4.07x
+   its area in chroma. Armed is already said by the `.is-ready` rim above; the
+   ring goes quiet when it is full and comes back to full strength the moment it
+   starts refilling, which is the only time anyone looks at it. FIRE is
+   excluded: its ready state is the charge shot, and that blink is the tell. */
+.tb--bomb.is-ready .tb__ring, .tb--pod.is-ready .tb__ring { opacity: .3; }
 .tb--jump .tb__ring, .tb--dash .tb__ring { display: none; }
 
 .crv2-touch.lay--lefty .tc__zone--move { left: auto; right: 0; }
@@ -1956,7 +2047,14 @@
   box-shadow: inset 0 0 0 1px var(--line);
   clip-path: var(--clip-s);
 }
-.tc__pause i { width: 4px; height: 15px; background: var(--ink); opacity: 1; }
+/* `opacity: 1` here is deliberate and must stay: `<i>` is reset globally by
+   `.crv2-ui :where(i)` for the kana, and a blanket opacity in THAT reset once
+   shipped the crosshair, win pips, cooldown dial and hit markers 15% dim for
+   five rounds. This is the local re-assert, not a new dimmer.
+   The bars themselves come off --ink (L=241, the brightest thing in the touch
+   layer per unit area — the pause chip measured 5.67x its area share of the
+   frame's brightest 1%) onto the same dimmed label tone as the buttons. */
+.tc__pause i { width: 4px; height: 15px; background: var(--tb-label); opacity: 1; }
 
 /* -------------------------------------------------------------------------
    What the pad displaces
