@@ -21,9 +21,15 @@ mid-sentence — the orbital frame-fitness survey and the foundry crops read at 
 orbital brightest-1% discrepancy round 13 recorded rather than settled, look at `#24` in orbital where
 round 13 named it the specific case, and score the first end-to-end playthrough this project has had.
 
-**STATUS: ROUND 14 OPEN. The VERDICT section at the bottom of this file was written for round 14 from
+**Round 15 opens at `36db0e8`.** Its job: correct every figure in this document that was scored
+against the pre-`52625c7` meter I filed a defect against and that has come back *better* than filed;
+re-measure and re-score blind point 2 after the foundry amber change; rule on the silhouette trade
+`36db0e8` states rather than hides; rule on which side gives in the chroma-versus-value-ladder
+tension; and end the four-round UNSCORED on blind point 1's phone half.
+
+**STATUS: ROUND 15 OPEN. The VERDICT section at the bottom of this file was written for round 15 from
 evidence already in this repository BEFORE the round's harness was started, committed in that state,
-and then revised as the captures landed — the third round running that this has held. It has never
+and then revised as the captures landed — the fourth round running that this has held. It has never
 been allowed to read PENDING and does not now. That section, not this line, is what decides.**
 
 **VERDICT: see the VERDICT section at the bottom of this file, which is the only place a verdict is
@@ -1693,6 +1699,13 @@ Contour, re-run by me on both builds, grid:
   ROBOT 2 before      6.2%     23.2%    59.9%    98.6   40.3        58.3
   ROBOT 2 after       7.3%     21.6%    65.2%   104.0   40.4        63.6
 ```
+
+> **ROUND 15: every figure in this table was taken on the settle-defect meter and is superseded.**
+> Not "noisy" — *pessimistic*. At head on the fixed meter grid reads **R1 invisible 4.6%, clean
+> 81.5%, body 144.5 against 77.3, separation 67.2** and **R2 5.3% / 84.9% / 148.0 against 80.3 /
+> 67.7**. The A/B *direction* this section argues for is unaffected — it is a comparison of two runs
+> of the same broken meter — but no absolute number here may be quoted forward, and the `39.6` in
+> particular was load-bearing in the verdict and is corrected there.
 
 The player's **weak fraction nearly halves, 14.5% → 8.1%**, which is a larger move than anything in
 the commit message and nobody quoted it. Separation is up 6 points on the player and 5 on the
@@ -3695,7 +3708,14 @@ measured on the machine with the fewest pixels, and the same fix closes both.**
 The reasoning, and the measurement that settles it. "Legible" and "large" are not the same claim,
 and we have been scoring the wrong one. Measured, the opponent's **edge** read is not what fails —
 its contour separation is **63.6 in grid, better than the player's 39.6**, because it stands against
-a dark background. What fails is the **internal** read: 11 masses at 42x79px in grid, 10 at 37x67px
+a dark background.
+
+> **CORRECTED BY THE CRITIC, ROUND 15. Both numbers in that clause came from the settle-defect meter
+> I filed against in round 14 and `52625c7` fixed. On the corrected meter grid's player reads a
+> separation of 67.2 (R1) and 67.7 (R2), not 39.6 — so the clause's ordering is inverted and its
+> pivot never existed. The conclusion it was supporting survives and is stronger: with both machines
+> above 67 in grid and above 172 in orbital, point 3's failure was never an edge failure at all.
+> See the round 15 continuation.** What fails is the **internal** read: 11 masses at 42x79px in grid, 10 at 37x67px
 in orbital, largest mass 16-21% of the body. You can find the opponent instantly. You cannot tell
 what it is doing, and that is the half of point 3 that matters.
 
@@ -4322,3 +4342,246 @@ The build did not regress and nothing landed against it. **Round 13's good news 
 that turns out to be the opening 7% of a match, and the one test that walks the whole thing had to be
 written before anybody noticed.** The art gap stopped being about what is on screen two rounds ago.
 It is now entirely about what has never been pointed at, and this round found a whole axis of it.
+
+---
+
+### Round 15, continued (opens at `36db0e8`) — the ledger was wrong in our favour's *disfavour*, and the chroma tension is not the tension it was named as
+
+*Written from evidence already in this repository, before a single new capture was taken, and
+committed in that state — the fourth round running. Revised below as this round's captures landed.
+**It does not say PENDING.***
+
+**NO. Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
+picks CRV2.** Sixth round running. But the sentence under it has changed shape, and this is the first
+round in which it changes in the build's favour:
+
+> **The defect I filed against the settle loop is fixed, and when the meter came back it said the
+> build was better than the numbers I had been scoring it on. Three of the six arena/machine cells
+> are now good by any standard this document has ever used. One is not, it is the same one, and it
+> is no longer possible to call it noise.**
+
+#### The correction I owe the ledger, and it runs the wrong way from the usual one
+
+Round 14 filed a defect against `tools/mass.mjs` and `tools/contour.mjs`: the settle loop drove the
+camera 240 times at a real `dt` and the machines **once at `dt = 0`**, and every pose term in the
+model is a damper. I traced it end to end and filed it rather than fixing it, because I do not own
+`tools/`. `52625c7` fixed it — both meters now drive the machines inside the settle loop at the
+camera's `dt` — and the fix reproduces to the pixel: foundry's stencil box is 61x200 at 727,599 on
+three consecutive runs, and invisible reads 19.8 / 20.1 / 19.8 where the pre-fix meter had a
+run-to-run spread the size of every delta this document ever credited.
+
+The re-baseline, both machines, all three arenas, twice:
+
+```
+                    invisible   clean    body / background   separation
+    grid    R1         4.6%     81.5%      144.5 / 77.3          67.2
+    grid    R2         5.3%     84.9%      148.0 / 80.3          67.7
+    foundry R1        19.7%     47.0%      118.4 / 53.4          65.0
+    foundry R2        15.5%     52.6%      129.6 / 44.4          85.2
+    orbital R1         8.8%     81.5%      208.6 / 36.6         172.0
+    orbital R2         7.7%     88.7%      209.2 / 35.8         173.4
+```
+
+**Every grid figure this document has been scoring against was pessimistic, not merely noisy.** The
+filed numbers — invisible 3.5%, clean 77%, body 120.2 against a background of 80.6, separation 39.6 —
+put grid's player at a separation of 39.6 when the corrected meter reads **67.2**. That is not a
+rounding error. It is the difference between a machine that half-disappears against its deck and one
+that does not.
+
+**What rested on it, and what that does to the score.** The verdict's ruling on blind point 3 —
+*"the opponent's edge read is not what fails; its contour separation is 63.6 in grid, better than the
+player's 39.6"* — used that 39.6 as its pivot. **The clause is now false and inverted**: the player is
+at 67.2 and, on a corrected meter, is no longer the weaker of the two. But the *conclusion* the clause
+was supporting survives, and survives more strongly than when it was argued: **both** machines' edges
+are clean in grid and orbital, so point 3's failure was never an edge failure, and the corrected meter
+removes the last reading that could have been read as one. I am correcting the clause in place at line
+3697 rather than deleting it, because a review that quietly repairs its own pivots is worse than one
+that shows them breaking.
+
+*One thing the correction does not license.* The 63.6 it was compared against is itself a pre-fix
+number from the same broken meter. **I hold a corrected separation for grid's player and a stale one
+for grid's opponent as of this writing**, and the honest form of the comparison needs both. That is
+this round's first capture.
+
+#### The finding that survives the correction, and it is now the only art defect with a clean measurement under it
+
+The corrected meter does not flatten the table. It sharpens it:
+
+> **Foundry is the outlier and it is not close. 47.0% clean against 81.5-88.7% in the other two
+> arenas, and 19.7% invisible against 4.6-8.8%.** A fifth of the player's outline in foundry does not
+> exist — body and background within 12 levels of each other — where in grid it is one twentieth.
+
+Five rounds of this document argued about whether foundry's cell was noise, an unusable frame, a bad
+draw, or a meter fault. It was none of them. With the meter fixed and the frame fit, **foundry is
+three to four times worse than either other arena on the metric that most directly encodes blind
+point 1**, and it is worse on both machines. Every "one arena and generalise" ruling this review has
+issued for three rounds was pointing at exactly this, and now there is a number.
+
+#### The trade `36db0e8` made, and my ruling on it: **do not keep it in this form**
+
+The foundry amber commit is honest about its own cost, which is more than most commits in this log
+manage. It states: foundry R1 separation 65.0 → 68.6, clean 47.0% → 48.4%, **invisible 19.7% →
+22.4%.**
+
+**I rule against the trade as stated, and the reason is that the three bands are not
+interchangeable.** `clean` and `weak` both describe an edge that a viewer *sees*; they differ in how
+hard it reads. `invisible` describes an edge that is **not there** — under 12 levels of separation is
+below the threshold at which an outline exists at all. Moving 1.4 points from weak into clean and 2.7
+points from visible into invisible is not a wash and it is not a small net win. It converts a
+soft edge into a **hole**, on the arena that already has by far the most holes, on the machine that
+already has the most.
+
+And the direction is diagnostic of the mechanism the commit names but does not follow to its end:
+dimming a bright background raises separation where the machine is light and lowers it where the
+machine is dark. Foundry's machine is the darkest of the three. So dimming foundry's stage
+*globally* will always do this — buy the lit faces and sell the shadowed ones — and the arena will
+keep trading its worst band for its best one. **The fix is not to dim less. It is to stop dimming the
+part of the stage the machine's dark side stands against**, which is the deck under and behind the
+feet, not the walls. The commit dimmed warm roles by hue family; the defect is positional.
+
+*Held open pending this round's own re-measurement of the trade, because I am ruling on numbers I did
+not take.* If my run reproduces 22.4%, the ruling stands as written.
+
+#### Blind point 2, re-measured — and the honest result is that one leg of three moved
+
+The commit's own numbers on foundry's amber: **8.2% of frame → 4.2%, share of the brightest 1%
+55.1% → 19.0%, machines 13.3% → 17.2%.** If that reproduces it is the largest single move against
+blind point 2 in this document's history, and read at 1:1 it should replace a monochrome amber box
+with blued walls against a warm deck — which is a real value structure and which my filed description
+of that arena did not have.
+
+**It does not flip point 2, and I am saying so before I measure so that a good result cannot be read
+as more than it is.** Point 2 has three legs on the record and this commit touches one:
+
+```
+    leg                                          filed              status at 36db0e8
+    foundry amber owning the brightest 1%        55.1% of top 1%    ADDRESSED — re-measure
+    foundry's warm lit gate, rank 1 in 11/24     11 of 24 cells     untouched
+    orbital's cyan rail, 3.5% at mean 144.9      3.5% @ 144.9       untouched
+```
+
+**Point 2 stays FAIL this round even if the amber number lands exactly as claimed**, because two of
+its three legs have had nothing land against them, and because the machines at 17.2% of the brightest
+1% are still not the brightest thing in a foundry frame — 19.0% amber against 17.2% machines is a
+stage that has stopped winning by a factor of four and is still winning. The re-score I will accept
+on a good measurement is **FAIL, with its worst leg closed** — which is the first time point 2 has
+had anything to put in that column.
+
+#### The chroma ruling, which is the substantive thing in this verdict: **the tension is real, and it is not between the two things it was named as**
+
+The builder tried the obvious lever and reported the failure rather than burying it: raising the
+paint's saturation floors from 0.10 to 0.52-0.66 moved measured machine chroma **0.324 → 0.327**.
+Nothing. The stated reason is the constraint I named two rounds ago — chroma is `(1 - |2L - 1|) x S`,
+so at `L 0.88` the ceiling is 0.24 whatever `S` is — and the stated consequence is that getting chroma
+up requires bringing lightness down, *"which is in direct tension with the value ladder that fixed the
+mass count."*
+
+**The first half is correct and the second half is wrong, and getting it wrong is what has kept this
+problem stuck.** Ruling:
+
+1. **The value ladder is not in tension with chroma, because the ladder is a *relative* structure and
+   the chroma ceiling is an *absolute* one.** Nine roles collapsed onto four values is a statement
+   about the *gaps* between the four. Four values at `L 0.88 / 0.80 / 0.72 / 0.64` and four at
+   `L 0.62 / 0.54 / 0.46 / 0.38` have the identical band structure and the identical mass count —
+   the meter counts bands, not altitudes. Their chroma ceilings are `0.24 / 0.40 / 0.56 / 0.72`
+   and `0.76 / 0.92 / 0.92 / 0.76`. **Translating the ladder down the L axis costs the mass count
+   nothing and multiplies the available chroma by three.** The tension as named does not exist.
+
+2. **The tension that *does* exist is between chroma and blind point 1's passing half**, and nobody
+   has stated it. The machines own 36.6% / 17.3% / 86.6% of the frame's brightest 1% **because they
+   are light**. That is the one clause of point 1 this project has ever passed. Translate the ladder
+   down and they fall out of the brightest 1%, and point 1's value half fails to buy its chroma half.
+   That is the real constraint and it is much harder than the one in the commit message.
+
+3. **Which side gives: neither. The stage gives.** CRV2's robots are the brightest *and* the most
+   saturated things on screen, and the reason that is achievable at all is that its stages are dark
+   and desaturated. "Brightest" is a **relative** property. We have been trying to buy it by raising
+   the machines, which pins them at `L 0.88` where chroma is arithmetically unavailable. Lower the
+   stage instead and the machines can come down the L axis into the chroma-rich middle **while
+   keeping their share of the brightest 1%**, because the thing they are brightest *against* came
+   down further.
+
+**And this is not a theory, because `36db0e8` is the first instance of the correct move and it
+worked.** It dimmed a stage, touched no machine, and machine share of foundry's brightest 1% rose
+13.3% → 17.2%. That is the lever. It should be run on all three arenas, much harder than this, and
+**paired with** a downward translation of the machines' value ladder — which is the step that has
+never been attempted and the only one that can move chroma at all.
+
+> **Ruled: stop trying to raise `S`. Stop treating the value ladder as untouchable. Dim the stages
+> until the machines can be moved down into the middle of the L range without losing the brightest
+> 1%, and move them there. Blind point 1's chroma half is not closeable by any change confined to the
+> machines' materials table, and three rounds have now been spent proving that one lever at a time.**
+
+Filed as a ledger entry rather than only a verdict paragraph, because the last time a ruling lived
+only in the verdict nobody fixing the defect ever read it.
+
+#### `#33` upgraded, and the thing it exposes that this round can actually fix
+
+Round 14 scored `#33` PASS on the strength of `6699c2f` — the game finishes a match, in all three
+arenas, identically from the regular build and the single-file bundle, no page errors, grid 5684
+ticks / foundry 4662 / orbital 7138. That holds and I am not re-opening it.
+
+Two things came out of writing that test that are worth more than the PASS:
+
+- **`fastForward` could throw after a match ended.** Thirteen rounds of capture never hit it because
+  nothing in this tree had ever fast-forwarded a match to its result.
+- **`bundle-single.mjs` had been inlining a two-week-old build while reporting success.** Every
+  single-file verification this document has recorded was a verification of a fortnight-old tree.
+
+**The review has been judging still frames of a game nobody had confirmed could finish a match.** I
+wrote that sentence in round 14 about a test I had not run. It is now confirmed, and the part of it
+still open is the part that has been open for four rounds:
+
+> **The end-of-match screens have never been walked on a phone.** Not once, in fifteen rounds. The
+> result screen, the rematch/garage transition and whatever the destruction VFX do to a 390x844
+> viewport are a whole surface of this product that no instrument in this repository has photographed
+> in any form factor, and the one form factor where a mis-placed button is unrecoverable is the one
+> where it has never been looked at. `b6ba7ed` fixed exactly this class of defect on CONTROLS —
+> BACK 194 px below the fold with no scroll and no keyboard — which is the evidence that this class
+> of defect is *live in this build*, not hypothetical.
+
+#### The phone half of point 1, unscored for a fourth round, is this round's rank-1 capture
+
+Four rounds have asked for a card-free phone gameplay capture and four rounds have not produced one.
+Every phone number in this document is measured through a menu card or a scrim: **the five touch
+buttons take 54.7% of the portrait frame's visible chroma off 10.0% of its area, no machine appears
+in the top twelve salience tiles in either orientation, and at 1:1 the brightest object in the frame
+is the floating thumbstick** — all of which was measured with a card on screen and none of which is
+therefore a gameplay reading.
+
+**I am not carrying UNSCORED into a fifth round.** If this round's harness cannot produce a
+card-free phone gameplay frame, that is itself the finding and the phone half gets scored on what a
+card-free frame *cannot* change: the touch layer's own footprint, which is present in every frame the
+player ever sees.
+
+#### The five-point comparison as it stands entering this round's captures
+
+| # | What a CRV2 frame does | R12 | R13 | R14 | Entering R15 | Why it moved |
+|---|---|---|---|---|---|---|
+| 1 | Robots brightest and most saturated | SPLIT | SPLIT | SPLIT | **SPLIT — PASS on value (desktop), FAIL on chroma, UNSCORED on phone** | Chroma unmoved (0.324 → 0.327); the ruling above says why and re-aims it at the stage. Phone still uncaptured. |
+| 2 | Stage quieter than subjects | FAIL | FAIL | FAIL | **FAIL — one leg of three addressed** | Foundry amber 55.1% → 19.0% of the brightest 1%. Gate and orbital cyan untouched. |
+| 3 | Both machines legible at once | FAIL | CLOSED (R13) | CLOSED, tick-scoped | **CLOSED on the mass rule; its supporting clause corrected** | The 39.6/63.6 pivot was a broken-meter reading. Conclusion survives, clause does not. |
+| 4 | Very few, very large forms | FAIL | CLOSED (R13) | CLOSED, tick-scoped | **CLOSED, and now with a reproducing meter under it** | `52625c7` is the first meter in this project that repeats to the pixel. |
+| 5 | Effects enormous, hard-edged, drawn | PASS | PASS | PASS, unverified in a real match | **PASS, unverified in a real match** | Unchanged. `6699c2f` makes verifying it possible for the first time. |
+
+**The build did not regress and two things landed against it, one of which worked.** The change in
+this round's verdict is not on the build side at all: **the numbers I was scoring against were worse
+than the build, my own filed defect is what made them so, and the corrected meter's first act was to
+tell me foundry is the whole problem.**
+
+#### The ranked list, re-issued before this round's captures
+
+1. **There is still no Custom Robo V2 reference frame in this repository.** Fifth round at rank 1.
+   Every mass number here, including the round-13 six-of-six pass I have just confirmed rests on a
+   now-reproducing meter, is scored against *"four or five masses"* — written from memory in round 6,
+   never measured, on a reference nobody can point at. **One PNG. Fifteen rounds.**
+2. **Foundry.** Promoted from 2, and it is now the only art defect in this document with a clean,
+   reproducing, three-arena-comparative measurement behind it: 47% clean and 19.7% invisible against
+   81-88% and 4.6-8.8%. Not noise, not the frame, not the meter. The arena.
+3. **The phone**, and now on two counts: the card-free gameplay capture (four rounds) and the
+   end-of-match screens, which have never been walked in any form factor on a touch device.
+4. **The chroma problem, re-aimed.** Per the ruling above: it is a stage-dimming and
+   ladder-translation job, not a materials-table job, and it should not be attempted a fourth time
+   from `S`.
+5. **The time axis**, round 14's finding, still with zero entries verified on it.
+6. **`N7`**, the bare octahedra, nine rounds.
