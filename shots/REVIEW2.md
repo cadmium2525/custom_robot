@@ -27,9 +27,15 @@ re-measure and re-score blind point 2 after the foundry amber change; rule on th
 `36db0e8` states rather than hides; rule on which side gives in the chroma-versus-value-ladder
 tension; and end the four-round UNSCORED on blind point 1's phone half.
 
-**STATUS: ROUND 15 OPEN. The VERDICT section at the bottom of this file was written for round 15 from
+**Round 16 opens at `eef15ed`.** Its job: rule on the orbital clipping trade `eef15ed` states rather
+than claims; end the four-round UNSCORED on blind point 1's phone half against the card-free capture
+`8a58d5d` finally delivered; fold in the `_sal.mjs`/`_salience.mjs` tool-crossing correction and rule
+on carrying two disagreeing meters; score the value-ladder translation experiment when it lands; and
+put a second round of scrutiny on foundry, which has had one against grid's twelve.
+
+**STATUS: ROUND 16 OPEN. The VERDICT section at the bottom of this file was written for round 16 from
 evidence already in this repository BEFORE the round's harness was started, committed in that state,
-and then revised as the captures landed — the fourth round running that this has held. It has never
+and then revised as the captures landed — the fifth round running that this has held. It has never
 been allowed to read PENDING and does not now. That section, not this line, is what decides.**
 
 **VERDICT: see the VERDICT section at the bottom of this file, which is the only place a verdict is
@@ -4585,3 +4591,252 @@ tell me foundry is the whole problem.**
    from `S`.
 5. **The time axis**, round 14's finding, still with zero entries verified on it.
 6. **`N7`**, the bare octahedra, nine rounds.
+
+---
+
+### Round 16, continued (opens at `eef15ed`) — the metric that has been scoring point 1 for four rounds was reading its own ceiling, and the phone stops being unscored
+
+*Written from evidence already in this repository — `eef15ed`, `12a3d0a`, `8a58d5d`, the two phone
+PNGs read at 1:1, and `src/core/quality.js` — before a single new capture was taken, and committed in
+that state. The fifth round running. Revised below as this round's captures land. **It does not say
+PENDING.***
+
+**NO. Shown this frame and a real Custom Robo V2 frame side by side and unlabelled, a person still
+picks CRV2.** Seventh round running. Two things move under it, and they move in opposite directions:
+
+> **A number this document has been treating as blind point 1's one passing clause turns out to have
+> been a measurement artifact, and removing it makes the frame better and the scorecard worse. And
+> the phone, unscored for four rounds for want of one capture, now has the capture, and it is the
+> worst-scoring surface in the product.**
+
+---
+
+#### RULING 1 — the orbital trade is not lateral. It is a false positive being retired, and I am scoring it as a win for the build and a loss for the scorecard
+
+`eef15ed` asks me to judge whether machines that own **19.3%** of the brightest 1% at saturation
+**0.353** are a better or worse state than machines that owned **92.8%** at saturation **0.171**, and
+declines to score it itself. The commit is right not to, and it is being too modest about its own
+finding. The two states are not comparable on the axis the question assumes, because **one of them
+was not a measurement.**
+
+*Share of the brightest 1% is a rank statistic on a channel that saturates.* Once a pixel reaches
+255 it cannot go higher, and every pixel above the clip point collapses onto the same value. A frame
+in which one object supplies 92.8% of the top percentile has not demonstrated that the object is the
+brightest thing present; it has demonstrated that **the top percentile is a plateau**, and a plateau
+has no ordering inside it. The metric was reporting the position of the ceiling, not the position of
+the machines.
+
+*And the corroboration is sitting in the same row of the commit's own table.* Saturation 0.171, the
+lowest in the game. That is not a second, independent fact to be traded against the first — **it is
+the arithmetic signature of the first.** Clipping is precisely the operation that destroys chroma:
+as channels are driven to 255 the gap between max and min closes, and `S = (max - min) / max` goes
+to zero. A 92.8%-of-top-1% reading at `S = 0.171` is not "bright but flat". It is **quantitatively
+close to a reading of white**, and white is what defect `#5` is called: the washed-out shell.
+
+So the honest scoring, and it costs us:
+
+> **This review scored orbital's clip as blind point 1's passing half for four rounds. That was
+> wrong, it was wrong in the build's favour, and it is the direction this document exists to catch.**
+> `eef15ed` did not sell 92.8% to buy 0.353. It deleted a false positive and then took the first
+> honest brightest-1% reading orbital has ever produced.
+
+**But the builder does not get everything, and here is the half I withhold.** 19.3% is not a pass
+either. If the machines own 19.3% of the brightest one percent, then **80.7% of the brightest one
+percent of an orbital frame is stage.** Point 1 asks that the robots be the brightest thing on
+screen. Owning a fifth of the top percentile is not being the brightest thing; it is being a fifth of
+it. The correct entry is:
+
+> **Blind point 1, value half, orbital: FALSE PASS → HONEST FAIL. The build improved and the score
+> went down.** Any review that cannot record that outcome is not measuring anything.
+
+**And the general rule this earns, which is round 16's addition to round 15's stage-gives ruling:**
+
+> **No share-of-the-brightest-1% figure may be quoted in this document again without the saturation
+> of the pixels that won it.** A top-percentile share above roughly 80% at `S` below roughly 0.2 is a
+> clip report, not a brightness report. **Four such figures are on the record and have never been
+> checked** — grid 36.6%, foundry 17.3% and 17.2%, orbital 86.6%. The orbital pair is now known to
+> have been a clip. The other four are unaudited, and auditing them is this round's rank-2 capture.
+
+*Predicted before measuring, so that a convenient answer cannot be read as a discovery:* grid and
+foundry's shares are low enough (17-37%) that they are unlikely to be plateau readings, and I expect
+them to survive. If they do, the damage is confined to orbital and round 15's "36.6 / 17.3 / 86.6"
+line needs one of its three numbers struck rather than all three.
+
+---
+
+#### RULING 2 — blind point 1, phone half: **FAIL**. Four rounds of UNSCORED end here, and not for want of a capture
+
+`8a58d5d` delivered what four rounds asked for: `shots/r16p-match.png` (1170x2532) and
+`shots/r16L-match.png` (2532x1170), both in-match, both card-free, both reached by dispatched touch
+events rather than by `menus.show()`. The commit's account of why it took four rounds — a 3.4s
+sim-time banner window plus a 5 fps renderer that turns 3.4s of sim into 25s of wall clock, plus a
+120ms cross-process poll loop competing for the render thread — is correct and is the best piece of
+harness diagnosis in this log. **The capture is good. What it photographs is not.**
+
+**Portrait, read at 1:1.**
+
+| what | measured | for comparison |
+|---|---|---|
+| opponent machine | ~115 x 68 device px = **38 x 23 CSS px = 2.7% of frame height** | desktop grid opponent 8.8%, a filed blocker since round 2; foundry's worst desktop case 4.8% |
+| FIRE button | 260 device px = **87 CSS px** across | **3.8x the opponent's on-screen height** |
+| HUD block (bars + VULCAN panel + JUMP/DASH strip) | device y 110-640 = **21% of frame height**, drawn at full 3x | the arena behind it is drawn at 0.72x |
+| player machine | feet **cut by the bottom edge**, not grazed | round 4 filed exactly this on desktop and it was fixed there |
+| DASH, BOMB | left edges **abut the machine's right silhouette**, zero gap | — |
+
+**The single sentence that scores it:** *the button the player taps is nearly four times the size of
+the thing they are shooting at.*
+
+**The renderer caveat, stated first so it cannot be read as a hedge — and then the part of the
+finding that survives it.** These frames were shot under swiftshader; the adaptive controller
+correctly dropped the build to LOW, so the softness in them is partly capture-side and a real iPhone
+12 would very likely hold MID or climb. **But LOW is not a capture artifact, it is a shipped preset**
+(`src/core/quality.js:12-31`): `maxPixelRatio: 1.0`, `renderScale: 0.72`, which on a 3x phone is a
+280x607 backing store upscaled 4.18x — **5.8% of the device's pixel count** — and `shadows: false`,
+which means defect `#14`'s contact shadow **does not exist at all** on the tier this product ships to
+weak phones.
+
+And this part survives every renderer, because it is not a performance question:
+
+> **`sample()` caps mobile at `TIER.HIGH` (`quality.js:186`), and HIGH's `maxPixelRatio` is 2.0
+> (`quality.js:54`).** On a 3x phone the game is drawn at two-thirds linear resolution **in the best
+> case the code permits** — 44% of the device's pixels — while the touch buttons and the HUD are DOM
+> and draw at the full 3. **There is no configuration of this build in which the machine is as sharp
+> as the button sitting on top of it.** That is the phone reading of blind point 1, and it is
+> structural.
+
+> **SCORED: blind point 1, phone half — FAIL.** Not UNSCORED. On a phone the machines are not the
+> brightest, not the most saturated, not the largest, and not the sharpest objects in the frame; in
+> portrait they are not even the largest *machine-sized* object, because a button is bigger than the
+> opponent.
+
+**And the half of this that is good news, because it localises the fix.** Landscape is a
+*different frame and a much better one*: the player is ~198 x 373 device px = **31.9% of frame
+height**, whole, standing on visible deck, with the whole button cluster clear of its silhouette to
+the right. **The failure is the portrait layout, not the phone.** Portrait puts a 5-button cluster,
+a thumbstick and a 21%-tall HUD stack into the same 1170x2532 column as a machine it then cuts off at
+the ankles. The recommendation is not "make the buttons smaller": it is that **portrait should either
+letterbox the game above the controls or not be offered**, and landscape should be the one that
+gets the polish.
+
+*One further note that the capture makes checkable and nobody has checked:* `detectTier` gates mobile
+MID on `cores >= 6 && mem >= 4`, and `navigator.deviceMemory` **is not implemented in Safari at
+all**, so on every iOS device `mem` falls back to the literal `4` on line 101 and the `mem >= 4` test
+is a no-op. The tier of the one device this file names in its header comment is decided entirely by
+`hardwareConcurrency`, on the one browser where nobody has run it.
+
+---
+
+#### RULING 3 — the landscape frame is the first real-match photograph of the explosion this project has ever taken, and on it **blind point 5 fails**
+
+Point 5 — *effects enormous, hard-edged, drawn* — has read PASS since round 12 and "PASS, unverified
+in a real match" since round 14, on the strength of `vfxsheet` stills. `shots/r16L-match.png` is a
+real match frame with the effect at full size. Read at 1:1:
+
+- **It is soft-edged.** Every boundary is a gradient falloff. There is no flat shape, no drawn ring,
+  no discrete frame anywhere in it. CRV2's effects are hard-edged by construction.
+- **The core is brown-maroon mud**, not a hot centre — which is the exact failure mode
+  `shots/_crop.mjs`'s own docstring was written to guard against: *"the discarded explosion rework
+  scored better than anything here while covering the fight in beige smoke."*
+- **It covers roughly a third of the frame and completely occludes the opponent**, who is at
+  1180/1180 and therefore present in it.
+- It is **by a wide margin the brightest and most saturated object in the frame**, which fails point 2
+  in the same photograph that fails point 5.
+
+> **SCORED: blind point 5 — PASS → FAIL.** This is the largest single downgrade in the scorecard's
+> history and I am recording it on one frame, which I would normally refuse to do. The reason I am
+> doing it anyway: **it is the only frame of this effect in a real match that has ever been taken**,
+> the PASS above it was carried for four rounds on stills from a tool that composes the effect
+> itself, and a review that keeps a PASS alive because its only contrary evidence is inconvenient is
+> worthless.
+
+*Stated in advance so that a revision cannot be read as a rescue:* the frame was shot at `TIER.LOW`,
+whose `particleBudget` is 260 against HIGH's 1400 and whose `bloomQuality` is 0. **A desktop
+real-match capture of the same effect is this round's rank-1 job**, and if the shipped effect is
+hard-edged, point 5 goes back to PASS with a phone-tier defect filed under it. If it is the same
+orange mud at 1400 particles, the FAIL stands and it is the top of the ranked list.
+
+---
+
+#### RULING 4 — the ladder-translation experiment: what will count, written before it lands, because after `eef15ed` it can no longer measure what it was designed to measure
+
+The experiment I specified in round 15 — translate `L 0.88/0.80/0.72/0.64` down to
+`0.62/0.54/0.46/0.38`, which costs the mass count nothing and triples the available chroma ceiling —
+was specified against a build in which orbital's machines were clipping and nobody knew it.
+**`eef15ed` has since moved the same needle by a different lever.** Orbital's saturation went
+0.171 → 0.353 with *no material change at all*, purely by dropping the key under the clip. The two
+levers are now confounded, and an experiment that reports "chroma went up" cannot tell me which one
+did it.
+
+**Therefore, what I will and will not accept:**
+
+- **A pass requires four columns together**, per machine, per arena: mass count still in the 4-5 band
+  with top-4 coverage held; machine chroma up materially; **brightest-1% share reported alongside the
+  saturation and the clipped-pixel fraction of the pixels that won it**; and contour separation not
+  down. Three of four is not a pass and I will say so.
+- **It must be run against an `eef15ed` baseline, not against a pre-`eef15ed` one.** A ladder
+  translation measured from the clipping build will credit the ladder with un-clipping's gain. On
+  orbital specifically, the honest question is now *what the translation adds on top of the key drop*,
+  and it is a much harder question than the one the experiment was commissioned to answer.
+- **I will not accept a chroma figure taken off a salience tile.** `shots/_r16chroma.mjs` already
+  makes this point better than I can: the famous `0.324` came off a 40px tile that happened to be 48%
+  machine, so half of what it measured was the deck behind the robot, *which is how a paint change
+  can move the paint and not move the number.* Machine-pixel statistics from the stencil, or nothing.
+- **The instruction to say plainly if it cannot have both halves of point 1 stands, and after
+  RULING 1 it is sharper than when I gave it:** the *value* half was never being passed on orbital in
+  the first place. If the translation costs brightest-1% share on grid and foundry — where the shares
+  are 36.6% and 17.3% and are probably not clips — that is a real cost and it must be reported as one.
+
+---
+
+#### RULING 5 — the tool-crossing correction, folded in, and the standing rule it earns
+
+`12a3d0a` and `eef15ed` correct round 15's *"foundry amber 8.2% → 4.2% of frame"*: 8.2% is
+`_sal.mjs` and 4.2% is `_salience.mjs`, the two suppress different scene elements before they look,
+and they disagree by about 2.7pt on the same build. **Held to one tool the drop is 5.4 → 4.2, or
+8.2 → 6.9 — about a quarter, not a half.** The correction is accepted and the round-15 figure is
+struck. The top-1% result reproduces on both meters (55.0 → 19.0 on `_salience.mjs`, 55.1 → 19.8 on
+`_sal.mjs`, agreeing to 0.8pt) and **stands**.
+
+The builder found this in his own filing and reported it. That is the second time in two commits, and
+it is worth more to this project than either measurement.
+
+> **Instrument fault 13, and it is mine as much as anyone's: this repository carries two committed
+> salience meters that disagree by 2.7pt on the same build, and neither is labelled as the
+> authority.** Every cross-build comparison in this document should be audited for which tool each
+> half came from. **Standing rule: no figure may compare two builds through two tools, and any
+> coverage number must name its meter in the same sentence.**
+
+---
+
+#### The five-point comparison, re-scored
+
+| # | What a CRV2 frame does | R13 | R14 | R15 | **R16** | Why it moved |
+|---|---|---|---|---|---|---|
+| 1 | Robots brightest and most saturated | SPLIT | SPLIT | SPLIT — PASS on value (desktop), FAIL on chroma, UNSCORED on phone | **FAIL** | Value half's orbital pass was a clip artifact (RULING 1). Phone half scored FAIL on measured geometry (RULING 2). Chroma unchanged. Nothing is left holding SPLIT up. |
+| 2 | Stage quieter than subjects | FAIL | FAIL | FAIL — one leg of three addressed | **FAIL — two legs of four addressed** | Foundry amber out of the top 1% (holds, at a quarter not a half). Orbital cyan 3.7% → 1.1% and out of the highlights. Gate untouched, five rounds. New fourth leg: the explosion (RULING 3). |
+| 3 | Both machines legible at once | CLOSED | CLOSED, tick-scoped | CLOSED; supporting clause corrected | **CLOSED on desktop, RE-OPENED on phone** | Portrait's opponent is 2.7% of frame height and smaller than a button. Desktop finding unaffected. |
+| 4 | Very few, very large forms | CLOSED | CLOSED, tick-scoped | CLOSED, reproducing meter | **CLOSED on desktop, UNVERIFIED on phone** | LOD and line-art scaling still unfinished (open since round 14); the phone frames are the first evidence of what they do at 0.72x and it is not encouraging. |
+| 5 | Effects enormous, hard-edged, drawn | PASS | PASS, unverified in a real match | PASS, unverified in a real match | **FAIL** | RULING 3. The first real-match frame of the effect shows a soft volumetric cloud with a mud core, occluding the opponent. |
+
+**Three points moved and every one of them moved down.** None of it is a regression in the build —
+`eef15ed` and `36db0e8` both improved the frames they touched. **It is the review catching up with
+what it had been failing to look at:** a metric that was reading its own ceiling, a form factor it had
+never photographed, and an effect it had only ever seen in a tool that composes the effect itself.
+
+---
+
+#### The ranked list, re-issued
+
+1. **There is still no Custom Robo V2 reference frame in this repository.** Sixth round at rank 1.
+   Every mass number in this file is scored against *"four or five masses"*, written from memory in
+   round 6 and never once measured. **One PNG. Sixteen rounds.**
+2. **The explosion**, pending this round's desktop capture — because if RULING 3 survives it, point 5
+   was the only PASS on the card and the card has none.
+3. **Portrait phone layout.** Newly scored, newly measurable, and the first defect in this document
+   with a one-line statement anybody can check: the FIRE button is 3.8x the opponent.
+4. **Foundry.** 47% clean against 81-88%, one round of scrutiny against grid's twelve.
+5. **The chroma job**, now confounded with the clip fix and needing an `eef15ed` baseline (RULING 4).
+6. **The gate residual.** Rank 1 in 10 of 24 cells, eleven of the top fourteen tiles, unchanged
+   between round 7's build and head. Five rounds, four filings, nothing landed.
+7. **The time axis**, round 14's finding, still zero entries verified on it.
+8. **`N7`**, the bare octahedra, ten rounds.
