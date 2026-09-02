@@ -1,0 +1,29 @@
+
+R8SAL — shots/r15base / foundry  (1600x900)
+  brightness-weighted salience sweep, 80px windows / 40px stride:
+    1. mean   97.1  at  160,480  robot     0%
+    2. mean     97  at  720,600  robot  47.3%
+    3. mean   94.8  at   40,520  robot     0%
+    4. mean   91.6  at  360,520  robot     0%
+    5. mean   91.3  at  320,440  robot     0%
+    6. mean   90.2  at  760,720  robot     5%
+    7. mean   89.4  at  240,480  robot     0%
+    8. mean   87.7  at  360,360  robot     0%
+    9. mean   85.9  at  240,320  robot     0%
+   10. mean   85.8  at 1400,760  robot     0%
+   11. mean   85.5  at  440,560  robot     0%
+   12. mean     85  at  280,560  robot     0%
+  best rank of a >=50%-machine window: -1  (mean undefined at undefined,undefined, robot undefined%)
+
+  coverage-weighted colour families (non-machine pixels only for cyan/amber):
+                 pct of frame   mean lum   mean sat
+  cyan family            0%      152.5      0.397
+  amber family         8.2%       86.3      0.795
+  MACHINES             0.3%      118.1      0.347
+  rest of scene       99.7%       59.7      0.511
+
+  saturated pixels (sat >= 0.35), same filter on both sides:
+    machines: 0.2% of frame, 45.8% of the machines' own pixels, mean sat 0.524
+    stage:    89.8% of frame, 90.1% of the stage's own pixels, mean sat 0.535
+
+  brightest 1% of the frame (threshold 138.1, 14400px): machines own 13.3%, cyan 0%, amber 55.1%

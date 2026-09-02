@@ -109,6 +109,22 @@ const STENCIL_FN = `(on) => {
   }
 }`;
 
+/**
+ * INSTRUMENT FAULT #12 — this file had the dt = 0 machine settle that HEAD's
+ * commit 52625c7 fixed in tools/contour.mjs and tools/mass.mjs, and nowhere
+ * else. It settled the CAMERA 240 times at 1/60 and the MACHINES once,
+ * afterwards, at dt = 0; every pose blend term in RoboModel.update is a damper
+ * and damp(a, b, lambda, dt) is exactly `a` at dt = 0, so the machines were
+ * drawn at tick 420's POSITION in a load-dependent POSE.
+ *
+ * That matters for THIS tool specifically, and it is why the fix is carried
+ * across rather than shrugged at. The stage does not move, so the tiles the
+ * sweep ranks are stable — but the two figures the residual is argued on are
+ * not. `m%` per tile and "best rank of a >=50%-machine tile" are both functions
+ * of where the limbs happened to be, so "the gate outranks the machines" was
+ * being decided by how loaded the box was when the capture ran. Every rank
+ * quoted against this file before this line existed carries that error bar.
+ */
 const SETTLE_FN = `(n) => {
   const g = window.__game;
   if (!g.rig || !g.world || !g.view) return false;
@@ -116,9 +132,9 @@ const SETTLE_FN = `(n) => {
   for (let i = 0; i < n; i++) {
     const views = g.view.prepare(1);
     g.rig.update(g.world, views, g.localIndex, 1 / 60, t);
+    g.view.update(1 / 60, 1, t);
     t += 1 / 60;
   }
-  g.view.update(0, 1, t);
   g.engine.onRender = null;
   if (g.engine.quality) g.engine.quality.auto = false;
   return true;

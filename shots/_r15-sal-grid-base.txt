@@ -1,0 +1,29 @@
+
+R8SAL — shots/r15base / grid  (1600x900)
+  brightness-weighted salience sweep, 80px windows / 40px stride:
+    1. mean  133.5  at  760,800  robot  91.6%
+    2. mean  126.4  at  760,720  robot  90.7%
+    3. mean  116.7  at  760,640  robot  68.3%
+    4. mean  107.1  at  840,680  robot  43.7%
+    5. mean   99.9  at  520,400  robot     0%
+    6. mean   97.1  at 1400,800  robot     0%
+    7. mean   96.4  at  440,400  robot     0%
+    8. mean     96  at  680,680  robot    21%
+    9. mean   95.1  at  480,480  robot     0%
+   10. mean   94.8  at  600,440  robot     0%
+   11. mean   93.2  at  280,440  robot     0%
+   12. mean   93.2  at  360,520  robot     0%
+  best rank of a >=50%-machine window: 1  (mean 133.5 at 760,800, robot 91.6%)
+
+  coverage-weighted colour families (non-machine pixels only for cyan/amber):
+                 pct of frame   mean lum   mean sat
+  cyan family          0.6%      145.7      0.686
+  amber family         5.6%       87.8      0.583
+  MACHINES             1.7%      134.7      0.449
+  rest of scene       98.3%       65.7      0.362
+
+  saturated pixels (sat >= 0.35), same filter on both sides:
+    machines: 1.1% of frame, 62.8% of the machines' own pixels, mean sat 0.577
+    stage:    56.5% of frame, 57.5% of the stage's own pixels, mean sat 0.495
+
+  brightest 1% of the frame (threshold 158.6, 14400px): machines own 66.8%, cyan 2.2%, amber 8.5%
