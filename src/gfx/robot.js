@@ -1704,6 +1704,84 @@ const OUTLINE_WIDTH = 0.0068;
 const OUTLINE_WIDTH_FAR = 0.0030;
 
 /**
+ * The line's floor in PIXELS OF THE RENDER TARGET, which is the second half of
+ * "scale the line art by on-screen size" and the half that had not been done.
+ *
+ * Everything above this is stated in NDC — a fraction of frame HEIGHT — and that
+ * is right for the angular half of the problem: a machine that is 8% of the
+ * frame is equally illegible on a phone and on a desktop, so its line must be
+ * the same fraction of it on both. But a fraction of frame height is not a
+ * number of pixels, and the line is not rasterised into the frame. It is
+ * rasterised into the RENDER TARGET, and the shipped LOW preset draws that at
+ * renderScale 0.72 before the post chain upsamples it.
+ *
+ * Run the arithmetic the review asked for. At 900p, OUTLINE_WIDTH_FAR = 0.0030
+ * is 0.0015 * 900 = 1.35 px — thin, but a line. On the LOW tier's 0.72 scale the
+ * same fraction is 0.0015 * 648 = 0.97 px, and on a 3x phone in portrait, whose
+ * LOW backing store is 280x607, it is 0.91 px. **A sub-pixel line does not get
+ * thinner, it gets INTERMITTENT** — it lands on some pixel centres and misses
+ * others, and then the upsample smears the survivors into a row of grey dots.
+ * That is the "dotted mess at 40px" in the brief, and it is not a width problem
+ * the NDC number can see, because in NDC nothing changed at all.
+ *
+ * So the width is floored at a real pixel count in the target being drawn into.
+ * 1.35 px is not a round number and is not meant to be: it is exactly what
+ * OUTLINE_WIDTH_FAR already buys at 900p, so the desktop frame this project's
+ * whole ledger is measured on does not move by one pixel, and every tier that
+ * renders smaller than 900p gets the line the desktop was tuned with instead of
+ * a fraction of it. The floor is a floor — it can only ever widen a line that
+ * had gone sub-pixel, never narrow one.
+ *
+ * The pixel height it needs comes from _applyLod, which already reads the bound
+ * render target's height for the geometry LOD. One place asks the renderer how
+ * big the buffer is; a second copy of that question is how the line ends up
+ * clamped against the canvas while the geometry is cut against the target.
+ */
+const OUTLINE_MIN_PX = 1.35;
+
+/**
+ * The silhouette LOD's threshold FOR THE CONTOUR, in square pixels, separately
+ * from LOD_MIN_PX2 which governs the shell.
+ *
+ * This is the round's main finding and it is a negative one first. The obvious
+ * reading of "collapse small greebles into the parent form as on-screen size
+ * drops" is: raise LOD_MIN_PX2 until the greebles stop being drawn. Measured on
+ * grid at tier 3 with tools/mass.mjs, that is wrong, and not marginally:
+ *
+ *   minPx2   far machine's stencil box   m51    curve mean   top4%
+ *      2 (shipped)      53x79px          5.3       5.7         88
+ *     40                51x70px          5.8       6.2         87
+ *    100                25x41px          4.3       5.2         93
+ *
+ * At 40 the count goes UP while the machine loses 9 px of height. At 100 the
+ * count finally falls, and it falls because 88% of the far machine's primitives
+ * are gone and what is left is a stump a third of its former area. **Deleting a
+ * plate does not merge it into its parent — it uncovers whatever was behind it**,
+ * which is a new value break where there was none, plus a bite out of the
+ * silhouette. A geometry LOD is an anti-aliasing tool and cannot be promoted
+ * into a reading tool by turning its knob.
+ *
+ * What CAN be deleted at distance without any of that is the line art, because
+ * the line art is not the machine. The inverted hull extrudes every primitive
+ * separately, so wherever one plate stands in front of another a dark seam is
+ * drawn between them — thirty of them on this model, each a constant screen
+ * width, each therefore a growing fraction of the body as the body shrinks.
+ * Cutting the CONTOUR's index buffer at a much larger threshold than the shell's
+ * leaves the shell whole — no holes, no lost volume, the silhouette exactly as
+ * it was — while the seams between small plates simply stop being drawn. The
+ * outer contour survives, because it is drawn by the big plates that define the
+ * silhouette and those are the ones the table keeps.
+ *
+ * That is a reading LOD: at distance the machine is the same shape made of the
+ * same masses, with the interior line art it is too small to carry removed.
+ *
+ * Swept against tools/mass.mjs; the value is in the round notes. Held at or
+ * above LOD_MIN_PX2 by construction in _applyLod — a contour drawn around a
+ * plate the shell has stopped drawing is a detached black fleck.
+ */
+const OUTLINE_LOD_MIN_PX2 = 190;
+
+/**
  * The machine's ON-SCREEN SIZE gate, as a fraction of frame height, shared by
  * every size-dependent treatment on the model: the shell's rim shaping and
  * light governor (uRimSizeLo/Hi), and the contour width here.
@@ -1738,6 +1816,8 @@ uniform float uOutlineFar;
 uniform float uOutBodyH;
 uniform float uOutSizeLo;
 uniform float uOutSizeHi;
+uniform float uOutMinPx;
+uniform float uOutPixH;
 `;
 
 const OUTLINE_VERT = /* glsl */`
@@ -1757,6 +1837,11 @@ const OUTLINE_VERT = /* glsl */`
       // NDC height spans 2.0, hence the halving.
       float sizeO = uOutBodyH * projectionMatrix[1][1] / max(gl_Position.w, 1e-3) * 0.5;
       float wO = mix(uOutlineFar, uOutlineWidth, smoothstep(uOutSizeLo, uOutSizeHi, sizeO));
+      // Floor the width at a real pixel count in the buffer being rasterised
+      // into — see OUTLINE_MIN_PX. NDC height spans 2.0, so n pixels of a target
+      // uOutPixH tall is 2n/uOutPixH of it. max(), never mix(): this can only
+      // rescue a line that has gone sub-pixel, and at 900p it changes nothing.
+      wO = max(wO, uOutMinPx * 2.0 / max(uOutPixH, 1.0));
       // x is squeezed by the aspect ratio so the contour is the same weight on
       // the sides as on the top; P00/P11 is exactly height/width.
       float ax = projectionMatrix[0][0] / projectionMatrix[1][1];
@@ -1817,6 +1902,12 @@ function outlineMaterial(hex) {
     uOutBodyH: { value: BODY_H },
     uOutSizeLo: { value: SIZE_GATE_LO },
     uOutSizeHi: { value: SIZE_GATE_HI },
+    uOutMinPx: { value: OUTLINE_MIN_PX },
+    // Written every frame by _applyLod off the BOUND RENDER TARGET, not the
+    // canvas. 900 is the desktop default so a material that is somehow drawn
+    // before _applyLod has ever run behaves exactly as it did before this
+    // uniform existed, rather than flashing a fat line for one frame.
+    uOutPixH: { value: 900 },
   };
   m.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, u);
@@ -2140,8 +2231,10 @@ export class RoboModel {
     // in one browser launch and sweeping it at one rebuild per value.
     this.lod = [];
     this._lodBudget = -1;
+    this._outBudget = -1;
     this.lodPx = Infinity;
     this._lodU = { value: LOD_MIN_PX2 };
+    this._outLodU = { value: OUTLINE_LOD_MIN_PX2 };
 
     this._build();
   }
@@ -2159,6 +2252,11 @@ export class RoboModel {
   get lodMinPx2() { return this._lodU.value; }
 
   set lodMinPx2(v) { this._lodU.value = v; }
+
+  /** The same, for the contour's own cut. See OUTLINE_LOD_MIN_PX2. */
+  get outLodMinPx2() { return this._outLodU.value; }
+
+  set outLodMinPx2(v) { this._outLodU.value = v; }
 
   get _low() {
     const s = this.settings;
@@ -2348,6 +2446,7 @@ export class RoboModel {
     // three size-dependent treatments inside the one meter that can sweep all
     // of them together.
     this.matShell.userData.u.uLodMinPx2 = this._lodU;
+    this.matShell.userData.u.uOutLodMinPx2 = this._outLodU;
     // And so does the frame's line-art fade, for the third time and the same
     // reason. The mass meter's `--u` reaches exactly one bag — the shell's — so
     // a knob that is not on it is a knob that gets argued about instead of
@@ -2366,8 +2465,13 @@ export class RoboModel {
       // cut at the same place. Left out, the outline would keep drawing hulls
       // around plates the shell had already stopped drawing — a machine trailing
       // detached black flecks, which is worse than the greebles it removed.
+      //
+      // It is cut at OUTLINE_LOD_MIN_PX2 and the shell at LOD_MIN_PX2, two
+      // different numbers off the same table, which is the whole of this
+      // round's LOD: the shell keeps its plates and the contour stops drawing
+      // seams between the small ones.
       const shellLod = this.lod.find((e) => e.geo === shellMesh.geometry);
-      if (shellLod) this.lod.push({ geo: om.geometry, table: shellLod.table });
+      if (shellLod) this.lod.push({ geo: om.geometry, table: shellLod.table, outline: true });
     }
 
     // One hook per mesh rather than one for the model: three.js calls
@@ -2441,28 +2545,46 @@ export class RoboModel {
   _applyLod(renderer, camera) {
     if (!this.lod || !this.lod.length) return;
     let budget = Infinity;
+    let outBudget = Infinity;
     // The garage is where a player inspects the parts they just bought, and it
     // is one machine on the screen. Full detail, always.
-    if (!this.preview && camera && camera.isPerspectiveCamera && renderer && this.lodMinPx2 > 0) {
+    if (!this.preview && camera && camera.isPerspectiveCamera && renderer) {
       const rt = renderer.getRenderTarget();
       const h = rt ? rt.height : renderer.getDrawingBufferSize(_lodSize).y;
+      // Publish the target's height to the contour's shader BEFORE the early
+      // out below, and outside the lodMinPx2 > 0 test. The line's pixel floor
+      // is not part of the geometry cut and must not be switched off with it:
+      // `lodMinPx2 = 0` is the control every LOD claim is measured against, and
+      // a control that also silently changes the line width measures two things.
+      if (this.matOutline) this.matOutline.userData.u.uOutPixH.value = h;
       _lodPos.setFromMatrixPosition(this.group.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
       const depth = Math.max(1e-3, -_lodPos.z);
       const px = BODY_H * camera.projectionMatrix.elements[5] / depth * 0.5 * h;
       this.lodPx = px;
       const perMetre = px / BODY_H;
-      budget = perMetre * perMetre / this.lodMinPx2;
+      const p2 = perMetre * perMetre;
+      if (this.lodMinPx2 > 0) budget = p2 / this.lodMinPx2;
+      // The contour is cut on its own, much larger threshold — see
+      // OUTLINE_LOD_MIN_PX2. Never below the shell's: a dark hull drawn around a
+      // plate the shell has already stopped drawing is a detached black fleck
+      // following the machine around.
+      const om = Math.max(this.outLodMinPx2, this.lodMinPx2);
+      if (om > 0) outBudget = p2 / om;
     } else {
       this.lodPx = Infinity;
     }
-    if (budget === this._lodBudget) return;
+    if (budget === this._lodBudget && outBudget === this._outBudget) return;
     this._lodBudget = budget;
-    for (const e of this.lod) e.geo.setDrawRange(0, lodDrawCount(e.table, budget));
+    this._outBudget = outBudget;
+    for (const e of this.lod) {
+      e.geo.setDrawRange(0, lodDrawCount(e.table, e.outline ? outBudget : budget));
+    }
   }
 
   _teardown() {
     this.lod = [];
     this._lodBudget = -1;
+    this._outBudget = -1;
     for (const m of this.meshes || []) {
       m.geometry.dispose();
       this.group.remove(m);
