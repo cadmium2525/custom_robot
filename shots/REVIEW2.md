@@ -4925,8 +4925,8 @@ description of the game; every inference I draw from it about *framing* is `JUDG
 
 | Clause | The claim about rendering | Derived from | Threshold | Meter in this repository | Basis |
 |---|---|---|---|---|---|
-| **A. Few, large masses** | Each machine's silhouette resolves into **4-6** distinct large forms, and the largest four cover most of it. | P1, P3 | mass count in `[4,6]`; **top-4 coverage >= 85%** of silhouette area | `shots/_massdrive.mjs` (+ `shots/_lodprobe.mjs` to confirm the LOD fired) | budget `FACT`; the band and 85% are `JUDGEMENT` |
-| **B. The silhouette carries everything** | With no rim light, no specular and no contact shadow to separate the machine from the stage, **the outline is the only cue**, so it may not go missing anywhere. | P2, P6 | **>= 90%** of silhouette boundary above the legibility floor | `tools/contour.mjs` / `shots/_contourdrive.mjs`; `shots/_invis.mjs` for *where* | mechanism `FACT`; the 90% floor is `JUDGEMENT` and is **stricter than anything this document has ever scored against** |
+| **A. Few, large masses** | Each machine's silhouette resolves into **4-6** distinct large forms, and the largest four cover most of it. | P1, P3 | mass count in `[4,6]`; **top-4 coverage >= 85%** of silhouette area | `tools/mass.mjs` (+ `shots/_lodprobe.mjs` to confirm the LOD fired) — *corrected in RULING 10; `_massdrive.mjs` aborts at head* | budget `FACT`; the band and 85% are `JUDGEMENT` |
+| **B. The silhouette carries everything** | With no rim light, no specular and no contact shadow to separate the machine from the stage, **the outline is the only cue**, so it may not go missing anywhere. | P2, P6 | **>= 90%** of silhouette boundary above the legibility floor | `tools/contour.mjs`; `shots/_invis.mjs` for *where* — *corrected in RULING 10; `_contourdrive.mjs` aborts at head* | mechanism `FACT`; the 90% floor is `JUDGEMENT` and is **stricter than anything this document has ever scored against** |
 | **C. Value belongs to form, not to view** | Within one mass the value is near-constant; between masses it **steps**. No gradient inside a face, no view-dependent highlight travelling across one. | P2 | per-mass luminance **sd < half the between-mass step** | **NO METER EXISTS.** One addition to `shots/_massdrive.mjs`: report per-region mean and sd, which it already segments for | mechanism `FACT`; the ratio is `JUDGEMENT` |
 | **D. The machines are the colour in the frame** | The machines are **more saturated than the stage**, not less. | P4 | **machine median chroma > stage median chroma**, machine pixels from the stencil | `shots/_r16chroma.mjs` | `JUDGEMENT`, but the direction is forced: a 32-level channel cannot carry a low-chroma subject against a high-chroma stage and keep either |
 | **E. The machines own the top of the value range** | The brightest pixels in the frame belong to the machines. | P6 (nothing else glows) | **machines >= 50% of the brightest 1%**, quoted **with** the saturation and clipped fraction of the pixels that won it (round 16's standing rule) | `shots/_salience.mjs` (**the authority meter**), `shots/_owner.mjs` for attribution | `JUDGEMENT`; the 50% is mine |
@@ -4957,13 +4957,13 @@ backwards, and I will score that as a regression.
 
 | Clause | Threshold | Where head stands | Meter that says so | Verdict |
 |---|---|---|---|---|
-| A masses | 4-6, top-4 >= 85% | 4-6 on six of six cells, desktop | `_massdrive.mjs` (reproducing since `52625c7`) | **MET on desktop.** Top-4 coverage has never been quoted against 85% — **unscored clause** |
-| B contour | >= 90% clean | **81-88%** at best; 73.8% under the reverted ladder | `_contourdrive.mjs` | **NOT MET.** Nearest approach 88%, and this is the first round the figure has had a threshold to miss |
+| A masses | 4-6, top-4 >= 85% | 4-6 on six of six cells, desktop | `tools/mass.mjs` (reproducing since `52625c7`) | **MET on desktop.** Top-4 coverage has never been quoted against 85% — **unscored clause** |
+| B contour | >= 90% clean | **81-88%** at best; 73.8% under the reverted ladder | `tools/contour.mjs` | **NOT MET.** Nearest approach 88%, and this is the first round the figure has had a threshold to miss |
 | C value/form | sd < half the step | **never measured** | none | **UNMEASURABLE TODAY** |
 | D chroma | machine > stage | machines **0.449**, stage **0.748** | `_r16chroma.mjs` | **NOT MET, and inverted by 1.7x.** The stage is 66% more saturated than the machines |
 | E highlights | >= 50% of top 1% | grid **46.1% at saturation 0.346** on the fixed authority meter (tier 3, tick 420); foundry **17.2%**, orbital **19.3%**, both on the old meter | `_salience.mjs` (authority) | **NEAR MISS on grid, NOT MET on the other two.** See the correction below — the grid figure is better than the 36.6% this document has been quoting, and it is **not** a clip |
 | F effects | falloff < 10% of radius; < 25% occlusion | eyeballed on one frame: gradient everywhere, opponent fully occluded | none | **NOT MET on an eyeball, UNMEASURABLE TODAY** |
-| G opponent scale | >= 36 rendered px | desktop **~79 px** (8.8% of 900); phone portrait **115 device px x 0.72 renderScale ≈ 27 rendered px** with `maxPixelRatio` 2.0 on a 3x screen | `_contourdrive.mjs` box / `quality.js:12-31,54,186` | **MET on desktop. NOT MET on phone**, by arithmetic rather than by eye |
+| G opponent scale | >= 36 rendered px | desktop **~79 px** (8.8% of 900); phone portrait **115 device px x 0.72 renderScale ≈ 27 rendered px** with `maxPixelRatio` 2.0 on a 3x screen | `tools/contour.mjs` box / `quality.js:12-31,54,186` | **MET on desktop. NOT MET on phone**, by arithmetic rather than by eye |
 | H stage quiet | stage < 50% of top 1%; no element > 25% of cells | grid stage owns **53.9%** of the top 1%; the gate ranks 1 in **17 of 24 cells = 71%** and outranks the machines in **18 of 24 = 75%** | `_salience.mjs` (authority, fair rule) | **NOT MET on both sub-clauses, and the cell figure is 70% worse than filed** (RULING 9) |
 
 **One clause of eight is met outright, one is met on desktop only, two cannot be measured by any
@@ -5226,3 +5226,68 @@ this card — stated before any of them lands, so a good result cannot be re-rea
 9. **Spawn-and-camera occlusion** — a machine four-fifths behind a block at a plausible seed
    (the surviving fragment of the withdrawn foundry row).
 10. **Foundry's match length**, 4662 ticks at `6699c2f` against 9637 at `f83c2b2`. Unlooked-at.
+
+---
+
+#### RULING 10 — the first measurement of round 17 is an instrument audit, and it fails on my own hour-old spec. **Two of the eight clauses in `SPEC-CRV2` name meters that abort at head.**
+
+The spec above cites `shots/_massdrive.mjs` as clause **A**'s meter and `shots/_contourdrive.mjs` as
+clause **B**'s. I wrote both lines from the files' own docstrings **without running either**, which is
+the exact failure this document's fourth standing rule exists to prevent, and I have enforced it on
+five other people. Run at head:
+
+```
+$ node shots/_massdrive.mjs --arena grid
+_massdrive: expected exactly one `g.view.update(0, 1, t);` in tools/mass.mjs, found 0.
+The stock meter's settle has changed shape. Re-read it before trusting any
+reading from this file — do NOT assume the fix still applies.
+
+$ node shots/_contourdrive.mjs --arena grid
+_drivefix: expected exactly one `g.view.update(0, 1, t);` in tools/contour.mjs, found 0.
+```
+
+**Both are dead, and the reason is good news.** The `_drive` files are *patchers*: they read the
+stock meter, string-replace the broken settle `g.view.update(0, 1, t)` with
+`g.view.update(1 / 60, 1, t)`, and run the patched copy. **`52625c7` fixed the settle in the tracked
+tools themselves** — `tools/mass.mjs:146` and `tools/contour.mjs:155` now carry `1 / 60` at head — so
+the anchor string no longer exists and the patchers correctly refuse to run.
+
+> **INSTRUMENT FAULT 16, and it is mine.** Two of eight spec clauses were tied to meters that cannot
+> execute, in a document that opens by demanding everyone else audit their instruments first. The
+> correction: **clause A's meter is `tools/mass.mjs` and clause B's is `tools/contour.mjs`**, the
+> tracked tools, post-`52625c7`. The `_drive` pair are obsolete — they were scaffolding around a
+> defect that has since been fixed at the source, and their remaining value is as documentation of
+> why the settle matters.
+
+**And the design deserves the opposite of a complaint.** Both files check that their anchor appears
+**exactly once** and **abort with a message naming the problem** rather than patching nothing and
+reporting a number. Compare `bundle-single.mjs`, which inlined a fortnight-old build **while
+reporting success** and invalidated every single-file verification in this document. Same class of
+drift, opposite outcome, because one instrument asserted its own precondition and the other did not.
+
+> **Standing rule, added: an instrument that transforms another file must assert its anchor and exit
+> non-zero when the anchor is missing.** Two files in `shots/` already do this. It is the cheapest
+> guard in this repository and it is the difference between fault 16, which cost an hour, and the
+> `bundle-single.mjs` fault, which cost fourteen rounds of single-file verification.
+
+#### The instruments that carry this card are untracked in a gitignored directory, for the fourth time
+
+`shots/` is gitignored (`.gitignore:5`). Checked at head:
+
+```
+    tools/mass.mjs        TRACKED    clause A   (correct since 52625c7)
+    tools/contour.mjs     TRACKED    clause B   (correct since 52625c7)
+    shots/_salience.mjs   TRACKED    clauses E, H  — the authority meter
+    shots/_owner.mjs      TRACKED    clause H attribution
+    shots/_spread.mjs     TRACKED
+    shots/_r16chroma.mjs  UNTRACKED  <- clause D. The ONLY machine-pixel chroma meter in the project
+    shots/_invis.mjs      UNTRACKED  <- the only meter that says WHERE the contour fails
+    shots/_drivefix.mjs   UNTRACKED
+```
+
+**Clause D — the inverted-chroma finding that is now half of blind point 1 and, after RULING 9, half
+of blind point 2 as well — is measured by exactly one instrument, and that instrument is one
+`git clean` from gone.** The ledger records this loss happening three times already. I am not filing
+it a fourth time and leaving it: `_r16chroma.mjs` and `_invis.mjs` are committed with this entry,
+`git add -f`, content untouched. They are not mine and I have changed nothing in them; preserving a
+meter is not editing it.
