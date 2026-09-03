@@ -7112,3 +7112,69 @@ Rank 2 is now **clause F sub-clause 2 at 433 ms**, which the light cannot reach 
 `9dcf651` made worse by 7.3 points; rank 3 is **clause C by geometry** at 1.705 against 1.00, with
 every shading lever now measured and closed in both directions; rank 4 is **re-reading B, D and E at
 head**, which is the same nine stale cells and is now staler by one art change than when I filed it.
+
+### Round 20 result — **the lobes were thrown THROUGH the opponent.** 333 ms and 433 ms both clear clause F, and the blast is not smaller
+
+Commit `0562782`, one line: the billow launch speed `sp`, `R * (1.1 + rand * 1.6)` ->
+`R * (0.72 + rand * 1.05)`. Count unchanged (seven), radii unchanged, erosion exponent unchanged, heat
+ramp unchanged, lifetimes unchanged.
+
+It follows directly from section 3 above. The opponent is 3.7-4.0 m from the blast; at 333 ms a lobe's
+centre reaches `rad + sp * (1 - e^-2.6t) / 2.6` = 3.14 m, with its own body on top of that, and the drag
+then parks it there. The lobes were not covering the opponent because the fireball is big — the cluster
+core, which stays where it is, was measured at **0.0 points** of the 333 ms figure by `--kill firecore`.
+They were covering it because they were being flung past it.
+
+**Both columns as shipped, on one commit differing by this line alone** — before is the critic's
+`shots/r22lite` (bundle `9f1f30b943dc`, i.e. with `c2db8b1`'s light fix already in), after is
+`shots/r20throwship` (`0904a9f1ee52`). Pinned blast, `shots/_r17-blast.mjs` + `shots/_r17-edge.mjs` only,
+seven ages:
+
+```
+    far-machine alteration, clause F sub-clause 2, threshold < 25%
+    age            1     7    14    20    26    32    48
+    ms            17   117   233   333   433   533   800
+    before       1.4  19.9  47.1  28.4  52.2   6.0   7.0
+    after        1.4  20.0  44.5  11.7  11.9   0.5   7.0
+                 MET   MET  FAIL   MET   MET   MET   MET
+```
+
+**333 ms 28.4 -> 11.7 and 433 ms 52.2 -> 11.9, both FAIL to MET.** 17, 117 and 800 ms do not move and
+533 ms improves. Per fault 26 no figure here is compared across the light change: both columns are on
+the post-`c2db8b1` build.
+
+**The blast is not smaller**, which is the regression this could have been and which the element-count
+cut was reverted for. Same captures, same meter — the effect's own coverage of the frame:
+
+```
+    age            1     7    14    20    26    32    48
+    before      15.2  19.0  18.0  15.4  14.5  12.8   6.7
+    after       15.2  19.0  17.8  15.1  14.1  12.7   6.7      inside 0.4 points everywhere
+    10-90 px    inside 1.25 px at every age                    sub-clause 1 untouched
+```
+
+And on the 1:1 crop, which is the standing rule: at 333 ms the opponent goes from half-buried in the
+upper-left lobe to fully clear of the fire and readable against the wall, while the fireball keeps the
+same silhouette, the same reach left and right, the same reach down to the deck and the same lobe
+structure. It is slightly more consolidated, which is what the throw comment already asked for — "the
+lobes have to stay overlapped enough to share one silhouette".
+
+Coverage-only control, `--kill light` — which deletes the light from both passes and is therefore
+invariant to `c2db8b1`:
+
+```
+    age            1     7    14    20    26    32    48
+    before       0.2  19.0  11.1  28.0  52.2   6.0   7.0     shots/r20nolight7
+    after        0.2  19.1   7.4   5.8  12.1   0.7   7.0     shots/r20throw
+```
+
+The fire's own floor — the residue `c2db8b1` provably cannot reach — is under the clause at every age.
+
+**233 ms is the one age left and it is not fire.** With this change in, the light-killed figure there is
+**7.4%** and the as-shipped figure is **44.5%**, so **37 points of 233 ms are still the blast light**
+after `c2db8b1`. Its own ceiling at that age is 11.1%. The point-light item is not finished; it has
+taken 84.7 -> 47.1 with 36 points still on the table, and 233 ms is now the only failing cell in clause
+F's second sub-clause.
+
+`npm run build` clean, `npm test` ALL PASS, `tools/deploycheck.mjs` OK on grid, foundry and orbital.
+
