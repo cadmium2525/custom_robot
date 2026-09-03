@@ -156,6 +156,14 @@ const AGES = String(flag('ages', '2,7,14,28,48')).split(',').map(Number);
  *   firecore    the UNTHROWN fire shells only: the flash and the cluster core
  *   firelobes   the THROWN fire shells only: the seven billows
  *   smokeshell  smoke-kind shells in `vfx.fireballs` (stage 5, the three volumes)
+ *   light       every live blast point light, in both passes
+ *   latelight   ROUND 21. Only the point lights born AFTER the pinned blast.
+ *               The pin is one EV.EXPLODE; the frame is not. A second
+ *               detonation inside the 800ms window puts a second light in the
+ *               arena, the novfx pass hides that one too, and its wash lands in
+ *               the pinned blast's occlusion column. This kills the later
+ *               lights and leaves the pinned blast's own, so the column can be
+ *               read as a statement about the effect it names.
  *
  * The last two share a pool and are separated by `aTint.w`, which `spawn`
  * writes as the kind. They are suppressed by parking the instance dead
@@ -167,7 +175,7 @@ const AGES = String(flag('ages', '2,7,14,28,48')).split(',').map(Number);
  */
 const KILL = flag('kill', null);
 const KILL_LIST = KILL === null ? [] : String(KILL).split(',').map((s) => s.trim()).filter(Boolean);
-const KILL_NODES = ['flares', 'shockwaves', 'sparks', 'energy', 'decals', 'trails', 'particles', 'light'];
+const KILL_NODES = ['flares', 'shockwaves', 'sparks', 'energy', 'decals', 'trails', 'particles', 'light', 'latelight'];
 const KILL_KINDS = { fireshell: 0, smokeshell: 1, firecore: 2, firelobes: 3 };
 /** Stages that actually matched something, at any age. See the guard below. */
 const KILL_SEEN = new Set();
@@ -309,6 +317,43 @@ const VFX_TOGGLE_FN = `(on) => {
 }`;
 
 /**
+ * LIGHT CENSUS, ROUND 21. Every live blast point light at the moment of the
+ * shutter, with the illuminance it is actually delivering to each machine.
+ *
+ * The occlusion column could not say whether the effect was standing in front
+ * of the opponent or shining on it until `--kill light` existed (fault 23), and
+ * it still cannot say WHICH light is shining, or whether the light belongs to
+ * the blast the capture is pinned to. Both are decided by numbers this returns:
+ * `birth` against the pinned blast's own time, and `lux = intensity / d^2`
+ * against the arena key of about 3.2, which is the unit `stage.js` and
+ * `c2db8b1` both argued the blast light in.
+ */
+const LIGHTS_FN = `() => {
+  const g = window.__game;
+  const f = g.view.vfx;
+  const out = [];
+  const robos = (g.world && g.world.robos) || [];
+  for (let i = 0; i < f.lights.length; i++) {
+    const l = f.lights[i];
+    if (!l.visible || !(l.intensity > 0)) continue;
+    const at = [];
+    for (let r = 0; r < robos.length; r++) {
+      const p = robos[r].pos;
+      const dx = l.position.x - p.x, dy = l.position.y - (p.y + 0.9), dz = l.position.z - p.z;
+      const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      const w = l.distance > 0 ? Math.max(0, 1 - Math.pow(d / l.distance, 4)) : 1;
+      at.push({ robo: r, d, lux: (l.intensity / Math.max(d * d, 1e-6)) * w * w });
+    }
+    out.push({
+      i, birth: f.lightBirth[i], life: f.lightLife[i], peak: f.lightPeak[i],
+      intensity: l.intensity, range: l.distance,
+      x: l.position.x, y: l.position.y, z: l.position.z, at,
+    });
+  }
+  return out;
+}`;
+
+/**
  * Stage suppression for `--kill`. Returns how many things it actually removed,
  * split by stage, so the caller can refuse when a name matched nothing.
  *
@@ -317,7 +362,7 @@ const VFX_TOGGLE_FN = `(on) => {
  * flagged for upload directly because the pool's own `flush` is gated on a
  * dirty bit it owns.
  */
-const KILL_FN = `(names) => {
+const KILL_FN = `(names, pinT) => {
   const f = window.__game.view.vfx;
   const out = {};
   const NODE = {
@@ -339,6 +384,20 @@ const KILL_FN = `(names) => {
       let hit = 0;
       for (const l of f.lights) { if (l.visible) hit++; l.visible = false; l.intensity = 0; }
       for (let i = 0; i < f.lightLife.length; i++) f.lightLife[i] = 0;
+      out[n] = hit;
+      continue;
+    }
+    if (n === 'latelight') {
+      // Only the lights that are NOT the pinned blast's. A light born within a
+      // tick of the pin is the pin's own and stays; anything later belongs to
+      // another detonation and its wash is not this effect.
+      let hit = 0;
+      for (let i = 0; i < f.lights.length; i++) {
+        const l = f.lights[i];
+        if (f.lightBirth[i] <= pinT + 0.02) continue;
+        if (l.visible) hit++;
+        l.visible = false; l.intensity = 0; f.lightLife[i] = 0;
+      }
       out[n] = hit;
       continue;
     }
@@ -629,7 +688,7 @@ for (const age of AGES) {
     if (!n) throw new Error('--flatheat matched no shell material: the diagnostic did nothing');
   }
   if (KILL_LIST.length) {
-    const hits = await page.evaluate(`(${KILL_FN})(${JSON.stringify(KILL_LIST)})`);
+    const hits = await page.evaluate(`(${KILL_FN})(${JSON.stringify(KILL_LIST)}, ${chosen.t})`);
     say(`  kill ${KILL_LIST.join(',')} at age ${age}: ${JSON.stringify(hits)}`);
     // A shell kill is PERMANENT — the instance is parked dead and never comes
     // back — so a later age legitimately matches zero. The refusal is therefore
@@ -673,7 +732,13 @@ for (const age of AGES) {
   await ui(true);
 
   const pr = await page.evaluate((p) => window.__blast.project(p), chosen);
-  shots.push({ age, tick: target, ms: Math.round(age * 1000 / 60), pr });
+  const lights = await page.evaluate(`(${LIGHTS_FN})()`);
+  shots.push({ age, tick: target, ms: Math.round(age * 1000 / 60), pr, lights });
+  for (const l of lights) {
+    const own = l.birth <= chosen.t + 0.02 ? 'PINNED' : `late +${((l.birth - chosen.t) * 1000).toFixed(0)}ms`;
+    say(`    light ${l.i} ${own}  intensity ${l.intensity.toFixed(1)} range ${l.range.toFixed(1)}m  ` +
+        l.at.map((a) => `robo${a.robo} ${a.d.toFixed(1)}m ${a.lux.toFixed(2)}lux`).join('  '));
+  }
   say(`  age ${age}t (${Math.round(age * 1000 / 60)}ms) -> ${PREFIX}-a${pad}.png  ` +
       `blast=(${pr.blast.x.toFixed(0)},${pr.blast.y.toFixed(0)}) ` +
       `p1=(${pr.robo0.x.toFixed(0)},${pr.robo0.y.toFixed(0)}) p2=(${pr.robo1.x.toFixed(0)},${pr.robo1.y.toFixed(0)})`);

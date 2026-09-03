@@ -1,0 +1,40 @@
+bundle=0904a9f1ee52
+tier=HIGH particleBudget=1400 seed=1234567 arena=grid vp=1600x900
+  blast @tick 264 R=2.80 kind=2 screen=(555,746) d=6.7m rpx=518 p1=(814,777) p2=(784,207) QUALIFIES
+  blast @tick 265 R=2.60 kind=1 screen=(243,461) d=14.1m rpx=228 p1=(814,777) p2=(784,207) QUALIFIES
+  blast @tick 311 R=2.80 kind=2 screen=(868,240) d=24.4m rpx=145 p1=(813,827) p2=(806,146) QUALIFIES
+  blast @tick 400 R=3.40 kind=1 screen=(995,433) d=15.7m rpx=266 p1=(981,690) p2=(720,245) QUALIFIES
+  blast @tick 449 R=2.60 kind=1 screen=(220,821) d=10.4m rpx=307 p1=(992,935) p2=(755,256) skip
+  blast @tick 455 R=2.80 kind=2 screen=(432,908) d=9.4m rpx=361 p1=(954,801) p2=(767,182) QUALIFIES
+  blast @tick 528 R=2.80 kind=2 screen=(871,197) d=27.5m rpx=125 p1=(960,1125) p2=(763,137) skip
+  blast @tick 616 R=2.80 kind=2 screen=(711,727) d=7.7m rpx=447 p1=(908,1068) p2=(774,115) skip
+  blast @tick 652 R=2.80 kind=2 screen=(955,179) d=22.6m rpx=153 p1=(629,1743) p2=(839,57) skip
+  blast @tick 838 R=2.80 kind=2 screen=(871,532) d=7.6m rpx=459 p1=(923,635) p2=(677,264) QUALIFIES
+  blast @tick 896 R=2.60 kind=1 screen=(773,200) d=11.8m rpx=279 p1=(712,804) p2=(887,91) QUALIFIES
+  blast @tick 956 R=2.60 kind=1 screen=(605,461) d=6.9m rpx=454 p1=(821,623) p2=(751,370) QUALIFIES
+  blast @tick 963 R=2.80 kind=2 screen=(956,367) d=20.7m rpx=159 p1=(703,1066) p2=(795,299) skip
+  blast @tick 1098 R=2.60 kind=1 screen=(549,679) d=11.4m rpx=280 p1=(932,515) p2=(754,427) QUALIFIES
+  blast @tick 1105 R=2.80 kind=2 screen=(698,702) d=9.0m rpx=385 p1=(932,515) p2=(754,427) QUALIFIES
+  blast @tick 1111 R=3.40 kind=1 screen=(566,585) d=15.7m rpx=266 p1=(904,652) p2=(819,382) QUALIFIES
+  blast @tick 1195 R=3.40 kind=1 screen=(924,372) d=16.1m rpx=253 p1=(947,707) p2=(750,319) QUALIFIES
+chosen blast at tick 1195 (scan reached 1200); replaying
+  kill latelight at age 1: {"latelight":0}
+    light 1 PINNED  intensity 55.2 range 13.6m  robo0 10.8m 0.17lux  robo1 3.7m 4.02lux
+  age 1t (17ms) -> shots/r23late-a01.png  blast=(896,368) p1=(961,720) p2=(737,342)
+  kill latelight at age 7: {"latelight":1}
+    light 1 PINNED  intensity 33.5 range 13.6m  robo0 10.6m 0.12lux  robo1 3.8m 2.35lux
+  age 7t (117ms) -> shots/r23late-a07.png  blast=(924,380) p1=(937,698) p2=(755,319)
+  kill latelight at age 14: {"latelight":0}
+    light 1 PINNED  intensity 18.7 range 13.6m  robo0 10.3m 0.08lux  robo1 3.3m 1.70lux
+  age 14t (233ms) -> shots/r23late-a14.png  blast=(932,408) p1=(919,719) p2=(799,288)
+  kill latelight at age 20: {"latelight":0}
+    light 1 PINNED  intensity 11.3 range 13.6m  robo0 10.2m 0.05lux  robo1 3.7m 0.81lux
+  age 20t (333ms) -> shots/r23late-a20.png  blast=(918,429) p1=(913,697) p2=(817,278)
+  kill latelight at age 26: {"latelight":0}
+    light 1 PINNED  intensity 6.9 range 13.6m  robo0 10.2m 0.03lux  robo1 4.3m 0.36lux
+  age 26t (433ms) -> shots/r23late-a26.png  blast=(906,453) p1=(923,670) p2=(793,282)
+  kill latelight at age 32: {"latelight":0}
+    light 1 PINNED  intensity 4.2 range 13.6m  robo0 10.2m 0.02lux  robo1 4.8m 0.18lux
+  age 32t (533ms) -> shots/r23late-a32.png  blast=(894,465) p1=(950,706) p2=(772,278)
+  kill latelight at age 48: {"latelight":0}
+  age 48t (800ms) -> shots/r23late-a48.png  blast=(884,439) p1=(936,772) p2=(749,238)
