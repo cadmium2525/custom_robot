@@ -94,6 +94,22 @@ const STENCIL_FN = `(on) => {
     v.__swap = [];
     v.scene.traverse((o) => {
       if (!o.isMesh || !o.visible) return;
+      // INSTRUMENT FAULT 19, FIXED HERE AND IN THE OTHER FOUR COPIES AT ONCE.
+      // A mesh that does not write depth does not occlude the machines in the
+      // real frame. Painting it opaque black made it occlude them in the mask:
+      // the practicals batch is additive with depthWrite off at renderOrder 4,
+      // so it drew after the machines and deleted them wherever it overlapped.
+      // Measured before this change, machine stencil area with that batch
+      // hidden vs left visible: grid 24460 -> 24460, orbital 24808 -> 24808,
+      // foundry 4854 -> 8138 — two fifths of foundry's near machine missing
+      // from every mask-derived figure taken of that arena. Zero on grid, which
+      // is why five rounds of arguing on grid never hit it.
+      // Hidden rather than blackened: whether such a mesh TINTS the machine is
+      // a colour question, and this is a mask.
+      const m0 = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!shells.has(o) && m0 && m0.depthWrite === false) {
+        v.__hidden.push(o); o.visible = false; return;
+      }
       v.__swap.push([o, o.material]);
       o.material = shells.has(o) ? white : black;
     });
