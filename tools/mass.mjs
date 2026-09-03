@@ -94,17 +94,55 @@ const NOPAINT = !!flag('nopaint');
  */
 const ONBODY = !!flag('onbody');
 /**
- * Live shell-uniform overrides — `--u lightCeil=0.4,specCap=0.2`.
+ * Live shell-uniform overrides — `--u lightCeil=0.4,specCap=0.2` or, since
+ * INSTRUMENT FAULT 29, the full uniform name: `--u uLightCeil=0.4`.
  *
  * Every number in the shell's light governor is a uniform, so tuning it does
  * not need a rebuild: this sets them on the running page between the settle and
  * the shutter. Findings still have to be baked into robot.js and re-measured
  * from a build, but the search for the number costs one browser launch instead
  * of one build plus one launch.
+ *
+ * -----------------------------------------------------------------------------
+ * INSTRUMENT FAULT 29 — `--u` SILENTLY DROPPED EVERY KEY IT COULD NOT RESOLVE
+ * -----------------------------------------------------------------------------
+ *
+ * The applier used to be four lines in the page:
+ *
+ *     const name = 'u' + k[0].toUpperCase() + k.slice(1);
+ *     if (u[name]) u[name].value = v;
+ *
+ * Two faults, and they compound into the `ssao` fault exactly:
+ *
+ *   1. The name is built by PREFIXING, so a caller who passes the uniform's own
+ *      name — `--u uBandX=4`, which is what the uniform is called in
+ *      `materials.js`, in the shader, and in every probe that reads it back —
+ *      gets `uUBandX`, which exists nowhere.
+ *   2. `if (u[name])` then swallows the miss without a word. The run proceeds,
+ *      the meter prints `uniforms: uBandX=4` from the ARGUMENT LIST rather than
+ *      from anything it set, and the report is a full set of figures for a
+ *      machine that was never touched.
+ *
+ * That is how round 24's follow-up got 1.706 at N=4 and 1.708 at N=1 against a
+ * baseline of 1.705 with the uniform reading 0 the whole time: not a null
+ * result about banding, a null result about `--u`. `ssao` is on file for the
+ * same shape — a probe that changed nothing, read as evidence about the thing
+ * it failed to change.
+ *
+ * The repair is the one this project keeps writing down: resolve BOTH spellings,
+ * verify by READ-BACK rather than by assumption, and make a key that resolves to
+ * nothing an ABORT with the list of names that would have worked. A sweep knob
+ * is allowed to say no. It is not allowed to say nothing.
  */
 const UNIFORMS = String(flag('u', '') || '').split(',').filter(Boolean).map((kv) => {
   const [k, v] = kv.split('=');
-  return [k.trim(), Number(v)];
+  const key = String(k).trim();
+  const num = Number(v);
+  if (!key || !Number.isFinite(num)) {
+    console.error('mass: --u "' + kv + '" is not name=number.');
+    process.exit(2);
+  }
+  return [key, num];
 });
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
@@ -539,17 +577,83 @@ const ANALYSE_FN = async ({ nUri, hUri, steps, dump, onbody }) => {
   if (transient && transient.length) console.log('  suppressed transients:', transient.join(', '));
   if (NOPAINT) await page.evaluate(`(${NOPAINT_FN})()`);
   if (UNIFORMS.length) {
-    await page.evaluate((list) => {
+    const uReport = await page.evaluate((list) => {
+      // Every material on the machine that carries live uniforms, not just
+      // matShell. robot.js Object.assign's the outline and frame tables INTO
+      // matShell.userData.u, which copies the uniform OBJECTS by reference, so
+      // most names are reachable through the shell — but a material added later
+      // would not be, and a knob that reaches only some of the machine is the
+      // fault this block was rewritten for.
+      const mats = [];
       for (const m of window.__game.view.models) {
-        const u = m.matShell?.userData?.u;
-        if (!u) continue;
-        for (const [k, v] of list) {
-          const name = 'u' + k[0].toUpperCase() + k.slice(1);
-          if (u[name]) u[name].value = v;
+        for (const mat of [m.matShell, m.matOutline, m.matFrame, m.matEmis, m.matFlare]) {
+          if (mat && mat.userData && mat.userData.u && !mats.includes(mat)) mats.push(mat);
+        }
+        for (const mat of m.shellMats || []) {
+          if (mat && mat.userData && mat.userData.u && !mats.includes(mat)) mats.push(mat);
         }
       }
+      // The names a caller could have meant, and the ones no --u can ever set
+      // because their value is not a number (THREE.Color and friends).
+      const numeric = new Set();
+      const typed = new Set();
+      for (const mat of mats) {
+        for (const name of Object.keys(mat.userData.u)) {
+          const slot = mat.userData.u[name];
+          if (slot && typeof slot.value === 'number') numeric.add(name);
+          else typed.add(name);
+        }
+      }
+      const applied = [];
+      const missed = [];
+      for (const [k, v] of list) {
+        // Both spellings: the uniform's own name, and the lowercase-initial
+        // short form the usage line documents.
+        const cand = [k, 'u' + k[0].toUpperCase() + k.slice(1)];
+        const name = cand.find((c) => numeric.has(c));
+        if (!name) {
+          const t = cand.find((c) => typed.has(c));
+          missed.push({ key: k, why: t ? t + ' is not a numeric uniform' : 'no such uniform' });
+          continue;
+        }
+        let hit = 0;
+        for (const mat of mats) {
+          const slot = mat.userData.u[name];
+          if (slot && typeof slot.value === 'number') { slot.value = v; hit++; }
+        }
+        // READ-BACK. The whole point of this rewrite: report what the uniform
+        // says it is now, not what we asked it to be.
+        let back = null;
+        for (const mat of mats) {
+          const slot = mat.userData.u[name];
+          if (slot && typeof slot.value === 'number') { back = slot.value; break; }
+        }
+        applied.push({ key: k, name, want: v, got: back, mats: hit });
+      }
+      return { applied, missed, numeric: [...numeric].sort(), typed: [...typed].sort() };
     }, UNIFORMS);
-    console.log('  uniforms:', UNIFORMS.map(([k, v]) => `${k}=${v}`).join(' '));
+
+    for (const a of uReport.applied) {
+      console.log(
+        '  uniform ' + a.key + ' -> ' + a.name + ' = ' + a.want +
+        '  read back ' + a.got + ' on ' + a.mats + ' material(s)' +
+        (a.got === a.want ? '' : '   *** READ-BACK MISMATCH ***')
+      );
+    }
+    const bad = uReport.missed.concat(uReport.applied.filter((a) => a.got !== a.want));
+    if (bad.length) {
+      for (const m of uReport.missed) console.error('  --u ' + m.key + ': ' + m.why);
+      console.error(
+        'mass: --u did not reach ' + bad.length + ' of ' + UNIFORMS.length + ' key(s). ' +
+        'A sweep knob that changes nothing must not return figures.\n' +
+        '  settable (numeric) uniforms on this build:\n    ' +
+        uReport.numeric.join(' ') +
+        (uReport.typed.length ? '\n  present but NOT numeric, so --u can never set them:\n    ' +
+          uReport.typed.join(' ') : '')
+      );
+      await browser.close();
+      process.exit(3);
+    }
   }
   for (const id of ['ui-layer', 'hud-layer', 'splash']) {
     await page.evaluate((i) => { const el = document.getElementById(i); if (el) el.style.display = 'none'; }, id);
