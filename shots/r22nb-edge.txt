@@ -1,0 +1,118 @@
+prefix=shots/r22nb  bundle=9f1f30b943dc  tier=HIGH  budget=1400
+seed=1234567 arena=grid viewport=1600x900
+blast: tick 1195 R=3.4 kind=1
+
+--- age 1 ticks (17ms) --------------------------------------------
+  C noise floor 2.28  threshold 6  effect covers 14.7% of frame
+  EDGE 10-90 width px  n=720  p10 5.25  median 27.75  p90 43.75   <=2px 0.3%  <=4px 7.4%  >20px 63.9%
+  EDGE slope-equiv px            median 5.3   outer radius median 65.5px
+  FLOOR (machine stencil, same code)  median 1.25px  p90 2.25px  <=2px 87.4%
+  CORE hottest 5%: rgb(254,251,238)  H 50 S 0.061 V 0.996
+  CENTRE 24px disc: rgb(255,252,231)  H 54 S 0.096 V 1
+  MACHINE @(964,722) 222px tall: effect moved 0% of its pixels >25, 0% >60
+     contour step  blast ON 44.4   blast OFF 43.4   (invisible contour 15.9% vs 16.7%)
+  MACHINE @(755,362) 76px tall: effect moved 1.1% of its pixels >25, 0% >60
+     contour step  blast ON 55.6   blast OFF 68.6   (invisible contour 5.8% vs 3.7%)
+  BRIGHTEST 1%  blast ON : machines 7%  effect 92%  cyan 0%  amber 9.6%  (thr 190.6)
+  BRIGHTEST 1%  blast OFF: machines 42.1%  effect 6.3%  cyan 5%  amber 7.5%  (thr 143.9)
+  CHROMA  effect sat 0.453 lum 73.8   machines sat 0.446 lum 121.2   stage sat 0.403 lum 54.6
+
+--- age 7 ticks (117ms) --------------------------------------------
+  C noise floor 5.49  threshold 8.23  effect covers 17.9% of frame
+  EDGE 10-90 width px  n=720  p10 10.25  median 31.75  p90 53.25   <=2px 0%  <=4px 1.3%  >20px 72.4%
+  EDGE slope-equiv px            median 7.4   outer radius median 76px
+  FLOOR (machine stencil, same code)  median 1.25px  p90 2.25px  <=2px 89.2%
+  CORE hottest 5%: rgb(255,250,208)  H 54 S 0.182 V 0.999
+  CENTRE 24px disc: rgb(250,219,103)  H 47 S 0.587 V 0.98
+  MACHINE @(938,695) 256px tall: effect moved 0.2% of its pixels >25, 0% >60
+     contour step  blast ON 45   blast OFF 47.1   (invisible contour 13% vs 14.2%)
+  MACHINE @(752,330) 93px tall: effect moved 24.9% of its pixels >25, 14.3% >60
+     contour step  blast ON 19.2   blast OFF 150.2   (invisible contour 37.6% vs 2.6%)
+  BRIGHTEST 1%  blast ON : machines 13.1%  effect 93%  cyan 0%  amber 5.7%  (thr 226.4)
+  BRIGHTEST 1%  blast OFF: machines 58.3%  effect 13.8%  cyan 7.4%  amber 6.5%  (thr 149.1)
+  CHROMA  effect sat 0.499 lum 83   machines sat 0.414 lum 134.1   stage sat 0.384 lum 55.7
+
+--- age 14 ticks (233ms) --------------------------------------------
+  C noise floor 4  threshold 6  effect covers 17% of frame
+  EDGE 10-90 width px  n=720  p10 5.5  median 23.25  p90 49.75   <=2px 0%  <=4px 5.6%  >20px 55.3%
+  EDGE slope-equiv px            median 6.93   outer radius median 125.5px
+  FLOOR (machine stencil, same code)  median 1.25px  p90 2.25px  <=2px 87.9%
+  CORE hottest 5%: rgb(254,243,127)  H 55 S 0.5 V 0.998
+  CENTRE 24px disc: rgb(250,204,0)  H 49 S 0.999 V 0.98
+  MACHINE @(925,717) 269px tall: effect moved 0.1% of its pixels >25, 0% >60
+     contour step  blast ON 59.4   blast OFF 64.8   (invisible contour 12.9% vs 13.4%)
+  MACHINE @(787,289) 76px tall: effect moved 38.3% of its pixels >25, 5.5% >60
+     contour step  blast ON 74.1   blast OFF 97.6   (invisible contour 9.8% vs 0%)
+  BRIGHTEST 1%  blast ON : machines 0.6%  effect 96.7%  cyan 0%  amber 40.7%  (thr 218)
+  BRIGHTEST 1%  blast OFF: machines 52.2%  effect 7.1%  cyan 24.7%  amber 5.9%  (thr 153)
+  CHROMA  effect sat 0.542 lum 91.2   machines sat 0.435 lum 126.3   stage sat 0.401 lum 53.4
+
+--- age 20 ticks (333ms) --------------------------------------------
+  C noise floor 2.14  threshold 6  effect covers 14.9% of frame
+  EDGE 10-90 width px  n=720  p10 3.75  median 22  p90 45.25   <=2px 1.1%  <=4px 11.3%  >20px 53.3%
+  EDGE slope-equiv px            median 5.91   outer radius median 145.25px
+  FLOOR (machine stencil, same code)  median 1.25px  p90 2.25px  <=2px 87.6%
+  CORE hottest 5%: rgb(254,235,74)  H 54 S 0.707 V 0.994
+  CENTRE 24px disc: rgb(191,73,4)  H 22 S 0.979 V 0.748
+  MACHINE @(921,689) 284px tall: effect moved 0.2% of its pixels >25, 0% >60
+     contour step  blast ON 65.7   blast OFF 70.4   (invisible contour 11.5% vs 9.6%)
+  MACHINE @(801,270) 78px tall: effect moved 28.5% of its pixels >25, 10.9% >60
+     contour step  blast ON 29.3   blast OFF 57.3   (invisible contour 26.5% vs 3.1%)
+  BRIGHTEST 1%  blast ON : machines 4.1%  effect 79.6%  cyan 1.1%  amber 56.1%  (thr 209.4)
+  BRIGHTEST 1%  blast OFF: machines 50.7%  effect 7.5%  cyan 20.8%  amber 3.2%  (thr 168.3)
+  CHROMA  effect sat 0.585 lum 96   machines sat 0.496 lum 130.5   stage sat 0.414 lum 51.3
+
+--- age 26 ticks (433ms) --------------------------------------------
+  C noise floor 1.57  threshold 6  effect covers 14.5% of frame
+  EDGE 10-90 width px  n=720  p10 4.25  median 19.5  p90 48   <=2px 0.3%  <=4px 10%  >20px 48.2%
+  EDGE slope-equiv px            median 5.61   outer radius median 135.75px
+  FLOOR (machine stencil, same code)  median 1.25px  p90 2.25px  <=2px 86.5%
+  CORE hottest 5%: rgb(242,178,34)  H 42 S 0.86 V 0.948
+  CENTRE 24px disc: rgb(95,50,33)  H 16 S 0.653 V 0.373
+  MACHINE @(932,659) 277px tall: effect moved 0% of its pixels >25, 0% >60
+     contour step  blast ON 67   blast OFF 70.4   (invisible contour 7.9% vs 9.1%)
+  MACHINE @(781,265) 86px tall: effect moved 52.3% of its pixels >25, 26.3% >60
+     contour step  blast ON 17.2   blast OFF 67.4   (invisible contour 41.4% vs 2.5%)
+  BRIGHTEST 1%  blast ON : machines 32.6%  effect 28.1%  cyan 16.9%  amber 22.2%  (thr 180.9)
+  BRIGHTEST 1%  blast OFF: machines 46.4%  effect 10.3%  cyan 21.3%  amber 3.6%  (thr 173.1)
+  CHROMA  effect sat 0.526 lum 82.8   machines sat 0.463 lum 123.2   stage sat 0.429 lum 49.8
+
+--- age 32 ticks (533ms) --------------------------------------------
+  C noise floor 1.64  threshold 6  effect covers 12.6% of frame
+  EDGE 10-90 width px  n=720  p10 3.25  median 24.25  p90 56.25   <=2px 1.4%  <=4px 13.8%  >20px 56.5%
+  EDGE slope-equiv px            median 5.42   outer radius median 104.5px
+  FLOOR (machine stencil, same code)  median 1.25px  p90 2.25px  <=2px 86.7%
+  CORE hottest 5%: rgb(178,134,96)  H 28 S 0.462 V 0.698
+  CENTRE 24px disc: rgb(77,45,33)  H 16 S 0.574 V 0.3
+  MACHINE @(959,695) 283px tall: effect moved 0% of its pixels >25, 0% >60
+     contour step  blast ON 60.4   blast OFF 61.3   (invisible contour 9.1% vs 9.1%)
+  MACHINE @(767,264) 67px tall: effect moved 7.6% of its pixels >25, 0.1% >60
+     contour step  blast ON 48.6   blast OFF 52.2   (invisible contour 11.3% vs 3.9%)
+  BRIGHTEST 1%  blast ON : machines 50%  effect 9.3%  cyan 13.9%  amber 5.4%  (thr 172.7)
+  BRIGHTEST 1%  blast OFF: machines 53.5%  effect 5.1%  cyan 15%  amber 5.1%  (thr 170.6)
+  CHROMA  effect sat 0.371 lum 65.7   machines sat 0.459 lum 128.9   stage sat 0.449 lum 48.6
+
+--- age 48 ticks (800ms) --------------------------------------------
+  C noise floor 0  threshold 6  effect covers 6.5% of frame
+  EDGE 10-90 width px  n=713  p10 2.5  median 25.25  p90 47.5   <=2px 3.5%  <=4px 25.7%  >20px 58.8%
+  EDGE slope-equiv px            median 4.94   outer radius median 119.5px
+  FLOOR (machine stencil, same code)  median 1.25px  p90 2.25px  <=2px 89.2%
+  CORE hottest 5%: rgb(138,153,165)  H 206 S 0.163 V 0.645
+  CENTRE 24px disc: rgb(53,36,30)  H 15 S 0.433 V 0.209
+  MACHINE @(938,758) 248px tall: effect moved 0% of its pixels >25, 0% >60
+     contour step  blast ON 58.4   blast OFF 56.7   (invisible contour 8.1% vs 9%)
+  MACHINE @(760,244) 84px tall: effect moved 0% of its pixels >25, 0% >60
+     contour step  blast ON 54   blast OFF 54   (invisible contour 0.8% vs 0.8%)
+  BRIGHTEST 1%  blast ON : machines 53.5%  effect 10.7%  cyan 6.2%  amber 8%  (thr 160.6)
+  BRIGHTEST 1%  blast OFF: machines 55.7%  effect 6.2%  cyan 6.8%  amber 7.9%  (thr 159)
+  CHROMA  effect sat 0.24 lum 55.4   machines sat 0.447 lum 128.6   stage sat 0.454 lum 49.9
+
+SUMMARY  (this file is the meter; see the header on why its numbers may not be carried to _salience.mjs)
+  age  ms   cover%  edge10-90  floor  coreHSV            hot1% mach  hot1% fx  fx sat
+    1    17    14.7      27.75   1.25     50/0.061/0.996           7        92   0.453
+    7   117    17.9      31.75   1.25     54/0.182/0.999        13.1        93   0.499
+   14   233      17      23.25   1.25       55/0.5/0.998         0.6      96.7   0.542
+   20   333    14.9         22   1.25     54/0.707/0.994         4.1      79.6   0.585
+   26   433    14.5       19.5   1.25      42/0.86/0.948        32.6      28.1   0.526
+   32   533    12.6      24.25   1.25     28/0.462/0.698          50       9.3   0.371
+   48   800     6.5      25.25   1.25    206/0.163/0.645        53.5      10.7    0.24
