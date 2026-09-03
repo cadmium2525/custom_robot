@@ -1086,13 +1086,24 @@ void main() {
       // fire shells killed the same age reads 21.6%, with everything else in
       // the detonation killed it does not move at all.
       //
-      // 0.95 walks the effective threshold through the field where the fire is
-      // actually going out instead of after it has: p05 at vT 0.45, p50 at
-      // 0.59, past p95 by 0.72. Early life is untouched -- at vT 0.39 the
-      // threshold is 0.284, still under p05, so the young fireball is as solid
-      // as it was. What changes is only the half-second-old mass that is no
-      // longer burning and is still opaque.
-      float bite = mix(0.06, 1.00, pow(vT, 0.95));
+      // 1.10 walks the effective threshold through the field where the fire is
+      // actually going out instead of after it has: under p05 until vT 0.50,
+      // p50 at about 0.62, past p95 by 0.72. Early and mid life are untouched
+      // -- at vT 0.39 the threshold is 0.246, well under p05, so the young
+      // fireball is as solid as it was. What changes is only the mass that is
+      // no longer burning and is still opaque.
+      //
+      // 0.95 was tried first and it is measurably worse, which is worth having
+      // on the record because it is fault 20 arriving in a new place. Eroding a
+      // lobe removes the pixels where turb is LOW, and heat carries a
+      // 0.55 + 0.78 * turb term, so the rags that survive are the hot ones. Cut
+      // too early and the mass over the opponent goes from uniform dark soot to
+      // bright rags, and the meter -- which reads change, not coverage --
+      // measures MORE alteration from LESS mass. On the pinned blast, coverage
+      // with the blast light separated out: 333ms went 17.4% to 27.9% at 0.95,
+      // i.e. through the clause threshold the wrong way, while 533ms went 66.5%
+      // to 1.8%. 1.10 keeps the 533ms win and hands 333ms back.
+      float bite = mix(0.06, 1.00, pow(vT, 1.10));
       // THE WINDOW IS THE EDGE. 0.28 was the whole reason the blast measured
       // soft, and the number that proves it is in this file's own smoke branch:
       // the turbulence field runs p05 0.367, p50 0.502, p95 0.637, so ninety
