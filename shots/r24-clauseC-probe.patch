@@ -1,0 +1,102 @@
+diff --git a/src/gfx/robot.js b/src/gfx/robot.js
+index da4d2b1..ee16feb 100644
+--- a/src/gfx/robot.js
++++ b/src/gfx/robot.js
+@@ -31,6 +31,38 @@ import { clamp, clamp01, lerp, damp, angleDelta, smoothstep, TAU } from '../core
+ // is why the machine stood in a black hole on an invisible floor.
+ import { smoothstep as ramp } from './noise.js';
+ 
++// ---------------------------------------------------------------------------
++// ROUND 24 GEOMETRY PROBE — TEMPORARY, and it must not survive the round.
++// ---------------------------------------------------------------------------
++/**
++ * A query-string multiplier on the three structural terms clause C's numerator
++ * could plausibly be made of, so ONE build answers several questions instead of
++ * one build per question.
++ *
++ *   ?chamfer=0.5   scales every roundedBox corner radius
++ *   ?plane=0.0     scales PLANE_UP / PLANE_DOWN, the baked per-face plane ramp
++ *   ?grime=0.0     scales the baked bottom-to-top value ramp
++ *
++ * All default to 1, so a URL without them is byte-for-byte the shipped build's
++ * behaviour and no measurement anyone else takes changes underneath them.
++ * Read ONCE at module load: geometry is built per model, long after boot, so a
++ * per-call read would be a per-vertex URL parse.
++ *
++ * This exists because the alternative is four rebuilds and four ninety-second
++ * captures to size four terms, and this round's budget does not have that.
++ */
++const PROBE = (() => {
++  const d = { chamfer: 1, plane: 1, grime: 1, plateau: 0 };
++  try {
++    const q = new URLSearchParams(globalThis.location ? globalThis.location.search : '');
++    for (const k of Object.keys(d)) {
++      const v = Number(q.get(k));
++      if (q.has(k) && Number.isFinite(v)) d[k] = v;
++    }
++  } catch { /* no location (worker, node) — defaults stand */ }
++  return d;
++})();
++
+ // ---------------------------------------------------------------------------
+ // Scratch — hoisted so the frame loop never allocates.
+ // ---------------------------------------------------------------------------
+@@ -366,7 +398,7 @@ function buildPalette(look, legColour) {
+  * @param arc 1 = single 45-degree chamfer (the workhorse), 2 = smoother round.
+  */
+ function roundedBox(w, h, d, r = 0.02, arc = 1) {
+-  const rad = Math.min(r, Math.min(w, h, d) * 0.48);
++  const rad = Math.min(r * PROBE.chamfer, Math.min(w, h, d) * 0.48);
+   const seg = 2 * arc + 1;
+   const g = new THREE.BoxGeometry(w, h, d, seg, seg, seg);
+ 
+@@ -662,11 +694,22 @@ class Build {
+     const arr = new Float32Array(c * 3);
+     for (let i = 0; i < c; i++) {
+       const ny = n.getY(i);
+-      const plane = ny >= 0 ? 1 + ny * ny * PLANE_UP : 1 - ny * ny * PLANE_DOWN;
++      // ?plateau=1 replaces the continuous ny*ny ramp with THREE hard levels —
++      // top plate, side plate, underside — so the baked half of the machine's
++      // value carries three numbers instead of a continuum. This is platform
++      // fact P2 written into the one place this round is allowed to write it:
++      // "a face is one value; the step happens at the edge between faces".
++      const pu = PLANE_UP * PROBE.plane, pdn = PLANE_DOWN * PROBE.plane;
++      const q = PROBE.plateau ? (ny > 0.5 ? 1 : ny < -0.5 ? -1 : 0) : ny;
++      const plane = q >= 0 ? 1 + q * q * pu : 1 - q * q * pdn;
+       // Gentle: this is grime, not a second value structure. Crushed harder it
+       // drags the white leg armour down into the same grey as the blue torso
+       // and undoes the colour blocking it is supposed to support.
+-      const k = plane * (0.82 + 0.18 * smoothstep((p.getY(i) - 0.02) / 1.2));
++      // Written as "1 minus the shortfall" rather than "0.82 plus the lift" so
++      // PROBE.grime scales the ramp toward FLAT AND FULL VALUE, never toward
++      // flat and dark: at grime=0 every vertex sits at 1.0 and no paint is
++      // lowered anywhere. At grime=1 it is 0.82 + 0.18*ss to the last bit.
++      const k = plane * (1 - 0.18 * PROBE.grime * (1 - smoothstep((p.getY(i) - 0.02) / 1.2)));
+       arr[i * 3] = paint.r * k;
+       arr[i * 3 + 1] = paint.g * k;
+       arr[i * 3 + 2] = paint.b * k;
+
+--- HOW TO USE, and why it is a patch file and not shipped source ---
+
+Apply with:   git apply shots/r24-clauseC-probe.patch
+Then:         npm run build -- --outDir dist-rX
+              node shots/_massdrive.mjs --base http://HOST/custom_robot/?chamfer=0.35 \
+                   --arena grid --tier 3 --seed 1234567 --onbody
+
+Knobs, all defaulting to the shipped behaviour so a URL without them reproduces
+head to the third decimal (verified: control 1.706 / 1.287 against head 1.705 /
+1.288, top4 85.3 / 86.2 against RULING 18's filed 85.3 / 86.2):
+
+    ?chamfer=k    scales every roundedBox corner radius
+    ?plane=k      scales PLANE_UP / PLANE_DOWN
+    ?grime=k      scales the bottom-to-top baked value ramp, toward FLAT AND
+                  FULL VALUE (k=0 puts every vertex at 1.0), never toward dark
+    ?plateau=1    replaces the continuous ny*ny plane ramp with three hard
+                  levels — top plate, side plate, underside
+
+It is NOT shipped source. A query-string switch read by the renderer and by
+nothing else is the `ssao` fault waiting to happen: a later round would probe
+it, read "not the cause", and never learn that it was "not present". Round 24
+measured all four to exhaustion (see REVIEW2, round 24) and every one of them
+is closed, so the code has no reason to exist in the build and every reason to
+exist here.
