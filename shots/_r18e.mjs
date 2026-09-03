@@ -114,8 +114,21 @@ const out = await page.evaluate(async ({ nb, mb }) => {
       ladder.push({ t, s: above(stage, t), m: above(mach, t) });
     }
   }
+  // WHERE the offending stage pixels are, as a coarse map, because "35000 stage
+  // pixels are too bright" does not say which surface to go and look at and the
+  // last four rounds each spent a capture cycle finding that out by hand.
+  const CX = 16, CY = 9;
+  const map = new Int32Array(CX * CY);
+  if (reachable) {
+    for (let i = 0; i < NP; i++) {
+      if (M.d[i * 4] > 127) continue;
+      const r = N.d[i * 4], g = N.d[i * 4 + 1], b = N.d[i * 4 + 2];
+      if (0.2126 * r + 0.7152 * g + 0.0722 * b < Lstar) continue;
+      map[(((i / W) | 0) * CY / H | 0) * CX + ((i % W) * CX / W | 0)]++;
+    }
+  }
   return {
-    W, H, NP, K, half, T, nowM,
+    W, H, NP, K, half, T, nowM, map: Array.from(map), CX, CY,
     nMach: mach.length, nStage: stage.length,
     machMax: mach[0], machP50: mach[Math.floor(mach.length / 2)],
     clipM, reachable, Lstar, sAt, ladder,
@@ -143,5 +156,11 @@ if (!out.reachable) {
   console.log(`\n  the stage tail, so the demotion has a target:`);
   console.log(`     level      stage px >= level    machine px >= level`);
   for (const r of out.ladder) console.log(`    ${p(r.t).padStart(6)}   ${String(r.s).padStart(16)}   ${String(r.m).padStart(18)}`);
+  console.log(`\n  where the stage pixels above L* are (${out.CX}x${out.CY} cells over the frame, px per cell):`);
+  for (let y = 0; y < out.CY; y++) {
+    let line = '   ';
+    for (let x = 0; x < out.CX; x++) line += String(out.map[y * out.CX + x]).padStart(7);
+    console.log(line);
+  }
 }
 console.log('');

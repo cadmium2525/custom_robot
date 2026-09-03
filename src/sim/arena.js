@@ -205,6 +205,15 @@ export const ARENAS = [
       key: 'orbital',
       floor: 0x232c3c,
       deck: 0x646c78,
+      // A multiplier on the deck's roughness map, and the whole of orbital's
+      // clause E fix. See the measurement table beside `deckRough` in
+      // gfx/stage.js `_buildFloor`: this arena's key sits at 30 degrees of
+      // elevation, the deck's specular lobe comes straight back at the camera,
+      // and that sheen — not the paint, not the key, not the emissive, not the
+      // env map — was the brightest thing in the frame. It touches no colour
+      // value at all: the deck's hue, saturation and albedo are exactly what
+      // they were, and what comes down is the light it throws back.
+      deckRough: 2.0,
       // 0x7de2ff is a 49%-saturated cyan, and the perimeter light rail baked
       // into the wall drives it at 1.5. Added over a lit deck it landed at
       // rgb(194,240,237) — a white line, the brightest thing in the arena,

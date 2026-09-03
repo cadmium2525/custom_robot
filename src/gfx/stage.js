@@ -191,6 +191,18 @@ function rampTint(g, lo, hi) {
  * point: hue and saturation come through untouched and only radiance moves. A
  * practical is allowed to be the most saturated thing in frame. It is not
  * allowed to be the brightest.
+ *
+ * ROUND 18 TRIED TO LOWER THIS AND PUT IT BACK, which is recorded here so the
+ * next round does not spend the cycle again. `shots/_owner.mjs` on the pinned
+ * grid frame says the practicals batch is 1.8% of the frame and owns 41.0% of
+ * its brightest 1% — the largest single owner in the arena — so 0.92 -> 0.62
+ * looked like the move. Measured on `shots/_r18e.mjs` it bought grid **0.2
+ * points of clause E** (47.7% -> 47.9%, 169 pixels), because most of what is in
+ * this batch is authored far below the ceiling and a clamp only touches what is
+ * above it. `_owner.mjs`'s ownership column counts every pixel that MOVES when
+ * a mesh is hidden, which is not the same question as how far a pixel would
+ * fall if that mesh were merely dimmer. Two different questions; the second one
+ * is the one a ceiling answers, and the answer here was 0.2 points.
  */
 const PRACTICAL_CEIL = 0.92;
 
@@ -373,11 +385,39 @@ export class Stage {
     // The emissive corner nodes come down with it: they are small, cyan and
     // scattered across the entire floor, which is three separate reasons for
     // the eye to go to the ground.
+    // `deckRough` multiplies the roughness map, and it is the lever that closed
+    // clause E on orbital after four rounds of value edits could not.
+    //
+    // THE MEASUREMENT, because this looks like a physically odd number and it
+    // is not a guess. Orbital's brightest 1% started at luminance 176.6 and the
+    // machines held 19.5% of it against a 50% floor; `shots/_owner.mjs` put
+    // 75.4% of that band on this mesh. Live knock-outs through
+    // `shots/_r15dump.mjs --mat`, each scored on `shots/_r18e.mjs`:
+    //
+    //   envMapIntensity 0.34 -> 0     19.5% -> 20.0%
+    //   emissiveIntensity 0.5 -> 0    19.5% -> 19.4%
+    //   albedo tint  #fff -> #808080  19.5% -> 28.0%   (a 4.6x cut in albedo)
+    //   albedo tint  #fff -> #404040  19.5% -> 28.8%   (a 20x cut in albedo)
+    //   metalness 1 -> 0              19.5% -> 24.1%
+    //   roughness 1 -> 2              19.5% -> 52.3%   CLAUSE E MET
+    //
+    // The deck was not over-painted and it was not over-lit. It was too GLOSSY
+    // for a key at 30 degrees of elevation: the specular lobe of a dielectric
+    // does not scale with albedo, which is why a 20x cut in the paint moved the
+    // number by nine points and a change that touches no colour at all moved it
+    // by thirty-three. It is also why every previous round's value edit failed
+    // here — they were all aimed at the diffuse term, and the offending pixels
+    // were not in it.
+    //
+    // Grid's key sits at 51 degrees, so its mirror direction goes away from the
+    // camera and its deck has no sheen to lose: the same override moves grid by
+    // 0.3 points. This is orbital's defect, and it gets orbital's fix.
     const mat = pbr(tex, {
       emissive: 0xffffff,
       emissiveIntensity: 0.5,
       envMapIntensity: this.settings.reflections ? 0.34 : 0.22,
       normalScale: 0.5,
+      roughness: this.theme.deckRough ?? 1.0,
     });
     mat.envMap = this.envMap;
     this.floorMat = mat;
