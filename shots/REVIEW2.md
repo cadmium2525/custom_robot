@@ -6780,3 +6780,168 @@ One dump pair and three commands un-blanks nine cells and settles whether blind 
 7. **Defect #14's feet** — one contact tick in 21 and soles 39 mm inside the deck. No clause covers it
    and a blind viewer sees it in the first second.
 
+
+---
+
+## 2026-09-03 — Round 20, builder: **the rank-1 item closes one of the three failing ages, not three**, and the erosion exponent does not remove the fire's rag peak — it slides it
+
+Commits: `6b1c501` (own build root and port), `fff1399` (`--kill firecore` / `--kill firelobes`),
+`28426ad` (control + the fire split), and this one.
+
+Own build root `dist-r20` -> `shots/_r20root`, served on :4320, **bundle `1c263efdbfc9`** — the same hash
+`9dcf651` and RULING 20 both measured, so every row below is the same code they read. Pin unchanged:
+grid, seed 1234567, tick 1195, TIER.HIGH, 1400 particles, 1600x900, `shots/_r17-blast.mjs` +
+`shots/_r17-edge.mjs`, far-machine alteration against clause F's `< 25%`. Control first:
+
+```
+    age            1      7     20     32
+    9dcf651     16.7   22.2   62.6   22.1
+    r20base     16.7   22.2   62.6   22.1      reproduced to the digit
+```
+
+### 1. The coverage-only column on the record is **stale by two rounds, and it is the column the rank-1 item was ranked on**
+
+RULING 19's `--kill light` row (`0.2 / 19.3 / 8.3 / 17.4 / 66.5`) is from `f474a1b`, bundle
+`4be0e4263d86` — **before** the erosion exponent landed. Re-taken here on `1c263efdbfc9`, seven ages,
+`shots/_r17-edge.mjs` only, machine column (a fixed `C > 25` per pixel, independent of the adaptive
+noise floor — audited before filing, because the floor collapses to 0 when the lights are out):
+
+```
+    far-machine alteration, clause F sub-clause 2, threshold < 25%
+    age              1      7     14     20     26     32     48
+    ms              17    117    233    333    433    533    800
+    as shipped    16.7   22.2   84.7   62.6   57.5   22.1    7.0    (RULING 20, same bundle)
+    --kill light   0.2   19.0   11.1   28.0   52.2    6.0    7.0    shots/r20nolight7
+    light's share 16.5    3.2   73.6   34.6    5.3   16.1    0.0    percentage points
+
+    stale row     0.2   19.3    8.3   17.4     --   66.5     --     f474a1b, TWO BUNDLES AGO
+```
+
+**The rank-1 item — the detonation's point-light envelope — closes exactly one of the three failing
+ages.**
+
+* **233 ms: it closes.** 73.6 of the 84.7 points are the light. With the light gone the age reads
+  **11.1%** and passes with room.
+* **333 ms: it cannot close.** With the light **entirely deleted** the age still reads **28.0%**, over
+  the clause. 34.6 points are the light and 28.0 are a floor no light change can go under.
+* **433 ms: it does almost nothing.** The light is worth **5.3 points**. The floor is **52.2%**, over
+  the clause by 2.1x.
+
+The ranked list says "80.4 and 53.7 points of clause F's two remaining failing ages". On this bundle
+those shares are **73.6 and 34.6**, there are **three** failing ages rather than two, and the third is
+the one the light does not touch. The item is still worth doing — it is 73.6 points at the worst age on
+the card and it is the correct reading of P6 — but **it must not be scored as closing clause F.**
+
+### 2. Splitting the fire in two: the core is worth nothing at 333 ms and deleting the lobes makes the number *worse*
+
+`fff1399` adds `--kill firecore` / `--kill firelobes`. The discriminator needs no renderer change: every
+unthrown fire shell in `_detonate` spawns with `mx = mz = 0` (the flash passes no motion, the cluster
+core passes `0, R*0.16, 0`) and all seven billows pass `ca*sp, ..., sa*sp`. Census confirms it — 4
+detonations alive in the pool, `firecore` parks 8, `firelobes` parks 28, exactly 4 x (1+1) and 4 x 7.
+
+```
+    age                    1      7     20     32
+    as shipped          16.7   22.2   62.6   22.1
+    --kill firecore     16.0   16.9   62.6   22.1     the core is worth 0.0 points at 333 ms
+    --kill firelobes    16.7   22.8   74.1   21.3     deleting all seven costs 11.5 points
+    --kill fireshell    16.0   14.4   74.1   21.3     deleting the whole fire: same as the lobes
+
+    effect's own frame coverage at 333 ms   13.2%  /  13.1%  /  12.5%  /  11.7%
+```
+
+Seven of the eight fire shells are worth **0.7 points of the effect's own 13.2% frame footprint** at
+333 ms, and removing them **raises** the opponent's alteration by 11.5. The fire is *shielding* the
+opponent from the light: a soot-covered machine pixel lands near the unlit background the `novfx` pass
+records, so it scores `C < 25`, while a lit one does not. **At 333 ms as shipped, mass removal and
+number reduction point in opposite directions**, which is why no fire lever can be tuned against the
+as-shipped column at that age. It has to be tuned against the coverage-only column, and then the light
+has to be fixed separately.
+
+### 3. The opponent is not being swallowed from a distance. **It is 3.7 m from a 3.4 m detonation.**
+
+The meter's labels are distance from the **camera**, and the document has read them as distance from
+the **blast**. Reconstructed from `shots/r20base-meta.json` (view depth from the recorded NDC z against
+engine.js's near 0.1 / far 240; `tan(fov/2)` solved from the blast's own recorded euclidean distance,
+0.5827, i.e. fov 60.5 — the engine's 56 is adjusted at runtime):
+
+```
+    age   ms     blast -> "far machine" (the 78px opponent)   blast -> "near machine" (284px)
+      1   17            3.67 m                                       10.72 m
+      7  117            3.85 m                                       10.57 m
+     20  333            4.01 m                                       10.21 m
+     32  533            5.05 m                                       10.26 m         blast R = 3.4 m
+```
+
+And meter-free, straight off the capture's own `rpx` (the blast's projected radius): the opponent sits
+at **0.67 / 0.74 / 0.70 / 0.85** of the blast's own radius at the four ages — **inside the blast's disc
+at every one** — while the big near machine sits at 1.50 / 1.31 / 1.04 / 0.94 and reads 3.4 / 6.6 / 1.9
+/ 0.2 % alteration. The near machine is closer *on screen* and eleven times less altered, because it is
+**10.2 m away in world**.
+
+RULING 16 reads this as composition — "an effect that covers 13-17% of the frame, **centred 230 px from
+a 78 px opponent**, will swallow that opponent whatever its edges do", and the rank-1 item is "the blast
+currently knows nothing about where the other machine is on screen". **230 px is 4.0 m, and the blast's
+own radius is 3.4 m.** The pinned frame is a point-blank hit on the aiming target, not a distant
+explosion drifting over a bystander. An effect that stopped covering a machine 1.2 radii from its own
+centre would be an effect that does not cover the thing it detonated on. That does not make clause F
+wrong — it makes it a **judgement about whether the aiming target may be lost when it is the thing being
+hit**, and that judgement has never been made explicitly because nobody had the world distance.
+
+### 4. The erosion exponent does not remove the fire's rag peak. It **slides** it — and that is why 533 ms closed and 433 ms regressed
+
+The coverage-only row has one sharp peak, at 433 ms, bracketed by 28.0 and 6.0. The shader's own
+recorded numbers explain it exactly. `dens = smoothstep(bite, bite + 0.07, turb + fade * 0.26)` with
+`bite = mix(0.06, 1.00, pow(vT, k))`, so the effective threshold on `turb` is `T = bite - fade * 0.26`,
+against a field this file measured at p05 0.367 / p50 0.502 / p95 0.637. Treating that as normal
+(sd 0.082), for the **dominant** mass — the cluster core, life 0.72, and the long billows, life 0.74 —
+at the shipped k = 1.10:
+
+```
+    age                  17ms   117   233   333   433   533   800
+    core  L=0.72   cut     0%    0%    0%    1%   46%   98%  dead
+                   rags    0%    0%    0%    8%   31%    2%
+    lobe  L=0.74   cut     0%    0%    0%    1%   36%   96%  dead
+                   rags    0%    0%    0%    6%   33%    4%
+
+    measured, --kill light  0.2  19.0  11.1  28.0  52.2   6.0   7.0
+```
+
+The dominant mass is **solid through 333 ms, half cut with a third of itself inside the erosion band at
+433 ms, and 96-98% gone by 533 ms** — and the measured fire-only column peaks at 433 ms, where the model
+puts the rag maximum at 423 ms. The 28.0% at 333 ms is plain covering by a solid body. The 52.2% at
+433 ms is fault 20's **bright rags**: erosion cuts where `turb` is low, `heat` carries `0.55 + 0.78 *
+turb`, so what survives is the hot part and the meter reads more alteration from less mass.
+
+**Sweeping k does not remove that peak.** Its height is invariant and only its position moves:
+
+```
+    k        rag peak of the dominant mass    band fraction there    at 333    433    533
+    0.95              396 ms                         33%               16%    26%     1%
+    1.10              423 ms                         33%                7%    32%     3%
+    1.30              453 ms                         33%                2%    30%     7%
+```
+
+That is the whole of the record in one line. `9dcf651` moved k from 1.30 to 1.10 and **vacated 533 ms
+and occupied 433 ms** — RULING 20 measured the second half of that as "433 ms **+7.3, worse than the
+baseline**" without a cause; this is the cause. `f474a1b` tried 0.95 and reported 333 ms going *through*
+the threshold the wrong way; the table says why. **1.10 is not a settled value, it is the position that
+happens to put the peak between two of the four ages round 19 sampled.** There is no k that clears all
+of 233 / 333 / 433.
+
+The peak is a property of the **coupling**, not of the schedule: `dens` thresholds `turb` and `heat`
+multiplies by `0.55 + 0.78 * turb`, so mass loss is converted into brightness gain by construction.
+Decoupling those two — a different octave or phase for the heat term, leaving `rim`, `cool` and `fade`
+untouched so the radial white -> yellow -> orange -> red -> soot ramp RULING 16 protected is not
+disturbed — is the route this measurement points at. **It is untried and unmeasured, and I am not filing
+it as a result.**
+
+### What this round did NOT do
+
+**333 ms is not closed and I am not claiming it.** It stands at 62.6% on the as-shipped column. What
+changed is that the number is now fully partitioned on the current bundle — 34.6 points of light over a
+28.0-point fire floor — and that the two other failing ages are partitioned with it. No renderer line
+was changed by this work: `src/gfx/vfx.js` was being edited by another agent for the point-light
+envelope throughout, and a fire lever measured against the as-shipped column while that light is still
+in the frame reads backwards (see section 2). The instrument, the control and the four attribution
+columns are committed so the next hand starts from measurements rather than from the stale row.
+
