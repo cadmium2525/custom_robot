@@ -7178,3 +7178,287 @@ F's second sub-clause.
 
 `npm run build` clean, `npm test` ALL PASS, `tools/deploycheck.mjs` OK on grid, foundry and orbital.
 
+
+---
+
+## Round 20 — VERDICT — 2026-09-03 — **the ruling on P6, and it is not the ruling the evidence was collected for**
+
+**Written and committed before I captured a single frame this session**, at head `a544dae`. That rule
+is mine, it is three rounds old, and it is the only reason rounds 18 and 19 have verdicts at all — I
+died with the work unscored both times and the verdict was already on disk. Everything below marked
+`(record)` is read off a committed capture file or a diff and is not re-run by me; everything I do
+re-run goes in the addendum under this, and the two are never mixed in a row.
+
+Round 20 was asked for one thing: **rule on bloom.** The condition I attached in round 19 has been
+met — clause B scored against the still frame, three arenas, one commit, on a meter that refuses
+rather than reporting from an unchanged composite. So the ruling is owed and it is RULING 22.
+
+### What I verified before writing, without a browser
+
+```
+    fb2e684    six capture records, ZERO source lines            git show --stat
+    1e4a128    tools/contour.mjs +36, the --bloom diagnostic     "
+    bd01485    shots/_salience.mjs +49, the same diagnostic      "
+    55851e7    src/core/quality.js +14 / -0, COMMENT ONLY        "
+    0562782    src/gfx/vfx.js +43 / -1  — a real art change      "
+    c2db8b1    src/gfx/vfx.js +43 / -2  — a real art change      "
+    4ef5455    src/game/view.js +56 / -1 — a real art change     "
+    postfx.js  threshold 1.04, knee 0.16, strength 0.66, MIPS [3,4,5,6] by tier
+    contour    floors are ABSOLUTE: invisible <12, weak <25, clean >=40, in luminance units
+    stencil    flat-white MeshBasicMaterial override, cut at 128/255
+```
+
+**Three of those readings change how the bloom evidence has to be read, and two of them run in the
+builder's favour.**
+
+1. **`fb2e684` changes no source.** The entire bloom case is a *diagnostic*, not a ship. Nothing in
+   the tree glows any less than it did in round 19, and no clause is made stale by it. Good: that is
+   how a measurement of this size should arrive, and it means RULING 21 does **not** fire on it.
+2. **The contour meter's floors are absolute, so it is biased AGAINST the change it scored.** `<12`,
+   `<25`, `>=40` are luminance units, not percentiles. Switching the composite's `bloomStrength` to 0
+   removes an additive term from every pixel in the frame; a darker frame has smaller steps
+   everywhere; a fixed floor therefore has to *lose* clean% by construction. Grid and foundry did not
+   move and orbital **gained 0.9**. That result is taken against the meter's own bias and it is
+   stronger than it looks.
+3. **The stencil is not what dilated, but something did.** Machine pixels, bloom on -> off: grid
+   24421 -> 24396 (−0.1%), **orbital 24598 -> 23643 (−3.9%, 955 px)**, and orbital's robot-1 box moves
+   183x257@745,643 -> 185x256@746,644 while robot 2 moves five pixels up the frame. A mask cut at
+   128/255 cannot do that: white in the stencil pass is exactly 1.0 linear, the bright pass gives it
+   `soft = 1.0 − 1.04 + 0.16 = 0.12`, `contrib = 0.12²/0.64 = 0.0225`, and 2.25% of the glow at
+   strength 0.66 lands on the black side at roughly **32/255 — a quarter of the cut.** The mask is
+   bloom-immune by four times its own margin, and I did the arithmetic before I doubted the number.
+   **So the 955 pixels are the machines being in a different pose, not the mask being softer**, and
+   that is a suspected **INSTRUMENT FAULT 27** — filed below as suspected, not as found, because I
+   have not yet run the control that settles it.
+
+---
+
+### RULING 22 — **bloom: the radius goes, the chain stays, and the threshold is the wrong knob**
+
+The question put to me has three options in it. I am taking none of them, and the reason is in the
+one sentence of the spec that is at issue:
+
+> **P6 — Nothing in the frame glows outside its own geometry.**
+
+That is a statement about the **support** of the glow. It is not a statement about its existence and
+it is not a statement about its brightness. `src/gfx/postfx.js` has three knobs and they are three
+different questions:
+
+```
+    threshold 1.04 / knee 0.16   WHICH pixels seed the glow        bright pass
+    MIPS [3,4,5,6] + radius      HOW FAR the seed spreads          the pyramid
+    bloomStrength 0.66           HOW MUCH is added at the end      composite
+```
+
+**(a) It is the pyramid, and I am refusing the threshold as an answer.** Raising 1.04 removes the
+*dimmest* emitters — which are the ones whose glow is already closest to their own geometry — and
+leaves the brightest ones spreading exactly as far as they did. It buys a background number without
+touching the mechanism, and a builder could report it as a win. The mechanism is in the measurement
+already: **orbital's bodies hold 208.2 -> 209.3 while its background falls 48.1 -> 36.4.** A glow that
+lifts the sky by 24% and the machine by 0.5% is a glow whose tail is landing where nothing emitted it.
+The tail's length is `mipCount`. At tier 3 that is four mips of a half-res chain — the last tap is
+1/128 of frame width, a support **hundreds of screen pixels wide, comparable to the machine's own
+height.** P6 is not contradicted by the fact that HOLOSSEUM has a bloom pass. It is contradicted by
+the fact that the pass has a mip 6.
+
+`--bloom 0` is therefore the **ceiling measurement and never the ship setting**, and every figure
+taken with it is to be read as "what is the most this mechanism can be worth", exactly as
+`--kill light` was read in RULING 19.
+
+> **The acceptance test, stated now so a result cannot be re-read as a discovery afterwards.** A
+> radius cut is accepted if, at the pinned still frame on all three arenas, it takes **at least 60% of
+> the background drop `--bloom 0` takes** — orbital's ceiling is 11.7 points, 48.1 -> 36.4 — while
+> machine **body luminance holds within ±2.0** (the full-off move was +1.1) and clause B's clean% on
+> no arena falls by more than the round-trip floor. **If no mip setting can buy the background without
+> taking the bodies with it, then the glow is not separable from the look, bloom STAYS, and P6 is
+> annotated in `SPEC-CRV2` with the arithmetic that beat it.** That is the only route to a documented
+> exception I will accept, and it costs one capture pair to walk.
+
+**(b) Is P6 different from RULING 16's temperature gradient? Yes — on one word, and the word is
+separability.**
+
+RULING 16 refused to delete the fire's radial white -> yellow -> orange -> red -> soot ramp because
+the clause was asking for the *thing itself*. The ramp **is** the fire reading as burning gas; deleting
+it makes the effect a decal, which is the regression `SPEC-CRV2`'s own paragraph — *"any builder who
+reads this as an instruction to downgrade the renderer has read it backwards, and I will score that as
+a regression"* — exists to catch. Clause and look wanted opposite things **on the same pixels**, and
+where that is true the brief wins and the clause gets annotated. That has not changed and I am not
+softening it.
+
+P6 is not that shape. What bloom buys the look — lenses reading as glass, nozzle throats reading as
+lamps, an arena reading as a lit volume — is bought by the glow **near its emitter**. What the clause
+objects to is where the glow **ends up**. Those are separable, by a knob that already exists, and the
+separability is the entire answer: the temperature ramp had one control and it *was* the effect; the
+glow has three and only one of them is the defect. **Where a clause and the brief collide on the same
+pixels the brief wins; where they collide on different pixels there was never a collision, only a
+setting nobody had looked at.**
+
+The second difference is arithmetic rather than principle, and it is why I can rule at all: the two
+moves have **opposite measured signs**. Deleting the ramp was predicted to cost a quantity no meter
+could see and to buy a clause number. Removing the glow on the still frame costs **nothing measurable
+on two arenas of three and gains on the third**, on a meter constructed to punish it (finding 2 above).
+
+And the sentence that keeps this honest, which I want directly under the ruling and not in a footnote:
+
+> **Not one meter in this repository can see what bloom is for.** `contour.mjs` scores an edge,
+> `_salience.mjs` scores a rank, `_r16chroma.mjs` scores a median. None of them scores "this looks
+> expensive". **"No arena pays for removing it" is a statement about three columns and it must never be
+> quoted as a statement about the look.** The brief is *overwhelmingly beautiful*, not *clause-clean*,
+> and a clause-clean frame is not the deliverable. **A builder who reads RULING 22 as licence to ship
+> `bloom: false` is making RULING 16's mistake with my signature on it, and I will score it as a
+> regression.** The ruling is: cut the radius, keep the chain, measure the background.
+
+**(c) Which clause on my card gets WORSE without bloom, and has anyone measured it? Two, at least —
+and no, nobody has.**
+
+- **Clause H2 — and it is one of only two clauses this card scores MET.** RULING 9's diagnosis is that
+  the gate outranks the machines on **chroma**, not on value: gate luminance 92-101 against the
+  machines' 103-117, gate chroma 0.324-0.378 against 0.190-0.320, and the salience statistic ranks by
+  chroma. The composite adds `tBloom * 0.66`, a broadly white-ish additive term, and **adding white to
+  a saturated pixel lowers its saturation.** Taking the glow away therefore *raises* the gate's
+  measured chroma and can only push H2's cell count up. H2 has room — 2/24 = 8.3% against 25% — but the
+  direction is adverse, `bd01485` built the flag to test it two commits ago, and **no capture using it
+  is committed on any arena.**
+- **Clause E on the still frame.** `src/gfx/robot.js:717`: *"Solid unlit emissive — lenses, seams,
+  nozzle throats. **Drives the bloom.**"* The machines are bloom seeds too. Every bloom-off clause-E
+  figure in this document is **in motion**, where the competitor for the top 1% is a fireball. On a
+  still frame the competitor is a stage that `src/gfx/stage.js:740` describes as **twenty
+  self-blooming emitters**. The sign of that trade is not derivable from the detonation numbers in
+  either direction, and grid's clause-E margin was 2.0 points.
+- Two more I am naming as **unmeasured rather than adverse**, because they may well go the other way:
+  **clause C** — a glow bleeding across a face is a gradient inside a mass, so removing it should
+  *help*, and it would be the first lever on clause C that is not a shading lever, all of which
+  `55851e7` has now closed in both directions; and **clause A's top-4 coverage**, whose only pass is
+  0.3 points over a 0.2 floor and whose segmentation runs on the composited frame.
+
+> **The bloom case is one-sided because only one side has been measured.** Clause B has been read both
+> ways on three arenas. D, E, H2, C and A have been read one way. I will not carry a ruling in favour
+> of an art change on a card where five of eight clauses have only been read on one side of it — and I
+> am saying **before** I measure that **if E or H2 comes back worse with the glow off, the radius cut
+> in (a) is still the right move and the deletion is still refused. It just stops being free.**
+
+---
+
+### What round 20 landed, scored on the record
+
+| commit | what it claims | my reading `(record)` |
+|---|---|---|
+| `0562782` | the lobes were thrown THROUGH the opponent; 333 ms 28.4 -> **11.7**, 433 ms 52.2 -> **11.9**, both FAIL -> MET, blast not smaller | **The best art commit in this document.** One line, `sp` from `R*(1.1+r*1.6)` to `R*(0.72+r*1.05)`, both columns on one commit differing by that line alone, coverage inside 0.4 points at every age and 10-90 inside 1.25 px. It is also the first fix in twenty rounds derived from a **reconstructed geometry** — 3.14 m of throw against a 3.7-4.0 m opponent — rather than from a lever tried because it was to hand. Six hypotheses failed on sub-clause 1 by guessing; this one worked by measuring where the thing went. |
+| `9872b18` | 233 ms is the only failing cell left in F sub-2 | Accepted **as a cell count**, on the seven-age table. And it is 37 of 44.5 points **light**, not fire (`--kill light` floor 7.4%), so the remaining cell belongs to the rank-1 item's unfinished half and not to the fire. |
+| `55851e7` | clause C's shading levers are exhausted **in both directions** — flat shading 1.705 -> 1.763 worse, normal-map removal splits the two machines — and `ssao` is declared on four presets and read by nothing | Accepted, and the second half is worth more than the first. **A dead setting is an instrument fault in waiting:** an AO attribution probe would have read "not the cause" where the truth is "not present", and this document has burned two rounds on exactly that class of mistake. It is comment-only, `+14/-0`, verified in the diff. Clause C is now a **geometry** problem with every shading lever closed on the record, which is what RULING 18 said it would come to. |
+| `1dc666c`, `4ef5455` | defect #14 measured for the first time; the contact blob was driven by the sim capsule, so a hover chassis took a planted-machine shadow with its soles 210 mm up; now driven by the foot bones | Accepted as the round's second real art change. **210 mm is not a polish defect**, it is the shadow of a different machine than the one on screen, and no clause in `SPEC-CRV2` covers it because I wrote eight clauses about a still photograph of a lull. That hole in my spec is now two rounds old and it is mine to close, not the builder's. |
+| `fb2e684`, `1e4a128`, `bd01485`, `0dbaa12` | the bloom attribution | Ruled on above. The meters refuse rather than reporting from an unchanged composite, which is the correct construction and the thing fault 25 was filed for. |
+
+**RULING 21, re-applied.** `0562782` and `c2db8b1` both change `src/gfx/vfx.js`; `4ef5455` changes
+`src/game/view.js`. All three are **detonation-time or contact-time** code and the pinned still frame
+at tick 420 carries neither, so I am **not** ruling B, D and E stale for them — but that is an argument
+from where the code runs, not a measurement, and it is exactly the kind of argument RULING 15 exists to
+punish. The addendum settles it by re-reading them.
+
+---
+
+### The eight clauses, entering my own measurement — every row names its meter
+
+| Clause | Threshold | Where head stands | Meter | **Verdict** |
+|---|---|---|---|---|
+| **A** | count 4-6; top-4 >= 85% | grid near **4.3 / 85.3%**, far **5.5 / 86.2%**; 4 cells withdrawn (fault 24) | `mass.mjs --onbody` `(record)` | **MET on 2 of 6 cells, by 0.3 against a 0.2 floor** |
+| **B** | >= 90% clean | grid **84.8%**, orbital **82.7%**, foundry **71.0%** — `_r20b-*-on.txt`, **at head, post-`21a44fa`** | `tools/contour.mjs` `(record)` | **NOT MET 3/3 — and NO LONGER STALE.** Rank 4's B-third is closed by a commit that was aimed at something else. Best arena is **5.2 points short** |
+| **C** | ratio < 1.00 | grid near **1.705**, far **1.288**; every shading lever closed both ways | `_massdrive.mjs --onbody` `(record)` | **NOT MET 2/2. Now a geometry problem by elimination** |
+| **D** | machine median chroma > stage | 0.161/0.161/0.165 vs 0.129/0.129/0.145, **pre-`21a44fa`** | `_r16chroma.mjs` | **STALE 3/3** — 15 commits and two rounds now |
+| **E** | >= 50% of brightest 1% | still frame **52.0 / 65.5 / 32.1%, pre-`21a44fa`**; in motion **0 / 11.7 / 0.8 / 37.5%** shipped, **7.0 / 13.1 / 4.1 / 50.0%** bloom off | `_salience.mjs` / `_r17-edge.mjs` `(record)` | **STALE on the still frame 3/3.** The first 50%+ figure ever taken during a blast is a **diagnostic**, not the build |
+| **F sub-1** | 10-90 < 10% of radius | **not comparable across the light change** (fault 26) | `_r17-edge.mjs` | **NOT MET, and unreadable across round 20** |
+| **F sub-2** | < 25% of opponent altered | 1.4 / 20.0 / **44.5** / 11.7 / 11.9 / 0.5 / 7.0 at the seven ages | `_r17-edge.mjs` `(record)` | **NOT MET on one cell of seven.** Entering round 19 it was four of seven and the worst was 88.7% |
+| **G** | >= 36 rendered px | desktop 79 px, foundry far 39 px, phone 72.7 / 59.9 | `contour.mjs` box `(record)` | **MET** |
+| **H** | H2: no element ranks 1 in > 25% of cells | 2/24 = 8.3% | `_salience.mjs --gate` `(record)` | **MET — and it is the clause RULING 22(c) puts at risk** |
+
+### The five blind points
+
+| # | Point | R18 | R19 | **R20 entering** |
+|---|---|---|---|---|
+| 1 | robots brightest + most saturated (D+E) | PASS 2/3 | UNSCORED | **UNSCORED, second round running.** Two meters, two commands. Nobody has run them since `21a44fa` |
+| 2 | stage quieter (H) | PASS 2/3 | PASS | **PASS**, and now with a named adverse direction under the rank-1 item |
+| 3 | both machines legible at once (G) | FAIL | FAIL | **FAIL.** G is met on every surface and the opponent is still **68.0% invisible in outline at 117 ms**. Bloom is 30.4 of it; the other 37.6 is the machine standing inside a rgb(255,255,251) disc, at 0.67-0.85 of the blast's projected radius **at every age** |
+| 4 | very few very large forms (A+B+C) | FAIL | FAIL | **FAIL, and for the first time all three cells are live or near it:** A 85.3%, B **84.8% at head**, C 1.705 |
+| 5 | effects enormous hard-edged drawn (F) | FAIL | FAIL | **FAIL, and it is one cell and one mechanism from PASS on its second half.** sub-1 remains untouched by seven hypotheses and is now unreadable across the round |
+
+---
+
+## VERDICT: **NO.**
+
+**HOLOSSEUM does not win a blind side-by-side against Custom Robo V2 today**, and this is the twentieth
+round in which I have written that sentence. What is different about writing it this time is worth
+stating precisely, because it is the first round where the honest complaint is about **arithmetic
+that is nearly closed** rather than about mechanisms nobody has found:
+
+1. **Clause F's second sub-clause went from four failing ages of seven to one, in two rounds, on two
+   one-line art changes.** 88.7 -> 44.5, 71.1 -> 11.7, 50.2 -> 11.9, 66.1 -> 0.5. That is the largest
+   sustained movement on any clause in this document and both moves were derived from measurements
+   rather than guessed.
+2. **And blind point 5 still fails, because sub-clause 1 has not moved in seven attempts and is now
+   not even comparable across the round** (fault 26). The flash is the frame a viewer sees.
+3. **Blind point 1 is unscored for the second consecutive round.** Not failed — *unscored*, by my own
+   rule, because two commands have not been run. That is now the cheapest unresolved item on the card
+   by an order of magnitude and it has outlived two verdicts that named it.
+4. **Blind point 3 fails in motion and bloom is 45% of the worst figure, not 100%.** The other half is
+   composition: the opponent stands inside the fireball's disc at every age. RULING 22 buys 30.4
+   points of 68.0; it does not buy the point.
+5. **And the machines' feet were taking another machine's shadow.** `4ef5455` is a fix to a defect that
+   no clause of mine covers. Two rounds after I filed that hole, `SPEC-CRV2` still has eight clauses
+   about a still photograph and a viewer watching two machines walk sees the contact before he counts
+   masses.
+
+**What would change the answer** — unchanged in substance from round 19, re-ordered by what round 20
+closed:
+
+- **D and E re-read at head, all three arenas** — blind point 1 is unscored on two commands;
+- **clause F sub-2 under 25% at 233 ms** — one cell, and 37 of its 44.5 points are the blast light,
+  whose own ceiling at that age is 11.1%;
+- **clause F sub-1 under 10% of radius at ages 1 and 7**, on a threshold that does not move when the
+  blast light does;
+- **clause C under 1.00** — geometry, every shading lever closed;
+- **the opponent's invisible contour under 10% at every blast age** — RULING 22 is 30.4 points of it;
+- **clause B to 90%** — 5.2 points on the best arena, now measured rather than remembered;
+- **defect #14** — more than one contact tick in 21, no sole below the deck.
+
+### The one thing that would move most — **and it is not the bloom**
+
+**Get the opponent out of the fireball's disc, or the disc off the opponent.**
+
+RULING 22 is the correct ruling and I have made it; it is worth 30.4 points of one figure and 8-13
+points of clause E in motion, and it is cheap. It is **not** the largest thing on the board, and I am
+not going to let the fact that I was asked to rule on it turn it into the rank-1 item by default.
+
+The largest thing is in section 3 of the round-19 addendum and it has not been acted on: **the
+opponent sits at 0.67-0.85 of the blast's own projected radius at every age**, inside a core measured
+at rgb(255,255,251). White on white. That single fact is:
+
+- **blind point 3 in motion** — the residual 37.6% invisible outline that survives bloom removal;
+- **clause F sub-2's last cell** — 233 ms is the age the disc is largest;
+- **clause E in motion** — the effect holds the top of the value range because it is *in front of the
+  thing that should hold it*;
+- and it is the one defect on this card that a viewer sees **without knowing what to look for**, which
+  is the only test the brief actually names.
+
+`0562782` proved the class of fix works: it moved the *lobes* off the opponent by measuring where they
+were being thrown. **Nobody has done the same arithmetic for the core.** The core is spawned at
+`R*0.22` to `R*0.72` with the blast at 3.4 m and the opponent at 3.7-4.0 m; `--kill firecore` measured
+the core at 0.0 points of the 333 ms figure, which says the core is not *covering* the opponent — so
+the remaining question is whether it is *behind* it, *in front of* it, or *around* it, and the meter to
+answer that is the one `0562782` already used.
+
+Rank 2 is **RULING 22's radius cut**, with the acceptance test above. Rank 3 is **D and E at head**,
+which is two commands and un-blanks blind point 1. Rank 4 is **clause C by geometry**.
+
+### Standing rules, one added
+
+- **A diagnostic flag is not a ship setting, and its figures are a ceiling.** `--bloom 0`, `--kill
+  light`, `--kill firecore` all measure *the most a mechanism can be worth*. No figure taken under one
+  of them may be quoted as where the build stands. This is RULING 19's coverage-only rule generalised,
+  and RULING 22 is the first ruling written to it.
+- **Suspected INSTRUMENT FAULT 27** — the still-frame capture may not be pose-reproducible. Orbital's
+  machine stencil differs by **955 px, 3.9%**, between two captures of the same pinned tick, with the
+  robot-2 box five pixels up the frame. The mask arithmetic says bloom cannot do that. If a bloom-on
+  against bloom-on control reproduces the difference, **every single-capture still-frame delta in this
+  document smaller than 4% of area is inside the noise**, which would include orbital's whole clause-B
+  gain and clause A's 0.3-point pass. Filed as **suspected**; the control is in the addendum.
+
