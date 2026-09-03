@@ -292,6 +292,67 @@ const INSTALL_FN = `(cfg) => {
  * rather than cleared: clearing writes to the instance buffers, and the frame
  * has to be restorable for the stencil pass that follows.
  */
+/**
+ * THE VFX LAYER RENDERED ALONE ON BLACK — instrument fault 28's route out.
+ *
+ * Every clause F sub-clause 2 figure this project has filed is
+ * `|luma(raw) - luma(novfx)|`: a DIFFERENCE, and therefore a statement about
+ * what the VFX layer CHANGED rather than about what it COVERS. The two come
+ * apart whenever the thing underneath changes brightness. `8b071d2` made the
+ * opponent darker under the effect — the aiming target had been at 220 of 255
+ * before anything was drawn over it — and the difference column promptly read
+ * 117 ms as 20.0 -> 87.0, i.e. the same effect over a darker machine measured as
+ * four times the alteration. The clause got worse because the target got better.
+ *
+ * The critic's standing rule after four faults of this shape: **a mask is a
+ * render, not a difference.** So this hides everything that is not the effects
+ * layer, clears to black, and shoots. What comes back is the effect's own
+ * footprint, exactly the way `tools/contour.mjs` gets its machine mask.
+ *
+ * Bloom is deliberately LEFT ON. Glow that lands on the opponent covers it as
+ * far as a player is concerned, and P6 is a separate clause with its own ruling.
+ * `--bloom 0` gives the geometry-only variant for anyone who wants the split.
+ */
+const VFX_ONLY_FN = `(on) => {
+  const v = window.__game.view;
+  const f = v.vfx;
+  if (!v.__vfxNodes) {
+    v.__vfxNodes = [
+      f.sparks.points, f.smoke.points, f.energy.points,
+      f.fireballs.mesh, f.shockwaves.mesh, f.flares.mesh, f.decals.mesh, f.trails.mesh,
+    ].filter(Boolean);
+  }
+  const keep = new Set(v.__vfxNodes);
+  const r = window.__game.engine.renderer;
+  if (on) {
+    v.__onlyHid = [];
+    v.scene.traverse((o) => {
+      if (!(o.isMesh || o.isPoints)) return;
+      if (keep.has(o) || !o.visible) return;
+      v.__onlyHid.push(o);
+      o.visible = false;
+    });
+    v.__onlyBg = v.scene.background;
+    v.__onlyFog = v.scene.fog;
+    // three is bundled and unreachable from the page, so a THREE.Color to read
+    // the clear colour into is borrowed from a material that already owns one —
+    // the same dodge STENCIL_FN uses to construct its flat materials.
+    const C = v.blobs[0].material.color.clone();
+    r.getClearColor(C);
+    v.__onlyClear = C.getHex();
+    v.__onlyAlpha = r.getClearAlpha();
+    v.scene.background = null;
+    v.scene.fog = null;
+    r.setClearColor(0x000000, 1);
+  } else {
+    for (const o of v.__onlyHid || []) o.visible = true;
+    v.scene.background = v.__onlyBg;
+    v.scene.fog = v.__onlyFog;
+    if (v.__onlyClear !== undefined) r.setClearColor(v.__onlyClear, v.__onlyAlpha);
+    v.__onlyHid = null;
+  }
+}`;
+
 const VFX_TOGGLE_FN = `(on) => {
   const v = window.__game.view;
   const f = v.vfx;
@@ -717,6 +778,17 @@ for (const age of AGES) {
   await page.evaluate(`(${VFX_TOGGLE_FN})(false)`);
   await page.waitForTimeout(250);
   await page.screenshot({ path: `${PREFIX}-a${pad}-novfx.png` });
+
+  // 5. the effects layer alone on black — the footprint as a render. See
+  // VFX_ONLY_FN: the difference column above cannot tell coverage from a change
+  // in what is underneath, and this one can.
+  await page.evaluate(`(${VFX_TOGGLE_FN})(true)`);
+  await page.evaluate(`(${VFX_ONLY_FN})(true)`);
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: `${PREFIX}-a${pad}-vfxonly.png` });
+  await page.evaluate(`(${VFX_ONLY_FN})(false)`);
+  await page.evaluate(`(${VFX_TOGGLE_FN})(false)`);
+  await page.waitForTimeout(150);
 
   // The stencil is taken with the effects still hidden, and that is deliberate:
   // STENCIL_FN overrides every visible mesh's material, which would turn the
