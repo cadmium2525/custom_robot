@@ -373,6 +373,28 @@ const CLAUSE_C_REPORT =
  *   maps     albedo / AO / roughness textures
  *   env      the environment map
  *
+ * ROUND 19 adds the two that write value inside a mass and are neither
+ * view-dependent nor a texture, so `--u` and the four above both miss them:
+ *
+ *   shadow   the shadow map. An N64 has none, and a limb's shadow lying across
+ *            the torso is a hard-edged dark region in the middle of a mass —
+ *            the exact shape of clause C's failure, and it was never on any
+ *            round's list because it is not a term in the shell shader.
+ *   emis     the emissive channel — vents, energy veins, lamp faces. Small,
+ *            bright, and inside a mass by construction.
+ *   smooth   SMOOTH SHADING itself, i.e. flatShading = true. This is the only
+ *            entry that is not a removal of an effect but a change of the
+ *            shading normal, and it is here because `roundedBox` — the
+ *            workhorse of this model — gives every chamfer quad one row of
+ *            vertices carrying the face normal and one row carrying the
+ *            corner-sphere normal. That is a Gouraud RAMP across a band whose
+ *            projected width is the chamfer radius: 0.02-0.045 m, which at 166
+ *            px/m on grid's near machine is 3-7 px. Clause C's own hardware
+ *            fact allows a per-vertex ramp; the clause's text does not ("no
+ *            gradient inside a face"). Nothing moves: positions, the welded
+ *            normal the rim and the outline hull are built on, and therefore
+ *            the silhouette are all untouched.
+ *
  * DIAGNOSTIC ONLY. It changes nothing in the build and nothing it switches off
  * is a proposal to switch off — it is there to name the term, which is the step
  * this clause has been missing for seventeen rounds.
@@ -384,19 +406,66 @@ const ABLATE_INJECT =
   "      const _did = await page.evaluate((list) => {\n" +
   "        const v = window.__game.view;\n" +
   "        const seen = [];\n" +
+  "        if (list.includes('shadow')) {\n" +
+  "          const r = window.__game.engine.renderer;\n" +
+  "          const sc = window.__game.engine.scene;\n" +
+  "          if (r && r.shadowMap.enabled) {\n" +
+  "            r.shadowMap.enabled = false;\n" +
+  "            /* three.js bakes NUM_DIR_LIGHT_SHADOWS into every program, so the */\n" +
+  "            /* flag alone changes nothing until each material recompiles.      */\n" +
+  "            if (sc) sc.traverse((o) => { if (o.material) for (const mm of [].concat(o.material)) mm.needsUpdate = true; });\n" +
+  "            seen.push('shadowMap');\n" +
+  "          }\n" +
+  "        }\n" +
   "        for (const m of v.models) {\n" +
   "          if (list.includes('outline') && m.outline) { m.outline.visible = false; seen.push('outline'); }\n" +
   "          for (const mat of [m.matShell, m.matFrame]) {\n" +
   "            if (!mat) continue;\n" +
   "            let touched = false;\n" +
   "            if (list.includes('normal') && mat.normalMap) { mat.normalMap = null; seen.push('normalMap'); touched = true; }\n" +
-  "            if (list.includes('maps')) {\n" +
+  "            if (list.includes('maps') || list.includes('albedo')) {\n" +
   "              if (mat.map) { mat.map = null; seen.push('map'); touched = true; }\n" +
+  "            }\n" +
+  "            if (list.includes('maps') || list.includes('ao')) {\n" +
   "              if (mat.aoMap) { mat.aoMap = null; seen.push('aoMap'); touched = true; }\n" +
+  "            }\n" +
+  "            if (list.includes('maps') || list.includes('rough')) {\n" +
   "              if (mat.roughnessMap) { mat.roughnessMap = null; seen.push('roughnessMap'); touched = true; }\n" +
   "            }\n" +
   "            if (list.includes('env') && mat.envMap) { mat.envMap = null; seen.push('envMap'); touched = true; }\n" +
+  "            if (list.includes('smooth') && !mat.flatShading) {\n" +
+  "              mat.flatShading = true; seen.push('flatShading'); touched = true;\n" +
+  "            }\n" +
+  "            if (list.includes('emis') && mat.emissive && mat.emissive.getHex() !== 0) {\n" +
+  "              mat.emissive.setHex(0); seen.push('emissive'); touched = true;\n" +
+  "            }\n" +
+  "            if (list.includes('emis') && mat.emissiveMap) { mat.emissiveMap = null; seen.push('emissiveMap'); touched = true; }\n" +
   "            if (touched) mat.needsUpdate = true;\n" +
+  "          }\n" +
+  "          /* The lit vents and the plumes are their OWN meshes with their own  */\n" +
+  "          /* materials (matEmis is a MeshBasicMaterial, matFlare is additive), */\n" +
+  "          /* so nulling mat.emissive on the shell and the frame never reached  */\n" +
+  "          /* them. They are identified by material identity, not by index.     */\n" +
+  "          for (const mesh of m.meshes || []) {\n" +
+  "            if (list.includes('lit') && mesh.material === m.matEmis && mesh.visible) { mesh.visible = false; seen.push('emisMesh'); }\n" +
+  "            if (list.includes('lit') && mesh.material === m.matFlare && mesh.visible) { mesh.visible = false; seen.push('flareMesh'); }\n" +
+  "            /* recv and cast are separable and they are NOT the same clause.  */\n" +
+  "            /* recv removes the shadow a limb throws ACROSS a mass, which is  */\n" +
+  "            /* a per-pixel darkening inside a form. cast removes the shadow    */\n" +
+  "            /* the machine throws on the GROUND, which is a grounding cue and  */\n" +
+  "            /* belongs to another meter entirely. --off shadow kills both, and */\n" +
+  "            /* the stage's own shadows with them.                             */\n" +
+  "            if (list.includes('recv') && mesh.receiveShadow) { mesh.receiveShadow = false; seen.push('receiveShadow'); if (mesh.material) mesh.material.needsUpdate = true; }\n" +
+  "            if (list.includes('cast') && mesh.castShadow) { mesh.castShadow = false; seen.push('castShadow'); }\n" +
+  "          }\n" +
+  "          /* The dark chassis and the light plates are two materials with two  */\n" +
+  "          /* base colours, interleaved at the scale of a plate. This sets the  */\n" +
+  "          /* frame to the shell's colour — VALUE AND ALL, so it is a probe and */\n" +
+  "          /* not a proposal — to size what that interleaving is worth.         */\n" +
+  "          if (list.includes('frame') && m.matFrame && m.matShell) {\n" +
+  "            m.matFrame.color.copy(m.matShell.color);\n" +
+  "            m.matFrame.needsUpdate = true;\n" +
+  "            seen.push('frameColour');\n" +
   "          }\n" +
   "        }\n" +
   "        return [...new Set(seen)];\n" +

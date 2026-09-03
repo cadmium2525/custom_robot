@@ -2406,7 +2406,8 @@ export class RoboModel {
       geo.boundingSphere = _sphere.clone();
       const m = new THREE.SkinnedMesh(geo, mat);
       m.castShadow = shadows && !opts.noShadow;
-      m.receiveShadow = shadows && !opts.noShadow;
+      // RECEIVE is off, and CAST stays on. See MACHINES_DO_NOT_RECEIVE below.
+      m.receiveShadow = false;
       if (opts.order !== undefined) m.renderOrder = opts.order;
       if (table) this.lod.push({ geo, table });
       this.group.add(m);
@@ -2930,7 +2931,41 @@ export class RoboModel {
       // from the expanded hull would fatten every shadow the robot throws.
       if (m.material === this.matOutline) continue;
       m.castShadow = shadows;
-      m.receiveShadow = shadows;
+      // MACHINES_DO_NOT_RECEIVE — the same rule as in mk(), applied again here
+      // because this runs on every settings change and would otherwise put the
+      // flag back the first time the player touches the shadow quality slider.
+      //
+      // WHY. SPEC-CRV2 clause C ("value belongs to form, not to view") derives
+      // from platform fact P2: lighting is per-vertex Gouraud and the RDP has no
+      // programmable per-pixel stage. A shadow map is per-pixel darkening, and
+      // the shadow a machine throws across ITSELF — a forearm over the chest, a
+      // pauldron over the ribs — lands in the middle of a form and puts a hard
+      // dark region inside a mass. That is the exact shape of clause C's
+      // failure, and no round had ever switched it off because it is not a term
+      // in the shell shader and `--u` cannot reach it.
+      //
+      // CAST STAYS ON, deliberately, and the two are separable: the shadow on
+      // the GROUND is a grounding cue that belongs to another meter, and turning
+      // it off is not this clause's business. Measured separately —
+      // `shots/_massdrive.mjs --onbody --off recv` and `--off cast` — the two
+      // give the same clause C reading to three decimals (1.706 vs 1.705), so
+      // all of the clause C value is in RECEIVE and none of it is in CAST.
+      //
+      // MEASURED, grid @ tier 3, seed 1234567, `--onbody` (see tools/mass.mjs):
+      //     clause C near   1.856 -> 1.706      far   1.250 -> 1.289
+      //     clause A top-4  84.6% -> 85.3%      far   87.2% -> 86.2%
+      //     clause A count  5.0 -> 4.3          far   5.5 -> 5.5
+      // The near machine's top-4 crosses its 85% threshold on this change, so it
+      // is the one lever found in round 19 that moves clause A and clause C the
+      // same way instead of trading them.
+      //
+      // The cost, stated: a machine standing in a pillar's shadow is now lit as
+      // if in the open. That is consistent with what the shell's own light
+      // governor already does on purpose (see FILL_FRAG in materials.js — "the
+      // machine's own light rig, asserting itself over the arena's"), and clause
+      // C's whole claim is that a machine's value should be a property of its
+      // form and not of where it is standing.
+      m.receiveShadow = false;
     }
     for (const mat of this.shellMats) {
       for (const k of ['map', 'normalMap', 'aoMap', 'roughnessMap', 'metalnessMap']) {
