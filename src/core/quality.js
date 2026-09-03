@@ -35,6 +35,20 @@ const PRESETS = {
     shadowMapSize: 512,
     bloom: true,
     bloomQuality: 0,       // half-res, 3 mips
+    /**
+     * DEAD SETTING. `ssao` is declared on all four presets and read by nothing:
+     * `grep -rn ssao src/ --include=*.js` returns these four lines and no other.
+     * There is no SSAO stage in `postfx.js` and no ambient-occlusion pass
+     * anywhere in the renderer.
+     *
+     * Left in place rather than deleted because the tier table is also a
+     * statement of intent and this is a reasonable thing to want. Labelled
+     * because it is not free to leave unlabelled: SPEC-CRV2 clause C fails on
+     * per-pixel darkening inside a mass, ambient occlusion is exactly that, and
+     * an attribution probe that switches this off would have measured a change
+     * of zero and been read as "AO is not the cause" rather than "AO is not
+     * present". Anyone implementing it should expect it to cost clause C.
+     */
     ssao: false,
     motionBlur: false,
     reflections: false,
