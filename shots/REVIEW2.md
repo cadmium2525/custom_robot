@@ -6094,3 +6094,72 @@ and C share the silhouette and have already been shown to pull against each othe
    names the device. Never captured.
 6. **The `RIM_FRAG` up-bias literal** — the one clause-C lever left unmeasured, named at `uRimEdge` in
    `src/gfx/materials.js`, unreachable by uniform so it needs a rebuild per point.
+
+---
+
+### Round 18 verdict, addendum — **foundry's five withdrawn cells, re-read on the fixed stencil. Three of them overturn, and one of the three is mine.**
+
+Rank 3 of the list above, done immediately because it is the cheapest item on it and because a
+withdrawal I make is worth nothing until somebody re-measures it. One dump pair captured on the
+**fixed** stencil (`shots/_r15dump.mjs --base http://127.0.0.1:4176/holosseum --arena foundry --dir
+shots/_d_r19f`, seed 1234567, tier 3, tick 420, `engine.paused`, tick-at-a-time settle with
+`g.view.update(1/60, 1, t)` inside the loop), then every meter that had not been re-baselined after
+`bf17a94`. Bundle rebuilt from head (`npm run build`, `tools/bundle-single.mjs`,
+`node tools/deploycheck.mjs http://127.0.0.1:4176/holosseum` -> **DEPLOY OK** on all three arenas).
+Machine stencil **8138 px**, against the 4854 px every foundry figure in this document was taken on.
+
+| foundry cell | filed on the fault-19 mask (4854 px) | **re-read on the fixed mask (8138 px)** | meter | outcome |
+|---|---|---|---|---|
+| **D** median chroma | 0.145 vs 0.145 — **tie, NOT MET** | **0.165 vs 0.145 — MET** | `_r16chroma.mjs` | **OVERTURNED** |
+| **A** top-4, R1 | **84.8%** — FAIL by 0.2 | **88.5%** — MET by 3.5 | `tools/mass.mjs` via `_massdrive.mjs` | **OVERTURNED** |
+| **A** top-4, R2 | 86.1% MET | **86.2%** MET | same | confirmed |
+| **C** ratio, R1 / R2 | 3.70 / 1.39 FAIL | **3.58 / 1.34** FAIL | same | confirmed, no change in kind |
+| **E** share of top 1% | 18.5% NOT MET, **"arithmetically unreachable, cap 33.7%"** | **32.1% NOT MET; the cap does not bind** | `_salience.mjs` (authority) reads **32%**; `_r16chroma.mjs` 32.1%; `_r18e.mjs` 32.1% | **half overturned** |
+| **G** opponent height | 40x**33** px — under the 36 px floor | 41x**39** px — over it | `tools/mass.mjs` box | **OVERTURNED, and it was my flag** |
+
+**What this changes on the card, three items:**
+
+1. **Clause D is MET on 3/3 arenas.** The only D failure this document had left was a tie produced by
+   painting out two fifths of the machine — and the part painted out was the part under a large
+   translucent red practical, which is not a random sample of a body. Clause D is now met everywhere,
+   and **not one pixel of the renderer changed to do it.** RULING 12 gets stronger, not weaker: D is
+   an instrument correction end to end.
+2. **Clause A's coverage half is MET 6/6, not 5/6.** The one FAIL was foundry R1 at 84.8%, which round
+   18 called "inside the noise floor, unresolved". It was not noise. It was 3.7 points of machine
+   missing from the mask. **Clause A is the second clause on this card to be met outright, and like
+   the first it was met before anybody measured it.**
+3. **My own clause G flag is withdrawn.** I raised foundry's far machine at 33 px against the 36 px
+   floor in the verdict above, off `tools/mass.mjs`'s box. On the fixed mask it is **39 px**. I raised
+   a fault-19 figure one section after ruling that every fault-19 figure must be withdrawn, which is
+   the exact error I had just ruled against, and it is on the record as such. **Clause G's remaining
+   failure is the phone and only the phone.** 3 px of margin on a 36 px floor is not comfort, but it
+   is not a failure and I will not score it as one.
+
+**What does not change, and it is the important half:**
+
+- **Clause C still fails on foundry, 3.58 and 1.34 against 1.00**, on a mask 68% larger than the one
+  the 3.70 was taken on. Correcting the instrument moved this number by 3%. Clause C is not an
+  instrument artifact and no re-baseline is going to rescue it.
+- **Clause E on foundry is still NOT MET at 32.1% against 50%** on the authority meter — but round
+  18's *reason* is withdrawn. The "arithmetic cap 33.7%, no lighting change can move it" finding was a
+  consequence of a 4854 px stencil being smaller than the 7200 px the clause asks for. **8138 > 7200,
+  so the cap does not bind and clause E on foundry is reachable in principle.** What `_r18e.mjs` says
+  instead is that `L*` falls to **58.7** and **689764 stage pixels — 47.9% of the frame — must drop
+  below it**. That is not an impossibility, it is a demand that half the arena go dark, and it is a
+  worse answer than "unreachable" because it names a price rather than an excuse. Round 18's own
+  `bad9253` said exactly this and its summary table still said "unreachable at this seed"; **the table
+  was wrong and the commit body was right.**
+
+**The pattern this makes, and it is the fourth time:** foundry has now had a row withdrawn as a
+one-frame occlusion artifact (`RULING 7`), the same row withdrawn again as an instrument artifact
+(`bf17a94`), five more cells withdrawn as instrument artifacts (`RULING 13`), and three of those five
+now overturned into MET. **Every single time this project has concluded something about foundry's art,
+it has been measuring its own mask.** Foundry is not a worse arena than grid. It is the arena whose
+frame happens to put a translucent additive practical across the hero, and that is a fact about the
+instrument's assumptions, not about the renderer.
+
+**The verdict is unchanged: NO.** Two clauses are now met outright rather than one, both by instrument
+correction, and clause D joins clause A in the column of things that were true before anyone looked.
+Blind points 4 and 5 fail exactly as measured — clause C 6/6 at 1.34-4.09, clause B 83.8% against 90%,
+clause F 17-26x soft with 59.5-73.0% of the opponent swallowed — and the rank-1 item is unchanged:
+**128 elements per detonation.**
