@@ -5589,3 +5589,230 @@ foundry R1's 84.8% against an 85% floor is reported above as unresolved rather t
 - **Did not repair `shots/_contourdrive.mjs`.** It aborts at head for the identical reason and its clause
   (B) already has a working meter in `tools/contour.mjs` per RULING 10, so it is obsolete rather than
   broken. It is one anchor-table edit away from being a clause B host if anyone wants one.
+
+---
+
+## Round 18 — 2026-09-03 — clauses D and E, and the premise of clause D was wrong
+
+Commits: `f29c189`, `7419259`, `2b06060`, `7cd67d7`, `e0b4473`, `ab02bcd`, `394d7f8`, `bad9253`.
+
+Every figure below is from the meter named in its own sentence, on a bundle built from my own tree
+into `dist-r18/` and served on a private port, because `dist/` was rebuilt under me twice by another
+agent mid-measurement. Final build **`index-FlkYAzLa.js`**, seed 1234567, tier 3, tick 420,
+`engine.paused`, tick-at-a-time settle with `g.view.update(1/60, 1, t)` inside the loop. `npm run
+build` clean, `npm test` **ALL PASS**, `tools/bundle-single.mjs`, and `node tools/deploycheck.mjs
+http://127.0.0.1:4176/holosseum` → **DEPLOY OK** on all three arenas.
+
+### The headline: clause D was already met, and the pair it is scored against does not exist
+
+The card says *"D chroma: machines **0.449**, stage **0.748**, `_r16chroma.mjs`, NOT MET and inverted
+by 1.7x."* I ran `shots/_r16chroma.mjs` — the meter the clause names — on head, on all three arenas.
+
+| arena | machine chroma | stage chroma | ratio | machine MEDIAN | stage MEDIAN | clause D |
+|---|---|---|---|---|---|---|
+| grid | 0.217 | 0.133 | **1.64x** | 0.161 | 0.129 | **MET** |
+| orbital | 0.222 | 0.126 | **1.77x** | 0.165 | 0.129 | **MET** |
+| foundry | 0.191 | 0.171 | 1.12x | 0.145 | 0.145 | **NOT MET** (a tie on the median) |
+
+**The machines are more chromatic than the stage on two of three arenas, and the third is a tie, not a
+1.7x inversion.** The filed pair does not reproduce under any of the four colour definitions that file
+computes — chroma, HSV S, HSL L, HSL S — and it cannot reproduce under the first of them on any build,
+because **chroma <= ceiling pointwise**: `chroma = (mx-mn)/255` and `ceil = 1-|2L-1|`, and
+`ceil - chroma >= 0` for every triple. Grid's stage has a mean ceiling of **0.609**, so a stage mean
+chroma of 0.748 is not a measurement of a darker frame, it is arithmetically impossible. I cannot say
+where 0.449/0.748 came from. I can say it is not this meter's chroma column and that no round has
+re-run the meter since it was filed.
+
+`f29c189` fixes the instrument rather than arguing with the number. Clause D's written threshold is
+*median* chroma and the file printed the *mean*; it documented four colour definitions in its header
+and printed three, computing HSL S and discarding it. It now prints the median, prints HSL S, and
+prints the clause D verdict on the clause's own threshold so no reader has to pick a column. The
+baseline dump pair for all three arenas is force-added under `shots/_d_base/` so every figure here is
+re-runnable without a capture.
+
+**Clause D's remaining work is foundry and only foundry.** Its stage is the most saturated of the
+three (HSV S 0.457 against grid's 0.361) and it ties the machines on the median. Knocking out the
+practicals batch and the hazard batch each moved the stage median by 0.000 — foundry's chroma is not
+in a fixture, it is the whole arena sitting under a warm key. I did not fix it and I am not going to
+pretend a knock-out sweep is a fix.
+
+### Clause E has a closed form, and it says foundry could never have passed at this seed
+
+`2b06060` adds `shots/_r18e.mjs`. Clause E asks the machines to own `K/2` of the frame's brightest `K`
+pixels. Let `L*` be the machines' `(K/2)`-th brightest pixel and `S(t)` the count of stage pixels at
+or above `t`. The final threshold `T` satisfies `M(T) + S(T) = K` and `M` decreases in `T`, so
+
+```
+    CLAUSE E IS MET   <=>   S(L*) <= K/2
+```
+
+— two numbers off one dump pair, no rebuild, no capture: the level the stage has to get under, and how
+many stage pixels have to leave it. It is not a salience meter, reports no ranks, and
+`shots/_salience.mjs` remains the authority for the verdict; this says what would have to change for
+the verdict to flip. It also prints the **arithmetic cap**, and that is the finding it was written for:
+
+> **The machines cannot own more of the brightest 1% than they have pixels.** Foundry's machine
+> stencil in the pinned frame is **4854 px** and the clause asks them to own **7200**. Against a
+> perfectly black stage they cap at **33.7%**. No lighting change, no paint change and no
+> desaturation can move foundry's clause E at seed 1234567, and rank 6 of the standing list —
+> *"foundry and orbital are not close"* — has been asking for one for three rounds.
+
+At **seed 11** foundry holds **52.9%** and passes with 1890 px of slack, because its machine stencil
+there is **19803 px**. The foundry clause E row was never about foundry's lighting. It is a statement
+about how large the machine happened to be in one photograph, which is clause **G**'s question.
+
+### Orbital: the deck was not over-painted and it was not over-lit — it was too glossy
+
+`7cd67d7`. `shots/_owner.mjs` puts **75.4%** of orbital's brightest 1% on the deck. `shots/_r18e.mjs`
+put the gap at **34739 stage pixels above L* = 148.0**, and its cell map put nearly all of them in one
+blown region of near-camera deck. So the deck was knocked out one term at a time — live, through the
+new `--mat` on `shots/_r15dump.mjs`, no rebuild per step, every step scored on `_r18e.mjs` against the
+same pinned frame:
+
+```
+    envMapIntensity 0.34 -> 0       19.5% -> 20.0%
+    emissiveIntensity 0.5 -> 0      19.5% -> 19.4%
+    albedo tint #fff -> #808080     19.5% -> 28.0%     a 4.6x cut in the paint
+    albedo tint #fff -> #404040     19.5% -> 28.8%     a 20x cut in the paint
+    metalness 1 -> 0                19.5% -> 24.1%
+    roughness 1 -> 2                19.5% -> 52.3%     MET
+```
+
+**A twentyfold cut in the deck's paint moved it nine points. Doubling its roughness moved it
+thirty-three, and touched no colour value at all.** Orbital's key sits at 30 degrees of elevation
+against grid's 51, the deck's specular lobe comes back down the camera axis, and **a dielectric's
+specular does not scale with albedo** — which is why four rounds of dimming could not reach it, and
+why the arithmetic said orbital's deck receives 30% *less* light than grid's while the photograph said
+it was the brightest thing in the frame. `theme.deckRough` multiplies the roughness map; orbital gets
+2.0 and nothing else changes. Grid gets the same override and moves 0.3 points, so grid does not get
+it.
+
+**This is the round's transferable finding and it generalises the one `4e632e0` found.** That commit
+learned that a stuck residual can be on an axis nobody named — there, chroma instead of value. This is
+the same lesson one level down: **the offending pixels were not in the diffuse term at all**, so every
+edit to albedo, key intensity and emissive was aimed at a quantity the pixels did not depend on. And
+there is a specific trap behind it worth writing down, because it invalidated my own first three
+knock-outs before I caught it: the pipeline is ACES plus an S-curve (`postfx.js`), so **a blown
+surface sits in the shoulder and removing a large fraction of its radiance produces almost no change
+in the output**. Every knock-out test on a blown surface reads as "no effect". `envMapIntensity 0.34
+-> 0` reading as 0.5 points is not evidence that the env map contributes nothing.
+
+### Grid: the crowd bank and the practicals gain
+
+`e0b4473`. Grid's gap was **2886 px above L* = 152.6**, 0.2% of the frame, and `_r18e.mjs`'s map put
+most of it in the top two rows. Two fixtures, both scaled proportionally on all three channels so hue
+and saturation are untouched and only radiance moves:
+
+- **crowd bank `emissiveIntensity` 2.2 -> 1.5.** At 2.2 the gallery held **1245 of the brightest
+  14400 pixels** — 8.6% of the band clause E asks the two machines to own half of, spent on spectators
+  25 m behind the fight.
+- **practicals gain 1.0 -> 0.80.** A *gain*, not the *ceiling*. `PRACTICAL_CEIL` only touches fixtures
+  above it and most of the batch is authored far below, so `0.92 -> 0.62` bought **0.2 points**
+  (47.7% -> 47.9%, 169 pixels) and was reverted. Recorded in the comment so the next round does not
+  spend the cycle. `_owner.mjs`'s ownership column counts every pixel that MOVES when a mesh is
+  hidden, which is not the same question as how far a pixel falls when that mesh is merely dimmer — I
+  read the first as an answer to the second and it cost me a build.
+
+### Where the two clauses stand, on the authority meter
+
+`shots/_salience.mjs`, bundle `index-FlkYAzLa.js`, tier 3, tick 420, quoted with the saturation and
+clipped fraction of the pixels that won it per round 16's standing rule.
+
+| arena | machines' share of the brightest 1% | machine sat | machine clipped | clause E | clause H (stage < 50%) |
+|---|---|---|---|---|---|
+| grid | **47.7% -> 52.0%** | 0.347 | 0.00% | **MET** | **MET** (stage 48.0%) |
+| orbital | **19.5% -> 65.5%** | 0.352 | 0.00% | **MET** | **MET** (stage 34.5%) |
+| foundry | 18.5% (was 17.2% on the old meter) | 0.323 | 0.00% | **NOT MET** — unreachable at this seed | stage 81.5% |
+
+Seed 11, `shots/_r18e.mjs`, current build: grid **55.4%**, orbital **56.7%**, foundry **52.9%** — all
+three met. I did not take a seed-11 reading before the change, so foundry's pass there is **not**
+attributed to this round.
+
+**Clause H's second sub-clause is unchanged at `2 / 24` cells** (`_salience.mjs --gate`, fair rule and
+filed rule agree), so with the first sub-clause now met on grid and orbital, **clause H is MET on both
+halves on both of those arenas** for the first time.
+
+**Clause B is unchanged**, which the constant-hue claim required and which is not optional:
+`tools/contour.mjs`, same build pairs, before -> after — grid **83.8% -> 83.8%**, orbital **83.1% ->
+82.9%**. Machine chroma is unchanged to three decimals on both arenas (grid 0.217 -> 0.217, orbital
+0.222 -> 0.222) and only the stage's luminance moved (orbital stage mean 65.4 -> 60.5). Nothing was
+desaturated toward grey; both frames were read at full size and still carry their plate seams, tread,
+chevrons, wall louvres and crowd lights.
+
+### Three instrument faults, and one of them has been eating two fifths of a machine
+
+**Fault 17 — `shots/_owner.mjs` could not see the sky** (`7419259`). It enumerated the stage group
+with `o.isMesh && o.name && o.visible`, and the sky sphere was the one batch in `Stage` that was never
+given a name. It had no row, and the table was printed as though it accounted for the frame anyway. On
+orbital the nine rows it did print summed to 2.8% of the brightest 1% while the authority meter put
+the machines at 19.5%. Fixed at both ends: the mesh is named, and unnamed meshes now get a synthetic
+`#n` handle and are toggled by identity, with the count printed.
+
+**Fault 18 — `_owner.mjs` was photographing a different frame from every other meter** (`7419259`).
+`_salience.mjs`, `_r15dump.mjs` and everything downstream zero the shells' transient uniforms before
+they shoot. `_owner.mjs` did not, and orbital's pinned frame carries `uHitFlash = 0.42` on robot 1: the
+brightest 1% started at **205.5** there and **176.6** everywhere else, same build, same seed, same
+tick. Its TOP1% column was being read straight across against clause E and H figures taken on a
+different photograph. Suppression is now identical, the suppressed transients are printed, and the
+machines' own share of the top 1% is printed above the table so a table whose rows do not account for
+the frame is visible as such on sight.
+
+**Fault 19 — the shared stencil paints the practicals batch black over the machines** (`bad9253`).
+This is the serious one. The stencil block duplicated verbatim in `tools/contour.mjs`,
+`tools/mass.mjs`, `shots/_salience.mjs`, `shots/_owner.mjs` and `shots/_r15dump.mjs` replaces every
+non-shell material with an **opaque** black `MeshBasicMaterial` — including the practicals batch,
+which is normally additive with depth-write off and carries `renderOrder` 4. It therefore draws after
+the machines, opaquely, and deletes them from the mask wherever it overlaps.
+
+```
+    machine stencil area, practicals hidden during capture vs left visible
+      grid      24460 -> 24460 px    no erosion
+      orbital   24808 -> 24808 px    no erosion
+      foundry    4854 -> 8138 px     THE MASK IS 40% OF THE MACHINE
+```
+
+Foundry's pinned frame has a large translucent red practical lying across the near machine. **3284
+machine pixels — two fifths of the machine — are absent from every mask-derived figure this project
+has ever taken of that arena**: contour percentage, mass count and top-4 coverage, chroma, clause E
+share, and the rendered height clause G is scored on. It is zero on grid, which is the arena
+everything is argued on, and that is why five rounds have not hit it. **RULING 7 withdrew the foundry
+contour row on the grounds that its near machine was "61 x 200 px and four-fifths behind a block" —
+part of what was behind that machine was this bug.**
+
+**Not fixed, deliberately.** One copy cannot be changed without making this round's numbers
+incomparable with every number filed against the other four. It needs all five changed at once by
+somebody who intends to re-baseline. Documented at the stencil in `shots/_r15dump.mjs` with the
+numbers above.
+
+It does not rescue foundry's clause E: on the un-eroded mask the machines hold **32.1%** rather than
+18.5%, but `L*` falls to 58.6 and the requirement becomes **48% of the frame** below that. The
+conclusion gets stronger, not weaker.
+
+### What I added to the harness
+
+- `shots/_r18e.mjs` — the clause E budget in closed form, plus the arithmetic cap and a 16x9 cell map
+  of where the offending stage pixels are. Reads the same dump pair as `_r16chroma.mjs`, so nothing
+  crosses frames.
+- `shots/_r15dump.mjs --mat <mesh>.<prop>=<value>` — live stage-material overrides, addressed by the
+  names `_owner.mjs` attributes by, `visible` and `THREE.Color` properties included, unmatched knobs
+  reported rather than ignored. It is what made a six-step knock-out cost one command instead of six
+  rebuilds, and it is the reason the orbital finding exists.
+- `shots/_r16chroma.mjs` — median chroma, HSL S, and clause D's verdict on its own written threshold.
+- `shots/_owner.mjs` — unnamed meshes, matched suppression, the machines' own share, and the bundle
+  hash it measured.
+- Dump pairs force-added: `shots/_d_base/` (head), `shots/_d_r18/`, `shots/_d_r18b/` (final),
+  `shots/_d_s11/` (seed 11), `shots/_d_fx/` and `shots/_d_fprac/` (the stencil fault).
+
+### What I did not do, stated so it is not read as done
+
+- **Clause D on foundry is still not met** on its written median threshold (0.145 vs 0.145). It is a
+  tie, not an inversion, and it is the only D failure left.
+- **Clause E on foundry is not met** at seed 1234567 and cannot be at that framing. It is met at seed
+  11 on the current build, unattributed.
+- **Fault 19 is documented, not fixed.** Every historical foundry figure carries it.
+- I did not touch `src/gfx/vfx.js`, `bounds`, `spawns` or `boxes`, did not raise machine chroma, did
+  not touch the value ladder or the saturation floors, and did not re-open the withdrawn foundry
+  contour row.
+- Two changes were measured and **reverted rather than shipped**, with the measurement left in the
+  comment: `PRACTICAL_CEIL 0.92 -> 0.62` (0.2 points) and a per-theme deck albedo ceiling (nine
+  points, against roughness' thirty-three).
