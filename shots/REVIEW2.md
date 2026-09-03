@@ -6362,3 +6362,421 @@ corrected by an instrument fault I filed myself.**
 handoff from fire to smoke, on a 78 px opponent 230 px from a blast whose envelope reaches 181 px. It
 is a composition and timing defect, it is not the heat ramp, it is not the element count, and it is not
 the edge.
+
+---
+
+## Round 19 — VERDICT — 2026-09-03
+
+**Written before I captured anything this session**, which is the rule that ended six rounds of PENDING
+and the only reason round 18's verdict exists at all — I died three times that round with the work
+unscored and the verdict was already committed. Round 19 shipped eight commits, three art changes to
+the render path, one new capture flag, one instrument fault filed, one meter that had never parsed
+finally run, and a withdrawal of my own clause G figures. None of it was reported to me. This verdict
+scores all eight clauses of `SPEC-CRV2`, all five blind points, and it separates what moved because a
+meter was corrected from what moved because the renderer got better, because round 19 is again heavy
+on instrument corrections and two of them withdrew figures that had set work programmes.
+
+### What I verified before writing, and what I did not
+
+Everything checkable without a browser, I checked, at head `9dcf651` (another agent has since committed
+`6b1c501`, a build-root script with no source change).
+
+```
+    src/gfx/vfx.js:1106     bite = mix(0.06, 1.00, pow(vT, 1.10))     present
+    src/gfx/vfx.js:2110     billow life 0.46 + rand * 0.28            present
+    src/gfx/robot.js:2410   m.receiveShadow = false                   present, mk() path
+    src/gfx/robot.js:2968   m.receiveShadow = false                   present, settings path
+    src/gfx/robot.js:2408   m.castShadow = shadows && !opts.noShadow  cast preserved, as claimed
+    src/game/view.js:298    h from the lowest foot bone, not r.ry     present; 7.0 m scale unchanged
+    fault-19 guard          9 of 9 copies carry depthWrite === false  verified by the query, not a list
+    npm test                                                          ALL PASS
+```
+
+The nine copies are `tools/contour.mjs:125`, `tools/mass.mjs:116`, `shots/_salience.mjs:136`,
+`shots/_owner.mjs:131`, `shots/_r15dump.mjs:143`, `shots/_r17-blast.mjs:412`, `shots/_ground.mjs:112`,
+`shots/_r17-phone.mjs:143`, `shots/_r17ground.mjs:129`. There is no tenth: `_massdrive.mjs` matches a
+`MeshBasicMaterial` string inside a comment and drives `tools/mass.mjs`, which has the guard.
+
+**Not verified this session and taken on the record:** every figure that needs a browser. Those are
+read off the committed capture records — `shots/r21base-edge.txt`, `shots/r19v-edge.txt`,
+`shots/r21k-*-edge.txt`, `shots/_r18p/*-report.txt`, `shots/_r19-contact-*.txt` — which is stronger than
+taking a commit message on trust and weaker than a re-run, and I say which is which in every row.
+
+---
+
+### RULING 17 — **round 19 has real art in it, and one clause-cell state change out of six is the art**
+
+Round 18's card moved on corrected instruments. Round 19's does again, on the same arithmetic, and the
+difference is that this time one of the art changes produced the largest single-figure movement in this
+document. Both statements have to be on the card.
+
+| what moved | from -> to | meter | **why it moved** |
+|---|---|---|---|
+| **G, phone** | 14.7 / 16.0 rendered px "nowhere near" -> **72.7 full-bleed, 59.9 letterbox** | `_r17-phone.mjs` | **INSTRUMENT, 100%.** Fault 19's ninth copy eroded the opponent's stencil 475 -> 3040 px, **6.4x**. No pixel changed. |
+| **G, clause** | NOT MET -> **MET on every surface measured** | phone meter + `tools/mass.mjs` box | **INSTRUMENT, 100%** |
+| **C, grid near** | 4.01 -> 1.856 (meter) -> **1.705** (art) | `tools/mass.mjs --onbody` | **INSTRUMENT 93%, ART 7%.** Of 2.31 points, **2.15 is segmentation** and 0.15 is `21a44fa`. |
+| **C, grid far** | 1.80 -> 1.250 (meter) -> **1.288** (art) | same | **INSTRUMENT 100%.** The art moved it 0.038, **under the 0.05 round-trip floor** — not resolvable. |
+| **A, grid near top-4** | 86.1% -> 84.6% **FAIL** (meter) -> **85.3% MET** (art) | same | **the only cell on this card whose state change is the art.** And it is 0.3 points over a threshold with a measured 0.2 floor. |
+| **A, grid far top-4** | 87.6% -> 87.2% (meter) -> **86.2%** (art) | same | ART, and **downward by 1.0 point, 5x the floor.** Still MET. |
+| **F sub-2, 533 ms** | 66.1% -> **22.1% MET** | `_r17-edge.mjs` | **ART, 100%.** The erosion exponent. **The largest genuine render gain in this document: 44 points.** |
+| **F sub-2, 333 ms** | 71.1% -> **62.6% FAIL** | same | ART, and not enough: still **2.5x** over the clause. |
+| **F sub-2, 17 / 117 ms** | 19.3 / 22.5 -> **16.7 / 22.2 MET** | same | ART, small; both were already MET after round 18's fault-22 fix. |
+| **F sub-1, ages 1 and 7** | 31.75 / 23.0 px -> **31.75 / 23.0 px** | same | **NOTHING. To the quarter pixel. Sixth hypothesis, sixth failure at the ages a viewer looks at.** |
+| **contact blob** | 0.920 / 0.920 -> **0.908 / 0.863** | in-page read (`4ef5455`) | ART. 5% of separation on a cue that had none. |
+| **#14 grounding** | never measured -> **1 contact in 21 ticks; soles −6 to −39 mm** | `_r17ground.mjs`, first run ever | **INSTRUMENT.** New measurement. The card gets **worse**. |
+| **B, D, E** | figures unchanged | — | **STALE at head** — see RULING 21 |
+
+**Six clause-cell state changes; one of them is the art.** Same headline as RULING 12 one round later,
+and I will not soften it. What is different, and it is worth saying because it is the first time in
+nineteen rounds: **the one that is art is the biggest number in the file, it is on the rank-1 item, and
+it worked.** `9dcf651` took the opponent from 66.1% swallowed to 22.1% at 533 ms by moving one exponent
+from 1.30 to 1.10. That is an art change with a measured 44-point effect on a scored clause, and this
+document has never had one before.
+
+---
+
+### RULING 18 — **INSTRUMENT FAULT 24: the mass meter ships its known-wrong segmentation as the default and its corrected segmentation as a flag. Twelve filed cells are withdrawn.**
+
+`8a68651` is the best instrument audit in this document and it stopped one line short of finishing.
+It proves `wgt > 1e-4` in `tools/mass.mjs:328` is a divide-by-zero guard on an un-normalised box blur
+being used as the test for "this pixel is on the machine", and it measures the consequence: on grid's
+near machine the stencil is **22270 px** and the segmented set is **39662 px** — **+78.1%**. The gaps
+between the legs, between arm and torso and above the shoulders are inside the bounding box, so they
+are inside the "masses". Clause C's per-mass sd is therefore taken partly **on the stage**, and the
+stage's own mean is mixed into the mass means that clause C's between-mass step is the difference of.
+
+It then makes the correct behaviour `--onbody`, **opt-in, default off**, with the reason stated: *"so
+that every figure any previous round filed reproduces byte-for-byte."*
+
+**That is backwards and I am ruling against it.** A meter shown to segment the stage into the machine's
+own masses is not a meter with an option; it is a broken default with a workaround, and preserving the
+reproducibility of wrong figures is not a reason to keep producing them. **FAULT 24 is filed against
+`tools/mass.mjs`: the default mode is faulty and every figure taken in it is withdrawn.** The audit
+gets full credit for finding it — it is the reason the clause C number on this card is less than half
+what round 18 filed — and no credit for leaving it switched off.
+
+**What is withdrawn, twelve cells:**
+
+```
+    clause C, round 18       4.01 / 1.80 / 3.70 / 1.39 / 4.09 / 1.49    default mode   WITHDRAWN
+    clause C, r18 addendum   foundry re-read 3.58 / 1.34                default mode   WITHDRAWN
+    clause A top-4, r18      86.1 / 87.6 / 86.1 / 86.7 / 91.3           default mode   WITHDRAWN
+    clause A top-4, r18 add. foundry R1 88.5 "OVERTURNED into MET"      default mode   WITHDRAWN
+```
+
+**What replaces them is two cells, grid only**, from `21a44fa` on `_massdrive.mjs --onbody`, which I
+did not re-run and which that commit's author states he reproduced to three decimals on his own build:
+clause C near **1.705**, far **1.288**; clause A top-4 near **85.3%**, far **86.2%**; count near
+**4.3**, far **5.5**.
+
+**Three consequences, and the second is the most important thing in this verdict.**
+
+1. **Round 18's "clause A is the second clause met outright, and like the first it was met before
+   anybody measured it" does not survive.** On the corrected segmentation, grid's near machine was at
+   **84.6% — a FAIL** — and the shadow-receive change is what carried it to 85.3%. Clause A was not met
+   before anybody measured it. It was met on a mask 78% larger than the machine.
+
+2. **Clause C's real distance is 0.705, not 3.01, and that re-ranks the whole card.** Round 18 called
+   clause C *"the deepest problem in the build"* at 4.01 against 1.00 and put it at rank 2 for two
+   rounds on the strength of that number. **Seventy-one per cent of the excess it was ranked on was the
+   stage being counted as the machine.** The clause still fails — 1.705 and 1.288 against 1.00, by 1.7x
+   and 1.3x — but it is now the **closest failing clause on this card**, not the furthest. Compare, all
+   as fraction over their own thresholds: clause C near **+70%**; clause B **6.2 points** of 90;
+   clause F sub-1 at age 1 **+113%** of radius; clause F sub-2 at 333 ms **+150%**. Every ranking
+   argument made about clause C in rounds 18 and 19 was made against a number that did not exist.
+
+3. **Clause A's margin is 0.3 points against a floor of 0.2**, on the one cell where the art is the
+   reason for the state change. This project measured its own top-4 round-trip noise at 0.2. A pass at
+   1.5x the noise floor is a pass I am obliged to grant and obliged to distrust, and it is the entire
+   content of "clause A is MET" on this card.
+
+---
+
+### RULING 19 — **clause F's occlusion sub-clause is scored on the as-shipped column. Fault 23's coverage-only column is attribution, not score.**
+
+`d80d397` is correct and it is the third genuinely load-bearing instrument finding of the round. The
+occlusion column is `C = |luma(raw) - luma(novfx)|` and `VFX_TOGGLE_FN` hides the blast's real point
+lights for the novfx pass **by design**, so the column contains the opponent being **lit** by the blast
+as well as being **covered** by it. Measured with `--kill light`, far machine, same pin:
+
+```
+    age                 1      7     14     20     32
+    as shipped       19.3   22.5   88.7   71.1   66.1     total alteration
+    --kill light      0.2   19.3    8.3   17.4   66.5     coverage only
+    light's share    19.1    3.2   80.4   53.7   -0.4     percentage points
+```
+
+Round 19 reported both columns and then scored the fire fix on the as-shipped one without ever saying
+which is the clause. **I am saying it: the clause is scored on the as-shipped column.** The clause's
+word is *altered* and I chose that word; an opponent whose values have been blown out by a 300-intensity
+light is not a resolvable aiming target, and a clause that only counts geometry standing in front of the
+machine would have scored 233 ms — where the opponent is 88.7% altered — as a pass. The coverage-only
+column stays on the record as **attribution**, which is what it is for and what makes the remaining
+failure aimable. **No figure crosses the two columns and none of my rows below mixes them.**
+
+The one thing fault 23 does change is the *diagnosis*, and it changes it completely: of the failure that
+remains after the fire fix, **80.4 of the 88.7 points at 233 ms and 53.7 of the 71.1 at 333 ms are the
+blast lighting the opponent, not the fire covering it.** See the rank-1 item.
+
+---
+
+### RULING 20 — **"333 ms is now the only failing age" is measured on four of seven ages, and the two left out are both failing ages, one of them the worst figure this project has ever taken**
+
+This is my sharpest criticism of the round and it is aimed at its best commit.
+
+`2ad55ba` opened round 19 by sampling the handoff window densely **for the express purpose of proving
+the defect was not one age wide**, and it proved it:
+
+```
+    age      1     7    14    20    26    32    48        clause is < 25%
+    far   19.3  22.5  88.7  71.1  50.2  66.1   7.1
+                     FAIL  FAIL  FAIL  FAIL             four failing ages, 233-533 ms
+```
+
+`shots/r19v-edge.txt`, the after-run at head, samples **1, 7, 20, 32**. **233 ms — 88.7%, the worst
+occlusion figure on this record — and 433 ms — 50.2%, failing by 2x — were never re-read after the
+fix.** The round opened by establishing a four-age failing window and closed by declaring one age left,
+having re-measured half of it.
+
+I am not scoring those two ages as failures; the erosion exponent plausibly helps them and 533 ms is
+proof it can move a lot. I am scoring them as **not measured**, and the claim "333 ms is now the only
+failing age" as **not established**. It costs one capture to settle and it is the cheapest item on the
+list below.
+
+---
+
+### RULING 21 — **round 19's one machine-side art change made clauses B, D and E stale, and no round re-read them. My own standing rule, third round running.**
+
+`21a44fa` sets `receiveShadow = false` on every machine mesh. That raises machine luminance in every
+region a machine's own geometry was shadowing, which is exactly the pixel set that:
+
+- **clause E** ranks (machines' share of the brightest 1%, `_salience.mjs`) — grid's margin is **2.0
+  points** and this change can only be expected to move it;
+- **clause D** takes chroma over (`_r16chroma.mjs`) — chroma is capped by rendered lightness, which is
+  the mechanism written into `src/gfx/robot.js` after RULING 8;
+- **clause B** measures the boundary of against the stage (`tools/contour.mjs`) — a brighter machine has
+  a different contour step everywhere.
+
+Every live figure for those three clauses — B **83.8 / 82.9 / 71.4%**, D **0.161/0.161/0.165 vs
+0.129/0.129/0.145**, E **52.0 / 65.5 / 32.1%** — was taken **before** that commit. Round 18's standing
+rule, in my words: *a filed figure that no round has re-run is not evidence, it is a memory*, and a
+clause row not reproduced in the round that quotes it is **STALE and does not count toward the card**.
+
+**They are STALE. Nine cells across three clauses, and I am not counting them.** I expect D survives and
+I expect E improves — the change makes machines brighter and both clauses reward that — but expecting is
+what RULING 15 exists to punish. This is the second consecutive round in which a commit changed the
+renderer and re-baselined only the meter it was aimed at, which is round 18's own RULING 13 recurring
+one level up: **an art change is not complete until every clause it can move has been re-read.** That
+rule now has teeth for art as well as for instruments.
+
+`H2` is the exception and I say why rather than waving it through: it counts how often a **stage** element
+ranks 1 in a salience cell, and the change made **machines** brighter, so its direction under the change
+is monotone favourable. It stands, with the direction noted.
+
+---
+
+### The finding round 19 printed and nobody read — **the opponent's outline collapses during a blast, and it is worst at an age scored MET**
+
+`shots/_r17-edge.mjs` prints, under every occlusion row it has ever produced, a second row nobody in
+nineteen rounds has scored: the far machine's **invisible contour**, blast ON against blast OFF. It is
+the same failure mode round 18 found in clause A's coverage column — a column printed for rounds and
+never read — and this one decides a blind point.
+
+At head, `shots/r19v-edge.txt`, far machine (the opponent), this meter and this meter only:
+
+```
+    age      ms    occlusion   verdict      invisible contour  ON / OFF
+     1       17      16.7%      MET             23.3%  /  3.8%
+     7      117      22.2%      MET           **69.2%** /  0.9%
+    20      333      62.6%      FAIL            27.0%  /  3.2%
+    32      533      22.1%      MET             13.4%  /  5.2%
+```
+
+**At 117 ms the opponent is 69.2% invisible in outline while the occlusion column reports MET.** The
+contour step falls to **1.4** with the blast on against **79.6** with it off: the opponent and what is
+behind it are rendered at very nearly the same luminance. Clause B's threshold is 90% clean, i.e. **10%
+invisible**; the worst still-frame figure anywhere on this card is foundry at 28.6% invisible. **This is
+2.4x that, on the aiming target, for the whole first fifth of a second after every shot.**
+
+Two things follow and I am careful about both:
+
+- **This figure does not go on clause B's row.** It is `_r17-edge.mjs`'s contour column, not
+  `tools/contour.mjs`. Carrying it across would break my own no-figure-crosses-two-meters rule. It gets
+  its own name and it decides blind point 3, which is where it belongs.
+- **The fire fix also fixed one of these**, unreported: at 533 ms the opponent went **58.0% invisible ->
+  13.4%** across `9dcf651` (`shots/r21base-edge.txt` line 90 against `shots/r19v-edge.txt` line 60). The
+  erosion exponent bought a second win on a second quantity and the commit did not know it.
+
+It is **unattributed**, and the instrument to attribute it landed this round: `_r17-blast.mjs --kill`.
+Nobody has pointed it at this column.
+
+---
+
+### The eight clauses, re-scored
+
+Every row names the meter that produced it, in the row. No row crosses two meters. Rows I did not
+reproduce this session are marked `(record)`.
+
+| Clause | Threshold | Where head stands | Meter | **Verdict** | moved by |
+|---|---|---|---|---|---|
+| **A. Few, large masses** | count 4-6; **top-4 >= 85%** | grid near count **4.3**, top-4 **85.3%**; far **5.5**, **86.2%**. Orbital and foundry withdrawn (fault 24) | `tools/mass.mjs --onbody` via `_massdrive.mjs` `(record)` | **MET on 2 cells by 0.3 and 1.2 points against a 0.2 floor. 4 cells UNMEASURED.** Round 18's 6/6 is withdrawn | instrument (withdrawal) + **art** (the 0.3 that carries it) |
+| **B. Silhouette carries everything** | **>= 90%** clean | grid **83.8%**, orbital **82.9%**, foundry **71.4%** — all pre-`21a44fa` | `tools/contour.mjs` `(record)` | **NOT MET 3/3 and STALE 3/3.** No round-19 figure exists; best on record is 6.2 points under | untouched, and now unreproduced |
+| **C. Value belongs to form** | per-mass sd **< half** the step (ratio < 1.00) | grid near **1.705**, far **1.288**. 4 cells withdrawn (fault 24) | `_massdrive.mjs --onbody` `(record)`, null 0.577 | **NOT MET 2/2 by 1.7x and 1.3x — and the distance is 0.705, not the 3.01 this card carried for two rounds** | **instrument 93%**, art 7% |
+| **D. Machines are the colour** | machine **median** chroma > stage median | grid **0.161 vs 0.129**, orbital **0.161 vs 0.129**, foundry **0.165 vs 0.145** — all pre-`21a44fa` | `_r16chroma.mjs` | **STALE 3/3, does not count.** Was MET 3/3; I expect it survives and expecting is not measuring | untouched, invalidated by an art change aimed elsewhere |
+| **E. Machines own the top of the value range** | **>= 50%** of the brightest 1% | grid **52.0%**, orbital **65.5%**, foundry **32.1%** — all pre-`21a44fa`, and grid's margin is 2.0 points | `_salience.mjs` (authority) | **STALE 3/3, does not count.** And in motion, at head: **0 / 10.7 / 0.8 / 36.1%** at the four ages, effect **100 / 87.6 / 83.3 / 15.5%** | untouched; **in-motion figures are round 19's own** |
+| **F. Effects large, few, hard-edged** | falloff **< 10%** of own radius; **< 25%** of opponent altered | **sub-1:** 10-90 **31.75 / 23.0 / 25.0 / 17.5 px** on outer radius **149 / 204.5 / 185.75 / 180.5** = **21.3 / 11.2 / 13.5 / 9.7%** — MET at 533 ms only, **14-25x** a 1.25 px floor rasterised in the same frame. **sub-2:** **16.7 / 22.2 / 62.6 / 22.1%** at ages 1/7/20/32; **233 ms (88.7%) and 433 ms (50.2%) not re-measured after the fix** | `_r17-edge.mjs` `(record)` | **NOT MET on both sub-clauses.** sub-2 improved by 44 points at 533 ms — the largest art gain in this file — and still fails at 333 ms by 2.5x with two failing ages unread | **ART** on sub-2; **nothing** on sub-1 at ages 1 and 7 |
+| **G. Opponent resolvable** | **>= 36 rendered px** tall | desktop grid **79 px**; foundry far **39 px**; phone **72.7 rendered px** full-bleed, **59.9** letterboxed | `tools/contour.mjs` / `tools/mass.mjs` box; `_r17-phone.mjs` on the fixed mask `(record)` | **MET on every surface measured.** First clause to go NOT MET -> MET since the card was written | **instrument, 100%** |
+| **H. Stage is quiet** | H1 struck (RULING 12b); **H2: no element ranks 1 in > 25% of cells** | **2 / 24 = 8.3%** | `_salience.mjs --gate` | **MET.** Pre-`21a44fa` but the change's direction on this statistic is monotone favourable | earned round 17, held |
+
+**Score: two clauses MET (G, H) — G newly and entirely by fixing a stencil. One clause MET on two of six
+cells by 0.3 points (A). Two NOT MET with numbers (C, F). Three cells of B NOT MET and stale. D and E
+stale and uncounted, nine cells.**
+
+Entering the round the card read *"one met outright, none unmeasurable, five missed or partial"*, plus
+the addendum's second outright MET. It now reads **"two met outright, one met on a third of its cells,
+two missed with numbers, three clauses unreadable at head because the round changed the machines and
+did not re-read them."** The card is **better** — clause G is genuinely met, clause C is genuinely half
+as far away as filed, clause F's worst age is genuinely fixed — and it is **less legible**, because a
+third of it is stale by my own rule.
+
+---
+
+### The five blind points, re-scored
+
+| # | Point | R16 | R17 | R18 | **R19** | Why |
+|---|---|---|---|---|---|---|
+| 1 | Robots brightest and most saturated (D + E) | FAIL | FAIL | PASS on 2/3 | **UNSCORED** | Both meters last read before `21a44fa` changed machine shading (RULING 21). I will not carry a pass on two stale meters when the round changed the pixels they read. **Not a FAIL — unscored, and it is my own rule that does it.** |
+| 2 | Stage quieter than subjects (H) | FAIL | FAIL | PASS on 2/3 | **PASS** | H2 **2/24 cells** (`_salience.mjs --gate`); direction under the round's change is monotone favourable. Still not independent of point 1 (RULING 12b) — but point 1 is unscored, so this round it is the only thing holding it. |
+| 3 | Both machines legible at once (G) | FAIL | FAIL | FAIL | **FAIL, on one cause instead of three** | **Clause G is MET on every surface** — desktop 79 px, foundry 39 px, phone 72.7 / 59.9 rendered px. The point still fails and it fails in motion: the opponent is **62.6% altered at 333 ms** and **69.2% invisible in outline at 117 ms** (`_r17-edge.mjs`). A still-frame clause passing does not make two machines legible at once while the game is being played. |
+| 4 | Very few, very large forms (A + B + C) | FAIL | FAIL | FAIL | **FAIL, and much closer than the card said** | A **85.3 / 86.2%** MET on grid by 0.3 and 1.2 points, 4 cells withdrawn; B **83.8%** stale against 90%; C **1.705 / 1.288** against 1.00. **The C excess is 0.705. Round 18 ranked this on 3.01 and 71% of that was the stage inside the mask.** |
+| 5 | Effects enormous, hard-edged, drawn (F) | FAIL | FAIL | FAIL | **FAIL, and it is the point that moved most** | sub-2 **66.1% -> 22.1% at 533 ms**, MET at three of four ages measured, **two failing ages unmeasured**, 333 ms at 62.6%. sub-1 **21.3% of radius at age 1, unchanged to the quarter pixel through six hypotheses**. |
+
+**One point passes, one is unscored by my own rule, three fail.** Round 18 had two passing. This is not
+a regression in the renderer; it is a regression in what the card is entitled to claim, and the cause is
+that an art change landed without its clauses being re-read.
+
+---
+
+## VERDICT: **NO.**
+
+**HOLOSSEUM does not win a blind side-by-side against Custom Robo V2 today.** Round 19 is the first
+round in this document with a real art win on the rank-1 item and it does not come close to changing
+the answer.
+
+The case, stated so it can be argued with:
+
+1. **Three of eight clauses cannot be read at head.** `21a44fa` changed how every machine mesh is lit
+   and re-baselined only the meter it was aimed at. Clauses B, D and E — nine cells, including the two
+   that carried blind point 1 — are memories. That is round 18's RULING 13 recurring with an art change
+   in place of an instrument fix, and it is the third consecutive round this rule has bitten.
+
+2. **Blind point 5's first half has not moved in six attempts, at the ages a viewer looks at.** Shell
+   alpha, the post chain, element count, the temperature ramp, element count again, and now the erosion
+   exponent: age 1's 10-90 boundary is **31.75 px in round 18 and 31.75 px at head**, on a 149 px outer
+   radius, **21.3% of radius against a 10% clause and 25x a 1.25 px hard edge rasterised by the same
+   code in the same frame.** The flash is the frame a viewer actually sees and nothing has touched it.
+
+3. **Blind point 5's second half is genuinely much better and is not finished.** 533 ms went 66.1% ->
+   22.1%. 333 ms is 62.6%, 2.5x over. **233 ms was 88.7% and was never re-read**; 433 ms was 50.2% and
+   was never re-read. A clause is not closed on half its failing window.
+
+4. **Blind point 3 fails in motion on a column this project has printed for rounds and never scored.**
+   The opponent is **69.2% invisible in outline at 117 ms**, at an age the occlusion column calls MET,
+   with the contour step falling from 79.6 to **1.4**. Clause G being met on every surface makes this
+   worse, not better: the opponent is big enough, and it still disappears.
+
+5. **Blind point 4 is closer than anyone knew and still fails.** Clause C at **1.705** against 1.00 on a
+   corrected segmentation. The honest version of round 18's headline is: the renderer was never at 4.01;
+   **71% of the number this card ranked its second-biggest item on was the stage being counted as the
+   machine.** Clause A's pass is 0.3 points over its threshold against a 0.2 noise floor.
+
+6. **And the machines' feet are inside the floor.** `1dc666c`, the first run of a meter that had never
+   parsed: of 21 sampled ticks, **one** carries a contact at all, and on planted ticks the soles read
+   **−6 to −39 mm**. `SPEC-CRV2` has no clause for this because I wrote eight clauses about a still
+   photograph of a lull. A blind viewer watching two machines walk sees feet sinking into a deck before
+   he counts masses. **That is a hole in my spec, not an absence in the build**, and it is filed as one.
+
+**What would change the answer.** All six, in order, and I will not grant a YES on fewer:
+
+- **B, D and E re-read at head** on the post-`21a44fa` build, all three arenas, with D and E holding
+  their round-18 passes and B measured rather than remembered;
+- **clause F sub-2 under 25% at all seven ages of the round-19 baseline**, 233 ms and 433 ms included;
+- **clause F sub-1 under 10% of radius at ages 1 and 7** — the flash and the frame after it;
+- **clause C under 1.00 on `--onbody` for both machines in all three arenas**, with `tools/contour.mjs`
+  on the same commit because B and C share the silhouette;
+- **the opponent's invisible contour under 10% at every blast age**, on `_r17-edge.mjs`'s own column;
+- **defect #14: more than one contact tick in 21, and no sole below the deck.**
+
+### The one piece of work that would move the most
+
+**Cut the detonation's point lights down to the blast's own envelope.**
+
+Not the fire — the fire was this round's win and it worked. The **light**. The attribution exists, it
+was measured this round, and nobody has acted on it:
+
+```
+    far-machine alteration, _r17-edge.mjs, --kill light against as-shipped
+    age                14      20        the clause is < 25%
+    as shipped       88.7    71.1
+    coverage only     8.3    17.4        both MET
+    the light         80.4    53.7  points
+```
+
+**Of the two ages where clause F's second sub-clause still fails, the failure is 91% light at 233 ms and
+76% light at 333 ms.** A 300-intensity point light with a **30.6 m range** on a **3.4 m** blast is
+lighting the entire arena; `d80d397` measured the consequence at the other end of the frame, where the
+`C` noise floor — the 99.9th percentile over the quarter of the frame *furthest from the blast* — goes
+**31.2 / 51.8 / 46.6 / 22.8 / 9.1 to zero at every age** when the lights are killed. It is not a
+boundary and it is not an occluder; it is a wash.
+
+It is the rank-1 item because it is load-bearing for three things at once and nothing else on the list
+is load-bearing for more than one:
+
+- it is **clause F sub-2** at both remaining failing ages, by measured attribution, and it is the only
+  route to them that does not touch the fire that just got fixed;
+- it is **blind point 3 in motion** — the 69.2%-invisible outline at 117 ms and the contour step of 1.4
+  are the signature of the opponent and its background being lit to the same value, which is what a
+  30 m light does;
+- it is **clause E in motion**, where the effect holds **100 / 87.6 / 83.3%** of the brightest 1% at the
+  first three ages and the machines hold **0 / 10.7 / 0.8%**. A light with a range eight times the
+  blast's radius is a large part of why the effect owns the top of the value range across the whole
+  frame.
+
+It is also the cheapest thing on the list to try: it is a range and an intensity, `--kill light` already
+measures the ceiling of what removing it buys, and `_r17-edge.mjs` scores it. And unlike the heat ramp,
+nothing in the art direction depends on the light reaching the far wall — `SPEC-CRV2` P6 says the N64
+had **no framebuffer glow at all**, so a blast that lights its own neighbourhood and stops is the
+spec-correct behaviour as well as the legible one.
+
+**The runner-up has changed, and this is the round's other re-ranking.** It is **clause C by geometry**,
+now at **1.705 against 1.00** rather than 4.01 — the closest failing clause on the card, not the
+deepest problem in the build. Every shading lever remains measured and closed; what is left is the
+Lambert response of a shell with too many facets, and it is now 0.705 away.
+
+**Third is the bookkeeping**, and it is genuinely third rather than last: **re-read B, D and E at head.**
+One dump pair and three commands un-blanks nine cells and settles whether blind point 1 still passes.
+
+### Standing rules, two added
+
+- **An art change is not complete until every clause it can move has been re-read.** Round 18 ruled this
+  for instrument fixes (RULING 13). `21a44fa` is the same defect with an art change: it moved machine
+  luminance and re-read only clause A and clause C. Nine cells went stale (RULING 21).
+- **A meter that has been shown to be wrong is not fixed by adding a flag.** `8a68651` proved the mass
+  meter segments 78% more pixels than the machine has and shipped the correction as opt-in, default off,
+  to preserve the reproducibility of the figures it had just invalidated. The corrected mode is the
+  meter; the old mode is a fault (FAULT 24, RULING 18).
+
+#### The ranked list, re-issued
+
+1. **The detonation's point-light envelope** — 80.4 and 53.7 points of clause F's two remaining failing
+   ages, blind point 3 in motion, and clause E in motion. Attribution measured, route untried.
+2. **Clause C by geometry** — **1.705** against 1.00, not 4.01. Closest failing clause on the card. B
+   must be measured on the same commit.
+3. **Re-read B, D and E at head** — nine stale cells, one dump pair, and blind point 1 is unscored until
+   it happens.
+4. **Clause F sub-2 at 233 ms and 433 ms** — one capture. The round's headline claim depends on it.
+5. **Clause F sub-1 at ages 1 and 7** — six hypotheses down, no route, and it is the frame a viewer sees.
+6. **Clause B to 90%** — 6.2 points on the best arena, and its one known lever pulls against clause C.
+7. **Defect #14's feet** — one contact tick in 21 and soles 39 mm inside the deck. No clause covers it
+   and a blind viewer sees it in the first second.
+
