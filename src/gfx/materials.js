@@ -417,6 +417,59 @@ export function roboShell(maps, look, teamColor, opts = {}) {
     // fact a full-body additive wash of the emissive colour: defect #5 exactly,
     // and most of why the machine photographed as a pale smudge. Supplying them
     // is the whole fix; the GLSL was already right.
+    //
+    // ---------------------------------------------------------------------
+    // MEASURED AND REVERTED: narrowing this band is a clause B regression.
+    // Do not retry it without reading the numbers below. (`shots/_massdrive.mjs`
+    // clause C + `tools/contour.mjs`, grid @ tier 3, seed 1234567.)
+    // ---------------------------------------------------------------------
+    //
+    // 0.40/0.60 makes the NEAR rim a band across much of every chamfered plate:
+    // smoothstep(0.40, 1.00, fres) is on wherever the surface has turned ~66
+    // degrees off camera, which is a large share of a rounded machine's area.
+    // The first measurement SPEC-CRV2 clause C has ever had lands on it — near
+    // machine, per-mass luminance sd 41.2 levels against a between-mass step of
+    // 20.3, ratio 4.06 where the clause passes below 1.00. The value variation
+    // INSIDE one mass is twice the step BETWEEN masses, and the rim is a
+    // measurable part of why: it both adds variance inside a mass and washes
+    // out the step between masses.
+    //
+    // Narrowing the near band to 0.70/0.30 is the largest single improvement
+    // available to that ratio — larger than switching off EVERY view-dependent
+    // term in the shader put together:
+    //
+    //     rim/spec/energy/wash all zeroed   ratio 4.06 -> 3.01
+    //     this one change                   ratio 4.06 -> 2.73  (gap 20.3 -> 28.7)
+    //     clause A top-4 coverage           86.3% -> 87.4%, 87.7% -> 88.8%
+    //
+    // AND IT IS STILL WRONG, because of what it costs on the clause next door.
+    // Built and re-measured from the bundle, not predicted:
+    //
+    //     clause B clean contour   83.8% -> 81.8%   (robot 1: 85.9% -> 83.5%)
+    //     body/background separation  69.5 -> 66.8
+    //     invisible boundary        4.5% -> 4.9%
+    //
+    // Clause C's gain comes from removing rim energy near the silhouette, which
+    // is the exact pixels clause B reads. The two are the same lever pulled in
+    // opposite directions. Clause B is already six points under its 90% floor,
+    // and clause C at 2.73 is still a FAIL — so the trade spends a real
+    // regression on a clause that does not change verdict. Reverted.
+    //
+    // Two escapes were tried and both closed. Compensating with rimStrength
+    // 0.10 -> 0.14 recovers rim energy at the edge but drops the near machine's
+    // mass count to 3.5 and FAILS clause A. A saturating band (0.60/0.25 or
+    // 0.66/0.20, full rim before the silhouette) keeps clause B's edge lift but
+    // gives back almost all of clause C's gain: ratio 3.88 and 3.86 against a
+    // 4.06 baseline. What buys clause C here is specifically the band NOT
+    // reaching full before the silhouette, which is specifically what costs
+    // clause B.
+    //
+    // The lever that has NOT been tried is the up-bias two lines below the
+    // smoothstep in RIM_FRAG (`rim *= 0.44 + 0.56 * ...nWorldX.y...`): biasing
+    // harder to upward-facing normals would keep the top silhouette a raked
+    // camera reads while dropping the rim off plate interiors and undersides.
+    // It is a literal in the shader, so no uniform reaches it and it cannot be
+    // swept without a rebuild per point. That is the next thing to measure.
     uRimEdge: { value: opts.rimEdge ?? 0.40 },
     uRimSoft: { value: opts.rimSoft ?? 0.60 },
     uRimWash: { value: opts.rimWash ?? 0.0 },

@@ -101,6 +101,9 @@ const ANCHORS = [
    '  id-to-size map every one of those figures is indexed by. If the sort has\n' +
    '  moved, the injection would index the WRONG regions and still print a\n' +
    '  number — which is the fault class this whole table exists to stop.'],
+  ['ABLATE', '  if (NOPAINT) await page.evaluate(', 1,
+   'where the --off ablation is injected, after the paint control and before\n' +
+   '  the shutter.'],
   ['REGION-RETURN', '      top4: top4 * 100,\n    };', 1,
    'the per-phase return, extended with the clause C figures.'],
   ['PHASE-AVG', "      top4: Math.round(avg('top4') * 10) / 10,\n    };", 1,
@@ -348,7 +351,62 @@ const CLAUSE_C_REPORT =
   "      '   (vs ramp null: ' + (_cFlat ? 'flatter than a gradient' : 'NO FLATTER THAN A GRADIENT') + ')');\n" +
   "  }\n";
 
+/**
+ * `--off outline,normal,maps,env` — the attribution probe for clause C.
+ *
+ * The stock meter's `--u` reaches every VIEW-DEPENDENT term in the shell shader,
+ * because those are all uniforms. It reaches nothing else. When the first clause
+ * C reading came back at ratio 4.06 and zeroing the rim, the specular, the
+ * energy and the wash together only moved it to 3.01, the remaining three
+ * quarters of the excess were coming from somewhere `--u` cannot switch off, and
+ * guessing which was not an option — this repository has sixteen instrument
+ * faults on file and most of them start with a plausible guess.
+ *
+ * So this removes, one at a time, the four things that write value INSIDE a mass
+ * without being view-dependent:
+ *
+ *   outline  the inverted-hull line art, which is drawn in near-black over every
+ *            interior seam as well as the silhouette
+ *   normal   the normal map — a per-pixel normal perturbation, i.e. exactly the
+ *            programmable per-pixel stage clause C's hardware fact says did not
+ *            exist, and the one term that can put a gradient inside a flat face
+ *   maps     albedo / AO / roughness textures
+ *   env      the environment map
+ *
+ * DIAGNOSTIC ONLY. It changes nothing in the build and nothing it switches off
+ * is a proposal to switch off — it is there to name the term, which is the step
+ * this clause has been missing for seventeen rounds.
+ */
+const ABLATE_INJECT =
+  "  {\n" +
+  "    const _off = String(flag('off', '') || '').split(',').filter(Boolean);\n" +
+  "    if (_off.length) {\n" +
+  "      const _did = await page.evaluate((list) => {\n" +
+  "        const v = window.__game.view;\n" +
+  "        const seen = [];\n" +
+  "        for (const m of v.models) {\n" +
+  "          if (list.includes('outline') && m.outline) { m.outline.visible = false; seen.push('outline'); }\n" +
+  "          for (const mat of [m.matShell, m.matFrame]) {\n" +
+  "            if (!mat) continue;\n" +
+  "            let touched = false;\n" +
+  "            if (list.includes('normal') && mat.normalMap) { mat.normalMap = null; seen.push('normalMap'); touched = true; }\n" +
+  "            if (list.includes('maps')) {\n" +
+  "              if (mat.map) { mat.map = null; seen.push('map'); touched = true; }\n" +
+  "              if (mat.aoMap) { mat.aoMap = null; seen.push('aoMap'); touched = true; }\n" +
+  "              if (mat.roughnessMap) { mat.roughnessMap = null; seen.push('roughnessMap'); touched = true; }\n" +
+  "            }\n" +
+  "            if (list.includes('env') && mat.envMap) { mat.envMap = null; seen.push('envMap'); touched = true; }\n" +
+  "            if (touched) mat.needsUpdate = true;\n" +
+  "          }\n" +
+  "        }\n" +
+  "        return [...new Set(seen)];\n" +
+  "      }, _off);\n" +
+  "      console.log('  off: ' + _off.join(',') + '   removed: ' + (_did.join(', ') || 'NOTHING — check the names'));\n" +
+  "    }\n" +
+  "  }\n";
+
 let out = src;
+out = out.replace('  if (NOPAINT) await page.evaluate(', ABLATE_INJECT + '  if (NOPAINT) await page.evaluate(');
 out = out.replace('  await page.waitForFunction(() => window.__game',
   BUNDLE_INJECT + '  await page.waitForFunction(() => window.__game');
 out = out.replace('      sizes.push(n);\n    }\n    sizes.sort((a, b) => b - a);', CLAUSE_C_SEGMENT);
