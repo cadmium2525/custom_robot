@@ -153,6 +153,8 @@ const AGES = String(flag('ages', '2,7,14,28,48')).split(',').map(Number);
  *   particles   the whole `vfx.smoke` ParticleBatch: dust wave + rising plume
  *               + tumbling chunks. They share one pool, so this kills all three.
  *   fireshell   fireball-kind shells in `vfx.fireballs` (flash core + cluster)
+ *   firecore    the UNTHROWN fire shells only: the flash and the cluster core
+ *   firelobes   the THROWN fire shells only: the seven billows
  *   smokeshell  smoke-kind shells in `vfx.fireballs` (stage 5, the three volumes)
  *
  * The last two share a pool and are separated by `aTint.w`, which `spawn`
@@ -166,7 +168,7 @@ const AGES = String(flag('ages', '2,7,14,28,48')).split(',').map(Number);
 const KILL = flag('kill', null);
 const KILL_LIST = KILL === null ? [] : String(KILL).split(',').map((s) => s.trim()).filter(Boolean);
 const KILL_NODES = ['flares', 'shockwaves', 'sparks', 'energy', 'decals', 'trails', 'particles', 'light'];
-const KILL_KINDS = { fireshell: 0, smokeshell: 1 };
+const KILL_KINDS = { fireshell: 0, smokeshell: 1, firecore: 2, firelobes: 3 };
 /** Stages that actually matched something, at any age. See the guard below. */
 const KILL_SEEN = new Set();
 for (const k of KILL_LIST) {
@@ -349,7 +351,22 @@ const KILL_FN = `(names) => {
     }
     // Shell kinds. aTint.w carries the kind written by ShellPool.spawn:
     // 0 and 1 are fire, 2 is smoke. Alive means life > 0.
+    //
+    // ROUND 20 -- 'fireshell' is too coarse to act on. It kills the flash core,
+    // the cluster core AND the seven thrown lobes together, so it can say the
+    // fire is standing on the opponent and cannot say WHICH fire. The two are
+    // separable without touching the renderer: every unthrown shell in
+    // _detonate spawns with mx = mz = 0 (the flash passes no motion at all, the
+    // cluster core passes 0, R*0.16, 0), and every lobe passes ca*sp / sa*sp,
+    // which is nonzero for all seven. So the discriminator is the LATERAL
+    // launch velocity, read off the pool's own motion buffer:
+    //
+    //   firecore    fire shells with no lateral throw  (flash + cluster core)
+    //   firelobes   fire shells with a lateral throw   (the seven billows)
+    //   fireshell   both, unchanged
     const wantSmoke = n === 'smokeshell';
+    const coreOnly = n === 'firecore';
+    const lobesOnly = n === 'firelobes';
     const p = f.fireballs;
     // Census first. A kill that matches nothing has to be able to say what WAS
     // in the pool, or the refusal is as uninformative as the zero it replaces.
@@ -367,7 +384,11 @@ const KILL_FN = `(names) => {
       const i4 = i * 4;
       if (!(p.life[i4 + 1] > 0)) continue;
       const isSmoke = p.tint[i4 + 3] > 1.5;
-      if (isSmoke !== wantSmoke) continue;
+      if (coreOnly || lobesOnly) {
+        if (isSmoke) continue;
+        const thrown = Math.abs(p.motion[i4]) > 1e-4 || Math.abs(p.motion[i4 + 2]) > 1e-4;
+        if (thrown !== lobesOnly) continue;
+      } else if (isSmoke !== wantSmoke) continue;
       p.life[i4 + 1] = 0;
       hit++;
     }
