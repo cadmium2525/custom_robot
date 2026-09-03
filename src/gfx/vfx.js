@@ -2300,16 +2300,55 @@ export class VFX {
     }
 
     // --- 7. light on the arena -------------------------------------------
+    //
+    // BROUGHT INTO THE ARENA'S OWN LIGHTING UNITS, which this file was not in.
+    // The rule is already written down for a stage practical in stage.js, in
+    // the paragraph that took the foundry gate lamp from 26 to 7: "a practical
+    // is not allowed to out-light the sun", and the arithmetic there is the
+    // arithmetic here — decay is 2, so the illuminance delivered is intensity
+    // over distance squared, against a key of about 3.2.
+    //
+    // This light was 300 at a range of R * 9 = 30.6 m on a 3.4 m blast. The
+    // opponent in the pinned capture stands about 3 m from the detonation, so
+    // it was taking 300 / 9 = 33 lux, TEN TIMES THE KEY, and the range reached
+    // the far wall. The gate lamp was condemned for out-lighting the sun by a
+    // factor of eight at the surface it was closest to; this was worse, at a
+    // surface that is the aiming target.
+    //
+    // What that measured, on the pinned blast, shots/_r17-edge.mjs only:
+    //   - the opponent's contour step against what is behind it fell to 1.4
+    //     from 79.6 at 117 ms, i.e. the machine and the fireball rendered at
+    //     the same luminance, and 69.2% of its outline went under the
+    //     legibility floor against 0.9% with the blast light killed;
+    //   - the C noise floor over the QUARTER OF THE FRAME FURTHEST FROM THE
+    //     BLAST ran 31.2 / 51.8 / 46.6 / 22.8 / 9.1 and went to zero at every
+    //     age with the lights out. A blast that measurably changes the far
+    //     corner of the frame is a wash, not a flash.
+    //
+    // 60 at R * 4 = 13.6 m instead. At 1 m from the centre that is still 60
+    // lux — about nineteen times the key, which is what an explosion at your
+    // feet should be. At the 3 m where the opponent stands it is 6.7, about
+    // twice the key: an unmistakable warm flash across the machine that does
+    // not take it to white. At 8 m it is 0.9, a fifth of the key, and the
+    // window closes before the boundary wall.
+    //
+    // The temporal decay is deliberately NOT touched. exp(-age * 5) is a
+    // judgement recorded in the update loop below — 9/s was tried and put the
+    // light out before the fireball had finished expanding — and the failure
+    // this is aimed at is at 117-433 ms, which is inside the flash, not after
+    // it. Shortening the light's life would hide the defect at the ages the
+    // meter samples without changing what a player sees at the moment of the
+    // hit. The size of the light is the defect; its duration is not.
     const li = this.lightCursor % this.lights.length;
     this.lightCursor++;
     const l = this.lights[li];
     l.position.set(x, y + 0.45, z);
     l.color.setRGB(1.0, 0.58, 0.24);
-    l.distance = R * 9;
+    l.distance = R * 4;
     l.visible = true;
     this.lightBirth[li] = t;
     this.lightLife[li] = 0.55;
-    this.lightPeak[li] = 300 * scale;
+    this.lightPeak[li] = 60 * scale;
     l.intensity = this.lightPeak[li];
 
     const prox = this._proximity(x, y, z);
