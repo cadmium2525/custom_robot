@@ -1,0 +1,12 @@
+COVERAGE AS A RENDER — shots/r29base   bundle 83ecfb41023f
+  grid @ HIGH, seed 1234567, blast tick 1195
+  opponent = the SMALLER stencil box. Clause F sub-clause 2 threshold is 25%.
+
+  age    ms  |  opponent box    px  |  L>8     L>25    L>60
+    1    17  |    51x77     2881  |   0.5     0.1     0.0
+    7   117  |    50x94     2717  | 100.0   100.0    97.2
+   14   233  |    60x77     2173  |  16.7    11.4     8.1
+   20   333  |    61x79     2304  |   7.6     6.1     2.5
+   26   433  |    59x87     2387  |  15.9    12.7     1.9
+   32   533  |    54x68     2265  |   2.5     0.3     0.0
+   48   800  |    49x85     2277  |   8.1     5.8     3.4
