@@ -1,0 +1,58 @@
+  bundle: index-B-Pp4STY.js   base: http://127.0.0.1:4324/custom_robot/
+  suppressed transients: robot 1 uCharge, robot 2 uCharge
+  bloomStrength 0.66 -> 0  (diagnostic, not written to src)
+
+GATE RECTS — re-derived from arena.bounds + arena.spawns, projected through the pinned camera
+    spawn     0, -10.5   rect 0,148,330,410   330x262 on screen   raw -107,148,330,410
+    spawn     0,  10.5   rect 1600,273,1600,900   0x627 on screen  (partly behind camera)   raw 1821,273,5014,3566
+  ranking the in-frame gate: 0,148,330,410 (330x262 px, 6.0% of frame)
+
+ATTENTION — grid @ tier 3, tick 420, 1600x900
+  ranking the in-frame gate: 0,148,330,410 (330x262 px, 6.0% of frame)
+  best rank of a >=50%-machine tile / best rank of a tile >=50% INSIDE the named rect [tiles in top 10]
+
+   T  off  total       A          B          C
+  32    0   1400    1/  7 [2]   1/  5 [3]   1/  2 [4]
+  32   16   1323    1/ 11 [0]   1/ 10 [1]   1/  4 [4]
+  40    0    880    1/  7 [2]   1/  7 [4]   1/  5 [4]
+  40   20    858    1/  4 [4]   1/  4 [5]   2/  1 [4]
+  48    0    594    1/  5 [4]   1/  5 [5]   1/  4 [4]
+  48   24    576    1/  4 [2]   1/  4 [3]   1/  4 [3]
+  64    0    350    1/  6 [2]   1/  3 [2]   1/  3 [4]
+  64   32    312    1/  3 [2]   1/  4 [2]   1/  5 [3]
+
+  THE FILED CLAIM, COUNTED — "rank 1 in N of 24 cells; M of the top 14 tiles"
+                                     rank 1   outranks the machines   of top 14 (A,T=40,off=0)
+    tile >=50% inside the rect (fair)     1 / 24            1 / 24                 4 / 14
+    top-left corner in the rect (as filed) 1 / 24            1 / 24                 4 / 14
+    a >=50%-machine tile                 23 / 24
+
+  top 20 tiles, model A at T=40 off=0   (m% = machine share of the tile; r% = share of the tile inside the rect)
+      800, 760   score    38.5   lum  118.3  chroma  0.326  m 100%  r   0%
+      800, 720   score    29.8   lum  108.2  chroma  0.276  m 100%  r   0%
+      760, 800   score    29.6   lum  127.5  chroma  0.233  m  93%  r   0%
+      800, 800   score    27.1   lum  125.4  chroma  0.216  m 100%  r   0%
+      760, 720   score    26.3   lum  108.4  chroma  0.242  m  88%  r   0%
+      760, 760   score      26   lum  115.9  chroma  0.224  m  75%  r   0%
+      160, 360   score    23.9   lum   92.7  chroma  0.257  m   0%  r 100%
+     1240, 840   score    23.6   lum   97.8  chroma  0.241  m   0%  r   0%
+     1120, 360   score    22.1   lum    101  chroma  0.218  m   0%  r   0%
+      120, 360   score      22   lum   93.8  chroma  0.235  m   0%  r 100%
+     1080, 360   score    21.7   lum  102.7  chroma  0.211  m   0%  r   0%
+       40, 360   score    20.9   lum   85.6  chroma  0.244  m   0%  r 100%
+       80, 360   score    20.7   lum   88.7  chroma  0.233  m   0%  r 100%
+      320, 480   score    20.5   lum   98.2  chroma  0.209  m   0%  r   0%
+      640, 440   score    20.3   lum  107.2  chroma  0.189  m   0%  r   0%
+      200, 360   score    20.2   lum   89.2  chroma  0.227  m   0%  r 100%
+      400, 560   score    20.2   lum  101.5  chroma  0.199  m   0%  r   0%
+      400, 520   score    19.7   lum   99.7  chroma  0.198  m   0%  r   0%
+      280, 480   score    19.6   lum   95.1  chroma  0.206  m   0%  r   0%
+      120, 240   score    19.5   lum   68.6  chroma  0.285  m   0%  r 100%
+
+  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)
+                pct     lum     sat
+    cyan        0.2%   148.1   0.615
+    amber       2.8%   101.2   0.542
+    MACHINES    1.7%   121.8   0.329
+
+  brightest 1% of the frame (>= 151.6): machines 58.6%, cyan 3.9%, amber 5.9%

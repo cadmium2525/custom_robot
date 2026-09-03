@@ -1,0 +1,1 @@
+  foundry -> shots/_r20cdump/foundry-n.png + shots/_r20cdump/foundry-mask.png

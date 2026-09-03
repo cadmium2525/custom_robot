@@ -1,0 +1,2 @@
+  suppressed transients: robot 1 uCharge=0.37, robot 2 uCharge=0.12
+  grid -> shots/_r20cdump/grid-n.png + shots/_r20cdump/grid-mask.png

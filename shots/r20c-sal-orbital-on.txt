@@ -1,0 +1,45 @@
+  bundle: index-B-Pp4STY.js   base: http://127.0.0.1:4324/custom_robot/
+  suppressed transients: robot 1 uHitFlash, robot 1 uCharge, robot 2 uCharge
+
+ATTENTION — orbital @ tier 3, tick 420, 1600x900
+  best rank of a >=50%-machine tile
+
+   T  off  total       A          B          C
+  32    0   1400    1          1          1       
+  32   16   1323    1          1          1       
+  40    0    880    1          1          1       
+  40   20    858    1          1          1       
+  48    0    594    1          1          1       
+  48   24    576    1          1          1       
+  64    0    350    1          1          1       
+  64   32    312    1          1          1       
+
+  top 20 tiles, model A at T=40 off=0   (m% = machine share of the tile; r% = share of the tile inside the rect)
+      840, 680   score    38.7   lum  127.2  chroma  0.304  m 100%  r   0%
+      840, 720   score    37.8   lum    128  chroma  0.295  m  96%  r   0%
+      800, 680   score    34.1   lum  120.9  chroma  0.282  m 100%  r   0%
+      800, 760   score    29.5   lum  109.8  chroma  0.269  m 100%  r   0%
+      800, 720   score    29.2   lum    118  chroma  0.247  m  93%  r   0%
+      840, 760   score      25   lum  107.7  chroma  0.232  m  77%  r   0%
+      840, 800   score    20.3   lum     95  chroma  0.213  m  80%  r   0%
+      800, 800   score    19.8   lum  118.6  chroma  0.167  m  99%  r   0%
+      880, 680   score    18.9   lum  121.3  chroma  0.156  m  97%  r   0%
+      760, 800   score    17.6   lum   99.8  chroma  0.177  m  62%  r   0%
+      760, 840   score    16.1   lum   97.9  chroma  0.164  m  72%  r   0%
+       40, 160   score    16.1   lum   82.3  chroma  0.195  m   0%  r   0%
+      760, 760   score    15.9   lum   79.7  chroma  0.199  m  32%  r   0%
+       80, 160   score    15.4   lum   79.9  chroma  0.193  m   0%  r   0%
+      840, 840   score    15.4   lum   92.4  chroma  0.167  m  57%  r   0%
+        0, 160   score    15.2   lum   79.1  chroma  0.192  m   0%  r   0%
+      160, 160   score    15.1   lum   74.7  chroma  0.203  m   0%  r   0%
+      120, 160   score    14.9   lum     75  chroma  0.198  m   0%  r   0%
+      920, 120   score    14.6   lum   73.9  chroma  0.197  m   0%  r   0%
+      280, 120   score    14.6   lum   75.3  chroma  0.193  m   0%  r   0%
+
+  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)
+                pct     lum     sat
+    cyan        1.1%   128.3   0.583
+    amber       0.4%    97.2   0.491
+    MACHINES    1.7%   122.5   0.346
+
+  brightest 1% of the frame (>= 140): machines 66.5%, cyan 3.5%, amber 3.2%

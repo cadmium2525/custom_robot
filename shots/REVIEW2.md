@@ -7462,3 +7462,274 @@ which is two commands and un-blanks blind point 1. Rank 4 is **clause C by geome
   document smaller than 4% of area is inside the noise**, which would include orbital's whole clause-B
   gain and clause A's 0.3-point pass. Filed as **suspected**; the control is in the addendum.
 
+
+---
+
+## Round 20 verdict, addendum — **I measured my own ruling and half of what it was built on does not reproduce**
+
+Everything below is mine, taken after the verdict above was committed, on **my own build root and my
+own port** — `shots/_r20c-snap.sh` -> `shots/_r20croot` on **:4324**, bundle `index-B-Pp4STY.js`,
+built from the `a544dae` tree. `npm run build` clean, `node tools/simtest.mjs` **ALL PASS**,
+`node tools/deploycheck.mjs http://127.0.0.1:4324/custom_robot/` **DEPLOY OK on grid, foundry and
+orbital** before any capture. Records committed as `shots/r20c-*.txt`. Every figure names its meter in
+its own row and no figure crosses two meters.
+
+### 1. **INSTRUMENT FAULT 27 — the orbital arm of the bloom evidence does not reproduce, and it is the arm the mechanism was read off**
+
+`tools/contour.mjs`, tier 3, tick 420, seed 1234567, three arenas, **one bundle**, bloom on against
+bloom off — the comparison round 19 asked for, run again by me because a ruling I had just written
+rested on it:
+
+```
+                clean %          invisible %       separation      body            background
+    grid     84.8 -> 84.8       4.5 -> 4.4       71.5 -> 70.8    149.0 -> 147.9   77.5 -> 77.1
+    foundry  70.8 -> 71.4       8.7 -> 8.7       84.0 -> 84.2    134.8 -> 134.8   50.8 -> 50.6
+    orbital  83.6 -> 83.6       7.6 -> 7.7      172.9 -> 172.9   209.3 -> 209.3   36.4 -> 36.4
+```
+
+**Grid and foundry reproduce the filed pair on both arms, inside 0.2 points.** Orbital does not, and it
+fails in a specific way: **my bloom-ON run returns the filed bloom-OFF row, to the decimal** — 83.6%
+clean, background 36.4, separation 172.9, body 209.3 — where the filed bloom-ON row reads 82.7 / 48.1 /
+160.1 / 208.2. I ran orbital bloom-ON twice; both agree with each other and with the filed OFF arm
+(23695 and 23643 machine px against the filed ON arm's 24598).
+
+Three things rule out the obvious explanations, and I ran the last one before filing:
+
+- **It is not the mask.** White in the stencil pass is exactly 1.0 linear; the bright pass gives it
+  `soft = 1.0 − 1.04 + 0.16 = 0.12`, `contrib = 0.12² / 0.64 = 0.0225`, and 2.25% of the glow at
+  strength 0.66 reaches the black side at roughly **32/255 against a cut at 128** — a factor of four.
+- **It is not a dead flag.** `--bloom 5` on the same command moves orbital's far machine from 9.4% to
+  **41.5% invisible** and dilates its box from 50x76 to 63x76. The diagnostic reaches the captured
+  frame; at 5 it even pushes the stencil past the cut, which is the same arithmetic in the other
+  direction and confirms it.
+- **It is not the bundle in any way I can check**, and that is the second half of the fault:
+  **`tools/contour.mjs` prints no bundle hash.** `shots/_salience.mjs` prints one — mine says
+  `bundle: index-B-Pp4STY.js` at the head of every record — and `shots/_r17-edge.mjs` prints one.
+  Round 14 asked for that line and RULING 9's rules list records it as **CLOSED**. It was closed on
+  one meter. **The meter that produces clause B and clause G has never had it**, so two contour
+  records that disagree cannot be told apart, which is exactly the position I am in.
+
+> **INSTRUMENT FAULT 27, filed: two captures of orbital at the same pinned tick, same arena, same
+> tier, same meter, differ by 955 machine pixels (3.9%), 11.7 luminance points of background, 12.8 of
+> separation and 0.9 points of clean%, with the far machine's box five pixels up the frame.** Suspected
+> in the verdict above on the pixel counts alone; confirmed here by a reproducing pair on my own root.
+> Until a contour record carries a bundle hash and a repeat, **no single-capture still-frame delta from
+> this meter is evidence** — which includes clause A's 0.3-point pass, since `tools/mass.mjs` shares
+> the stencil and the settle.
+
+**What is withdrawn.** *"Orbital improves on all three and clears it on two"* and, with it, the sentence
+the ruling was asked for: *"orbital's body luminance is unchanged while its BACKGROUND falls 48.1 ->
+36.4 — the glow was on the sky."* Orbital's background at head is **36.4 with bloom on and 36.4 with it
+off**. There is no still-frame background drop on that arena and there never was one to attribute.
+
+**What survives, and it is unanimous rather than dramatic:** on the still frame, removing the glow is
+worth **0.0 / +0.6 / 0.0 points of clean%** on grid / foundry / orbital, and **−1.1 / 0.0 / 0.0** points
+of machine body luminance. **No arena pays. No arena gains.** The condition I set in round 19 has been
+answered with a **null result on three arenas**, and the null is the informative part — see section 4.
+
+### 2. Clauses D and E, re-read at head — **blind point 1 is unscored no longer, and it passes on two arenas of three**
+
+Rank 3 on my own list, stale since `21a44fa`, two rounds and two verdicts old. Two commands.
+
+**Clause E — `shots/_salience.mjs` (the authority meter), tier 3, tick 420:**
+
+```
+    machines' share of the brightest 1%      bloom on   bloom off    filed, pre-21a44fa
+    grid                                       58.9       58.6            52.0
+    orbital                                    66.5       66.1            65.5
+    foundry                                    33.3       33.3            32.1        clause asks 50%
+```
+
+**MET on grid and orbital, NOT MET on foundry.** Grid's stale 52.0 was a 2.0-point margin; at head it
+is **8.9 points**, and RULING 21's expectation — *"I expect E improves, and expecting is what RULING 15
+exists to punish"* — is confirmed rather than assumed. Grid's winning pixels are at machine saturation
+**0.328**, nowhere near the clip signature that made orbital's old 92.8% a false positive, so round
+16's standing rule is satisfied and this is an honest figure.
+
+**Clause D — `shots/_r16chroma.mjs` on a fresh `_r15dump.mjs` pair, same root:**
+
+```
+    median chroma            machines   stage    ratio    machine headroom
+    grid                       0.149    0.129    1.559        31%
+    orbital                    0.161    0.129    1.736        31%
+    foundry                    0.153    0.145    1.153        30%
+```
+
+**MET 3/3.** Grid and foundry both fell about 0.012 from their filed values and both still clear. The
+machines sit at **30-31% of the chroma their own lightness allows**, so RULING 8's "renderer-limited"
+answer remains unavailable for this clause — which costs nothing today, because the clause is met.
+
+> **Blind point 1 — robots brightest and most saturated — is PASS on two arenas of three, on figures
+> re-read at head.** It was UNSCORED in round 19 by my own rule and it cost two verdicts to say so. The
+> ranked item that closed it took two commands and about twenty minutes.
+
+### 3. RULING 22(c): **I named two clauses that would get worse without bloom. Both are wrong, and one of them is wrong in the opposite direction**
+
+This is the part of the round I most want on the record, because I wrote the prediction into a
+committed verdict before I measured it, which is the only arrangement under which being wrong is worth
+anything.
+
+- **Clause E does not get worse. It does not get anything.** 58.9 -> 58.6, 66.5 -> 66.1, 33.3 -> 33.3.
+  Machine saturation 0.328 -> 0.329. I reasoned that the machines' own emissives — *"lenses, seams,
+  nozzle throats. Drives the bloom."* — would lose the top of the value range with the glow gone. On a
+  still frame they lose 0.3 points of it.
+- **Clause H2 gets BETTER, and my mechanism was backwards.** `_salience.mjs --gate`, grid, the same
+  re-derived rect: the gate ranks 1 in **2 of 24 cells with bloom and 1 of 24 without**. I argued that
+  a white additive term dilutes the gate's chroma, that the salience statistic ranks by chroma, and
+  that removing it would therefore raise the gate. What the frame says is that **bloom lifts the gate's
+  value by more than it dilutes the gate's chroma** — the gate is one of the emitters over the 1.04
+  threshold, so it is a bloom *source*, not just a bloom *recipient*, and I only reasoned about the
+  half of that where it receives.
+
+> **Answer to my own question (c), measured: nothing on this card gets worse on the still frame without
+> bloom.** B flat on three arenas, E flat on three, H2 better, D met with the glow on and its machine
+> saturation moved by 0.001. The one-sidedness I complained about in the verdict above is now closed on
+> the side that was missing, and it closed in the builder's favour on every cell.
+
+### 4. **RULING 22, amended on my own measurement: the acceptance test moves off the still frame, because there is nothing on the still frame to accept**
+
+The ruling's substance stands and I am not withdrawing it: **P6 is a statement about the support of the
+glow; the support is the mip count; the threshold is the wrong knob; the chain stays.** All of that is
+about `src/gfx/postfx.js` and none of it depended on the orbital capture.
+
+What did depend on it was the acceptance test, and it is now vacuous as written. I keyed it to *"60% of
+the background drop `--bloom 0` takes"* on the still frame. **The still-frame background drop is 0.4
+points on grid and zero on the other two.** There is nothing to take 60% of.
+
+The corrected mechanism is better than the one I was given, and it follows from the two measurements
+side by side. On the still frame almost nothing clears 1.04, so the pyramid has nearly nothing to
+spread and its radius does not matter. **During a detonation the core is rgb(255,255,251) and covers
+15-19% of the frame** — now the pyramid has a fireball to spread, and `0dbaa12` measures what it does
+with it: **30.4 of the 68.0 points of the opponent's outline collapse at 117 ms, and 8-13 points of the
+machines' share of the brightest 1% at every age.**
+
+> **P6 is not violated by this renderer on a still frame. It is violated during a blast, and only
+> during a blast.** That is a sharper claim than the one the round set out to prove, it is consistent
+> with every number now on the record, and it re-points the work: **the radius cut is to be scored on
+> `shots/_r17-edge.mjs`'s columns, not on `tools/contour.mjs`'s.**
+
+**RULING 22's acceptance test, re-keyed:**
+
+> A `mipCount` / upsample-radius cut is accepted if, on the pinned blast, it takes **at least 60% of
+> what `--bloom 0` takes on the opponent's invisible contour at 117 ms** (the ceiling is 68.0 -> 37.6)
+> **and at least 60% of the clause-E gain at 533 and 800 ms** (37.5 -> 50.0 and 41.9 -> 53.5), while on
+> all three arenas at the pinned still frame **clean% stays inside 0.6 points and machine body
+> luminance inside ±2.0** of the table in section 1. Both halves are one capture each and both meters
+> already carry the flag. **If no radius setting separates the near glow from the far one, bloom stays
+> and P6 is annotated in `SPEC-CRV2` with the arithmetic that beat it** — that route is still open and
+> it is still the only route to an exception I will accept.
+
+And the null result is a **licence, not a gain**, which is the whole of what round 19's condition
+bought: it says the still frame will not notice a radius cut. It says nothing whatever about whether
+the frame is more beautiful with the glow in it, because — as the verdict above says and this addendum
+proves — **not one meter here can see that.** A builder reading this: the ruling is still *cut the
+radius, keep the chain*. Shipping `bloom: false` remains a regression and I will still score it as one.
+
+### 5. `0562782` verified — **and it bought the outline column too, which nobody reported. Third commit running.**
+
+Re-derived from the commit's own committed records (`shots/r22lite-edge.txt` against
+`shots/r20throwship-edge.txt`, `shots/_r17-edge.mjs`, same pin), not from the commit message:
+
+```
+    far-machine alteration, clause F sub-clause 2, < 25%
+    age            1     7     14     20     26     32     48
+    before       1.4  19.9   47.1   28.4   52.2    6.0    7.0
+    after        1.4  20.0   44.5   11.7   11.9    0.5    7.0
+                 MET   MET   FAIL    MET    MET    MET    MET
+```
+
+The claim reproduces to the digit, and so does *"the blast is not smaller"*: coverage inside 0.4 points
+at every age, 10-90 inside 1.25 px at every age. **The one-line throw change is verified.**
+
+**And the row underneath it, which the commit did not read.** The far machine's own invisible contour,
+blast ON, the column that decides blind point 3 and that this project has printed for five rounds:
+
+```
+    age            1     7     14     20     26     32     48
+    ms            17   117    233    333    433    533    800
+    before       5.8  68.0   13.2   27.0   41.6   16.5    3.2
+    after        5.8  68.0   11.9    9.9   14.7    7.8    3.2
+```
+
+**333 ms 27.0 -> 9.9 — under the 10% target — and 433 ms 41.6 -> 14.7, 533 ms 16.5 -> 7.8.** That is
+the third consecutive commit in this project whose second win went unreported: `9dcf651` did it at
+533 ms, `c2db8b1` did it on clause D in motion, `0562782` does it here on four ages at once. **A meter
+that prints a column nobody reads has produced three findings in three rounds.**
+
+**And 117 ms does not move. 68.0% before, 68.0% after, to the tenth.** The throw fix moved every age it
+could reach and could not touch the one age where the opponent is standing inside the disc. That is my
+rank-1 item confirmed from the other side, by the commit that was aimed at something else.
+
+---
+
+## VERDICT, re-scored on the above: **still NO** — and it is the best card this project has had
+
+| Clause | Threshold | Head | Meter | **Verdict** |
+|---|---|---|---|---|
+| **A** | count 4-6; top-4 >= 85% | 4.3 / 85.3%, 5.5 / 86.2% (grid) | `mass.mjs --onbody` `(record)` | **MET 2 of 6 cells** — and now **suspect**, because fault 27 hits the stencil this meter shares |
+| **B** | >= 90% clean | grid **84.8**, orbital **83.6**, foundry **70.8** | `tools/contour.mjs`, **mine, this session** | **NOT MET 3/3, LIVE.** Best arena 5.2 points short |
+| **C** | ratio < 1.00 | 1.705 / 1.288 | `_massdrive.mjs --onbody` `(record)` | **NOT MET 2/2**, geometry, every shading lever closed |
+| **D** | machine median chroma > stage | **0.149/0.129, 0.161/0.129, 0.153/0.145** | `_r16chroma.mjs`, **mine** | **MET 3/3, LIVE** |
+| **E** | >= 50% of brightest 1% | **58.9 / 66.5 / 33.3** | `_salience.mjs`, **mine** | **MET 2/3, LIVE** |
+| **F sub-1** | 10-90 < 10% of radius | not comparable (fault 26) | `_r17-edge.mjs` | **NOT MET, unreadable across this round** |
+| **F sub-2** | < 25% altered | 1.4 / 20.0 / **44.5** / 11.7 / 11.9 / 0.5 / 7.0 | `_r17-edge.mjs` `(record)`, verified | **NOT MET on 1 cell of 7** |
+| **G** | >= 36 rendered px | 79 / 39 / 72.7 px | `contour.mjs` box `(record)` | **MET** |
+| **H** | H2 <= 25% of cells | **2 / 24 = 8.3%** | `_salience.mjs --gate`, **mine** | **MET, LIVE** |
+
+**Four clauses met (D, G, H, and E on two arenas of three), one met on two cells of six (A), three not
+met with numbers (B, C, F).** Round 19's card had two met and three clauses unreadable. **Nothing is
+stale on this card.** That is the first time that sentence has been true since `SPEC-CRV2` was written.
+
+| # | Blind point | R18 | R19 | **R20** |
+|---|---|---|---|---|
+| 1 | robots brightest + most saturated | PASS 2/3 | UNSCORED | **PASS on 2 of 3 arenas, live** — D met 3/3, E met on grid and orbital, foundry 33.3% |
+| 2 | stage quieter | PASS 2/3 | PASS | **PASS** — 2/24 cells, and 1/24 without the glow |
+| 3 | both machines legible at once | FAIL | FAIL | **FAIL.** 68.0% invisible at 117 ms, unmoved by the light fix, the throw fix and 45% of it bloom |
+| 4 | very few very large forms | FAIL | FAIL | **FAIL.** B 84.8 live, C 1.705, A met on 2 cells of 6 and now under fault 27 |
+| 5 | effects enormous, hard-edged, drawn | FAIL | FAIL | **FAIL, one cell and one column from its second half** — sub-2 fails at 233 ms only; sub-1 untouched by seven hypotheses |
+
+**Two of five pass. The three that fail are the three that have always failed**, and the answer is NO
+for the twentieth round. What has changed is that the failures are now small, named and aimed:
+5.2 points of clause B, 0.705 of clause C, one cell of seven in F sub-2 of which 37 points are the
+blast light, and one age of the outline column.
+
+### The one thing that would move most — unchanged, and now confirmed by a commit aimed elsewhere
+
+**Get the opponent out of the fireball's disc at 117 ms, or the disc off the opponent.**
+
+The evidence is now three-sided and every side is a measurement:
+
+- **the light cannot reach it** — `c2db8b1` cut the blast light from 300 at 30.6 m to 60 at 13.6 m and
+  117 ms went 69.2% -> 68.0%;
+- **the fire's throw cannot reach it** — `0562782` fixed 333, 433 and 533 ms on this exact column and
+  117 ms moved **0.0 points**;
+- **bloom is 30.4 of the 68.0 and the remaining 37.6 is still 3.8x the target** — `0dbaa12`;
+- **and the frame says why**: the opponent sits at **0.67-0.85 of the blast's projected radius, inside
+  its disc at every age**, against a core measured at rgb(255,255,251). White on white.
+
+Nobody has done for the **core** what `0562782` did for the lobes: reconstruct where it goes and
+compare it against where the opponent stands. `--kill firecore` says the core contributes 0.0 points of
+the *occlusion* figure, which means it is not covering the opponent — so it is behind it or around it,
+and either answer names a different fix (a smaller core, a core that does not sit on the aiming line, a
+camera that does not put the two on top of each other, or an opponent that is drawn over the effect at
+close range). **The arithmetic is one capture and the meter already exists.**
+
+Rank 2 is **RULING 22's radius cut**, on the re-keyed blast-side test in section 4. Rank 3 is **clause B
+to 90%**, now live on three arenas and the only clause left with no known lever that does not pull
+against clause C. Rank 4 is **clause C by geometry** at 1.705. Rank 5 is **clause F sub-2's last cell**,
+233 ms, of which 37 of 44.5 points are the blast light and whose own floor there is 7.4%. Rank 6 is
+**fault 27**: a bundle hash in `tools/contour.mjs` and a repeat capture on orbital, which is two lines
+and un-suspects clause A and clause B at once.
+
+### Standing rules, one added and one closed
+
+- **NEW — a meter that produces a scored clause prints the hash of the bundle it measured, or its
+  records are not comparable to each other.** Round 14 asked for this, `1c34325` did it in
+  `_salience.mjs`, and RULING 9's list recorded it CLOSED. It was closed on one meter of three.
+  `tools/contour.mjs` still has no such line and that is the whole reason fault 27 cannot be resolved
+  further today (FAULT 27).
+- **CLOSED — rank 3 of round 19, the nine stale cells.** B, D and E are re-read at head on three
+  arenas each, by me, this session, and blind point 1 is scored again. The rule that made them stale —
+  *an art change is not complete until every clause it can move has been re-read* — did its job: two of
+  the three came back **better** than the figures it invalidated, and the card is stronger for having
+  refused to carry them.

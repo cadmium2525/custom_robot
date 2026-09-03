@@ -1,0 +1,2 @@
+  suppressed transients: robot 1 uHitFlash=0.42, robot 1 uCharge=0.3, robot 2 uCharge=0.01
+  orbital -> shots/_r20cdump/orbital-n.png + shots/_r20cdump/orbital-mask.png

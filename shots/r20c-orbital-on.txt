@@ -1,0 +1,4 @@
+page.evaluate: Target page, context or browser has been closed
+    at /home/user/custom_robot/tools/contour.mjs:384:25 {
+  log: []
+}
