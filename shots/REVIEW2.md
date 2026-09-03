@@ -5391,3 +5391,201 @@ it, and 0.346 is nowhere near the clip signature (>80% share at S < 0.2) that ma
 false positive. **This is an honest 46.8% against a 50% threshold**, it independently reproduces the
 46.1% reported to me on the previous build, and it is the best evidence blind point 1's value half has
 ever had. It does not pass. It is 3.2 points short, on one arena.
+
+---
+
+### 2026-09-03 — Clause C is measured for the first time, and clause A's coverage half is quoted for the first time
+
+Commits: `e8285e9` (repair `shots/_massdrive.mjs`, score clause A's coverage half), `7526f40` (clause C
+meter), `290b48c` (attribution, and the rim route measured and closed). All figures below: seed
+1234567, `engine.paused`, tick-at-a-time settle with `g.view.update(1 / 60, 1, t)` **inside** the loop,
+tier 3, `dist-single` served at `http://127.0.0.1:4176/holosseum`, bundle `54c0f860` unless a different
+one is named. `npm run build`, `npm test` and `node tools/deploycheck.mjs` clean at every commit.
+
+#### The repair, and what it cost
+
+`shots/_massdrive.mjs` aborted at head — RULING 10's finding, confirmed. It is a **patcher**: it reads
+`tools/mass.mjs` at run time, rewrites named anchors and runs the result, so the two cannot drift. Its
+one anchor was the broken `g.view.update(0, 1, t)` settle. `52625c7` fixed that line at the source, the
+anchor vanished, and the `hits !== 1` guard did exactly what it was built to do: refuse to run.
+
+**That is a good guard pointed at a world that no longer exists, and it is the whole reason clause C
+went unmeasured for seventeen rounds** — the spec named this file as clause C's host and the file would
+not start. The repair points the guard at the world as it is: a table of **seven** anchors asserted
+before the browser launches, each naming what it protects. Two of them are now permanent audits rather
+than patch targets:
+
+```
+    SETTLE-OK       g.view.update(1 / 60, 1, t);   must appear exactly 1x
+    SETTLE-BROKEN   g.view.update(0, 1, t);        must appear exactly 0x
+```
+
+`SETTLE-OK` is a standing check against the recurrence of **INSTRUMENT FAULT 15** — a settle claimed
+correct in a comment instead of checked. **Audited that claim at its source while here:**
+`shots/_lodprobe.mjs:65` still says "Byte-identical to `tools/mass.mjs`'s settle" and is still **not**
+byte-identical, but after `9ed19a1` the two are identical once comments and whitespace are stripped. The
+substance of fault 15 is closed; only the word is wrong.
+
+Two faults of the print-a-number-anyway class were found and fixed while building on it. The bundle-hash
+print injected before `page.goto` hashed a **blank page** and reported 0 script bytes. And a clause C
+field named `step` silently **overwrote the curve's quantisation step** in the stock report, which
+printed a plausible table of wrong column headings. Both were caught because the output was read, not
+because anything failed.
+
+> Also fixed: `tools/mass.mjs` never printed the bundle hash round 14 asked every capture for, and
+> `shots/_salience.mjs`'s version reads the `index-*.js` script tag, which names **nothing** on
+> `dist-single/` — it prints `(inline)` on exactly the artefact `deploycheck` verifies. The patcher
+> hashes the script text actually loaded (FNV-1a, 8 hex).
+
+#### CLAUSE A — the coverage half, quoted at last. **Five of six cells MET, one FAIL**
+
+`tools/mass.mjs` has computed `top4` all along and prints it in the curve. **No round has ever read
+it.** A number that is printed and never read is not a measurement. Scored at step 51, the "five value
+bands" the rule names:
+
+| cell | box | count | count | top-4 | vs 85% |
+|---|---|---|---|---|---|
+| grid R1 | 156x283 | 4.3 (max 6-7) | MET | **86.1%** | MET |
+| grid R2 | 53x79 | 5.0 (max 6) | MET | **87.6%** | MET |
+| foundry R1 | 59x200 | 5.0 (max 6) | MET | **84.8%** | **FAIL** |
+| foundry R2 | 40x33 | 5.5 (max 6) | MET | **86.1%** | MET |
+| orbital R1 | 183x257 | 4.3 (max 5) | MET | **86.7%** | MET |
+| orbital R2 | 52x66 | 4.5 (max 6) | MET | **91.3%** | MET |
+
+The count half is MET 6/6, as previously reported. **The coverage half is MET 5/6 and fails on foundry's
+near machine by 0.2 points.** Every cell is thin: the range is 84.8-91.3% against an 85% floor, and the
+run-to-run noise measured below is 0.2 points. **Foundry R1 is inside the noise of its own threshold and
+should be treated as unresolved, not as a fail.** Clause A is not the settled clause the count half made
+it look like.
+
+#### CLAUSE C — the meter that never existed, and it fails 6/6
+
+The clause: within one mass the value is near-constant, between masses it steps; per-mass luminance
+**sd < half the between-mass step**. The meter rides on segmentation `tools/mass.mjs` already does and
+adds no geometry:
+
+- **sd** — per-mass luminance sd on the **original** luminance, not on the blur the segmentation runs
+  on. Measuring sd on the blurred image would be measuring the blur, and every mass would look flat
+  because we flattened it. Area-weighted, at the same 3% floor the mass count uses, so sd and count
+  describe the same regions.
+- **gap** — median `|mean_i - mean_j|` between masses **that touch**, contact counted in pixels of
+  shared 4-neighbour border, pairs under 6px dropped. Two masses on opposite sides of the body share no
+  edge for an eye to read a step across, and averaging them in inflates the gap until anything passes.
+- **ratio** — `sd / (gap/2)`. Passes below 1.00.
+
+> **THE METER'S NULL, WHICH MUST BE QUOTED WITH EVERY NUMBER IT RETURNS.** A perfect linear ramp across
+> the body — the exact thing clause C forbids — scores **0.577**, and therefore **passes**. The
+> arithmetic is forced: quantisation at step S cuts a ramp into strips of width S, a uniform
+> distribution of width S has sd = S/sqrt(12) = 0.289S, adjacent strip means differ by S, ratio =
+> 0.577 at every step in the sweep. **This is not a gradient detector and no pass from it may be quoted
+> as "the faces are flat."** What it reads is variance inside a mass *in excess of a ramp* — speculars,
+> Fresnel rims, flashes: the view-dependent terms the clause actually names.
+
+| cell | sd | gap | **ratio** | vs 1.00 | vs 0.577 |
+|---|---|---|---|---|---|
+| grid R1 | 41.2 | 20.5 | **4.01** | FAIL | 7.0x |
+| grid R2 | 29.7 | 33.1 | **1.80** | FAIL | 3.1x |
+| foundry R1 | 47.6 | 25.7 | **3.70** | FAIL | 6.4x |
+| foundry R2 | 25.4 | 36.6 | **1.39** | FAIL | 2.4x |
+| orbital R1 | 48.5 | 23.7 | **4.09** | FAIL | 7.1x |
+| orbital R2 | 27.0 | 36.2 | **1.49** | FAIL | 2.6x |
+
+**Six of six FAIL, by 1.4x to 4.1x.** On every near machine the value variation *inside* one mass is
+roughly twice the step *between* masses — the literal inversion of the clause. The ratio holds across
+the whole quantisation sweep (2.7-4.8 on grid R1), so it is not an artefact of one band width.
+
+**The failure scales with rendered size**: near machines 3.70-4.09, far machines 1.39-1.80. That is the
+signature of resolved geometric detail, not of a view-dependent term, which would not care how big the
+machine is.
+
+#### Where the variance comes from — attributed, not guessed
+
+`--u` reaches every view-dependent term because those are uniforms. It reaches nothing else, so
+`290b48c` adds `--off outline,normal,maps,env` to remove the four things that write value inside a mass
+without being view-dependent. grid, near machine, ratio at step 51, baseline **4.01-4.06**:
+
+```
+    rim + spec + energy + wash ALL zeroed      3.01     -26%
+      rim alone                                3.12
+      specular alone                           3.87
+    outline (inverted-hull line art) off       3.22
+    normal map off                             3.67
+    all textures off                           2.88
+    env map off                                4.04     nil
+    outline + normal + maps + env ALL off      3.39
+    --nopaint (flat grey, vertexColors off)    5.07     WORSE
+```
+
+**Nothing available switches it off.** Zeroing every view-dependent term in the shader leaves 3.01, three
+times the threshold. Removing the line art, the normal map, every texture and the env map together
+leaves 3.39. `--nopaint` makes it *worse* (sd 41.2 -> 45.6), so the paint is currently *reducing*
+within-mass variance and is not the cause.
+
+> **The finding: clause C's threshold is not reachable by shading tuning at this geometry density, and
+> view-dependence is about a quarter of the excess rather than the cause of it.** What remains is the
+> Lambert response of a dense multi-facet body — a region that is flat after the meter's squint contains
+> facets whose individual values span most of the machine's range. That is form, not view. The one route
+> to fewer facets was measured and closed in `87d5cfa`.
+
+#### The rim route: the largest lever there is, measured, and **reverted**
+
+The near rim is `smoothstep(0.40, 1.00, fres)` — on across much of every chamfered plate. The *far* rim
+is the narrow one (0.66/0.34). Narrowing the near band to **0.70/0.30** beats zeroing every
+view-dependent term put together, and improves clause A at the same time:
+
+```
+    clause C ratio    4.06 -> 2.73      (gap between masses 20.3 -> 28.7)
+    clause A top-4    86.3% -> 87.4%,  87.7% -> 88.8%
+    mass count max    7 -> 6
+```
+
+Built and re-measured from the bundle — which reproduced the live-uniform prediction to within **0.005**
+on the ratio, so `--u` is a trustworthy search tool for these uniforms. **Then measured the clause next
+door:**
+
+```
+    clause B clean contour   83.8% -> 81.8%     (robot 1: 85.9% -> 83.5%)
+    separation               69.5 -> 66.8
+    invisible boundary       4.5% -> 4.9%
+```
+
+**Reverted.** Clause C's gain comes from removing rim energy near the silhouette, which is the exact
+pixels clause B reads: one lever, two clauses, opposite directions. Clause B is already six points under
+its 90% floor, and clause C at 2.73 is **still a FAIL** — the trade spends a real regression to move a
+verdict that does not move. Both escapes were tried and both close:
+
+- **rimStrength 0.10 -> 0.14** restores the edge energy but drops the near mass count to **3.5** and
+  FAILS clause A.
+- **a saturating band** (0.60/0.25, 0.66/0.20 — full rim before the silhouette, which is what clause B
+  wants) gives back nearly all of clause C's gain: **3.88** and **3.86** against a 4.06 baseline. What
+  buys clause C is specifically the band *not* reaching full before the silhouette, which is specifically
+  what costs clause B.
+
+All of it is written beside `uRimEdge` in `src/gfx/materials.js` so it is not re-run. **The untried lever
+is named there too:** the up-bias literal in `RIM_FRAG` (`rim *= 0.44 + 0.56 * ...nWorldX.y...`). Biasing
+harder to upward-facing normals would keep the top silhouette a raked camera reads while dropping the rim
+off plate interiors and undersides. No uniform reaches it, so it cannot be swept without a rebuild per
+point — which is why it is still untried, and why it is the next thing to measure.
+
+#### This meter pair's noise floor, measured on one unchanged binary
+
+The revert was verified by rebuilding and re-measuring rather than by trusting `git checkout`:
+
+```
+    clause B clean     83.8% -> 81.8% -> 83.6%     (robot 1: 85.9% -> 83.5% -> 85.7%)
+    separation         69.5  -> 66.8  -> 69.6
+    clause C ratio     4.06  -> 2.73  -> 4.01
+    clause A top-4     86.3% -> 87.4% -> 86.1%
+```
+
+**Round-trip residual: 0.2 points of contour, 0.05 of clause C ratio, 0.2 points of top-4.** That is the
+noise floor of this pair at this pin, and **no claim smaller than it counts** — which is exactly why
+foundry R1's 84.8% against an 85% floor is reported above as unresolved rather than as a failure.
+
+#### What I did not do
+
+- Did not touch `src/sim/arena.js` theme blocks or `src/gfx/vfx.js`.
+- Did not retry `LOD_MIN_PX2` (closed, `87d5cfa`), saturation floors, or the value ladder (closed).
+- **Did not repair `shots/_contourdrive.mjs`.** It aborts at head for the identical reason and its clause
+  (B) already has a working meter in `tools/contour.mjs` per RULING 10, so it is obsolete rather than
+  broken. It is one anchor-table edit away from being a clause B host if anyone wants one.
