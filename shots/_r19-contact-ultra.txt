@@ -1,0 +1,32 @@
+  bundle: /custom_robot/assets/index-Dsn13aIx.js   base: http://127.0.0.1:4305/custom_robot/
+  suppressed transients: robot 1 uCharge, robot 2 uCharge
+
+CONTACT — grid @ tier ULTRA, tick 380, 1600x900, shadowMap=true
+
+  ROBOT 1  legs=sprinter  air 0.000 m  grounded=true  soles L/R 88/38 mm  lowest 38 mm
+     241px tall, 83.4px per deck metre, 99px of viewport below the contact   blob=0.92 disc=0.72
+     ring (m)         0.00    0.35    0.60    0.90    1.30    1.80    2.60    3.60
+     samples             1     173     136     119      83      72      60      60
+     as shipped       46.7    76.7      94   100.1   102.8    87.1    87.3    86.5
+     no discs         85.1    83.3      94   100.1   102.8    87.1    87.3    86.5
+     no cue at all   109.5      93    98.8   100.1     105    87.1    87.3    86.5
+     CD_blob          38.3     5.8       0       0       0       0       0       0
+     CD_map           24.4       0       0       0       0       0       0       0
+     CD_all           62.7     7.9       0       0       0       0       0       0
+     PD (2.6 m minus contact, as shipped): 40.6
+     CD_all peak: 62.7   CD_blob at contact: 38.3   CD_map at contact: 24.4
+
+  ROBOT 2  legs=hover (HOVER — no foot contact exists)  air 0.000 m  grounded=true  soles L/R 210/210 mm  lowest -51 mm
+     83px tall, 10.4px per deck metre, 464px of viewport below the contact   blob=0.92 disc=0.72
+     ring (m)         0.00    0.35    0.60    0.90    1.30    1.80    2.60    3.60
+     samples             1     155     176     183     170     146     130     118
+     as shipped       50.1    71.6    92.7    94.9      98   107.4   102.2   109.2
+     no discs         54.2    73.7    92.7    94.9      98   107.4   102.2   109.2
+     no cue at all    92.3    95.8    92.7    94.9      98   107.4   102.5   109.8
+     CD_blob           4.2     1.9       0       0       0       0       0       0
+     CD_map           38.1    20.6       0       0       0       0       0       0
+     CD_all           42.2    25.6       0       0       0       0       0       0
+     PD (2.6 m minus contact, as shipped): 52.1
+     CD_all peak: 42.2   CD_blob at contact: 4.2   CD_map at contact: 38.1
+
+  JSON {"arena":"grid","tier":"ULTRA","tick":380,"contact":true,"robots":[{"legs":"sprinter","gapL":88,"gapR":38,"hPx":241,"below":99,"pd":40.6,"cdBlob0":38.3,"cdMap0":24.4,"cdAll0":62.7,"cdAllPeak":62.7,"curve":[46.7,76.7,94,100.1,102.8,87.1,87.3,86.5]},{"legs":"hover","gapL":210,"gapR":210,"hPx":83,"below":464,"pd":52.1,"cdBlob0":4.2,"cdMap0":38.1,"cdAll0":42.2,"cdAllPeak":42.2,"curve":[50.1,71.6,92.7,94.9,98,107.4,102.2,109.2]}]}
