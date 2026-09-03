@@ -8194,3 +8194,148 @@ Rank 2 is **RULING 23(3)'s illuminance clamp**, now on a burst pattern measured 
 Rank 3 is **clause B to 90%**, live on three arenas. Rank 4 is **clause C by geometry**. Rank 5 is
 **sub-clause 1's footprint from a render rather than a difference** (RULING 23(5)), which un-blanks a
 scored clause that has now been unreadable for two rounds.
+
+---
+
+## Round 24 — 2026-09-03 — **clause C by geometry, taken to exhaustion: the numerator is the light, and `sd` is a spread-invariant constant**
+
+RULING 18 re-ranked clause C to the closest failing clause on the card (0.705, not 3.01) and `55851e7`
+closed every shading lever. That left one instruction: **it is a geometry problem, and nobody has tried
+it.** This round tried it, in both of the directions the brief named — lower the numerator, raise the
+denominator — and **all seven knobs are now closed with numbers.** Nothing is landed in the renderer.
+
+### 1. The bench, and the control that says it is the same bench
+
+Every figure below: `shots/_massdrive.mjs --onbody`, grid, seed 1234567, tier 3, near machine unless
+the far one is named. Clause B: `tools/contour.mjs`, same arena/tier/seed. Both meters name their
+bundle (fault 27) and no figure below crosses the two meters.
+
+```
+    head, my bundle 8a6d04c3      C 1.705 / 1.288     A top4 85.2 / 86.2      B 84.8  (86.2 / 80)
+    probe build, defaults         C 1.706 / 1.287     A top4 85.3 / 86.2
+```
+
+The probe build is head plus four query-string multipliers that all default to the shipped behaviour.
+Its control reproduces head **to the third decimal on clause C and to RULING 18's filed 85.3 / 86.2 on
+clause A**, so the eleven readings below are comparable to each other and to the record.
+
+### 2. Eleven levers. The best is −0.330 and it costs 6.8 points of clause A.
+
+`0.705` is the distance to close on the near machine.
+
+| lever | near ratio | Δ | far ratio | clause A near top-4 |
+|---|---|---|---|---|
+| **control (= head)** | **1.705** | — | **1.288** | **85.2% MET** |
+| `--off outline` | 1.632 | **−0.073** | 1.238 | **86.4% MET** |
+| `--off frame` (chassis = shell colour) | 1.566 | −0.139 | 1.361 | 83.7% FAIL |
+| `--off maps` (albedo + AO + roughness) | **1.375** | **−0.330** | 1.175 | **78.4% FAIL** |
+| `--off maps,env,outline` | 1.418 | −0.287 | 1.096 | 82.0% FAIL |
+| `--off env` | 1.715 | 0 | 1.160 | 85.3% MET |
+| `--off lit` (emissive + flare meshes) | 1.824 | +0.119 | 1.291 | 83.2% FAIL |
+| `?grime=0` (bottom-to-top ramp removed) | 1.720 | 0 | 1.271 | 84.1% FAIL |
+| `?plane=0` (per-face plane ramp removed) | 1.797 | +0.092 | 1.338 | 86.0% MET |
+| `?plane=2` (plane ramp doubled) | 1.784 | +0.079 | 1.198 | 84.5% FAIL |
+| `?chamfer=0.35` | 1.767 | +0.062 | 1.311 | 83.3% FAIL |
+| `?chamfer=1.8` | 1.723 | 0 | 1.372 | 84.1% FAIL |
+| `?plateau=1` (plane ramp in 3 hard levels) | 1.710 | 0 | 1.229 | 85.6% MET / **far 84.3 FAIL** |
+
+Round-trip floor is 0.05 of ratio and 0.2 of top-4; five of the eleven do not clear it in either
+direction. Read the table three ways:
+
+1. **The brief's own first direction is closed.** Chamfer width was the named candidate — the 45° band
+   is a Gouraud ramp ~0.7·r wide, 3-5 px on the near machine, the same scale as the meter's blur. It
+   moves the ratio **the wrong way when narrowed** (1.767) and not at all when widened (1.723), and
+   costs clause A both times. The bevel is not the gradient inside the mass.
+2. **The second direction is closed too, and non-monotonically.** The plane ramp *feeds* the step —
+   removing it drops the step 51.86 → 48.81 — so the denominator argues for *more* of it; but doubling
+   it drops the step as well (49.83). **`plane = 1` is already the optimum**, found from both sides.
+3. **Nine of eleven cost clause A's near top-4.** It passes at 85.2 against 85.0 with a 0.2 floor.
+   RULING 18 called that "a pass I am obliged to grant and obliged to distrust". This round is eleven
+   independent confirmations that it is knife-edge: **every perturbation of the machine's value
+   structure, in either direction, pushes it under.**
+
+`--off outline` is the only lever that improves clause C *and* clause A together (1.632, top-4 86.4/88.4,
+counts 5.0/5.3 both MET). It is not a proposal — the outline is the dark half of the silhouette step in
+the ladder's own reasoning, and clause B is at 84.8 against 90 — and at −0.073 it is a tenth of the
+distance anyway. It is filed because a lever that moves two clauses the same way is rare here.
+
+### 3. Why none of them work, in one line of arithmetic
+
+`sd` is not a decoration on this machine. **Across every probe in the table it is a fixed fraction of
+the machine's own p2-p98 luminance spread:**
+
+```
+    sd / spread     near 0.280 +/- 0.003        far 0.213 +/- 0.007
+    step / spread   near 0.328 (0.313 - 0.329)
+    uniform null    1/sqrt(12) = 0.289
+```
+
+The near machine's luminance **inside one mass** is, to within 3%, **uniformly distributed over the
+whole machine's range.** The blur-and-quantise segmentation is not partitioning value at all. And
+because the step is spread-invariant too, the spread cancels:
+
+```
+    ratio = 0.280*spread / (0.328*spread / 2) = 1.707        measured 1.705
+```
+
+**Clause C's ratio is a quotient of two constants.** That is the mechanism behind every null this
+document has filed against it: it is why the whole ladder translating down 0.26 was neutral on C while
+wrecking B, why `--nopaint` came back *worse*, and why re-scaling anything is a wasted round. The ratio
+does not respond to the value RANGE. It responds only to the SHAPE of the value histogram, and the
+shape is uniform.
+
+### 4. The control that names the culprit: paint is 8% of the numerator and most of the denominator
+
+Taken `--onbody` for the first time (round 18's `--nopaint` figure was in the withdrawn default mode):
+
+```
+                                   near sd   near step   ratio     spread
+    full 4-rung paint ladder         44.21      51.86     1.705       158
+    ONE flat grey on every plate     40.73      45.29     1.799       164
+```
+
+**Replacing one hundred per cent of the machine's paint structure with a single grey removes eight per
+cent of the within-mass variance** — and 13% of the step, which is why it scores worse. A machine
+painted one flat colour still spans **164 levels** of luminance and still carries **sd 40.7** inside one
+mass. That is the light falling on the geometry, and nothing else is left for it to be.
+
+So clause C's numerator is **the continuous diffuse response of a many-oriented model to a continuous
+light.** The albedo has four rungs; the light has as many values as the model has face orientations,
+and at 166 px/m the eye and the meter both resolve them. `--off smooth` and `--off normal` are already
+on the record as *worse*, which is the same statement seen from the other side: they add orientations
+rather than removing them.
+
+### 5. What is left, and it is not in this file
+
+The only mechanism that makes the histogram multi-modal without touching the value range is to **band
+the diffuse response itself** — quantise N·L to a small number of levels, which is platform fact P2's
+consequence implemented rather than imitated: *a face is one value, the step happens at the edge
+between faces*, with few enough values that the mass is genuinely flat. That is a shell-shader change,
+it lives in `src/gfx/materials.js`, and it is **not a shading lever in the closed set**: every closed
+lever *removes a term*, and this one *quantises a term that stays*. Nothing in `src/gfx/robot.js` can
+reach it — this round is the proof of that, at eleven readings.
+
+**Acceptance test, so it is falsifiable before it is walked:** near ratio under **1.35** (which is the
+best any removal has ever produced, `--off maps`, and that one fails clause A by 6.6 points) with
+**clause A top-4 at or above 85.0 on both machines** and **clause B not below 84.6** — the floor under
+head's 84.8. Anything that buys clause C with clause A's 0.2 points of headroom is not a fix.
+
+### 6. Instrument kept
+
+`shots/r24-clauseC-probe.patch` — the four-knob query-string probe (`chamfer`, `plane`, `grime`,
+`plateau`), with the apply-and-run recipe and the control figures that prove it inert at defaults. It
+is a **patch file and not shipped source**, deliberately: a query-string switch read by the renderer
+and by nothing else is the `ssao` fault waiting to happen, where a later round probes it, reads "not
+the cause", and never learns it was "not present". `shots/` is gitignored; it is `git add -f`'d.
+
+### 7. Card
+
+**Nothing on the card moves, and no renderer change is landed.** Re-measured at head on bundle
+`8a6d04c3` / `de65b03910ac`: clause A **85.2% / 86.2% MET**, clause B **84.8%** (robot 1 86.2, robot 2
+80.0), clause C **1.705 / 1.288 FAIL**. `npm run build` clean, `npm test` ALL PASS,
+`node tools/deploycheck.mjs` **DEPLOY OK** on grid, foundry and orbital.
+
+**Clause C by geometry should be struck from the rank list.** It has been rank 2 to rank 4 for four
+rounds on the reasoning that the shading levers were closed so the geometry must be open. The geometry
+is now closed at eleven readings, with the arithmetic that says why it was never going to open, and the
+clause's remaining lever is one file this round was not allowed to touch.
