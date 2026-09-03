@@ -7899,3 +7899,163 @@ Meters and captures, all committed with `git add -f`: `shots/r23base-edge.txt` (
 `shots/r23census-log.txt` (the light census), `shots/_r23-lightprobe.mjs` (new meter),
 `shots/_r17-blast.mjs` (census + `--kill latelight`). `npm run build` clean, `npm test` ALL PASS,
 `node tools/deploycheck.mjs` OK on grid, foundry and orbital.
+
+---
+
+## RULING 23 — **fault 28: the whole-frame reading is the clause, no scored figure is withdrawn, and every sentence that named an emitter is**
+
+Written and committed before I re-ran anything, at head `5377d27`. Round 21 asked for a ruling and
+deliberately shipped no `src/` change to bias it; `git diff HEAD -- src/` is empty across the three
+commits that file it. That is the right way to hand a critic a decision and I am ruling on it in the
+order asked.
+
+### 1. Which reading is the clause? **The whole frame. This is RULING 19 one level out, and I am obliged to answer it the same way.**
+
+RULING 19 settled the identical question ten commits ago in the other axis: the occlusion column
+contains the opponent being *lit* as well as *covered*, `--kill light` separates them, and I ruled
+**"the clause is scored on the as-shipped column; the coverage-only column is attribution, not score."**
+Fault 28 is the same shape with a different knife — `--kill latelight` separates one emitter from
+another instead of one mechanism from another — and it gets the same answer, because the reason has not
+changed:
+
+> **Clause F sub-clause 2 derives from P8: *"the opponent is the aiming target and must be
+> resolvable."* A player aiming at a machine does not get to subtract the other explosion.** The 25%
+> threshold is a property of **the target's legibility**, not of any emitter's authorship, and it
+> therefore does not scale with how many things happen to be exploding. Two detonations 100 ms apart
+> wash the aiming target for a sixth of a second; that the wash has two authors is a fact about the
+> cause, not a defence.
+
+**So: `1.4 / 20.0 / 44.5 / 11.7 / 11.9 / 0.5 / 7.0`, FAIL at 233 ms, is the clause.** The
+`--kill latelight` column (`1.4 / 19.1 / 7.6 / 6.7 / 11.9 / 0.5 / 7.0`, MET at seven of seven) is
+**attribution**, it is excellent attribution, and it is not a score. It may never be quoted as "clause F
+sub-clause 2 is met".
+
+**`SPEC-CRV2` clause F is amended here**, because the honest half of the builder's question is that the
+clause's words and its meter have never agreed:
+
+> **F, as amended.** *An effect is a handful of big quads with texture-edge boundaries, not a
+> volumetric falloff, and **the effects live in the frame do not, together, swallow the opponent**.*
+> Sub-clause 2's meter is, and has always been, the difference between the frame and the frame with the
+> whole VFX layer suppressed — **which is now what the clause says.** The singular "an effect" was my
+> wording and it was wrong from the day I wrote it.
+
+### 2. What is withdrawn — **no number, and a great many sentences, including three of my own**
+
+The scored column has been the as-shipped column since RULING 19, so **fault 28 withdraws no scored
+figure.** What it withdraws is every sentence that attributed one of those figures to a named emitter.
+The ones that matter, and I am striking mine first:
+
+- **MINE, round 20 verdict, struck:** *"233 ms ... is 37 of 44.5 points **light**, not fire, so the
+  remaining cell belongs to the rank-1 item's unfinished half."* It does not. `shots/_r23-lightprobe.mjs`
+  measures the pinned blast's own light moving **0.0% of the opponent's pixels past C>25 at all seven
+  ages**. The cell never belonged to the rank-1 item at all.
+- **MINE, round 20 verdict, rank 5, struck:** *"of which 37 of 44.5 points are the blast light and whose
+  own floor there is 7.4%."* The floor figure survives; the attribution does not.
+- **MINE, round 19 verdict, struck:** *"of the two ages where clause F's second sub-clause still fails,
+  the failure is 91% light at 233 ms and 76% light at 333 ms"* — the arithmetic stands, the word
+  **"the"** in "the light" does not. It was two lights and nothing could say so.
+- **The builder's, `9872b18`, struck:** *"37 points of 233 ms are still the blast light after
+  `c2db8b1`."*
+- **Round 19's RULING 19 table** keeps its numbers and loses its heading: `--kill light` is *"all blast
+  lights"*, not *"the blast light"*.
+
+> **NEW STANDING RULE — a difference-against-`novfx` figure names the LAYER, not the emitter.** No
+> figure from `_r17-edge.mjs`'s occlusion column may be attributed to a particular effect unless a kill
+> column isolates that effect in the same bundle. Four rounds of this clause's prose broke that rule
+> before the instrument existed to keep it.
+
+**And what this closes, which is the round's real gain:** the rank-1 item of round 19 — *cut the
+detonation's point lights* — is **closed, spent and measured at seven ages of seven.** `c2db8b1` took
+what was available and the residue is zero. That is the first time an item on this list has been retired
+by a measurement showing it has nothing left rather than by a better idea displacing it.
+
+### 3. The lever, if the whole-frame reading stands — and it does. **Bound the SUM at the target, not the count of lights and not the intensity of any one of them.**
+
+The two candidates are not equivalent and I am not leaving the choice open:
+
+- **Take-over — a new blast light replaces the live one — is a rule about slots.** It bounds the sum
+  only incidentally, and it pays for it by extinguishing a light whose fire is still visibly burning:
+  at 233 ms the pinned blast is 1.70 lux and mid-life, and killing it the instant a second shell lands
+  is a pop the player can see. A rule that fixes a legibility defect by introducing a visible
+  discontinuity is the kind of trade this document exists to catch.
+- **A clamp on the summed illuminance at a machine is a rule about the quantity the defect is measured
+  in.** `c2db8b1` already set the design point — **6.7 lux at the aiming target**, derived in the same
+  unit `stage.js` used to condemn the foundry gate lamp against a key of ~3.2 — and this defect is
+  precisely that design point being exceeded by **summation**: 29.6 lux from one light 1.2 m away, on
+  top of a live one.
+
+> **Ruled: the rule is `c2db8b1`'s own design point applied to the sum.** When a detonation spawns a
+> light, scale it so that the total blast-light illuminance at the nearest machine does not exceed the
+> figure that commit chose. It is deterministic, it is inert when only one blast is live — so the
+> single-detonation look, which four rounds of art work have tuned, **cannot move at all** — and it
+> degrades by dimming the newcomer rather than by extinguishing the incumbent.
+
+**Acceptance test, stated before it is walked:**
+
+1. **233 ms under 25% on the AS-SHIPPED column**, seven ages, one bundle, with `--kill latelight` and
+   `--kill light` printed beside it as attribution.
+2. **No age regresses**, all seven — the test `9dcf651` failed at 433 ms and nobody noticed for a round.
+3. **The single-blast case is bit-identical in illuminance.** If the clamp changes the pinned blast's
+   own lux at any age where it is the only live light, it is a dimming and I will score it as one.
+4. **The blast is not smaller**: coverage inside 0.4 points at every age, the same test `0562782` passed.
+5. **And it must be shown to matter.** See below.
+
+### 4. The condition I attach, and it is my own standing rule turned on this round's best finding
+
+**The 233 ms cell is one draw.** Fault 15's rule — *no single-seed figure without a spread beside it or
+an explicit note that it is a single draw* — applies to a burst pattern exactly as it applies to an
+arena. Everything in this filing rests on there being a second `EV.EXPLODE` **six ticks** after the pin,
+at seed 1234567, tick 1195.
+
+> **Before any `src/` change is made for this, one command must answer: is a second detonation within
+> 100 ms of another the game's normal behaviour, or is it this seed?** If the weapon that fired is a
+> burst or a multi-round gun, two overlapping blasts are the *common* case, the whole-frame reading is
+> the normal frame, and this is urgent. If it is two machines' shots coinciding, it is a real defect at
+> a plausible seed — worth fixing, and **not** worth reordering the card for. The scan listing that
+> found the second event is the instrument that answers it and the answer costs one run.
+
+I am measuring that myself below rather than asking for it, because it is one command and because I
+have twice ranked work on a single draw in this document.
+
+### 5. Sub-clause 1 across a light change — **fault 26 confirmed, and here is what makes it comparable, because "not comparable" cannot be the permanent answer to a scored clause**
+
+**The builder is right and quoting no delta is correct discipline.** Removing a light moves
+`_r17-edge.mjs`'s noise floor (4.00 -> 1.35 at 233 ms), the floor sets the threshold, and the threshold
+defines what counts as "the effect" — so cover%, outer radius and the 10-90 width are computed against a
+different object in the two arms. No delta may be quoted and none was.
+
+But sub-clause 1 is a **scored clause of `SPEC-CRV2`** and it has now been unreadable across two
+consecutive rounds, which is a worse position than failing. So:
+
+> **The fix is to stop deriving the effect's footprint from a difference.** `tools/contour.mjs` gets the
+> machines' mask from a **render** — everything but the shells hidden, flat white override — after its
+> first version diffed two frames and reported the robot as 74% of the image. The same move is available
+> here: draw the VFX layer alone on black in a second pass and take the effect's footprint from **that**,
+> and the mask stops depending on any light in the scene, which is what the clause was always about —
+> the effect's *own* edge. **Stopgap, if that is more than this round can carry:** pin the threshold to
+> the control arm's floor and carry that same operating point into every arm of the comparison, so the
+> operating point is a property of the A/B and not of each capture.
+>
+> **NEW STANDING RULE — a mask is a render, not a difference.** This is the fourth instrument fault in
+> this document caused by deriving a mask by subtracting two renders: contour's original 74%, fault 19's
+> `depthWrite` occluders, fault 23/26's threshold, and now fault 28's scope. Every one of them was found
+> after the figures had been filed.
+
+### 6. What this does to the card — **nothing, and that is the point**
+
+| clause | before RULING 23 | after | why |
+|---|---|---|---|
+| **F sub-2** | NOT MET, 1 cell of 7 (233 ms, 44.5%) | **NOT MET, 1 cell of 7 (233 ms, 44.5%)** | the scored column does not move; the cell now has an attributed cause and a named lever |
+| **F sub-1** | NOT MET, not comparable across a light change | **NOT MET, and now with a route to comparability** | section 5 |
+| rank 1 of round 19 (the blast point light) | executed, ceiling measured | **CLOSED — spent, 0.0% of the opponent's pixels at seven ages of seven** | `_r23-lightprobe.mjs` |
+
+**Fault 27 accepted as fixed** (`f6c53b0`): `tools/contour.mjs` and `tools/mass.mjs` now print the
+bundle they measured, and the builder found the gap by asking which meters lacked the line rather than
+by working from my list — which is the correct way to close an instrument fault and is why the fix
+covers `mass.mjs`, which I had only implicated by inference. **I stand by the withdrawal of `fb2e684`'s
+orbital arm and its mechanism sentence, and I claim from that commit exactly what the coordinator
+claims: the unanimous half — removing bloom on the still frame costs 0.0 / +0.6 / 0.0 points of
+clean%.**
+
+**The verdict does not move. It is still NO**, on the same three blind points, and clause F sub-clause 2
+still fails on one cell of seven.
