@@ -61,6 +61,7 @@ uniform vec3  uFillUp;
 uniform vec3  uFillDown;
 uniform float uFillDark;
 uniform float uLightCeil;
+uniform float uBandX;
 uniform float uLightKnee;
 uniform float uLightPivot;
 uniform float uFlat;
@@ -273,6 +274,38 @@ const FILL_FRAG = /* glsl */`
       if (outX > uLightKnee) {
         float headX = max(uLightCeil - uLightKnee, 1e-3);
         outX = uLightKnee + headX * (1.0 - exp(-(outX - uLightKnee) / headX));
+      }
+
+      // 3. BANDING, and this is P2 IMPLEMENTED RATHER THAN IMITATED.
+      //
+      // Every other route to clause C has been measured and closed: eleven
+      // geometry readings, every shading term zeroed, flat shading (which makes
+      // it WORSE), the paint (which REDUCES the variance). The arithmetic behind
+      // all of those nulls is that per-mass sd is a fixed fraction of the
+      // machine's own spread — 0.280 +/- 0.003 against a uniform null of
+      // 1/sqrt(12) = 0.289 — and the step is spread-invariant too at 0.328, so
+      // the spread CANCELS: ratio = 0.280 / (0.328 / 2) = 1.707 against 1.705
+      // measured. The clause does not respond to the value range at all. It
+      // responds only to the SHAPE of the histogram, and the shape is uniform.
+      //
+      // So the lever has to change the shape, and quantising the illumination is
+      // the only one that does: it replaces a uniform ramp with a small number
+      // of spikes. Every closed lever REMOVES a term; this one keeps the term
+      // and quantises it, which is why it is not in the closed set.
+      //
+      // In ILLUMINATION space, like everything else in this block, so the paint
+      // survives — banding light times paint would band the plates together and
+      // be the flattening mistake this comment block already warns about.
+      //
+      // The band edge is softened by its own screen-space derivative, so a band
+      // boundary crossing a curved plate is a line rather than a staircase.
+      // uBandX = 0 disables it, which is the shipped default until the sweep
+      // says otherwise.
+      if (uBandX > 0.5) {
+        float g = clamp(outX / max(uLightCeil, 1e-3), 0.0, 1.0) * uBandX;
+        float fl = floor(g);
+        float w = clamp(fwidth(g), 1e-4, 0.5);
+        outX = (fl + smoothstep(0.5 - w, 0.5 + w, g - fl)) / uBandX * uLightCeil;
       }
 
       // Clamped because albX is a floor, not a measurement: on a fully metallic
@@ -514,6 +547,8 @@ export function roboShell(maps, look, teamColor, opts = {}) {
     uRimEdgeFar: { value: opts.rimEdgeFar ?? 0.66 },
     uRimSoftFar: { value: opts.rimSoftFar ?? 0.34 },
     uRimFar: { value: opts.rimFar ?? 1.45 },
+    // Illumination banding. 0 = off (shipped). See FILL_FRAG step 3.
+    uBandX: { value: opts.bandX ?? 0 },
     uFillUp: { value: new THREE.Color(opts.fillUp ?? 0x000000) },
     uFillDown: { value: new THREE.Color(opts.fillDown ?? 0x000000) },
     uFillDark: { value: opts.fillDark ?? 0.0 },
