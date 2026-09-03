@@ -32,6 +32,38 @@ import { clamp, clamp01, lerp, damp, angleDelta, smoothstep, TAU } from '../core
 import { smoothstep as ramp } from './noise.js';
 
 // ---------------------------------------------------------------------------
+// ROUND 24 GEOMETRY PROBE — TEMPORARY, and it must not survive the round.
+// ---------------------------------------------------------------------------
+/**
+ * A query-string multiplier on the three structural terms clause C's numerator
+ * could plausibly be made of, so ONE build answers several questions instead of
+ * one build per question.
+ *
+ *   ?chamfer=0.5   scales every roundedBox corner radius
+ *   ?plane=0.0     scales PLANE_UP / PLANE_DOWN, the baked per-face plane ramp
+ *   ?grime=0.0     scales the baked bottom-to-top value ramp
+ *
+ * All default to 1, so a URL without them is byte-for-byte the shipped build's
+ * behaviour and no measurement anyone else takes changes underneath them.
+ * Read ONCE at module load: geometry is built per model, long after boot, so a
+ * per-call read would be a per-vertex URL parse.
+ *
+ * This exists because the alternative is four rebuilds and four ninety-second
+ * captures to size four terms, and this round's budget does not have that.
+ */
+const PROBE = (() => {
+  const d = { chamfer: 1, plane: 1, grime: 1 };
+  try {
+    const q = new URLSearchParams(globalThis.location ? globalThis.location.search : '');
+    for (const k of Object.keys(d)) {
+      const v = Number(q.get(k));
+      if (q.has(k) && Number.isFinite(v)) d[k] = v;
+    }
+  } catch { /* no location (worker, node) — defaults stand */ }
+  return d;
+})();
+
+// ---------------------------------------------------------------------------
 // Scratch — hoisted so the frame loop never allocates.
 // ---------------------------------------------------------------------------
 
@@ -366,7 +398,7 @@ function buildPalette(look, legColour) {
  * @param arc 1 = single 45-degree chamfer (the workhorse), 2 = smoother round.
  */
 function roundedBox(w, h, d, r = 0.02, arc = 1) {
-  const rad = Math.min(r, Math.min(w, h, d) * 0.48);
+  const rad = Math.min(r * PROBE.chamfer, Math.min(w, h, d) * 0.48);
   const seg = 2 * arc + 1;
   const g = new THREE.BoxGeometry(w, h, d, seg, seg, seg);
 
@@ -662,11 +694,17 @@ class Build {
     const arr = new Float32Array(c * 3);
     for (let i = 0; i < c; i++) {
       const ny = n.getY(i);
-      const plane = ny >= 0 ? 1 + ny * ny * PLANE_UP : 1 - ny * ny * PLANE_DOWN;
+      const plane = ny >= 0
+        ? 1 + ny * ny * PLANE_UP * PROBE.plane
+        : 1 - ny * ny * PLANE_DOWN * PROBE.plane;
       // Gentle: this is grime, not a second value structure. Crushed harder it
       // drags the white leg armour down into the same grey as the blue torso
       // and undoes the colour blocking it is supposed to support.
-      const k = plane * (0.82 + 0.18 * smoothstep((p.getY(i) - 0.02) / 1.2));
+      // Written as "1 minus the shortfall" rather than "0.82 plus the lift" so
+      // PROBE.grime scales the ramp toward FLAT AND FULL VALUE, never toward
+      // flat and dark: at grime=0 every vertex sits at 1.0 and no paint is
+      // lowered anywhere. At grime=1 it is 0.82 + 0.18*ss to the last bit.
+      const k = plane * (1 - 0.18 * PROBE.grime * (1 - smoothstep((p.getY(i) - 0.02) / 1.2)));
       arr[i * 3] = paint.r * k;
       arr[i * 3 + 1] = paint.g * k;
       arr[i * 3 + 2] = paint.b * k;
