@@ -330,6 +330,13 @@ export class Stage {
   _buildSky() {
     this.skyMat = makeSkyMaterial(this.theme);
     const sky = new THREE.Mesh(new THREE.SphereGeometry(120, 32, 20), this.skyMat);
+    // NAMED, and the name is load-bearing. `shots/_owner.mjs` — the attribution
+    // instrument the whole "who owns the top of the value range" argument runs
+    // on — enumerates `stage.group` with `if (o.isMesh && o.name && o.visible)`.
+    // This mesh was the only unnamed batch in the group, so for every round it
+    // has been the one surface the attribution table could not see, and in
+    // orbital it is the surface that owns the brightest 1% of the frame.
+    sky.name = 'sky';
     sky.frustumCulled = false;
     sky.renderOrder = -1000;
     this.sky = sky;

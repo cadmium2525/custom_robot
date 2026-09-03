@@ -97,16 +97,36 @@ const STENCIL_FN = `(on) => {
   }
 }`;
 
-/** The stage's own named meshes, in build order. */
+/**
+ * The stage's own meshes, in build order.
+ *
+ * INSTRUMENT FAULT — found and fixed in round 18. This used to read
+ * `if ((o.isMesh || o.isPoints) && o.name && o.visible)`, so **every unnamed
+ * mesh in the stage group was silently absent from the table**, and the table
+ * was still printed as if it accounted for the frame. In orbital the only
+ * unnamed mesh was the SKY SPHERE, and the sky owns the brightest 1% of that
+ * arena: the tool reported nine objects summing to 2.8% of the top 1% while the
+ * machines held 19.5%, and the missing 78% had no row because it had no name.
+ * Four rounds of "orbital's highlights" were argued on that table.
+ *
+ * Unnamed meshes now get a synthetic `#<n>` handle and are toggled by object
+ * identity, so a batch can never leave the attribution table by forgetting to
+ * introduce itself. The count of them is printed.
+ */
 const LIST_FN = `() => {
   const s = window.__game.view.stage;
-  const names = [];
-  s.group.traverse((o) => { if ((o.isMesh || o.isPoints) && o.name && o.visible) names.push(o.name); });
-  return names;
+  const out = [];
+  let anon = 0;
+  s.group.traverse((o) => {
+    if (!(o.isMesh || o.isPoints) || !o.visible) return;
+    if (!o.__ownId) o.__ownId = o.name || ('#' + (++anon));
+    out.push(o.__ownId);
+  });
+  return out;
 }`;
 const SET_FN = `(spec) => {
   const s = window.__game.view.stage;
-  s.group.traverse((o) => { if (o.name === spec.name) o.visible = spec.on; });
+  s.group.traverse((o) => { if (o.__ownId === spec.name) o.visible = spec.on; });
 }`;
 
 /* The per-object diff, run with the base arrays already in the page. */
@@ -180,6 +200,10 @@ const BASE_FN = async ({ aUri, mUri }) => {
   const context = await browser.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
   const page = await context.newPage();
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  /* Round 14's standing rule: every capture names the bundle it measured. */
+  const bundle = await page.evaluate(() => [...document.querySelectorAll('script[src]')]
+    .map((s) => s.src.split('/').pop()).filter((s) => /^index-/.test(s)).join(',') || '(inline)');
+  console.log(`  bundle: ${bundle}   base: ${BASE}`);
   await page.waitForFunction(() => window.__game && window.__game.engine?.running, null, { timeout: 90000 });
   await page.evaluate((t) => { const q = window.__game.engine.quality; q.auto = false; q.setTier(t); }, TIER);
   await page.waitForTimeout(400);
@@ -215,7 +239,7 @@ const BASE_FN = async ({ aUri, mUri }) => {
   console.log(`\nWHO OWNS THE LIGHT — ${ARENA} @ tier ${TIER}, seed ${SEED}, ${base.W}x${base.H}`);
   console.log(`  brightest 1% starts at luminance ${base.top1}  (${base.nTop} px)`);
   console.log(`  contour background ring: ${base.nRing} px;  lit non-machine pixels (>=90): ${base.nLit}`);
-  console.log(`  objects: ${names.join(', ')}\n`);
+  console.log(`  objects: ${names.join(', ')}   (${names.filter((n) => n.startsWith('#')).length} unnamed)\n`);
   console.log('object            footprint    dLum mean/max     TOP1% owned    RING owned    LIT owned');
 
   const rows = [];
