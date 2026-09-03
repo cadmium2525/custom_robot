@@ -60,6 +60,12 @@ const KEEP = !!flag('keep');
 const DUMP = !!flag('dump');
 const NOPAINT = !!flag('nopaint');
 /**
+ * Restrict the segmentation to the machine's own stencil. OPT-IN, default off.
+ * See the long note in `blurBody` — without it the masses include background
+ * inside the bounding box, and on grid's near machine that is +78% of pixels.
+ */
+const ONBODY = !!flag('onbody');
+/**
  * Live shell-uniform overrides — `--u lightCeil=0.4,specCap=0.2`.
  *
  * Every number in the shell's light governor is a uniform, so tuning it does
@@ -204,7 +210,7 @@ const VFX_OFF_FN = `() => {
   return was;
 }`;
 
-const ANALYSE_FN = async ({ nUri, hUri, steps, dump }) => {
+const ANALYSE_FN = async ({ nUri, hUri, steps, dump, onbody }) => {
   const load = async (uri) => {
     const img = new Image();
     await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = uri; });
@@ -299,8 +305,38 @@ const ANALYSE_FN = async ({ nUri, hUri, steps, dump }) => {
       pass(tmpV, tmpW, val, wgt, false);
     }
     const out = new Float32Array(bw * bh);
+    /*
+     * `wgt > 1e-4` is a DIVIDE-BY-ZERO GUARD, and round 19 found it being used
+     * as the definition of "this pixel is on the machine". It is not one. Three
+     * un-normalised box passes of radius ~8 spread a single unit of weight over
+     * a ~26px neighbourhood with the SUM preserved, so wgt is far above 1e-4
+     * everywhere the kernel reaches — which is the whole bounding box, minus its
+     * corners. On grid's near machine the stencil is 22270 px and the set this
+     * guard admits is 39662 px: **+78% of pixels that are not on the machine.**
+     * The gaps between the legs, between arm and torso, and above the shoulders
+     * are inside the box, so they are inside the "masses", so the stage's own
+     * value range is counted as variance INSIDE a mass and the stage's own mean
+     * is mixed into the mass mean the between-mass step is taken from.
+     *
+     * --onbody restricts the segmentation to the machine's own stencil, which is
+     * what the comment above blurBody has always said this does ("the machine is
+     * blurred against itself and never against what is behind it"). It is OPT-IN
+     * and defaults OFF so that no figure any other round filed changes under it
+     * without someone asking for it; the two readings are meant to be quoted
+     * side by side. Round 19's finding is the difference between them.
+     */
     for (let i = 0; i < bw * bh; i++) out[i] = wgt[i] > 1e-4 ? val[i] / wgt[i] : -1;
-    return { out, x0, y0, bw, bh };
+    if (onbody) {
+      for (let y = 0; y < bh; y++) {
+        for (let x = 0; x < bw; x++) {
+          const p = (y + y0) * W + (x + x0);
+          if (!(mask[p] && comp[p] === c.id)) out[y * bw + x] = -1;
+        }
+      }
+    }
+    let seg = 0;
+    for (let i = 0; i < bw * bh; i++) if (out[i] >= 0) seg++;
+    return { out, x0, y0, bw, bh, seg };
   };
 
   /** Connected regions of one quantisation band inside the body, at one phase. */
@@ -425,6 +461,7 @@ const ANALYSE_FN = async ({ nUri, hUri, steps, dump }) => {
       const B = blurBody(c, sigma);
       return {
         px: c.n,
+        seg: B.seg,
         box: `${c.x1 - c.x0 + 1}x${h}`,
         at: `${c.x0},${c.y0}`,
         sigma: Math.round(sigma * 100) / 100,
@@ -508,11 +545,17 @@ const ANALYSE_FN = async ({ nUri, hUri, steps, dump }) => {
     hUri: 'data:image/png;base64,' + Hs.toString('base64'),
     steps: STEPS,
     dump: DUMP,
+    onbody: ONBODY,
   });
 
-  console.log(`\nMASSES — ${ARENA} @ tier ${TIER}, ${out.screen}${NOPAINT ? '  [NO PAINT]' : ''}`);
+  console.log(`\nMASSES — ${ARENA} @ tier ${TIER}, ${out.screen}${NOPAINT ? '  [NO PAINT]' : ''}${ONBODY ? '  [ON-BODY]' : ''}`);
   out.bodies.forEach((b, i) => {
     console.log(`  ROBOT ${i + 1}  ${b.box}px at ${b.at}   blur sigma ${b.sigma}`);
+    // The two pixel sets every figure below is averaged over. When `seg` is
+    // larger than `px`, the difference is background inside the bounding box
+    // that the blur's weight guard admitted into the masses. See blurBody.
+    console.log(`     stencil ${b.px}px   segmented ${b.seg}px` +
+      (b.seg > b.px ? `   (+${Math.round((b.seg / b.px - 1) * 1000) / 10}% NOT ON THE MACHINE)` : '   (on-body)'));
     console.log(`     value  p2=${b.p2} median=${b.median} p98=${b.p98}   spread ${b.spread} levels`);
     const head = b.curve.map((c) => String(c.step).padStart(6)).join('');
     const mass = b.curve.map((c) => c.masses.toFixed(1).padStart(6)).join('');
