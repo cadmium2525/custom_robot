@@ -383,7 +383,30 @@ const RIM_FRAG = /* glsl */`
   gl_FragColor.rgb += uTeamColor * pow(fres, 2.5) * uRimWash;
   gl_FragColor.rgb += energy;
   gl_FragColor.rgb += uTeamColor * pulse * 0.85;
-  gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.6, 0.9, 0.85), uHitFlash);
+  // THE HIT TELL IS CHROMATIC, NOT LUMINOUS, AND THAT IS THE WHOLE POINT.
+  //
+  // This was vec3(1.6, 0.9, 0.85). The bright-pass in postfx.js keys on the MAX
+  // CHANNEL against a threshold of 1.04 with a 0.16 knee, so a flashed pixel sat
+  // at br 1.6 and bled with contrib (1.6 - 1.04) / 1.6 = 0.35. **A machine being
+  // hit was itself a bloom source** — the defect RULING 22 is about, emitted by
+  // the object whose outline is collapsing.
+  //
+  // Measured: at 117 ms the opponent's mean luma with the entire VFX layer
+  // suppressed is 220 of 255. Before any effect is drawn, the aiming target is
+  // nearly white. Two rounds of work on the 68% outline collapse at that age
+  // aimed at the effect; the light fix moved it 1.2 points and the throw fix 0.0,
+  // because the effect was never what was doing it.
+  //
+  // 0.88 is threshold minus knee, so a fully flashed pixel contributes exactly
+  // nothing to the bright pass rather than a little. The punch that value used to
+  // carry is bought back in CHROMA instead — green and blue drop far below the
+  // old 0.9/0.85, so the tell reads as a hot red hit rather than a white blowout,
+  // and it moves clause D the right way instead of the wrong one.
+  //
+  // The tell is NOT deleted: RULING 16 applies to it, and a hit that cannot be
+  // seen is a worse defect than a hit that blooms. What changed is only which
+  // axis it is built on.
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.88, 0.34, 0.30), uHitFlash);
 `;
 
 /**
