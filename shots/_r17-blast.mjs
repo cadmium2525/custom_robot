@@ -268,7 +268,15 @@ const VFX_TOGGLE_FN = `(on) => {
   }
 }`;
 
-/** Exactly contour.mjs's stencil, so the machine mask is the same construction. */
+/**
+ * The machine mask, built the same way `tools/contour.mjs` builds it.
+ *
+ * INSTRUMENT FAULT 22 -- this was the SIXTH copy of the stencil block and
+ * `bf17a94` fixed five. It said "exactly contour.mjs's stencil" and had said so
+ * since the five diverged from it, which made a false claim of provenance the
+ * reason nobody re-read it. Every clause F occlusion figure in this document
+ * was measured against a mask built by the unfixed rule. Fixed here to match.
+ */
 const STENCIL_FN = `(on) => {
   const v = window.__game.view;
   if (on) {
@@ -285,6 +293,15 @@ const STENCIL_FN = `(on) => {
     v.__swap = [];
     v.scene.traverse((o) => {
       if (!o.isMesh || !o.visible) return;
+      // INSTRUMENT FAULT 19's rule, which this copy did not have. A mesh that
+      // does not write depth does not occlude the machines in the real frame,
+      // so painting it opaque black made it occlude them in the mask. Hidden
+      // rather than blackened: whether such a mesh TINTS the machine is a
+      // colour question, and this is a mask.
+      const m0 = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!shells.has(o) && m0 && m0.depthWrite === false) {
+        v.__hidden.push(o); o.visible = false; return;
+      }
       v.__swap.push([o, o.material]);
       o.material = shells.has(o) ? white : black;
     });

@@ -143,6 +143,18 @@ const ANALYSE = async ({ rawUri, novfxUri, machUri, cx, cy }) => {
   far.sort((a, b) => a - b);
   const noise = far.length ? far[Math.floor(far.length * 0.999)] : 0;
   const T = Math.max(6, noise * 1.5);
+  // INSTRUMENT FAULT 21. C is |luma - luma| and cannot exceed 255, so a
+  // threshold above 255 has already established that this frame is not
+  // measurable -- whatever is happening far from the blast is as large as
+  // anything the blast could do. Four captures in one session came back with
+  // the whole 3D view black and floors of 195-241, i.e. thresholds of 292-361,
+  // and the meter printed "effect covers 0% of frame" and then nine more
+  // numbers off the same frame: centre colours, occlusion percentages,
+  // brightest-1% shares. A meter that has proved its own frame unmeasurable
+  // must say so and stop, not hand back a table.
+  if (T > 255) {
+    return { unmeasurable: true, noise: Math.round(noise * 100) / 100, T: Math.round(T * 100) / 100 };
+  }
 
   let cover = 0;
   for (let p = 0; p < NP; p++) if (C[p] > T) cover++;
@@ -434,6 +446,7 @@ say(`blast: tick ${meta.blast.tick} R=${meta.blast.radius} kind=${meta.blast.kin
 say('');
 
 const rows = [];
+let refused = 0;
 for (const s of meta.shots) {
   const p = String(s.age).padStart(2, '0');
   const f = { raw: `${PREFIX}-a${p}-raw.png`, no: `${PREFIX}-a${p}-novfx.png`, ma: `${PREFIX}-a${p}-mach.png` };
@@ -442,8 +455,17 @@ for (const s of meta.shots) {
     rawUri: uri(f.raw), novfxUri: uri(f.no), machUri: uri(f.ma),
     cx: s.pr.blast.x, cy: s.pr.blast.y,
   });
-  rows.push({ age: s.age, ms: s.ms, ...r });
   say(`--- age ${s.age} ticks (${s.ms}ms) --------------------------------------------`);
+  if (r.unmeasurable) {
+    // FAULT 21. Refuse, loudly, and print nothing else from this frame.
+    say(`  REFUSED: C noise floor ${r.noise} gives a threshold of ${r.T}, and C cannot exceed 255.`);
+    say(`  Whatever is happening far from the blast is as large as anything the blast could do,`);
+    say(`  so nothing in this frame is attributable to the effect. Check the capture: a black`);
+    say(`  3D view writes a ~91 KB PNG where a sane frame writes ~2.1 MB.`);
+    refused++;
+    continue;
+  }
+  rows.push({ age: s.age, ms: s.ms, ...r });
   say(`  C noise floor ${r.noise}  threshold ${r.threshold}  effect covers ${r.coverPct}% of frame`);
   if (r.edge.width) {
     const w = r.edge.width, sl = r.edge.slope;

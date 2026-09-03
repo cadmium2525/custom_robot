@@ -6315,3 +6315,50 @@ drawn elements"; that was tried and it moved sub-clause 1 by nothing. It becomes
 
 The runner-up is unchanged and is still the deepest problem in the build: **clause C by geometry**,
 6/6 FAIL at 1.34-4.09 against 1.00, every shading lever measured and closed.
+
+### Faults 21 and 22 fixed, and fixing 22 **overturns half of clause F's second sub-clause**
+
+Both faults filed in RULING 16 above are closed in the same commit, and one of them changes numbers.
+
+**Fault 21 — the meter now refuses.** `shots/_r17-edge.mjs` returns `{ unmeasurable: true }` when its
+threshold exceeds 255, prints why, and prints nothing else from that frame. Verified on the exact
+black-frame run that exposed it (`shots/r19b`): all four ages now read
+*"REFUSED: C noise floor 240.88 gives a threshold of 361.31, and C cannot exceed 255"* where they
+previously printed a full table of centre colours, occlusion percentages and brightest-1% shares.
+
+**Fault 22 — the sixth stencil copy now has fault 19's rule**, and the re-baseline is the finding. Same
+pinned blast, same build (`4be0e4263d86`), same tick, `shots/_r17-edge.mjs` only, unfixed -> fixed:
+
+```
+    age      near machine occlusion        FAR MACHINE (the opponent)        vs < 25%
+     1        3.5% ->  3.5%                ABSENT  ->  76px, 19.3%           MET
+     7        7.1% ->  7.1%                ABSENT  ->  93px, 22.5%           MET
+    20        1.9% ->  1.9%                78px, 71.1% -> 71.1%              FAIL, 2.8x over
+    48        0%   ->  0%                  84px,  7.1% ->  7.1%              MET
+
+    edge 10-90    31.75 / 23.0 / 25.5 / 25.25   IDENTICAL before and after
+    hard floor    1.25px, <=2px 87.8% -> 87.9%  inside noise
+```
+
+**At the two ages where the blast is brightest, the unfixed stencil was deleting the opponent from the
+mask entirely** — no second component, so no occlusion row, so no measurement. That is fault 19's exact
+signature in a sixth copy, on the two frames that matter most, and it is why this document has never
+had an occlusion figure for the first 117 ms.
+
+**What it does to the clause.** Sub-clause 2 was filed as a blanket failure — *"59.5 / 66.4 / 73.0% at
+ages 12, 20 and 72"*. On the fixed mask it is **19.3 / 22.5 / 71.1 / 7.1%**: **MET at three of four
+ages and failing only at 333 ms**, the fire-to-smoke handoff, where it misses by 2.8x. That is a
+narrower, later and far more actionable defect than the one on the card, and it is a **single-age
+spike**, not a property of the effect.
+
+**And it corrects RULING 14 upward.** *"The machines take 0% of the brightest 1% for the first 333 ms"*
+was measured on the mask that had the opponent painted out. On the fixed mask: **0% at 17 ms, 10.7% at
+117 ms, 0.9% at 333 ms, 39.9% at 800 ms.** The finding survives — clause E is nowhere near its 50%
+floor during a detonation, and the effect holds 100 / 87.6 / 83% of the top 1% — but the specific "0%
+for a third of a second" is wrong and I withdraw it. **That is my own ruling, filed four hours ago,
+corrected by an instrument fault I filed myself.**
+
+**Rank 1 is unchanged and better aimed than before.** The occlusion failure is one age wide, at the
+handoff from fire to smoke, on a 78 px opponent 230 px from a blast whose envelope reaches 181 px. It
+is a composition and timing defect, it is not the heat ramp, it is not the element count, and it is not
+the edge.
