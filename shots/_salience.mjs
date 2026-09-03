@@ -60,6 +60,12 @@
  *              This is the half of the gate residual that is a LIGHTING bug
  *              rather than a paint one: "a practical is not allowed to out-light
  *              the sun" is only checkable by turning them off one at a time.
+ *   --bloom X  composite bloomStrength for this capture only, 0 to switch the
+ *              post chain's glow off. `0dbaa12` measured bloom's share of the
+ *              opponent's outline collapse during a detonation and closed by
+ *              saying clause E on the STILL FRAME had never been re-read
+ *              without it. This is that knob. Diagnostic only, and it refuses
+ *              rather than reporting a zero if the composite did not change.
  *   --rect x0,y0,x1,y1   name a region to rank.
  *   --gate     derive the gate rect from the SCENE instead of typing one in,
  *              and rank that. The rect quoted for the gate residual since round
@@ -101,6 +107,8 @@ const LIGHTS = !!flag('lights');
 const KEEP = !!flag('keep');
 const GATE = !!flag('gate');
 const RECT = flag('rect', null);
+/** --bloom X: composite bloomStrength for this capture only. See the block below. */
+const BLOOM = flag('bloom', null) === null ? null : Number(flag('bloom', null));
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /* Identical to contour.mjs / mass.mjs / _ground.mjs. */
@@ -567,6 +575,47 @@ const pad = (v, n) => String(v).padStart(n);
     await page.evaluate((i) => { const el = document.getElementById(i); if (el) el.style.display = 'none'; }, id);
   }
   await page.waitForTimeout(700);
+
+  /**
+   * `--bloom X` sets the composite's bloomStrength for this capture only.
+   *
+   * `0dbaa12` measured bloom's share of the opponent's outline collapse and of
+   * the brightest 1% DURING A DETONATION, and closed by naming what it could
+   * not settle: "clause E on the still frame, clause B's three arena figures
+   * and the whole look of the machines' highlights are measured WITH bloom and
+   * none of them has been re-read without it." This is the flag that lets the
+   * still frame be re-read. `_r17-blast.mjs` has had the same knob since round
+   * 18; the authority meter for clause E did not, which is why the still-frame
+   * half of the question has never been asked.
+   *
+   * It is a DIAGNOSTIC. Nothing is written to src, and the uniform is restored
+   * by the next settings change. Two facts make it safe to set here rather than
+   * at construction: the engine's frame loop calls onRender whether or not the
+   * sim is paused (core/engine.js), so the pinned frame is re-composited a few
+   * dozen times during the wait below; and `q.auto` is off in this capture, so
+   * nothing re-applies the tier and resets the uniform underneath it.
+   *
+   * IT REFUSES RATHER THAN REPORTING A ZERO. The value is read back after the
+   * wait, and a capture whose composite did not actually change is a capture
+   * that would print a full, plausible, wrong table -- which is fault 25 with a
+   * different first cause. If the uniform is absent or did not take, this stops.
+   */
+  if (BLOOM !== null) {
+    const got = await page.evaluate((b) => {
+      const u = window.__game.engine.postfx && window.__game.engine.postfx.uniforms;
+      if (!u || !u.bloomStrength) return null;
+      const was = u.bloomStrength.value;
+      u.bloomStrength.value = Number(b);
+      return { was, now: u.bloomStrength.value };
+    }, BLOOM);
+    if (!got) throw new Error('--bloom: no bloomStrength uniform on this build — the diagnostic did nothing');
+    await page.waitForTimeout(500);
+    const held = await page.evaluate(() => window.__game.engine.postfx.uniforms.bloomStrength.value);
+    if (Math.abs(held - Number(BLOOM)) > 1e-6) {
+      throw new Error(`--bloom: set ${BLOOM} but the composite holds ${held} — something re-applied the tier`);
+    }
+    console.log(`  bloomStrength ${got.was} -> ${held}  (diagnostic, not written to src)`);
+  }
 
   const probe = await context.newPage();
   await probe.goto('about:blank');
