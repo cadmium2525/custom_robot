@@ -96,6 +96,38 @@ const SEED = Number(flag('seed', 1234567));
 const KEEP = !!flag('keep');
 /** --bloom X: composite bloomStrength for this capture only. See the block below. */
 const BLOOM = flag('bloom', null) === null ? null : Number(flag('bloom', null));
+/**
+ * Live shell-uniform overrides — `--u bandX=4` or `--u uBandX=4`.
+ *
+ * WHY THIS EXISTS HERE, AND WHY IT IS A COPY OF tools/mass.mjs's BLOCK.
+ *
+ * Clause A and clause C are swept with `mass.mjs --u`; clause B is this meter;
+ * and until now this meter had no `--u` at all. So the acceptance test the
+ * rounds keep writing down — "clause C under X with clause A at or above Y AND
+ * clause B not below Z" — could never be evaluated on a swept point. Every
+ * sweep had to be baked into a build first, which is the rebuild-per-point cost
+ * `--u` was added to mass.mjs to avoid, and which is why round 24's follow-up
+ * timed out twice instead of finishing.
+ *
+ * It is a COPY and not a shared import on purpose. `shots/_massdrive.mjs` is a
+ * PATCHER: it reads tools/mass.mjs, string-replaces anchors, and writes the
+ * result into `shots/` before running it. A relative import in mass.mjs would
+ * resolve against `shots/` in that copy and the meter would not start — the
+ * same class of breakage as the vanished settle anchor RULING 10 found. So
+ * mass.mjs must stay import-free, and the price of that is this duplicate.
+ * KEEP THE TWO IN STEP: the applier's contract is resolve-both-spellings,
+ * verify-by-read-back, abort-on-miss. See INSTRUMENT FAULT 29 in mass.mjs.
+ */
+const UNIFORMS = String(flag('u', '') || '').split(',').filter(Boolean).map((kv) => {
+  const [k, v] = kv.split('=');
+  const key = String(k).trim();
+  const num = Number(v);
+  if (!key || !Number.isFinite(num)) {
+    console.error('contour: --u "' + kv + '" is not name=number.');
+    process.exit(2);
+  }
+  return [key, num];
+});
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /**
@@ -419,6 +451,73 @@ const bar = (pct, width = 28) => {
   const settled = await page.evaluate(`(${SETTLE_FN})(240)`);
   if (!settled) throw new Error('camera rig unavailable — cannot pin the frame');
   await page.evaluate(`(${VFX_OFF_FN})()`);
+  if (UNIFORMS.length) {
+    const uReport = await page.evaluate((list) => {
+      const mats = [];
+      for (const m of window.__game.view.models) {
+        for (const mat of [m.matShell, m.matOutline, m.matFrame, m.matEmis, m.matFlare]) {
+          if (mat && mat.userData && mat.userData.u && !mats.includes(mat)) mats.push(mat);
+        }
+        for (const mat of m.shellMats || []) {
+          if (mat && mat.userData && mat.userData.u && !mats.includes(mat)) mats.push(mat);
+        }
+      }
+      const numeric = new Set();
+      const typed = new Set();
+      for (const mat of mats) {
+        for (const name of Object.keys(mat.userData.u)) {
+          const slot = mat.userData.u[name];
+          if (slot && typeof slot.value === 'number') numeric.add(name);
+          else typed.add(name);
+        }
+      }
+      const applied = [];
+      const missed = [];
+      for (const [k, v] of list) {
+        const cand = [k, 'u' + k[0].toUpperCase() + k.slice(1)];
+        const name = cand.find((c) => numeric.has(c));
+        if (!name) {
+          const t = cand.find((c) => typed.has(c));
+          missed.push({ key: k, why: t ? t + ' is not a numeric uniform' : 'no such uniform' });
+          continue;
+        }
+        let hit = 0;
+        for (const mat of mats) {
+          const slot = mat.userData.u[name];
+          if (slot && typeof slot.value === 'number') { slot.value = v; hit++; }
+        }
+        let back = null;
+        for (const mat of mats) {
+          const slot = mat.userData.u[name];
+          if (slot && typeof slot.value === 'number') { back = slot.value; break; }
+        }
+        applied.push({ key: k, name, want: v, got: back, mats: hit });
+      }
+      return { applied, missed, numeric: [...numeric].sort(), typed: [...typed].sort() };
+    }, UNIFORMS);
+
+    for (const a of uReport.applied) {
+      console.log(
+        '  uniform ' + a.key + ' -> ' + a.name + ' = ' + a.want +
+        '  read back ' + a.got + ' on ' + a.mats + ' material(s)' +
+        (a.got === a.want ? '' : '   *** READ-BACK MISMATCH ***')
+      );
+    }
+    const bad = uReport.missed.concat(uReport.applied.filter((a) => a.got !== a.want));
+    if (bad.length) {
+      for (const m of uReport.missed) console.error('  --u ' + m.key + ': ' + m.why);
+      console.error(
+        'contour: --u did not reach ' + bad.length + ' of ' + UNIFORMS.length + ' key(s). ' +
+        'A sweep knob that changes nothing must not return figures.\n' +
+        '  settable (numeric) uniforms on this build:\n    ' +
+        uReport.numeric.join(' ') +
+        (uReport.typed.length ? '\n  present but NOT numeric, so --u can never set them:\n    ' +
+          uReport.typed.join(' ') : '')
+      );
+      await browser.close();
+      process.exit(3);
+    }
+  }
   for (const id of ['ui-layer', 'hud-layer', 'splash']) {
     await page.evaluate((i) => { const el = document.getElementById(i); if (el) el.style.display = 'none'; }, id);
   }

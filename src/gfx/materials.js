@@ -299,8 +299,41 @@ const FILL_FRAG = /* glsl */`
       //
       // The band edge is softened by its own screen-space derivative, so a band
       // boundary crossing a curved plate is a line rather than a staircase.
-      // uBandX = 0 disables it, which is the shipped default until the sweep
-      // says otherwise.
+      //
+      // ---------------------------------------------------------------------
+      // ROUND 28 SWEPT IT AND IT IS CLOSED. uBandX SHIPS AT 0. DO NOT RE-SWEEP.
+      // ---------------------------------------------------------------------
+      //
+      // Round 24 named this the one lever that changes the SHAPE of the
+      // within-mass luminance histogram rather than removing a term, and set the
+      // test: near ratio under 1.35, clause A top-4 at or above 85.0 on both
+      // machines, clause B not below 84.6. Seven points were measured on bundle
+      // fc777480 with the plumbing repaired (INSTRUMENT FAULT 29 — the earlier
+      // readings were the control repeated). NO N PASSES:
+      //
+      //     N        1      2      3      4      6      8     12    ctl
+      //     C near 1.925  1.783  1.876  1.674  1.707  1.717  1.708  1.706
+      //     A near  81.7   84.6   85.0   84.5   85.4   85.3   85.3   85.2
+      //     B       ----   83.7   84.8   81.3   84.8   84.8   84.8   84.8
+      //
+      // The lever renders — at N=1 the machine blows out and every clause moves
+      // hard — but the number clause C reads does not respond to it. Per-mass sd
+      // at step 51 is 44.2 / 43.6 / 44.3 / 44.3 / 44.3 / 44.2 across N=2..12
+      // against 44.2 at the control, and the whole eight-step sd curve overlays
+      // the control to within a level. The best ratio, 1.674 at N=4, is a
+      // 0.032 move inside a 0.05 round-trip floor and it comes entirely from the
+      // between-mass GAP, not from a flatter mass — and it costs 0.7 of clause A
+      // and 3.5 of clause B. sd stays 0.280 +/- 0.003 of the machine's own
+      // spread at every N, which is round 24's constant exactly.
+      //
+      // Why: the meter blurs the near machine at sigma 8.84 px before it
+      // segments, and this band edge is softened by fwidth on top of that. The
+      // far machine, blurred at sigma 2.47, moves its sd about four times as far
+      // (27.6 to 29.6) — and UPWARD. A staircase integrated by a kernel wider
+      // than its tread is the ramp again.
+      //
+      // Kept at 0 rather than deleted so the numbers above sit on the mechanism
+      // they describe. It is not a knob to sweep; it is a closed result.
       if (uBandX > 0.5) {
         float g = clamp(outX / max(uLightCeil, 1e-3), 0.0, 1.0) * uBandX;
         float fl = floor(g);
