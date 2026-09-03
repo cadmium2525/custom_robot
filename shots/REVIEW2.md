@@ -7733,3 +7733,169 @@ and un-suspects clause A and clause B at once.
   *an art change is not complete until every clause it can move has been re-read* — did its job: two of
   the three came back **better** than the figures it invalidated, and the card is stronger for having
   refused to carry them.
+
+---
+
+## 2026-09-03 — Round 21, builder: **the last failing cell in clause F sub-clause 2 is not the pinned blast — it is a second detonation's point light, and no meter in this repository could say so**
+
+The brief for this round was one cell: 233 ms, 44.5% of the opponent altered against a 25% clause, the
+only failure left after `0562782` closed 333 and 433 ms by correcting the lobes' throw. It named the
+blast point light as **closed** — `c2db8b1` took the available gain at 333/433/533 ms, and with the
+light deleted outright 333 ms still read 28.0%. That closure is correct **about the light it was
+measured on**. It is about the wrong light.
+
+Everything below is the pinned blast — grid, seed 1234567, tick 1195, TIER.HIGH, 1400 particles,
+1600x900 — captured by `shots/_r17-blast.mjs` and read by `shots/_r17-edge.mjs` only, from my own build
+root `dist-r23` on `:4327`, **bundle `0904a9f1ee52`, which is the same bundle hash `0562782` filed**, so
+the control is the same code and not a rebuild that happens to agree. Seven ages on every row. No line
+of `src/` was changed this round; `git diff HEAD -- src/` is empty at the commit that files this.
+
+### 1. The control, and it reproduces to the decimal
+
+`shots/r23base-edge.txt`, far-machine alteration, `_r17-edge.mjs`:
+
+```
+    age            1     7    14    20    26    32    48        clause is < 25%
+    ms            17   117   233   333   433   533   800
+    head         1.4  20.0  44.5  11.7  11.9   0.5   7.0
+                 MET   MET  FAIL   MET   MET   MET   MET
+```
+
+Identical at all seven ages to `shots/r20throwship-edge.txt`. The round starts from a control, not from
+the record.
+
+### 2. Two instruments, because the question could not be asked without them
+
+**`_r17-blast.mjs` now prints a light census at every age** — every live blast point light, its birth
+against the pinned blast's own, and the illuminance it delivers to each machine, computed as
+`intensity / d^2` with THREE's range window applied. That is the lux unit `stage.js` used to condemn the
+foundry gate lamp and the unit `c2db8b1` used to take this light from 300 to 60, against an arena key of
+about **3.2**. `shots/r23census-log.txt`:
+
+```
+    age  ms   PINNED blast's light          SECOND light, born +100 ms
+      1  17     3.7 m   4.02 lux            -- not born yet --
+      7 117     3.8 m   2.35 lux            1.2 m   29.60 lux
+     14 233     3.3 m   1.70 lux            3.3 m    2.30 lux
+     20 333     3.7 m   0.81 lux            4.9 m    0.61 lux
+     26 433     4.3 m   0.36 lux            5.2 m    0.32 lux
+     32 533     4.8 m   0.18 lux            5.4 m    0.17 lux
+     48 800   -- dead --                  -- dead --
+```
+
+`_r17-blast.mjs --list --scan 1260` names it: **a second `EV.EXPLODE` at tick 1201, R = 2.80, six ticks
+after the pin.** Its light stands **1.2 m from the opponent and puts 29.6 lux on it — nine times the
+key, and 4.4x the 6.7 lux design point `c2db8b1` set for a blast light at the aiming target.** The pin
+is one explosion; the 800 ms window this document has been measuring is not.
+
+**`_r17-blast.mjs --kill latelight`** kills only the point lights born after the pinned blast and leaves
+the pinned blast's own. It exists because `VFX_TOGGLE_FN` hides *every* light in the scene for the novfx
+pass, so a second detonation's wash has always been inside the pinned blast's occlusion column with
+nothing able to separate them. `--kill light` could only remove both.
+
+### 3. The attribution, seven ages, one meter
+
+`_r17-edge.mjs` on three captures from the same bundle and the same frozen frames
+(`shots/r23base-edge.txt`, `shots/r23late-edge.txt`, `shots/r23nolight-edge.txt`):
+
+```
+    far-machine alteration, clause F sub-clause 2, threshold < 25%
+    age                    1     7    14    20    26    32    48
+    ms                    17   117   233   333   433   533   800
+    as shipped           1.4  20.0  44.5  11.7  11.9   0.5   7.0
+    --kill latelight     1.4  19.1   7.6   6.7  11.9   0.5   7.0
+    --kill light         0.2  19.1   7.4   5.8  12.1   0.7   7.0
+                         MET   MET   MET   MET   MET   MET   MET   (both killed columns)
+```
+
+**233 ms goes 44.5 -> 7.6 when the other explosion's light is removed, and to 7.4 when every light is
+removed. The pinned blast's own light is worth 0.2 points there.** Nothing in the renderer moved
+between these three columns.
+
+Per fault 26 the **sub-clause 1 columns are not comparable across these runs and I quote no delta for
+them**: removing a light moves `_r17-edge.mjs`'s own noise floor (4.00 -> 1.35 at 233 ms) and therefore
+its threshold, its cover% and its outer radius. The occlusion column is the only one here with a fixed
+threshold (C > 25), which is why it is the only one quoted.
+
+### 4. `shots/_r23-lightprobe.mjs` — what each light on its own does to the opponent's pixels
+
+New meter, and it is a subtraction between two captures rather than between two layers:
+`L = luma(raw with the light) - luma(raw with it killed)`, over the opponent's own stencil from the
+capture's `-mach.png`, split from the near machine by nearest reported centre. It measures brightening,
+signed, where the occlusion column measures unsigned change against a threshold.
+
+```
+    the opponent's pixels, mean brightening in luma levels (0-255), and % over the clause's C>25
+    age              1     7    14    20    26    32    48
+    both lights    3.0   0.7  18.8  10.1   3.5   1.8   0.0      27.9% over 25 at 233 ms
+    pinned only    3.0   0.0   2.9   3.5   1.3   0.9   0.0       0.0% over 25 at EVERY age
+    second only    0.0   0.7  16.0   6.5   2.1   0.9   0.0      18.0% over 25 at 233 ms
+    opponent's own luma with no effect at all
+                 127.3 220.3 131.5 103.0 115.6 114.6 125.9
+```
+
+Three things in that table, and the third is the one I cannot yet explain:
+
+- **The pinned blast's light never moves a single pixel of the opponent past the clause's threshold, at
+  any of the seven ages.** `c2db8b1` is spent, exactly as the brief said, and this is the first
+  measurement that says so at every age rather than at three.
+- **117 ms is the clipped age.** The second light is putting 29.6 lux on the opponent there and moves it
+  by 0.7 luma, because the machine is already at 220 luma from its own hit flash before any effect is
+  drawn. The wash at 117 ms is not the light; it is the machine's own flash and the fireball's white
+  core, which is what `c2db8b1` found when its hypothesis was falsified on that age.
+- **The second light brightens 5.5x what the pinned light does at 233 ms while delivering 1.35x the
+  illuminance at the reference point.** A single-point lux figure does not predict it. The likely cause
+  is which faces each light reaches — the pinned blast is up-and-right of the opponent on screen and the
+  second is down-and-left, so one may be lighting surfaces the camera cannot see — but I have not
+  measured face normals and **I am not filing that as established.** What is established is the
+  brightening, which is a difference of two captured frames.
+
+### 5. INSTRUMENT FAULT 28 — the occlusion column is scoped to the whole VFX layer, and it has always been quoted as a statement about one blast
+
+`_r17-edge.mjs`'s C is `|luma(raw) - luma(novfx)|`, and `novfx` hides every VFX node **and every blast
+light in the scene**. Every clause F sub-clause 2 figure ever filed — RULING 16's 71.1%, RULING 20's
+`19.3 / 22.5 / 88.7 / 71.1 / 50.2 / 66.1 / 7.1`, `c2db8b1`'s and `0562782`'s columns, and the 44.5% this
+round was sent to close — is therefore **"what everything the VFX layer did in this frame does to the
+opponent"**, while every sentence written around those figures says *the blast*. On this pin the two
+differ by **36.9 points at 233 ms** and by up to 5.9 points elsewhere.
+
+This does not overturn the fix history: the throw correction in `0562782` moved fire that was genuinely
+standing on the opponent, and `--kill light` was already separating covering from lighting. What it
+overturns is the *scope* of the word "effect" in one cell, and it is the reason a cell that four rounds
+of art work could not move drops to 7.6% with no renderer change at all.
+
+### 6. What I did not do, and the ruling I am asking for
+
+**I did not touch the light and I did not ship an art change.** The brief closed the blast point light
+and I take that as binding; the census says the closure is right about the pinned blast's light and
+silent about a second one 100 ms later. So the round produces an attribution and two instruments, not a
+commit against `src/`.
+
+There are two readings of the cell and I will not pick the one that scores better without saying that is
+what I am doing:
+
+- **Read as a statement about the pinned effect** — the effect the capture is named for, the one the
+  clause's fix history is about — clause F sub-clause 2 is **MET at all seven ages**:
+  `1.4 / 19.1 / 7.6 / 6.7 / 11.9 / 0.5 / 7.0`, worst cell 19.1% against 25%.
+- **Read as a statement about the frame a player sees** — every effect live at that instant — it is
+  **FAIL at 233 ms, 44.5%**, and the aiming target is still washed for about a sixth of a second. That
+  reading is the honest one for blind point 5, and the cause is now named: **two blast lights summing on
+  one machine during a burst**, one of them 1.2 m away at 29.6 lux.
+
+The lever the second reading needs is on the closed list, so I am not pulling it. Its arithmetic, for
+whoever rules: a blast light is `60 * scale` at range `R * 4` with `exp(-age * 5)` decay, one slot per
+detonation out of three, and two detonations 100 ms apart therefore **add** on the same target. Making a
+new detonation take over the live light rather than stack with it, or clamping the illuminance a blast
+light may deliver to a machine, are both composition rules rather than dimming — but both are the light,
+both trip fault 26 for sub-clause 1, and neither is mine to open this round.
+
+**Nothing in the card is moved by this entry on my own authority.** Clause F sub-clause 2 stays where the
+ruling puts it. What is new is that the cell has an attributed cause for the first time, the pinned
+blast's light is measured as spent at seven ages of seven, and the meter that produced every figure in
+this clause is now known to be answering a wider question than the one being asked.
+
+Meters and captures, all committed with `git add -f`: `shots/r23base-edge.txt` (control),
+`shots/r23late-edge.txt` (`--kill latelight`), `shots/r23nolight-edge.txt` (`--kill light`),
+`shots/r23census-log.txt` (the light census), `shots/_r23-lightprobe.mjs` (new meter),
+`shots/_r17-blast.mjs` (census + `--kill latelight`). `npm run build` clean, `npm test` ALL PASS,
+`node tools/deploycheck.mjs` OK on grid, foundry and orbital.
