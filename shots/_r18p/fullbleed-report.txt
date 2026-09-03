@@ -1,0 +1,80 @@
+
+R17PHONE — 390x844@3x  insets 47/34/0/0  arena=grid tier=2 ticks=420 seed=1234567
+  bundle: index-Dsn13aIx.js   base: http://127.0.0.1:4291/custom_robot/
+  tap "ENTER ARENA" at 178,378
+  tap "TO GARAGE" at 171,781
+  tap "SELECT ARENA" at 187,748
+  tap "grid" at 195,202
+  tap "FIGHT" at 144,738
+  sim: tick=422 phase=1 p1=-11.11,8.84 p2=10.18,3.35 separation=21.99m
+  CAPTURING state=match phase=1 tick=422 round=1 tier=HIGH pr=2 scale=1 touchOn=true padUp=true cards=NONE
+  canvas 1170x2532 at 0,0  backing 780x1688  fov=79.63953004765149 aspect=0.462
+
+  FRAME 1170x2532   RENDER BAND 1170x2532 at 0,0  = 100.0% of frame area, 100.0% of frame height
+
+  MACHINES (stencil mask + camera projection)
+    who        maskbox                px      maskH   projH   %frameH  %bandH  clipped
+    PLAYER     471,1903 571x629       168472     629     314     24.8    24.8  BOTTOM
+    OPPONENT   536,732 87x109           6291     109     106      4.3     4.3  -
+
+  CONTROLS (device px)   size        vs opponent H   machine px covered   gap to machine
+    fire         870,2118  264x264         2.42x            27584        0px
+    bomb         654,2196  186x186         1.71x            34596        0px
+    dash         654,1980  186x186         1.71x            16758        0px
+    jump         924,1902  186x186         1.71x                0        72px
+    pod          714,1764  186x186         1.71x             2217        0px
+    stick         90,1896  396x396         3.63x                0        61px
+    pause         996,393  138x138         1.27x                0        428px
+    hudtop         30,165  1110x183       10.18x                0        385px
+    hudgear        30,375  655x243         6.01x                0        115px
+    buttons      654,1764  480x618         5.67x            95279        0px
+    hudblock       30,165  1110x453       10.18x                0        115px
+
+  SALIENCE — rules copied from shots/_salience.mjs, THE AUTHORITY METER.
+    brightest-1% threshold L=205 (29625 px).  chroma = (max-min)/255.  S = HSV saturation.
+    what            area%   bright1%   chromaMass%   S>=.35%   [framesal S&L>=40%]   light/area  chroma/area
+    MACHINES         5.90       11.5          15.5       8.9                  18.2        1.94x       2.63x
+     player          5.69        9.5          15.2       8.8                  17.8        1.68x       2.67x
+     opponent        0.21        1.9           0.3       0.1                   0.4        8.98x       1.61x
+    fire             2.35        0.0           3.5       3.8                   3.6        0.00x       1.48x
+    bomb             1.17        0.0           1.8       1.9                   1.7        0.00x       1.57x
+    dash             1.17        0.1           1.2       1.7                   0.9        0.07x       1.01x
+    jump             1.17        0.0           1.0       1.7                   1.0        0.00x       0.85x
+    pod              1.17        0.0           1.4       1.8                   1.2        0.00x       1.18x
+    stick            5.29        0.0           9.2       6.5                  12.6        0.00x       1.74x
+    pause            0.64        0.0           0.4       1.1                   0.3        0.00x       0.60x
+    hudtop           6.86       31.1           6.8      10.7                   9.4        4.54x       1.00x
+    hudgear          5.37        9.7           4.9       9.7                   5.5        1.80x       0.91x
+    buttons         10.01        0.4          11.6      12.5                  11.5        0.04x       1.16x
+    hudblock        16.97       40.8          15.0      27.0                  16.7        2.40x       0.89x
+
+  TILE SWEEP (authority meter's model A = lum x chroma; MACHINE at >=50% machine px,
+              control at >=50% AREA coverage — fault 14's fair rule, both sides)
+    T   off   cells   machine rank / in top14   fire  bomb  dash  jump  pod  stick  pause  hudtop  hudgea  button
+   32    0    2844        1 / 14             16      73      72    1025     307     159    1472      52      34       4
+   32   16    2808        1 / 14             24      33     200    1104     369     163    1805      43      66       7
+   40    0    1827        1 / 14             46      39     130     790     247     103     921      40      32       3
+   40   20    1736        1 / 13              5      13      27     752     270      87    1302      37     102       5
+   48    0    1248        1 / 14             13      46     204     543     183      61     876      18      25       5
+   48   24    1196        1 / 13             32      15      22     571     167      59     837      36      99       5
+   64    0     702        1 / 12             67       8      22     356     265      25     518      14      39       8
+   64   32     663        1 / 14             12      42     341     336     131      32     515      26      31      10
+
+  TOP 14 TILES, model A at T=40 offset 0 (the authority meter's headline grid)
+    1.   600, 2360  score   95.7  lum 143.7  chroma 0.666  machine    1   MACHINE
+    2.   520, 2400  score   83.3  lum 152.6  chroma 0.546  machine    1   MACHINE
+    3.   640, 2160  score   80.5  lum 142.7  chroma 0.564  machine    1   MACHINE
+    4.   640, 2400  score   79.1  lum 134.5  chroma 0.588  machine 0.99   MACHINE
+    5.   720, 2480  score   75.8  lum   180  chroma 0.421  machine    1   MACHINE
+    6.   840, 2360  score   75.6  lum 147.1  chroma 0.514  machine    1   MACHINE
+    7.   600, 2400  score   75.3  lum 169.8  chroma 0.444  machine    1   MACHINE
+    8.   480, 2440  score   73.6  lum 137.5  chroma 0.535  machine    1   MACHINE
+    9.   680, 2480  score   68.5  lum   133  chroma 0.515  machine    1   MACHINE
+   10.   560, 2360  score   68.2  lum 126.3  chroma  0.54  machine    1   MACHINE
+   11.   560, 2400  score   67.7  lum 128.8  chroma 0.526  machine 0.99   MACHINE
+   12.   840, 2400  score     66  lum 131.4  chroma 0.503  machine    1   MACHINE
+   13.   640, 2480  score   63.9  lum 124.4  chroma 0.514  machine 0.96   MACHINE
+   14.   800, 2440  score   63.9  lum   130  chroma 0.492  machine    1   MACHINE
+   -> 14 of the top 14 tiles are MACHINE
+
+  wrote shots/_r18p/fullbleed-match.png shots/_r18p/fullbleed-mask.png shots/_r18p/fullbleed-report.txt shots/_r18p/fullbleed.json

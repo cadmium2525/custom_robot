@@ -115,6 +115,20 @@ const STENCIL_FN = `(on) => {
     v.__swap = [];
     v.scene.traverse((o) => {
       if (!o.isMesh || !o.visible) return;
+      // INSTRUMENT FAULT 19. A mesh that does not write depth does not occlude
+      // the machines in the real frame; painting it opaque black made it occlude
+      // them in the mask. See tools/contour.mjs for the measurement.
+      //
+      // This is the THIRD sweep for copies of this block. The first fixed five
+      // and was described as atomic; a sixth was then found inline in
+      // _r17-blast.mjs; these three are the remainder, found by asking which
+      // files contain the swap and do NOT contain the guard rather than by
+      // listing them from memory. Nine copies, three sweeps. If this block is
+      // ever touched again, run that query, do not trust a list.
+      const m0 = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!shells.has(o) && m0 && m0.depthWrite === false) {
+        v.__hidden.push(o); o.visible = false; return;
+      }
       v.__swap.push([o, o.material]);
       o.material = shells.has(o) ? white : black;
     });
@@ -215,7 +229,12 @@ const CONTACT_FN = `() => {
       }
     });
     const deckY = v._groundUnder(r.pos.x, r.pos.z);
-    // `_groundUnder` takes the top of any box whose footprint contains the
+    // NOTE: no backticks below. This comment sits inside the CONTACT_FN
+    // template literal, and the two that used to wrap the function name here
+    // ended that literal on this line — so this file did not parse AT ALL and
+    // the grounding meter could not be run by anybody. It is the project's
+    // signature failure, in the instrument for the project's oldest defect.
+    // _groundUnder takes the top of any box whose footprint contains the
     // point WITH A 0.4 m MARGIN, so a machine standing on the deck beside a
     // pillar resolves to the pillar's cap. Recorded, because the renderer parks
     // the contact blob on exactly this number.
