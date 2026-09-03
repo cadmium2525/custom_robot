@@ -126,6 +126,7 @@ const BASE = flag('base', 'http://127.0.0.1:4262/');
 const PREFIX = flag('prefix', 'shots/r17h');
 const TIER = Number(flag('tier', 2));
 const BLOOM = flag('bloom', null) === null ? null : Number(flag('bloom', null));
+const FLAT = flag('flatheat', null) === null ? null : Number(flag('flatheat', null));
 const SEED = Number(flag('seed', 1234567));
 const ARENA = flag('arena', 'grid');
 const SCAN = Number(flag('scan', 2400));
@@ -351,6 +352,45 @@ if (BLOOM !== null) {
     const u = window.__game.engine.postfx?.uniforms;
     if (u && u.bloomStrength) u.bloomStrength.value = Number(b);
   }, BLOOM);
+}
+
+/**
+ * `--flatheat X` replaces every shell's COLOUR with the flat linear value X and
+ * leaves its ALPHA exactly as authored. It answers the one question three
+ * rounds of edge work never asked, and the question the clause F ruling turns
+ * on: is the boundary `shots/_r17-edge.mjs` measures the edge of the effect's
+ * COVERAGE, or the edge of its TEMPERATURE?
+ *
+ * They are different objects in this shader. `SHELL_FRAG` drives colour from
+ * `rim` through the heat ramp, and rim is 0 at every lobe's silhouette, so the
+ * outer skin of the fireball is C_SOOT (0.028 linear, effectively black) while
+ * its alpha is still ~0.88. The meter reads C = |luma(raw) - luma(novfx)|. A
+ * fully covered pixel painted almost exactly the colour of an unlit background
+ * contributes nothing to C, so the meter cannot tell it from a pixel the effect
+ * never reached. Flat colour makes C a pure coverage signal.
+ *
+ *   both runs soft   -> the boundary really is coverage; the gradient is not
+ *                       the cause and clause F's threshold stands as written
+ *   flat run hard    -> the alpha edge is already hard, the meter has been
+ *                       measuring the temperature ramp, and the clause and the
+ *                       art direction were never actually in conflict
+ *
+ * Pair it with `--bloom 0` to take the post chain out at the same time. It sets
+ * the dormant `uFlat` uniform documented at the premultiply in `src/gfx/vfx.js`
+ * and is a diagnostic, not a shipping mode.
+ */
+if (FLAT !== null) {
+  const n = await page.evaluate((v) => {
+    let n = 0;
+    window.__game.engine.scene.traverse((o) => {
+      const m = o.material;
+      for (const mm of Array.isArray(m) ? m : [m]) {
+        if (mm && mm.uniforms && mm.uniforms.uFlat) { mm.uniforms.uFlat.value = Number(v); n++; }
+      }
+    });
+    return n;
+  }, FLAT);
+  say(`flatheat=${FLAT} on ${n} shell materials`);
 }
 await page.waitForTimeout(600);
 

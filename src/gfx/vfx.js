@@ -804,6 +804,7 @@ varying vec3 vLocal;
 varying vec4 vMeta;
 uniform sampler2D uMap;
 uniform mediump float uMode;
+uniform mediump float uFlat;
 
 // The fire ramp, in linear light. EMBER and up clear the bloom threshold (1.04)
 // so the burning part of the blast has real HDR headroom to glow with; SOOT and
@@ -1163,6 +1164,25 @@ void main() {
   }
 
   if (a <= 0.004) discard;
+  // DORMANT DIAGNOSTIC, default 0, shipped off. Replaces every shell's COLOUR
+  // with one flat value and leaves its ALPHA untouched, which is the only way
+  // to ask this shader the question clause F actually turns on: is the boundary
+  // that shots/_r17-edge.mjs measures the edge of the shape's COVERAGE, or the
+  // edge of its TEMPERATURE?
+  //
+  // The two are not the same here and that is the whole difficulty. The meter
+  // reads C = |luma(raw) - luma(novfx)|. At a lobe's silhouette rim is 0, so
+  // heat is ~0 and the ramp returns C_SOOT = 0.028 linear -- while alpha is
+  // still dens * (0.88 + 0.14 * rim), i.e. very nearly opaque. A pixel that is
+  // fully covered but coloured almost exactly like an unlit background makes
+  // NO difference to the frame, so the meter cannot distinguish it from a pixel
+  // the effect never touched. Flatten the colour and C becomes a pure coverage
+  // signal; the difference between the two readings is the answer.
+  //
+  // A uniform branch, uniform across the draw, and zero when it is not being
+  // measured. It is here rather than in a scratch build because four of this
+  // project's instruments have already been lost to a container restart.
+  if (uFlat > 0.0) col = vec3(uFlat);
   // Premultiplied. Alpha is coverage and colour is emission, and keeping them
   // independent is what lets one shader be both a lamp and a solid: a wisp with
   // a=0.05 and col=5.0 blooms without hiding anything behind it, while burnt
@@ -1196,6 +1216,7 @@ class ShellPool {
         uTime: { value: 0 },
         uMap: { value: map },
         uMode: { value: mode },
+        uFlat: { value: 0 },
         uEase: { value: ease },
         uDrag: { value: drag },
       },
