@@ -8382,9 +8382,23 @@ exit 3** on a key that resolves to nothing, naming every settable uniform on the
 *A sweep knob is allowed to say no. It is not allowed to say nothing.*
 
 **Which other uniforms `--u` was missing.** Every one, under its own name — the bug was in the
-spelling, not in a subset. Under the documented short spelling the only permanent misses are the three
-that are not numbers and that no `--u` can ever set: **`uTeamColor`, `uFillUp`, `uFillDown`** (all
-`THREE.Color`). These are now reported by name in the abort text instead of being silently skipped.
+spelling, not in a subset. Under the documented short spelling the permanent misses are the ones that
+are not numbers and that no `--u` can ever set. **I guessed three from reading the source and the
+repaired knob printed five**, which is the whole argument for making the meter say it rather than the
+agent:
+
+```
+    $ node shots/_massdrive.mjs --u nosuchknob=1,uTeamColor=2      -> exit 3
+      --u nosuchknob: no such uniform
+      --u uTeamColor: uTeamColor is not a numeric uniform
+      settable (numeric) uniforms on this build:        36 names, uBandX among them
+      present but NOT numeric, so --u can never set them:
+        uFillDown uFillUp uFrameFadeCol uRimColor uTeamColor
+```
+
+`uFrameFadeCol` and `uRimColor` were the two I missed. They are now reported by name in the abort text
+instead of being silently skipped, and the abort was run and its exit code checked rather than
+asserted from the source.
 The `matShell`-only scope was a latent second miss and not an active one: `robot.js` `Object.assign`s
 the outline and frame tables into `matShell.userData.u` and the uniform OBJECTS are shared by
 reference, so today the readings are identical — the applier prints the material count so a future
@@ -8486,10 +8500,14 @@ That is evidence and not proof, and it is filed as the next question rather than
 
 ### 5. What is shipped
 
-**`uBandX` ships at 0. Nothing on the card moves.** Re-measured at the new head on bundle
-`fc777480 / 4182abf463f1`: clause A **85.2% / 86.2% MET**, clause B **84.8%** (robot 1 86.2, robot 2
-80.0), clause C **1.706 / 1.288 FAIL**. `npm run build` clean, `npm test` ALL PASS,
-`node tools/deploycheck.mjs` **DEPLOY OK** on grid, foundry and orbital.
+**`uBandX` ships at 0. Nothing on the card moves.** Re-measured at the new head, which is a DIFFERENT
+bundle from the sweep bench — the closing note added to `FILL_FRAG` is a GLSL comment inside a template
+literal, so it changes the bytes without changing a pixel, and fault 27's rule is that the bundle is
+named and not assumed. Head, bundle `c983aa1e / 83ecfb41023f`: clause A **85.2% / 86.2% MET**, clause B
+**84.8%** (robot 1 86.2, robot 2 80.0), clause C **1.704 / 1.288 FAIL** — against the sweep bench's
+1.706 / 1.288 on `fc777480 / 4182abf463f1`, so the comment is confirmed inert to 0.002 of ratio rather
+than argued to be. `npm run build` clean, `npm test` ALL PASS, `node tools/deploycheck.mjs`
+**DEPLOY OK** on grid, foundry and orbital. Reports: `shots/r28/head-ac.txt`, `shots/r28/head-b.txt`.
 
 The mechanism is kept at 0 rather than deleted, with the seven-point table written into the comment
 that sits on it, so the next agent who finds the uniform reads the result before sweeping it again.
@@ -8514,7 +8532,7 @@ renderer, and is the one thing in this round that nobody has measured.
 ### 7. Instruments kept
 
 - `tools/mass.mjs`, `tools/contour.mjs` — the repaired `--u` (fault 29), shipped source in both.
-- `shots/r28/` — the sixteen raw meter reports behind every figure above (`band-N.txt` = clause A and
+- `shots/r28/` — the eighteen raw meter reports behind every figure above (`band-N.txt` = clause A and
   C, `B-N.txt` = clause B, `ctl-onbody.txt` = the control; `ctl.txt` is the same control run WITHOUT
   `--onbody` and is kept only to show what the withdrawn default mode reads, 3.988 / 1.988 — it is
   quoted nowhere above), plus the control and N=1 frames. `git add -f`'d, `shots/` being gitignored.
