@@ -40,8 +40,36 @@
  */
 
 import { chromium } from 'playwright';
+import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
+
+/**
+ * Hash of the bundle actually served, printed with every capture.
+ *
+ * INSTRUMENT FAULT 27. Round 14 asked for this in one line; it was added to
+ * `shots/_salience.mjs` and never applied to the meters that produce clauses A,
+ * B, C and G. The cost came due in round 20: an orbital contour arm did not
+ * reproduce, one record's bloom-ON row equalled another's bloom-OFF row to the
+ * decimal, and because neither run named the code it measured the disagreement
+ * could not be resolved — a three-arena result had to be withdrawn instead.
+ * Several agents build into this tree at once. A measurement that does not name
+ * its bundle is not comparable to the one before it.
+ */
+async function bundleHash(base) {
+  try {
+    const html = await (await fetch(base)).text();
+    const h = createHash('sha256').update(html);
+    const srcs = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1]);
+    for (const s of srcs) {
+      const u = new URL(s, base).href;
+      h.update(new Uint8Array(await (await fetch(u)).arrayBuffer()));
+    }
+    return h.digest('hex').slice(0, 12) + (srcs.length ? '' : ' (inline)');
+  } catch (e) {
+    return 'unavailable (' + String(e.message || e).slice(0, 40) + ')';
+  }
+}
 
 const args = process.argv.slice(2);
 const flag = (name, def = null) => {
@@ -484,6 +512,7 @@ const ANALYSE_FN = async ({ nUri, hUri, steps, dump, onbody }) => {
   page.on('pageerror', (e) => errors.push(String(e)));
 
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  console.log(`  bundle: ${await bundleHash(BASE)}   base: ${BASE}`);
   await page.waitForFunction(() => window.__game && window.__game.engine?.running, null, { timeout: 90000 });
   await page.evaluate((t) => { const q = window.__game.engine.quality; q.auto = false; q.setTier(t); }, TIER);
   await page.waitForTimeout(400);
