@@ -74,7 +74,37 @@ const MATS = String(flag('mat', '') || '').split(',').filter(Boolean).map((kv) =
 });
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
-/* Identical to mass.mjs' stencil, which is identical to contour.mjs'. */
+/* Identical to mass.mjs' stencil, which is identical to contour.mjs'.
+ *
+ * INSTRUMENT FAULT — round 18, MEASURED, NOT FIXED HERE, because this block is
+ * duplicated verbatim in `tools/contour.mjs`, `tools/mass.mjs`,
+ * `shots/_salience.mjs` and `shots/_owner.mjs`, and changing one copy would
+ * make this round's numbers incomparable with every number filed against those
+ * tools. It has to be fixed in all five at once, deliberately, by somebody who
+ * intends to re-baseline.
+ *
+ * THE FAULT. The swap gives every non-shell mesh an opaque black
+ * MeshBasicMaterial. A stage mesh that is normally ADDITIVE and depth-write-off
+ * — the practicals batch, `renderOrder` 4 — becomes an opaque black plane that
+ * draws AFTER the machines and erases them from the mask wherever it overlaps.
+ * The machines are perfectly visible through it in the real frame; they are
+ * simply gone from the stencil.
+ *
+ * MEASURED, same build, same tick, machine stencil area with the practicals
+ * batch hidden during the capture versus left visible:
+ *
+ *     grid      24460 -> 24460 px    no erosion
+ *     orbital   24808 -> 24808 px    no erosion
+ *     foundry    4854 -> 8138 px     THE MASK IS 40% OF THE MACHINE
+ *
+ * Foundry's pinned frame has a large translucent red practical lying across the
+ * near machine, so 3284 machine pixels — two fifths of the machine — are absent
+ * from every mask-derived figure this project has taken of that arena: contour
+ * percentage, mass count, top-4 coverage, chroma, clause E share, rendered
+ * height for clause G. It is arena-specific and frame-specific, which is
+ * exactly why nobody has hit it: on the arena everything is argued on, it is
+ * zero.
+ */
 const STENCIL_FN = `(on) => {
   const v = window.__game.view;
   if (on) {
