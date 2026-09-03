@@ -575,7 +575,16 @@ export class Stage {
       }
       const gmat = pbr(gtex, {
         emissive: 0xffffff,
-        emissiveIntensity: 2.2,      // all the information is in the crowd lights
+        // All the information is in the crowd lights, and none of it needs the
+        // top of the value range to carry it. This bank runs the full width of
+        // the frame's top edge as an unbroken field of small bright dots, and
+        // on the pinned grid frame at 2.2 it held 1245 pixels of the frame's
+        // brightest 14400 — 8.6% of the band clause E asks the two machines to
+        // own half of, spent on spectators 25 m behind the fight. The dots
+        // still read; they have stopped being the brightest thing above the
+        // machines. Measured on `shots/_r18e.mjs`: 2.2 -> 1.5 with the
+        // practicals gain below takes grid from 47.9% to 51%+.
+        emissiveIntensity: 1.5,
         envMapIntensity: 0.1,
         normalScale: 1.0,
         side: THREE.DoubleSide,
@@ -1223,7 +1232,24 @@ export class Stage {
     }
 
     if (this._practicals.length) {
-      const mat = additive(0xffffff, { opacity: 1, vertexColors: true, side: THREE.DoubleSide });
+      // A GAIN on the whole batch, which is a different instrument from the
+      // CEILING above it and the reason the ceiling did not work.
+      //
+      // PRACTICAL_CEIL clamps the fixtures that are ABOVE it and does nothing
+      // to anything below, and most of this batch — deck kerbs at 0.12-0.30,
+      // block rims, gate glow — is authored well below: taking the ceiling
+      // 0.92 -> 0.62 bought grid's clause E 0.2 points. A gain moves every
+      // fixture, proportionally on all three channels, so hue and saturation
+      // come through untouched and only radiance changes. Measured live on
+      // `shots/_r15dump.mjs --mat`, scored on `shots/_r18e.mjs`, grid's pinned
+      // frame, machines' share of the brightest 1%:
+      //
+      //   ceiling 0.92 -> 0.62                  47.7% -> 47.9%
+      //   gain 1.0 -> 0.85, crowd 2.2 -> 1.6    47.9% -> 51.1%
+      //
+      // 0.80 rather than 0.85 for the margin: a share this close to the
+      // threshold has to survive a seed it was not tuned on.
+      const mat = additive(0xffffff, { opacity: 0.80, vertexColors: true, side: THREE.DoubleSide });
       // Every practical in the arena passes through here, so this is where the
       // additive budget is enforced — see PRACTICAL_CEIL.
       const geo = clampAdditive(mergeGeometries(this._practicals));
