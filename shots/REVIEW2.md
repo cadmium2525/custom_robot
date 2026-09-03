@@ -8059,3 +8059,138 @@ clean%.**
 
 **The verdict does not move. It is still NO**, on the same three blind points, and clause F sub-clause 2
 still fails on one cell of seven.
+
+### RULING 23, addendum — **the condition is answered, the filing reproduces, and the probe's own third column says the opponent is white before any effect is drawn**
+
+Measured after RULING 23 was committed. Everything here is offline analysis of the round-21 captures
+(`shots/r23base`, `shots/r23late`, `shots/r23nolight`, bundle `0904a9f1ee52`) plus the committed scan
+listing — no new capture, so nothing here can be contaminated by my own build.
+
+#### 1. The condition in section 4: **answered, and it goes the wrong way for the build**
+
+`shots/r17h-scan.txt`, the listing `5377d27` re-took to 1260 ticks. Nobody has read it as a
+distribution. Every consecutive gap in one match, seed 1234567, grid:
+
+```
+    264->265    1 tick   17 ms   POD  -> BOMB     <= 117 ms
+    449->455    6 ticks 100 ms   BOMB -> POD      <= 117 ms
+    956->963    7 ticks 117 ms   BOMB -> POD      <= 117 ms
+   1098->1105   7 ticks 117 ms   BOMB -> POD      <= 117 ms
+   1105->1111   6 ticks 100 ms   POD  -> BOMB     <= 117 ms      <- a TRIPLE, 217 ms end to end
+   1195->1201   6 ticks 100 ms   BOMB -> POD      <= 117 ms      <- the pin
+    the other twelve gaps: 36 to 186 ticks, 600 ms to 3.1 s
+```
+
+**Six of eighteen consecutive detonation pairs in a single match land within 117 ms of each other, and
+`1098 / 1105 / 1111` is a triple inside 217 ms.** And the pattern is not random: **every one of the six
+close pairs crosses weapon kind** — `PK.BOMB` against `PK.POD`, never bomb-bomb and never pod-pod —
+while the wide gaps include both same-kind and cross-kind. Two different weapons on one loadout landing
+together is **what this game does**, not what this seed did.
+
+> **My own condition is met and it raises the priority rather than lowering it.** The 233 ms cell is not
+> a pathological draw; **it is the typical burst frame.** A third of the times this game explodes twice
+> in a row, it does it inside the 800 ms window every clause-F figure in this document is measured over.
+> The whole-frame reading of RULING 23(1) is not a strict reading of an edge case — it is the ordinary
+> frame, and the composition rule of RULING 23(3) moves up the list accordingly.
+
+#### 2. The filing reproduces, and one sentence in it is over-stated
+
+- **The control reproduces byte-for-byte.** `node shots/_r17-edge.mjs --prefix shots/r23base`, re-run by
+  me on the committed frames, returns `shots/r23base-edge.txt` identical on every number at all seven
+  ages; the only diff against the committed file is a trailing console line. The record is restored.
+- **The light probe reproduces exactly** on its mean column: the second light alone gives
+  `0.0 / 0.7 / 16.0 / 6.5 / 2.1 / 0.9 / 0.0` and **18.0% of the opponent's pixels past 25 levels at
+  233 ms**, and killing it takes the occlusion column `44.5 -> 7.7`. Confirmed on my own run of the
+  builder's meter.
+- **One claim is over-stated and I am correcting it rather than repeating it.** *"The pinned blast's
+  light moves ZERO opponent pixels past C>25 at any of the seven ages"* — my run of the same probe
+  (`--a shots/r23late --b shots/r23nolight`) reads **1.1% at 17 ms and 0.3% at 333 ms**, not 0.0 at
+  every age. The substance is untouched — 1.1% against a 25% clause is spent — but "zero at every age"
+  is not what the meter says, and the probe's `L` column is *signed brightening by one light*, which is
+  not the clause's unsigned `C` and must not be written as though it were.
+
+#### 3. **The finding: at 117 ms the opponent reads 220 of 255 with the entire VFX layer suppressed**
+
+`_r23-lightprobe.mjs` prints a column called `novfx luma` — the opponent's own mean luminance in the
+frame with every VFX node and every blast light hidden. It is the control column of the control, it has
+been printed under every row of this round's tables, and nobody has read it:
+
+```
+    the opponent's mean luma with the whole VFX layer suppressed
+    age            1     7     14     20     26     32     48
+    ms            17   117    233    333    433    533    800
+    novfx luma 127.3 220.3  131.5  103.0  115.6  114.6  125.9
+```
+
+**220.3 at 117 ms, against 127.3 one age earlier and 131.5 one age later.** That is a +90-level
+transient on the aiming target, and **not one level of it is the effect** — the effect is switched off
+in that pass. At exactly that age the opponent's outline is **68.0% invisible** with the contour step
+at **1.4** against 79.6 with the blast off, which is the worst legibility figure in this document, my
+rank-1 item for two rounds, and the one age that neither `c2db8b1` nor `0562782` could move.
+
+**The timing names the cause and it is the same event fault 28 found.** The capture's own metadata puts
+age 7 at **tick 1202**; the second detonation is at **tick 1201**, one tick earlier, and the census puts
+it **1.2 m from the opponent** — inside its own R = 2.80 radius, so it did not merely light the machine,
+**it hit it.** The pinned blast at 3.7 m is outside its R = 3.40 and did not, which is why 17 ms reads a
+normal 127.3.
+
+**What turns a hit machine white, in `src/`:** two machine-side terms fire on damage and **I have not
+separated them, so I name both and claim neither**:
+
+```
+    materials.js:386   gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.6, 0.9, 0.85), uHitFlash);
+    robot.js:2868      u.uHitFlash.value = hit * hit * 0.85;    hit = clamp01(robo.hurtFlash / 10)
+    robot.js:2870      u.uEnergy.value   = 0.03 + heat * 0.10 + invuln * 0.22;
+```
+
+The flash mixes the shell up to **85% toward rgb(1.6, 0.9, 0.85)** — and **1.6 linear on the red channel
+is over the bright pass's 1.04 threshold**, so a machine that has just been hit is not only near-white,
+it is a **bloom source**. Separating the two terms is the same `--kill` pattern this round already
+built, pointed at a machine uniform instead of a VFX node, and it is one capture.
+
+**Three consequences, and the first one re-ranks my own list.**
+
+- **The white-on-white at 117 ms has two halves and only one of them is the effect.** Round 20's
+  addendum established the fireball core at rgb(255,255,251) and the opponent standing inside its disc.
+  This is the other half: **the opponent is at 220/255 before the disc is drawn.** Every attempt on this
+  age for two rounds has been aimed at the effect — the light (1.2 points), the throw (0.0 points),
+  bloom (30.4 of 68.0, and a diagnostic). **Nobody has aimed at the machine**, which is the only object
+  in that frame whose legibility the clause is actually about.
+- **One event owns both remaining failures.** The second detonation supplies the light that is 36.9 of
+  the 44.5 points at 233 ms **and** the hit that puts the opponent at 220 luma at 117 ms. Clause F
+  sub-clause 2's last failing cell and blind point 3's worst figure are the same explosion, seen through
+  two meters neither of which could name it until this round.
+- **It couples to RULING 22 from the other end.** I ruled that P6 is violated only during a blast,
+  because only then is anything far enough over 1.04 for the pyramid to spread. A hit machine at
+  `mix(..., vec3(1.6, 0.9, 0.85), 0.85)` **is over 1.04 by itself** — so at 117 ms the glow that is
+  washing the opponent's outline is partly being emitted **by the opponent**. That is the sharpest
+  possible statement of P6's defect and it is not about the effects at all.
+
+#### 4. The card, and the new rank 1
+
+**Nothing on the card moves.** Clause F sub-clause 2 is NOT MET on one cell of seven at 44.5%, scored
+on the as-shipped column per RULING 23. Blind point 3 fails. **Verdict: still NO.**
+
+> ### The one thing that would move most, re-issued: **stop making the aiming target white when it is hit.**
+>
+> It displaces "get the opponent out of the fireball's disc" — which I ranked 1 in round 20 on the
+> strength of a core at rgb(255,255,251) — because the same frame says the *other* surface is at 220 of
+> 255 and it is ours, it is not the effect, it is measured with the effect switched off, and it is
+> **untouched by every one of the seven hypotheses this clause has consumed.** A hit tell is necessary
+> and I am not asking for it to be deleted — RULING 16 applies to it exactly as it applies to the
+> temperature ramp, and a machine that does not flash when hit is a worse game. What I am ruling is that
+> **the tell must not be built out of the one value the aiming target cannot afford to lose**: it is a
+> *near-white above the bloom threshold*, applied to 85% of the shell, on the machine the player is
+> aiming at, for the sixth of a second after every hit. A tell that reads as chroma, as a rim, as a
+> short-lived edge, or simply at a lower mix, costs the player nothing and gives back the step.
+>
+> **Acceptance test, before it is walked:** the opponent's **novfx luma at 117 ms under 150** (against
+> 220.3 now and 127.3 at the neighbouring age); the **invisible contour at 117 ms under 25%** (68.0%
+> now, and 37.6% is bloom's floor — this lever is aimed at the other 37.6); **no age regresses** on the
+> seven-age occlusion column; and the tell still legible on the 1:1 crop, which is the standing rule and
+> the half a meter cannot score.
+
+Rank 2 is **RULING 23(3)'s illuminance clamp**, now on a burst pattern measured as one frame in three.
+Rank 3 is **clause B to 90%**, live on three arenas. Rank 4 is **clause C by geometry**. Rank 5 is
+**sub-clause 1's footprint from a render rather than a difference** (RULING 23(5)), which un-blanks a
+scored clause that has now been unreadable for two rounds.
