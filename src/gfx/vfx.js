@@ -882,7 +882,19 @@ void main() {
     float sn = max(vMeta.z, 0.05);
     float hw = mix(clamp(0.021 / sn, 0.018, 0.16), 0.13, pinned);
     float d = (r - centre) / hw;
-    float front = exp(-d * d);
+    // A GAUSSIAN HAS NO EDGE. exp(-d*d) is still at 1% of peak two and a half
+    // half-widths out and never reaches zero, so the front's boundary was a
+    // tail rather than a line — the same defect as the fireball's density ramp,
+    // in a shape whose entire job is to be a sharp discontinuity.
+    //
+    // A flat top with a hard shoulder instead: full strength through the middle
+    // of the band, falling to nothing over the last third of it. The spine is
+    // split out rather than left as pow(front, 6.0), which on a flat top would
+    // be flat too and would push the whole band to paper white — the "grey
+    // donut" this file already fixed once from the other direction.
+    float ad = abs(d);
+    float front = 1.0 - smoothstep(0.68, 1.0, ad);
+    float spine = 1.0 - smoothstep(0.0, 0.34, ad);
     // Nearly all of the front's brightness is now anisotropic. A wave you can
     // see equally well from every direction is a decal.
     float sheen = mix(0.10 + 0.90 * edg, 1.0, pinned);
@@ -900,7 +912,7 @@ void main() {
     // every colour tone-maps to the same paper white, which is exactly why a
     // ring authored in warm values arrived on screen grey.
     col = vTint.rgb * front * (0.35 + sheen * 1.15)
-        + vec3(1.0, 0.93, 0.82) * pow(front, 6.0) * sheen * 3.2;
+        + vec3(1.0, 0.93, 0.82) * spine * sheen * 3.2;
     col *= fade;
     a = clamp(front * (0.16 + 0.84 * sheen) * 0.88 + lip * 0.30 * sheen, 0.0, 1.0)
       * pow(fade, 1.25) * mix(1.0, 0.42, pinned);
@@ -990,7 +1002,16 @@ void main() {
       // rather than thinning at the edges" complaint, arriving as geometry
       // instead of as opacity. Widened, the same noise field reads as a
       // soot-to-transparent falloff and the mass frays.
-      float d2 = smoothstep(bite, bite + 0.34, rag + 0.16);
+      // Narrowed from 0.34 for the same reason the fire's was, and with the same
+      // trade understood. The note above is right that a narrow window is a
+      // stencil with a cut edge — that is now the point. It also does the second
+      // half of clause F for free: shots/_r17-edge.mjs measured the effect
+      // covering 59.5%, 66.4% and 73.0% of the FAR machine's pixels at ages 12,
+      // 20 and 72 against a < 25% threshold, and the late ages are the smoke's.
+      // Thresholding the same field harder puts more of it fully out rather than
+      // faintly in, so the mass tears into billows with real gaps between them
+      // and the opponent reads THROUGH it instead of behind it.
+      float d2 = smoothstep(bite, bite + 0.12, rag + 0.16);
       // Underlighting is the fire shining up into the smoke, so it has to die
       // with the fire and not with the smoke. It went out on pow(fade, 3.0) of
       // the *smoke's* two-second life, i.e. it was still at a third of full
@@ -1050,7 +1071,27 @@ void main() {
       // blows apart; what it can no longer do is stay a solid object while it
       // does so.
       float bite = mix(0.06, 1.00, pow(vT, 1.30));
-      float dens = smoothstep(bite, bite + 0.28, turb + fade * 0.26);
+      // THE WINDOW IS THE EDGE. 0.28 was the whole reason the blast measured
+      // soft, and the number that proves it is in this file's own smoke branch:
+      // the turbulence field runs p05 0.367, p50 0.502, p95 0.637, so ninety
+      // percent of the mass lives inside a band 0.27 wide. A 0.28-wide
+      // smoothstep across a 0.27-wide distribution is not an edge treatment at
+      // all — it is a ramp spanning the entire ball, and every pixel of the
+      // fireball sat somewhere on it.
+      //
+      // Measured by shots/_r17-edge.mjs at HIGH: the 10-90 transition of the
+      // effect's own boundary was 21.5-32 px against 1.25 px for a machine
+      // silhouette rasterised by the same code in the same frame. Seventeen to
+      // twenty-six times softer than a hard edge in its own pipeline, and
+      // 11.6-21.3% of the effect's own radius against clause F's < 10%.
+      //
+      // 0.07 cuts the mass out of the noise field instead of fading it. The
+      // smoke branch below calls a narrow window "a stencil: every pixel is
+      // either fully in or fully out, so the mass has a cut edge" — that is a
+      // correct description and, for the FIRE, it is the goal rather than the
+      // defect. A drawn explosion is a flat shape with a hard boundary. The
+      // ragged multi-octave field is what stops that boundary being a circle.
+      float dens = smoothstep(bite, bite + 0.07, turb + fade * 0.26);
       // The rim term is what actually carries the gradient, and it used to span
       // 0.45..1.30 — a factor of under three across the whole ball, which put
       // nearly every visible pixel inside one band of the ramp. That is why the
@@ -1105,7 +1146,19 @@ void main() {
       // hold to 0.70 meant a lobe was at full opacity through the whole of the
       // stretch where it had already cooled out of the fire ramp — opaque and
       // no longer burning, which is the definition of a curtain.
-      a = clamp(dens * (0.42 + 0.62 * rim) * smoothstep(0.97, 0.50, vT), 0.0, 0.95);
+      // The SECOND source of softness, and it is a soft-particle look arrived at
+      // from the other direction. rim is 1 face-on and 0 at the silhouette, so
+      // (0.42 + 0.62 * rim) drove alpha down to 40% of its centre value exactly
+      // where the boundary is — a smooth radial opacity falloff built into every
+      // shell, on top of the density ramp above.
+      //
+      // Held nearly flat instead: the shape now carries its opacity out to its
+      // own edge and stops. rim keeps its real job, which is TEMPERATURE — it
+      // is what puts white at the centre, yellow and orange around it and deep
+      // red at the rim, and none of that is touched. What it no longer does is
+      // decide coverage. Flat alpha inside a hard boundary is what a drawn
+      // effect is; the gradient belongs in the colour, not in the mask.
+      a = clamp(dens * (0.88 + 0.14 * rim) * smoothstep(0.97, 0.50, vT), 0.0, 0.95);
     }
   }
 

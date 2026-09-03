@@ -125,6 +125,7 @@ const flag = (n, d = null) => {
 const BASE = flag('base', 'http://127.0.0.1:4262/');
 const PREFIX = flag('prefix', 'shots/r17h');
 const TIER = Number(flag('tier', 2));
+const BLOOM = flag('bloom', null) === null ? null : Number(flag('bloom', null));
 const SEED = Number(flag('seed', 1234567));
 const ARENA = flag('arena', 'grid');
 const SCAN = Number(flag('scan', 2400));
@@ -327,6 +328,30 @@ await page.evaluate((t) => {
   q.cooldown = 1e9;
   window.__game.engine.resize(true);
 }, TIER);
+
+/**
+ * `--bloom X` scales the composite's bloom contribution, and it exists to
+ * answer one question the edge meter cannot: **how much of the effect's soft
+ * boundary is the effect, and how much is the post chain smearing it?**
+ *
+ * The first hardening pass narrowed the fireball's density window from 0.28 to
+ * 0.07 on a noise field whose 90% band is 0.27 wide, and flattened the
+ * rim-driven alpha falloff that took coverage to 40% at the silhouette. Both
+ * are large changes to the shell's own alpha. Neither moved the measured 10-90
+ * edge by more than a pixel. That result only makes sense if the boundary being
+ * measured is not the shell's.
+ *
+ * Set to 0 the effect is composited with no bloom at all, so the difference
+ * between the two runs is the post chain's contribution to its own edge. This
+ * is a diagnostic, not a shipping mode: `bloomStrength` is restored by the next
+ * settings change, and nothing here is written back to the tier tables.
+ */
+if (BLOOM !== null) {
+  await page.evaluate((b) => {
+    const u = window.__game.engine.postfx?.uniforms;
+    if (u && u.bloomStrength) u.bloomStrength.value = Number(b);
+  }, BLOOM);
+}
 await page.waitForTimeout(600);
 
 const meta = await page.evaluate(`(${INSTALL_FN})(${JSON.stringify({ seed: SEED, arena: ARENA, vfxSeed: VFX_SEED })})`);
