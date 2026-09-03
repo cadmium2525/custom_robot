@@ -804,6 +804,7 @@ varying vec3 vLocal;
 varying vec4 vMeta;
 uniform sampler2D uMap;
 uniform mediump float uMode;
+uniform mediump float uFlatShell;
 
 // The fire ramp, in linear light. EMBER and up clear the bloom threshold (1.04)
 // so the burning part of the blast has real HDR headroom to glow with; SOOT and
@@ -1163,6 +1164,32 @@ void main() {
   }
 
   if (a <= 0.004) discard;
+  // DORMANT DIAGNOSTIC, default 0, shipped off. Replaces every shell's COLOUR
+  // with one flat value and leaves its ALPHA untouched.
+  //
+  // It exists because clause F's whole record rests on shots/_r17-edge.mjs, and
+  // that meter reads C = |luma(raw) - luma(novfx)| -- what the effect DID to the
+  // frame. Colour here comes from heat, heat comes from rim, and rim is 0 at
+  // every lobe's silhouette, so the outer skin of a fireball is C_SOOT (0.028
+  // linear, effectively black) while its alpha there is still
+  // dens * (0.88 + 0.14 * rim), very nearly opaque. A pixel that is fully
+  // covered and painted almost exactly the colour of an unlit background makes
+  // no difference to the frame at all, so the meter cannot tell it from a pixel
+  // the effect never touched. C is therefore a TEMPERATURE boundary, not a
+  // COVERAGE boundary, and the two are different objects in this shader.
+  //
+  // Flatten the colour and C becomes a pure coverage signal. The difference
+  // between the two readings is the answer, and it is the only way to ask this
+  // shader the question the clause F ruling turns on.
+  //
+  // Named uFlatShell and NOT uFlat because src/gfx/materials.js:504 already has
+  // a uFlat -- the machine shells' flatten knob. A diagnostic that reached for
+  // that one would have flattened the MACHINES while claiming to flatten the
+  // effect, and would have printed a number and a wrong ruling instead of an
+  // error. (The comment that first recorded this broke the build on a backtick,
+  // which the note in the smoke branch says has now happened three times in this
+  // one file. There are no backticks here.)
+  if (uFlatShell > 0.0) col = vec3(uFlatShell);
   // Premultiplied. Alpha is coverage and colour is emission, and keeping them
   // independent is what lets one shader be both a lamp and a solid: a wisp with
   // a=0.05 and col=5.0 blooms without hiding anything behind it, while burnt
@@ -1196,6 +1223,7 @@ class ShellPool {
         uTime: { value: 0 },
         uMap: { value: map },
         uMode: { value: mode },
+        uFlatShell: { value: 0 },
         uEase: { value: ease },
         uDrag: { value: drag },
       },
