@@ -280,9 +280,34 @@ export class GameView {
       // Contact blob: fades and shrinks with height off the deck.
       const blob = this.blobs[i];
       const groundY = this._groundUnder(r.rx, r.rz);
-      const h = Math.max(0, r.ry - groundY);
+      // MEASURED FROM THE FEET, NOT FROM THE SIM CAPSULE.
+      //
+      // This was `r.ry - groundY`. `r.ry` is the capsule's height and the sim
+      // has no legs, so a HOVER chassis — which is `grounded` with `air 0.000 m`
+      // on every tick it is flying — read h = 0 and took a full-strength
+      // planted-machine contact shadow while its soles sat 210 mm off the deck.
+      // `shots/_r17ground.mjs` measures exactly that: at tick 380 on grid the
+      // hover machine's soles are 210/210 mm up and its blob was at 0.92 opacity,
+      // the same as the sprinter standing on the floor beside it.
+      //
+      // The foot bones are read instead. Two world-position lookups per machine
+      // per frame, no vertex scan: the meter needs skinned vertices because it
+      // reports millimetres, but the blob only needs to know how far up the legs
+      // are, and the bone carries that.
+      const soleY = this._soleY(i, r);
+      const h = Math.max(0, soleY - groundY);
       // A contact shadow is tight and dark when the feet are down, and spreads
       // and fades as the robo climbs — that contrast is the anchoring cue.
+      //
+      // The 7.0 m scale is LEFT ALONE deliberately. It is slack — a machine a
+      // full metre up still holds k = 0.857 and 0.68 of full opacity — and
+      // tightening it to 2.2 m was tried here and reverted unmeasured, because
+      // the survey in `shots/_r19-contact-survey.txt` has machines at 2.5 and
+      // 4.1 m mid-jump and at 2.2 m the blob is simply gone for most of a jump.
+      // That deletes the cue exactly when a player is judging where a machine
+      // will land, which is a worse defect than a slack fade and is not one this
+      // project has a meter for. Whoever changes it should measure the landing
+      // read, not the contact pool.
       const k = clamp(1 - h / 7.0, 0, 1);
       blob.position.set(r.rx, groundY + 0.015, r.rz);
       blob.scale.setScalar(0.85 + (1 - k) * 1.9);
@@ -302,6 +327,36 @@ export class GameView {
 
     this.vfx.syncProjectiles(this.world, alpha);
     this.vfx.update(dt, time, this.camera);
+  }
+
+  /**
+   * World Y of the lowest foot bone on machine `i`, for the contact blob.
+   *
+   * The bone, not the skin. `shots/_r17ground.mjs` scans real skinned vertices
+   * because it reports the sole gap in millimetres and has to be exact; the blob
+   * only needs to know roughly how far up the legs are, and two bone lookups a
+   * frame buy that. Bones are read without forcing a matrix update — the rig has
+   * already run this frame, and a contact shadow one frame stale is not a thing
+   * anybody can see.
+   *
+   * Falls back to the capsule for a chassis with no foot bones at all, which is
+   * what a hover machine is: there is no sole to measure, so the old behaviour
+   * is the honest one there and the fade is driven by the capsule as before.
+   */
+  _soleY(i, r) {
+    const m = this.models[i];
+    const sk = m && m.skeleton;
+    if (!sk || !sk.bones) return r.ry;
+    if (m.__feetFor !== sk) {
+      m.__feetFor = sk;
+      m.__feet = sk.bones.filter((b) => /^(foot|toe)[LR]$/.test(b.name));
+    }
+    const feet = m.__feet;
+    if (!feet || !feet.length) return r.ry;
+    let lo = Infinity;
+    // elements[13] is the translation Y of the world matrix.
+    for (const b of feet) if (b.matrixWorld.elements[13] < lo) lo = b.matrixWorld.elements[13];
+    return Number.isFinite(lo) ? lo : r.ry;
   }
 
   _groundUnder(x, z) {
