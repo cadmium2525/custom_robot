@@ -137,6 +137,44 @@ const VW = Number(flag('vw', 1600));
 const VH = Number(flag('vh', 900));
 const LIST = !!flag('list');
 const AGES = String(flag('ages', '2,7,14,28,48')).split(',').map(Number);
+/**
+ * --kill a,b,c   ATTRIBUTION. Suppress named stages of the detonation in BOTH
+ * the raw and the novfx pass, so that C = raw - novfx is the contribution of
+ * everything EXCEPT them. Run once per stage and the drop in far-machine
+ * occlusion names which stage is standing in front of the opponent.
+ *
+ * Names, and what each one owns in `_detonate`:
+ *   flares      the rayed flash card
+ *   shockwaves  the deck front
+ *   sparks      debris streaks
+ *   energy      muzzle/impact energy (not part of a detonation)
+ *   decals      scorch marks
+ *   trails      projectile trails
+ *   particles   the whole `vfx.smoke` ParticleBatch: dust wave + rising plume
+ *               + tumbling chunks. They share one pool, so this kills all three.
+ *   fireshell   fireball-kind shells in `vfx.fireballs` (flash core + cluster)
+ *   smokeshell  smoke-kind shells in `vfx.fireballs` (stage 5, the three volumes)
+ *
+ * The last two share a pool and are separated by `aTint.w`, which `spawn`
+ * writes as the kind. They are suppressed by parking the instance dead
+ * (`aLife.y = 0`), which the vertex stage discards.
+ *
+ * It is a diagnostic, not a shipping mode, and it REFUSES rather than reporting
+ * a zero: a kill that matched nothing is the confidently-wrong-number failure
+ * this file's flat-heat block was already burned by once.
+ */
+const KILL = flag('kill', null);
+const KILL_LIST = KILL === null ? [] : String(KILL).split(',').map((s) => s.trim()).filter(Boolean);
+const KILL_NODES = ['flares', 'shockwaves', 'sparks', 'energy', 'decals', 'trails', 'particles', 'light'];
+const KILL_KINDS = { fireshell: 0, smokeshell: 1 };
+/** Stages that actually matched something, at any age. See the guard below. */
+const KILL_SEEN = new Set();
+for (const k of KILL_LIST) {
+  if (!KILL_NODES.includes(k) && !(k in KILL_KINDS)) {
+    console.error(`--kill: unknown stage "${k}". Known: ${[...KILL_NODES, ...Object.keys(KILL_KINDS)].join(', ')}`);
+    process.exit(2);
+  }
+}
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /** Seed for the effects layer's own jitter, so lobe directions repeat too. */
@@ -266,6 +304,78 @@ const VFX_TOGGLE_FN = `(on) => {
     v.__vfxNodes.forEach((n, i) => { n.visible = v.__vfxWas[i]; });
     f.lights.forEach((l, i) => { l.visible = v.__lightWas[i]; });
   }
+}`;
+
+/**
+ * Stage suppression for `--kill`. Returns how many things it actually removed,
+ * split by stage, so the caller can refuse when a name matched nothing.
+ *
+ * Node kills hide a whole pool's mesh. Shell kills park individual instances
+ * dead by writing `aLife.y = 0`, which `SHELL_VERT` discards; the attribute is
+ * flagged for upload directly because the pool's own `flush` is gated on a
+ * dirty bit it owns.
+ */
+const KILL_FN = `(names) => {
+  const f = window.__game.view.vfx;
+  const out = {};
+  const NODE = {
+    flares: f.flares && f.flares.mesh,
+    shockwaves: f.shockwaves && f.shockwaves.mesh,
+    sparks: f.sparks && f.sparks.points,
+    energy: f.energy && f.energy.points,
+    decals: f.decals && f.decals.mesh,
+    trails: f.trails && f.trails.mesh,
+    particles: f.smoke && f.smoke.points,
+  };
+  for (const n of names) {
+    if (n === 'light') {
+      // The blast's real point lights. VFX_TOGGLE_FN already hides these for
+      // the novfx pass, so C normally CONTAINS the arena being lit by the
+      // blast. Killing them here removes them from both passes, which separates
+      // "the effect is standing in front of the machine" from "the effect is
+      // shining on it" -- two very different things to call occlusion.
+      let hit = 0;
+      for (const l of f.lights) { if (l.visible) hit++; l.visible = false; l.intensity = 0; }
+      for (let i = 0; i < f.lightLife.length; i++) f.lightLife[i] = 0;
+      out[n] = hit;
+      continue;
+    }
+    if (n in NODE) {
+      const m = NODE[n];
+      if (!m) { out[n] = 0; continue; }
+      m.visible = false;
+      out[n] = 1;
+      continue;
+    }
+    // Shell kinds. aTint.w carries the kind written by ShellPool.spawn:
+    // 0 and 1 are fire, 2 is smoke. Alive means life > 0.
+    const wantSmoke = n === 'smokeshell';
+    const p = f.fireballs;
+    // Census first. A kill that matches nothing has to be able to say what WAS
+    // in the pool, or the refusal is as uninformative as the zero it replaces.
+    const census = { cap: p && p.capacity, alive: 0, kinds: {} };
+    for (let i = 0; p && i < p.capacity; i++) {
+      const i4 = i * 4;
+      if (!(p.life[i4 + 1] > 0)) continue;
+      census.alive++;
+      const k = String(p.tint[i4 + 3]);
+      census.kinds[k] = (census.kinds[k] || 0) + 1;
+    }
+    out.__census = census;
+    let hit = 0;
+    for (let i = 0; i < p.capacity; i++) {
+      const i4 = i * 4;
+      if (!(p.life[i4 + 1] > 0)) continue;
+      const isSmoke = p.tint[i4 + 3] > 1.5;
+      if (isSmoke !== wantSmoke) continue;
+      p.life[i4 + 1] = 0;
+      hit++;
+    }
+    p.aLife.needsUpdate = true;
+    p._dirty = true;
+    out[n] = hit;
+  }
+  return out;
 }`;
 
 /**
@@ -497,6 +607,15 @@ for (const age of AGES) {
     say(`  flatheat=${FLAT} on ${n} shell materials at age ${age}`);
     if (!n) throw new Error('--flatheat matched no shell material: the diagnostic did nothing');
   }
+  if (KILL_LIST.length) {
+    const hits = await page.evaluate(`(${KILL_FN})(${JSON.stringify(KILL_LIST)})`);
+    say(`  kill ${KILL_LIST.join(',')} at age ${age}: ${JSON.stringify(hits)}`);
+    // A shell kill is PERMANENT — the instance is parked dead and never comes
+    // back — so a later age legitimately matches zero. The refusal is therefore
+    // against the run, not against the age: a stage that never matched anything
+    // at ANY age is a diagnostic that did nothing, and that must throw.
+    for (const k of KILL_LIST) if (hits[k]) KILL_SEEN.add(k);
+  }
   const pad = String(age).padStart(2, '0');
   const ui = (show) => page.evaluate((s) => {
     for (const id of ['ui-layer', 'hud-layer', 'splash']) {
@@ -537,6 +656,16 @@ for (const age of AGES) {
   say(`  age ${age}t (${Math.round(age * 1000 / 60)}ms) -> ${PREFIX}-a${pad}.png  ` +
       `blast=(${pr.blast.x.toFixed(0)},${pr.blast.y.toFixed(0)}) ` +
       `p1=(${pr.robo0.x.toFixed(0)},${pr.robo0.y.toFixed(0)}) p2=(${pr.robo1.x.toFixed(0)},${pr.robo1.y.toFixed(0)})`);
+}
+
+if (KILL_LIST.length) {
+  const never = KILL_LIST.filter((k) => !KILL_SEEN.has(k));
+  if (never.length) {
+    say(`--kill matched nothing at any age for: ${never.join(', ')}`);
+    await writeFile(`${PREFIX}-log.txt`, log.join('\n') + '\n');
+    await browser.close();
+    throw new Error(`--kill matched nothing at any age for: ${never.join(', ')} — the diagnostic did nothing`);
+  }
 }
 
 await writeFile(`${PREFIX}-meta.json`, JSON.stringify({
