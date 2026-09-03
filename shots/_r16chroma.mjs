@@ -104,6 +104,7 @@ const out = await page.evaluate(async ({ nb, mb }) => {
   const stat = (pick) => {
     let n = 0, sChroma = 0, sHsvS = 0, sL = 0, sHslS = 0, sLum = 0, sCeil = 0, sHsvV = 0;
     const lums = [];
+    const chromas = [];
     for (let i = 0; i < NP; i++) {
       if (!pick(i)) continue;
       const r = N.d[i * 4], g = N.d[i * 4 + 1], b = N.d[i * 4 + 2];
@@ -121,14 +122,18 @@ const out = await page.evaluate(async ({ nb, mb }) => {
       const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
       sLum += lum;
       lums.push(lum);
+      chromas.push(chroma);
     }
     if (!n) return null;
     lums.sort((a, b) => a - b);
+    chromas.sort((a, b) => a - b);
     const q = (p) => lums[Math.min(lums.length - 1, Math.max(0, Math.round(p * (lums.length - 1))))];
+    const qc = (p) => chromas[Math.min(chromas.length - 1, Math.max(0, Math.round(p * (chromas.length - 1))))];
     return {
       n, pct: (100 * n) / NP,
       chroma: sChroma / n, hsvS: sHsvS / n, hsvV: sHsvV / n,
       L: sL / n, ceil: sCeil / n, hslS: sHslS / n,
+      cmed: qc(0.50),
       lum: sLum / n, p10: q(0.10), med: q(0.50), p90: q(0.90),
     };
   };
@@ -161,10 +166,10 @@ const f = (v, d = 3) => (v === null || v === undefined ? '  -  ' : v.toFixed(d))
 const pad = (v, w) => String(v).padStart(w);
 
 console.log(`\nCHROMA — ${DIR} / ${ARENA}  (${out.W}x${out.H})`);
-console.log('                  px      %frame   chroma   ceil   used   HSL L   HSV S    lum    p10   med   p90');
+console.log('                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90');
 const row = (name, s) => {
   if (!s) { console.log(`  ${name.padEnd(14)}  (none)`); return; }
-  console.log(`  ${name.padEnd(14)}${pad(s.n, 7)}  ${pad(s.pct.toFixed(2), 6)}   ${f(s.chroma)}  ${f(s.ceil)}  ${pad((100 * s.chroma / Math.max(1e-4, s.ceil)).toFixed(0) + '%', 5)}  ${f(s.L)}  ${f(s.hsvS)}  ${pad(s.lum.toFixed(1), 6)} ${pad(s.p10.toFixed(0), 5)} ${pad(s.med.toFixed(0), 5)} ${pad(s.p90.toFixed(0), 5)}`);
+  console.log(`  ${name.padEnd(14)}${pad(s.n, 7)}  ${pad(s.pct.toFixed(2), 6)}   ${f(s.chroma)}  ${f(s.cmed)}  ${f(s.ceil)}  ${pad((100 * s.chroma / Math.max(1e-4, s.ceil)).toFixed(0) + '%', 5)}  ${f(s.L)}  ${f(s.hslS)}  ${f(s.hsvS)}  ${pad(s.lum.toFixed(1), 6)} ${pad(s.p10.toFixed(0), 5)} ${pad(s.med.toFixed(0), 5)} ${pad(s.p90.toFixed(0), 5)}`);
 };
 row('MACHINES', out.machines);
 out.parts.forEach((p, i) => row(`  robot ${i + 1} ${p.w}x${p.h}`, p.s));
@@ -172,6 +177,8 @@ row('STAGE', out.stage);
 const m = out.machines, s = out.stage;
 if (m && s) {
   console.log(`\n  machine chroma / stage chroma = ${f(m.chroma / Math.max(1e-4, s.chroma))}   (1.0 = the machines are as colourful as their backdrop)`);
+  console.log(`  CLAUSE D, on its written threshold (MEDIAN chroma): machines ${f(m.cmed)} vs stage ${f(s.cmed)}  ->  ${m.cmed > s.cmed ? 'MET' : 'NOT MET'}`);
+  console.log(`  the same pair in HSL S (scale-free, inflates on dark pixels): machines ${f(m.hslS)} vs stage ${f(s.hslS)}  — NOT clause D's statistic`);
   console.log(`  headroom: the machines are at ${(100 * m.chroma / Math.max(1e-4, m.ceil)).toFixed(0)}% of the chroma their own lightness allows`);
 }
 console.log(`  brightest 1% (>= ${out.top1.thr.toFixed(1)}): machines own ${out.top1.share.toFixed(1)}%`);
