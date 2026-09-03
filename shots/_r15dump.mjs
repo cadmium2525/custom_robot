@@ -76,12 +76,18 @@ const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /* Identical to mass.mjs' stencil, which is identical to contour.mjs'.
  *
- * INSTRUMENT FAULT — round 18, MEASURED, NOT FIXED HERE, because this block is
- * duplicated verbatim in `tools/contour.mjs`, `tools/mass.mjs`,
- * `shots/_salience.mjs` and `shots/_owner.mjs`, and changing one copy would
- * make this round's numbers incomparable with every number filed against those
- * tools. It has to be fixed in all five at once, deliberately, by somebody who
- * intends to re-baseline.
+ * INSTRUMENT FAULT 19 — round 18, measured here and FIXED in `bf17a94`, in all
+ * five copies at once (`tools/contour.mjs`, `tools/mass.mjs`,
+ * `shots/_salience.mjs`, `shots/_owner.mjs` and this file), because changing one
+ * copy alone would have made a round's numbers incomparable with every figure
+ * filed against the other four. The account of the fault below is kept as the
+ * reason the rule at the swap is what it is.
+ *
+ * The re-baseline that came with the fix: grid does not move at all — 4.5 /
+ * 10.7 / 83.7 invisible / weak / clean before and after, separation 69.5 vs
+ * 69.4, inside the 0.2-point round-trip noise floor — so every figure ever
+ * filed against grid stays comparable. Foundry's near machine goes 61x200 ->
+ * 78x217 px, invisible contour 20.0% -> 9.1%, clean 52.6% -> 71.4%.
  *
  * THE FAULT. The swap gives every non-shell mesh an opaque black
  * MeshBasicMaterial. A stage mesh that is normally ADDITIVE and depth-write-off
