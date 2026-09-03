@@ -6163,3 +6163,155 @@ correction, and clause D joins clause A in the column of things that were true b
 Blind points 4 and 5 fail exactly as measured — clause C 6/6 at 1.34-4.09, clause B 83.8% against 90%,
 clause F 17-26x soft with 59.5-73.0% of the opponent swallowed — and the rank-1 item is unchanged:
 **128 elements per detonation.**
+
+---
+
+## RULING 16 — clause F, the temperature gradient, and **INSTRUMENT FAULT 20**
+
+The coordinator recomposed the detonation from 128 elements to ~37 (`a7fd777`), measured it, found the
+10-90 boundary unmoved, reverted it, and asked me to rule on a conflict: **clause F's threshold against
+the effect's radial temperature gradient**, which `SHELL_FRAG` puts white at the centre, yellow and
+orange around it, deep red at the rim and soot at the silhouette, deliberately, at every age. Three
+questions were put. I refused to answer any of them until I had audited the meter, because the third
+question was whether the meter can see the distinction the ruling turns on — and that is my own
+standing rule, not a courtesy.
+
+**It cannot see it, and I have now measured by how much.**
+
+### The arithmetic, first, because it decides the shape of the answer
+
+`shots/_r17-edge.mjs` reads `C = |luma(raw) - luma(novfx)|` — what the effect **did to the frame**.
+Under the premultiplied over-blend that is `C = a * |col - B|` for background `B`. In `SHELL_FRAG`
+colour comes from `heat`, `heat` comes from `rim`, and **`rim` is 0 at every lobe's silhouette**, so a
+fireball's outer skin is `C_SOOT` = 0.028 linear — effectively black — while its alpha there is still
+`dens * (0.88 + 0.14 * rim)`, very nearly opaque. **A fully covered pixel painted almost exactly the
+colour of an unlit background contributes nothing to C.** The meter therefore measures where the effect
+stops *changing* the image, not where it stops *covering* it, and those are different radii in this
+shader by construction.
+
+### The measurement, which is the first evidence anyone has had on this
+
+`src/gfx/vfx.js` gains `uFlatShell` (dormant, default 0, one uniform branch at the premultiply) and
+`shots/_r17-blast.mjs --flatheat 1.0` sets it: **every shell's colour is replaced by one flat value and
+its alpha is left exactly as authored**, which turns `C` into a pure coverage signal. Same pinned
+blast, same build, same tick — grid, seed 1234567, tick 1195, HIGH, 1400 particles, bundle
+`4be0e4263d86`, vite preview — measured by `shots/_r17-edge.mjs` only.
+
+| age | 10-90 boundary, as shipped | **colour flattened** | change | effect's coverage, as shipped | **colour flattened** | change |
+|---|---|---|---|---|---|---|
+| 1 (17ms) | 31.75 px | **24.25 px** | **-24%** | 9.9% of frame | **13.6%** | **+37%** |
+| 7 (117ms) | 23.00 px | **22.00 px** | -4% | 10.2% | **12.9%** | **+26%** |
+| 20 (333ms) | 25.50 px | **15.75 px** | **-38%** | 13.1% | **17.5%** | **+34%** |
+| 48 (800ms) | 25.25 px | **14.75 px** | **-42%** | 6.7% | **9.2%** | **+37%** |
+
+The as-shipped column reproduces `a7fd777`'s "before" row to the quarter-pixel (31.75 / 23.0 / 25.5 /
+25.5), so this is the same measurement, not a different one.
+
+**INSTRUMENT FAULT 20, in two parts, both quantified:**
+
+1. **Every clause F coverage figure ever filed understates the effect's footprint by 26-37%.** The
+   soot rim is invisible to the meter. The blast is materially *bigger* than this document has said.
+2. **The temperature ramp inflates the measured boundary width by 4-42%.** The coordinator's
+   hypothesis is **confirmed as a contributor**, and it is the first of five hypotheses — shell alpha,
+   post chain, element count, and now colour — to move the number at all.
+
+### The ruling
+
+**1. The threshold stands.** This is the first evidence ever brought to bear on clause F's `< 10% of
+radius`, and it argues *for* the threshold rather than against it. With the entire temperature field
+deleted — the largest concession the art direction could possibly make, and one nobody would ship —
+the boundary as a fraction of the effect's own outer radius is **16.0% / 9.5% / 9.0% / 12.8%** at the
+four ages. **Two of four pass, two fail**, and one of the failures is age 1, the flash, the frame a
+viewer actually looks at. A threshold still missed after the most extreme change available is not a
+threshold that is mis-set. `JUDGEMENT` in `SPEC-CRV2` means *falsifiable by a frame*; it does not mean
+*adjustable by an argument*, and I will not move a number of mine because the alternative is
+unpalatable.
+
+**2. The gradient does not go, and clause F gets no exception either.** It does not go because
+deleting it does not buy the pass — it buys half a pass, at the price of the one thing that makes the
+mass read as burning gas rather than as a decal, which is precisely the regression `SPEC-CRV2`'s own
+warning names and which I said I would score as one. It gets no exception because an exception is a
+way of stopping measuring, and the corrected measurement is **worse** than the one it would excuse:
+the effect is a third larger than filed and it takes **71.1%** of the opponent.
+
+**3. There is a third reading, it is not the one that was proposed, and the numbers name it.** The
+proposal was "hard alpha boundary with the gradient strictly inside it". **The flat run refutes that
+as a description of what is there**: with colour removed from the question the boundary is still
+14.75-24.25 px against a **1.25 px** hard-edge floor rasterised by the same code in the same frame —
+**12 to 19 times softer**, with 0-1.8% of rays under 2 px. The alpha edge is *not* hard. But the third
+reading that survives is this:
+
+> **Clause F's two sub-clauses have different causes, and only one of them is about the boundary.**
+
+Sub-clause 1 (falloff) is a property of a cloud of scattered elements and four hypotheses have now
+failed to close it. **Sub-clause 2 (occlusion) is a composition failure and has never been aimed at.**
+On this build, `shots/_r17-edge.mjs`:
+
+```
+    near machine (222-284 px)   effect moved  3.5% / 7.1% / 1.9% / 0%   of its pixels   MET
+    far machine  (78-84 px)     effect moved      -  /   -  / 71.1% / 7.1%              FAIL at 333ms
+    machines' share of the brightest 1%, blast on:  0% / 0% / 0.9% / 39.9%
+    the effect's share:                           100% / 87.6% / 83% / 14.4%
+```
+
+An effect that covers 13-17% of the frame, centred 230 px from a 78 px opponent, will swallow that
+opponent whatever its edges do. **That is closable without touching one line of the heat ramp**, and it
+is the half that decides the blind comparison, because it is the half a player *feels*: the aiming
+target vanishes for a third of a second. It is also, exactly, RULING 14 scored against clause E rather
+than clause F — one phenomenon, two clauses, and the last four rounds have all been aimed at the other
+one.
+
+**Also confirmed on this build, and it is round 18's correction standing up:** the core's hottest 5% is
+**rgb(255,255,253)** at age 1, **rgb(255,255,251)** at age 7 and **rgb(254,246,144)** at age 20 — white
+to yellow, H 56-60, V 1.0. RULING 3's "brown-maroon mud core" is muddy only at age 48
+(rgb(159,172,186), and that is cold grey, not mud). The overturn holds.
+
+### Two more faults, found while doing this
+
+**INSTRUMENT FAULT 21 — `_r17-edge.mjs` computes a threshold above the arithmetic range of the
+quantity it thresholds, and reports a zero instead of refusing.** Its noise floor is the 99.9th
+percentile of `C` far from the blast, times 1.5. `C` cannot exceed 255. On four captures this session
+the floor came out 195-241 and the threshold **292-361**, so `cover` was necessarily 0 and the meter
+printed *"effect covers 0% of frame — EDGE: no measurable boundary"* and then went on to print a full
+table of centre colours, occlusion percentages and brightest-1% shares **taken from that same frame**.
+It did not refuse. A meter whose threshold exceeds its own maximum has established that the frame is
+not measurable, and it must say so and stop, not hand back nine other numbers.
+
+**INSTRUMENT FAULT 22 — there is a SIXTH copy of the fault-19 stencil block, and it is the one clause F
+is scored on.** `bf17a94` fixed five copies atomically (`tools/contour.mjs`, `tools/mass.mjs`,
+`shots/_salience.mjs`, `shots/_owner.mjs`, `shots/_r15dump.mjs`). `shots/_r17-blast.mjs`'s inline
+`STENCIL_FN` is a sixth, it still reads *"Exactly contour.mjs's stencil"* — which is now false — and it
+still paints every non-shell mesh opaque black with no `depthWrite === false` exemption. **Every clause
+F occlusion figure in this document is measured against a machine mask built by the unfixed copy.** On
+grid's pinned salience frame that erosion was zero, so the figures are probably intact, but "probably"
+is not a measurement and this is a different frame.
+
+### The black-frame incident, recorded because it is not explained
+
+Four captures this session (`r19base`, `r19b`, `r19flat`, `r19v`) came back with the entire 3D view
+black — HUD and minimap inset drawn, main scene empty, 91 KB PNGs against the 2.1 MB of a sane frame —
+across both the single-file bundle and the vite preview. A control capture with my shader change
+removed was sane; **re-applying the identical change produced a byte-identical sane frame**, so the
+change was not the cause and I have not isolated one. No filed number is affected: fault 21 is why —
+the meter's threshold went over 255 and it declined to report a boundary rather than inventing one.
+**It is open, and anybody who sees a 91 KB capture from `_r17-blast.mjs` should treat every number from
+that run as void.**
+
+### What this does to the card
+
+**Nothing.** Clause F was NOT MET on both sub-clauses before this ruling and is NOT MET on both after
+it. What changed is the *account*: sub-clause 1's number is 4-42% smaller than filed once the meter's
+colour blindness is corrected and still 12-19x the floor; sub-clause 2's is *worse* than filed and has
+a cause nobody has attacked. **Blind point 5 stays FAIL. The verdict stays NO.**
+
+**The rank-1 item is amended, not replaced.** It was "compose the detonation from a handful of large
+drawn elements"; that was tried and it moved sub-clause 1 by nothing. It becomes:
+
+> **Stop the detonation covering the opponent.** Not by shrinking it and not by hardening it — by
+> composition: the blast currently knows nothing about where the other machine is on screen, and 71.1%
+> of a 78 px opponent at 333 ms is the result. It closes clause F's second sub-clause, it closes
+> RULING 14's 0%-of-the-brightest-1%, and it is the only thing on this list that improves what a player
+> feels rather than what a meter reads.
+
+The runner-up is unchanged and is still the deepest problem in the build: **clause C by geometry**,
+6/6 FAIL at 1.34-4.09 against 1.00, every shading lever measured and closed.
