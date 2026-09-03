@@ -381,7 +381,25 @@ if (ANALYSE) {
     // Where the camera says each machine is, independent of the stencil.
     const g = window.__game;
     const cam = g.camera;
-    const toPx = (v) => ({ x: (v.x * 0.5 + 0.5) * innerWidth * dpr, y: (-v.y * 0.5 + 0.5) * innerHeight * dpr, z: v.z });
+    /*
+     * NDC maps to the CANVAS, not to the window, and those stopped being the
+     * same thing when portrait was letterboxed. This projected into the full
+     * frame, so with a render band 69.7% of the frame's height every machine
+     * landed low and short: the near machine fell outside the mask the tool
+     * matches against and was reported "not in stencil", while the far one was
+     * matched to the near machine's blob and came back 408x1201 px against a
+     * projected height of 106. Both figures were nonsense and neither was the
+     * game's fault.
+     *
+     * Taken off the canvas's own client rect, which is where the renderer put
+     * the pixels, plus its offset within the frame.
+     */
+    const cr = document.getElementById('view').getBoundingClientRect();
+    const toPx = (v) => ({
+      x: ((v.x * 0.5 + 0.5) * cr.width + cr.left) * dpr,
+      y: ((-v.y * 0.5 + 0.5) * cr.height + cr.top) * dpr,
+      z: v.z,
+    });
     for (let i = 0; i < g.world.robos.length; i++) {
       const r = g.world.robos[i];
       const V = g.camera.position.constructor;      // THREE.Vector3, borrowed

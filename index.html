@@ -30,11 +30,46 @@
     touch-action: none;
   }
   #app { position: fixed; inset: 0; }
+  /* The canvas box is the stylesheet's to decide; Engine.resize reads it and
+     sizes the backing store from it, and deliberately writes no inline style.
+     So the height carries the letterbox band, and it is written as an explicit
+     `calc` rather than as a `bottom` offset: an explicit `height: 100%` beats a
+     `bottom`, and the two together are a silent way for the canvas to run back
+     under the controls.
+
+     A WARNING PAID FOR THREE TIMES, AND THE THIRD IS THIS COMMENT. An earlier
+     draft of it discussed a stray comment terminator by writing one out in full,
+     which of course ended the comment on that line: the text after it parsed as
+     bare CSS, the parser dropped the `#view` rule entirely, and the canvas fell
+     back to being sized by its own width/height attributes — 4866x2433 device px inside a 1170px
+     frame, at aspect 2 in a portrait window, 399.6% of the frame's area. That is
+     the identical failure a stray terminator in `ui.css` caused earlier in
+     this project, and it is why that one is described here in words. `npm run build` was clean, `npm test` was ALL PASS and
+     `tools/deploycheck.mjs` was green throughout, because the game still boots
+     and still plays at any canvas size. Only `shots/_r17-phone.mjs` saw it, and
+     only because it prints the canvas rect next to the frame it is supposed to
+     fill. Measure the frame; do not trust the build. */
   #view {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
+    position: absolute;
+    top: var(--view-top, 0px);
+    left: 0;
+    width: 100%;
+    height: calc(100% - var(--view-top, 0px) - var(--view-bottom, 0px));
     display: block;
     touch-action: none;
+  }
+  /* PORTRAIT LETTERBOX, touch only.
+     Measured, not chosen: `.tc__pad` is `3 * 62 + 2 * 10 = 206px` tall sitting
+     `16 + var(--safe-b)` off the bottom, so on an iPhone 12 the control cluster
+     begins at y = 844 - 50 - 206 = 588. The band reserved here is exactly that
+     cluster and nothing more.
+     Round 16 measured what the full-bleed layout did instead: the player's feet
+     were CUT by the bottom edge, DASH and BOMB abutted the machine's silhouette
+     with zero gap, and the FIRE button was 3.8x the on-screen height of the
+     opponent being aimed at. The HUD's top scrim is left alone — it is a
+     gradient over the frame by design, and the machines are not cut by it. */
+  @media (orientation: portrait) and (pointer: coarse) {
+    #view { --view-bottom: calc(206px + 16px + var(--safe-b, 0px)); }
   }
   #hud-layer, #ui-layer {
     position: absolute; inset: 0;

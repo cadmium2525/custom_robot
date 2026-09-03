@@ -12,6 +12,24 @@ const PRESETS = {
   [TIER.LOW]: {
     name: 'LOW',
     maxPixelRatio: 1.0,
+    /**
+     * BACKING-STORE PIXEL BUDGET, MOBILE ONLY. See the note on `pixelRatio`.
+     *
+     * Each value is EXACTLY what this tier already asks for on a full-bleed
+     * iPhone 12 portrait — 390 x 844 CSS at devicePixelRatio 3 — so the shipped
+     * full-bleed layout does not move by one pixel:
+     *
+     *     budget = 390 * 844 * renderScale^2 * min(3, maxPixelRatio)^2
+     *
+     * HIGH: 329160 * 1.00 * 4.00 = 1316640, which is 780 x 1688, i.e. ratio 2.0
+     * to the digit, exactly as today. What changes is only what happens when the
+     * game is asked to fill LESS of the screen: over a letterboxed 390 x 449
+     * band the same budget fits sqrt(1316640 / 175110) = 2.74, so the letterbox
+     * pays for its own sharpness out of pixels that were already being spent.
+     * That is the answer to "there is no configuration of this build in which
+     * the machine is as sharp as the button sitting on top of it".
+     */
+    maxPixels: 170637,
     renderScale: 0.72,
     shadows: false,
     shadowMapSize: 512,
@@ -32,6 +50,7 @@ const PRESETS = {
   [TIER.MID]: {
     name: 'MID',
     maxPixelRatio: 1.6,
+    maxPixels: 652538,
     renderScale: 0.88,
     shadows: true,
     shadowMapSize: 1024,
@@ -52,6 +71,7 @@ const PRESETS = {
   [TIER.HIGH]: {
     name: 'HIGH',
     maxPixelRatio: 2.0,
+    maxPixels: 1316640,
     renderScale: 1.0,
     shadows: true,
     shadowMapSize: 2048,
@@ -72,6 +92,7 @@ const PRESETS = {
   [TIER.ULTRA]: {
     name: 'ULTRA',
     maxPixelRatio: 2.0,
+    maxPixels: 1316640,
     renderScale: 1.0,
     shadows: true,
     shadowMapSize: 2048,
@@ -244,13 +265,27 @@ export class QualityManager {
     const dpr = window.devicePixelRatio || 1;
     const cap = Math.min(dpr, this.settings.maxPixelRatio);
     const budget = this.settings.maxPixels;
-    if (!budget || !this.viewW || !this.viewH) return cap;
+    // MOBILE ONLY, and this gate is the correction to the mechanism as first
+    // written. The budgets below are sized for a phone; applied to a desktop
+    // canvas they are a large REGRESSION, because a 1600x900 CSS window on a 2x
+    // display asks for 5.76M pixels today and HIGH's budget is 1.32M, so the
+    // fitted ratio would come out under 1 and clamp to 1.0 — halving the linear
+    // resolution of every desktop retina frame. The budget is a phone policy;
+    // the flat cap stays the desktop policy.
+    if (!budget || !this.device.mobile || !this.viewW || !this.viewH) return cap;
     const area = this.viewW * this.viewH * this.settings.renderScale * this.settings.renderScale;
     if (area <= 0) return cap;
     const fit = Math.sqrt(budget / area);
+    // Capped by the DEVICE, not by `maxPixelRatio`, and that is the whole point
+    // of the mechanism rather than a detail of it. Clamped to `cap` — as it was
+    // when this was dormant — the budget could only ever LOWER the ratio, so a
+    // smaller canvas bought nothing and the letterbox this exists to pay for
+    // would have resolved to 2.0 exactly like the full-bleed frame it replaces.
+    // Whatever the budget affords, up to the physical pixels the screen has.
+    //
     // Never below 1: a backing store under one device-independent pixel per CSS
     // pixel is not a resolution decision, it is a broken frame.
-    return Math.max(1, Math.min(cap, fit));
+    return Math.max(1, Math.min(dpr, fit));
   }
 
   get effectiveScale() {
