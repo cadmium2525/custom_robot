@@ -1,4 +1,12 @@
 node_modules/
+# Build output. `dist-single/` is the exception: the single-file bundle is a
+# tracked deliverable, because the artifact people are handed has to be
+# reviewable as a diff like anything else. Everything else matching `dist-*` is
+# scratch — agents building a "before" tree on a spare port to compare against
+# have left `dist-r18/` and friends lying in the working tree, and a dirty tree
+# is how a half-finished change gets committed by somebody who did not write it.
+/dist-*/
+!/dist-single/
 dist/
 .DS_Store
 *.log
