@@ -8536,3 +8536,166 @@ renderer, and is the one thing in this round that nobody has measured.
   C, `B-N.txt` = clause B, `ctl-onbody.txt` = the control; `ctl.txt` is the same control run WITHOUT
   `--onbody` and is kept only to show what the withdrawn default mode reads, 3.988 / 1.988 — it is
   quoted nowhere above), plus the control and N=1 frames. `git add -f`'d, `shots/` being gitignored.
+
+---
+
+## Round 29 — VERDICT — 2026-09-03 — **committed before I measured a single number, and it rules against the round on its own best instrument**
+
+Everything in this section was written and committed at head `1cee355` **before I ran any meter, built
+any bundle, or opened any capture.** Nothing landed this round was reported to me; I read the four
+commits and the ledger and nothing else. The measurement is in the addendum below, and where it
+contradicts what is written here I say so in the same words I used to be wrong in.
+
+# VERDICT: **NO.**
+
+Twenty-ninth round, same sentence. But this round it is *not* NO for the reason the round expected. The
+round expects to be told that clause C should come off the list and that fault 28's fix is a clean win.
+It gets neither answer, and the reason is the same in both cases: **this round produced the best two
+instruments in the document's history and both of them make the card worse, not better.**
+
+### RULING 24 — **clause F sub-clause 2 is scored on the RENDER column, my own standing rule decides it, and the clause gets WORSE: the failing cell moves from 233 ms at 44.5% to 117 ms at 100%**
+
+The builder is entitled to be told which of two disagreeing columns is the clause, before I look at
+either. Here is the answer and the reasoning, written blind.
+
+**RULING 23(5) already decided this and I am not going to un-decide it because the answer is
+unflattering.** *A mask is a render, not a difference.* That rule was written in this document eight
+commits ago, over my own signature, with four instrument faults enumerated under it as the evidence —
+contour's original 74%, fault 19's `depthWrite` occluders, fault 23/26's threshold, fault 28's scope.
+`0cac4ed` is the fifth member of that list and it was found by *implementing the rule*. **The render
+column is the clause.**
+
+And the mechanism the disagreement exposes is worse than the disagreement:
+
+> **The difference column's sensitivity is anti-correlated with the target's own brightness.** It counts
+> a pixel as "altered" by how far the effect moved it. A target already at 220 of 255 cannot be moved
+> far by adding white to it — the headroom is gone — so the meter reads *lowest* exactly where the
+> target is *whitest*, which is exactly where the clause's legibility is worst. That is not noise and it
+> is not a threshold; it is a meter with the wrong sign on its most important input. **117 ms read 20.0
+> when the opponent was at 220 luma and 87.0 after the hit-flash fix pulled it to 174.5** — the figure
+> moved 67 points on a commit that did not touch a single VFX pixel. A meter that improves when the
+> subject gets dimmer is measuring the subject, not the effect.
+
+**And in the other direction, at 233 ms: 60.2 against 11.4 is lighting counted as covering.** RULING 19
+said the as-shipped column is the score because *"a player aiming at a machine does not get to subtract
+the other explosion"*, and I stand by every word of that — **but that ruling was about which EMITTER,
+not about which PHENOMENON.** Clause F's own sentence is *"an effect is a handful of big quads with
+texture-edge boundaries... and the effects live in the frame do not, together, swallow the opponent."*
+Swallowing is an occupancy of the frame by the effect's own geometry. A point light 1.2 m away
+brightening the target is not the effect swallowing it — it is the target being washed out, which is a
+real defect, is **blind point 3's** defect, and already has its own meter in the invisible-contour
+column. **One reading, two clauses, and for four rounds they have been added together into one number
+and scored against one threshold.**
+
+> **`SPEC-CRV2` clause F is amended a second time.** Sub-clause 2's meter is the **intersection of the
+> VFX layer's own rendered footprint with the opponent's machine stencil**. The difference-against-
+> `novfx` column is **re-homed, not withdrawn**: it is a *legibility* reading and belongs beside the
+> invisible-contour column under blind point 3, where its brightness-anticorrelation is a known defect
+> of a supporting figure rather than a fatal defect of a scored one. **RULING 19 is untouched in its own
+> axis** — no emitter may be subtracted from either column.
+
+**What this does to the card, stated before I check the numbers: it makes clause F worse.** F sub-2 was
+NOT MET on one cell of seven at 44.5%. On the render column it is NOT MET on one cell of seven at
+**100.0%** — total, not marginal — and the cell **moves from 233 ms to 117 ms**, which is the age that
+already owns blind point 3's worst figure and the hit-flash. The 233 ms cell that four rounds of work,
+two rulings and one rank-1 item were aimed at **was never a clause-F failure at all**; it was the second
+detonation's light, read by a meter that could not tell light from geometry. **Rank 2 of my last card —
+RULING 23(3)'s illuminance clamp — is aimed at a cell that does not exist on the corrected meter, and I
+am striking it from the rank list before it is built.** That is the second time this round's
+instruments have retired one of my own ranked items, and it is the whole argument for building them.
+
+**Both columns are still defective and I am not pretending otherwise.** The render column counts a faint
+additive haze as footprint at `L>25` (10% of range) and — worse — **it has no depth test**, so an effect
+*behind* the opponent counts as swallowing it. The correction is one flag on a pass that now exists:
+render the VFX layer with the machines as **depth-only occluders**, so only effect pixels actually in
+front of the target survive. Until that exists, **100.0% at 117 ms is an upper bound and I score it as
+one** — but the bound is not what saves the cell, because a machine 1.2 m from a detonation of radius
+2.80 m is inside the fireball on any depth test anyone cares to run.
+
+### RULING 25 — **clause C comes off the ART rank list, and goes straight onto the INSTRUMENT list, because `0.280` against a uniform null of `0.289` is the signature of a broken meter and nobody has excluded it**
+
+The builder asks me to strike clause C because the document contains no proposal for it. **Granted on
+the art side, and refused as a closure.** Round 24's own arithmetic is the reason:
+
+```
+    per-mass sd / machine spread     near 0.280 +/- 0.003     far 0.213
+    uniform null 1/sqrt(12)                = 0.289
+```
+
+Round 24 wrote the correct sentence and then read it as a fact about the machine: *"the blur-and-
+quantise segmentation is not partitioning value at all."* **That sentence has two readings and this
+document has only ever taken one of them.** Either (a) the machine's within-mass luminance really is
+uniform over the whole machine's range — a strong, surprising claim about the renderer — or (b) **the
+segmentation is not finding masses**, so each "mass" is a mixture of several real ones and its histogram
+is near-uniform *by construction*, in which case the ratio is a property of an 8.84 px Gaussian and
+clause C has never been measured at all. **Eighteen perturbations failing to move a number is evidence
+for (b), not for (a).** A quantity that is invariant to flat shading, to normal-map removal, to
+`--off maps`, to chamfer width in both directions, to the plane ramp in both directions, to replacing
+100% of the paint with one grey, and to seven levels of diffuse banding **is not measuring the shading.**
+
+Round 28 saw this and filed it as *"the one thing in this round that nobody has measured"*, then closed
+the clause anyway. I am reversing the order:
+
+> **Clause C is struck from the rank list as an art item and entered as INSTRUMENT AUDIT, ranked above
+> every art item that depends on it.** The audit is one command and needs no renderer: **run
+> `_massdrive.mjs --onbody`'s segmentation against a synthetic target whose answer is known** — an image
+> of flat regions with a known step and known zero within-region variance, at the same pixel scale and
+> through the same 8.84 px blur. If the meter reports a ratio near 0 the clause is real and closed at
+> eighteen readings, and I will say so. **If it reports anything near 1.7 on a target that is flat by
+> construction, every clause-C figure in this document is withdrawn, four rounds of clause-C work were
+> measuring a blur kernel, and RULING 18's re-ranking of C to "the closest failing clause on the card"
+> was wrong from the day I wrote it.** The far machine reading 0.213 at sigma 2.47 while the near reads
+> 0.280 at sigma 8.84 is a directional hint that it is (b), and a hint is not a result.
+
+**This is the same mistake as fault 28, one clause over.** Fault 28 was found by asking *what is my mask
+actually made of*. Clause C has never been asked that question. Neither had clause F for four rounds,
+and when it finally was, the answer moved a scored cell by 88 points.
+
+### RULING 26 — **rank 1 was walked and it MISSES its own acceptance test.** 174.5 against a stated 150
+
+`8b071d2` is real art work aimed at the right object, and I ranked it 1 for exactly this reason: it is
+the first lever in this document pointed at **the machine** rather than at the effect. The mechanism is
+right — a hit tell built out of chroma instead of out of the one value the aiming target cannot lose —
+and `vec3(0.88, 0.34, 0.30)` sitting exactly on threshold-minus-knee is the kind of number that shows
+somebody read the bright pass rather than guessing at it.
+
+**And the acceptance test I wrote before it was walked has four legs, and the round reports one.**
+
+```
+    1. novfx luma at 117 ms  UNDER 150      reported 174.5     <- MISS, by 24.5 of the 70.3 needed
+    2. invisible contour at 117 ms UNDER 25%  (68.0% before)   <- NOT REPORTED
+    3. no age regresses on the seven-age column                <- meter changed underneath it
+    4. the tell still legible on the 1:1 crop                  <- NOT REPORTED
+```
+
+**Leg 1 misses.** 220.3 -> 174.5 is 65% of the distance and it is the largest single move ever made on
+that number, and it is still 47 levels above the neighbouring age's 127.3, on the frame that carries
+blind point 3's worst figure. **I am scoring it as a partial: the mechanism is accepted, the item stays
+at rank 1, and the remaining 24.5 levels are the `uEnergy` term the round did not separate** —
+`robot.js:2870`, `0.03 + heat*0.10 + invuln*0.22`, named in my own addendum as the second of the two
+machine-side terms and still unmeasured.
+
+**Leg 2 is the one that matters and it is missing.** The luma column is the diagnosis; the invisible
+contour is the *clause*. This document has three separate occasions on the record where a lever moved
+the number it was aimed at and did not move the clause underneath it. I am measuring leg 2 myself
+below, and **if the contour at 117 ms has not moved, the fix bought a diagnosis and not a point.**
+
+### What I am predicting, before I run anything, so that this verdict can be caught being wrong
+
+1. **The render column reproduces at 117 ms above 99%** on my own bundle.
+2. **Clause B on grid at head is 84.8 +/- the round-trip floor** — `uHitFlash` is 0 on the pinned still
+   frame, so `mix()` is the identity and the commit is provably inert there. If it moved, something
+   other than the mix changed.
+3. **The invisible contour at 117 ms is still above 25%**, i.e. leg 2 of the acceptance test also
+   misses.
+4. **No scored cell on my card came through a `--u` sweep**, so fault 29 withdraws nothing that is
+   scored — only `41a903a`'s two figures, which its own author already refused to quote.
+
+### The one thing that would move most — **unchanged, and now it has a second half with a number on it**
+
+**Stop making the aiming target white when it is hit — and finish it.** 174.5 is not 150. The chroma
+half is done and correct; the `uEnergy` half has never been separated from it, and 117 ms is now the
+*only* failing cell in clause F sub-clause 2 as well as blind point 3's worst figure and the frame with
+the second detonation inside its own radius. **One age, one event, three clauses.** Nothing else on this
+card touches three.
+
