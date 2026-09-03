@@ -379,19 +379,31 @@ if (BLOOM !== null) {
  * the dormant `uFlat` uniform documented at the premultiply in `src/gfx/vfx.js`
  * and is a diagnostic, not a shipping mode.
  */
-if (FLAT !== null) {
-  const n = await page.evaluate((v) => {
+const applyFlat = async () => {
+  if (FLAT === null) return 0;
+  return page.evaluate((v) => {
+    // Addressed through the VFX object rather than by walking the scene. The
+    // scene walk found nothing and returned a confident zero, which is the
+    // print-a-number-anyway failure this document has ruled on three times: the
+    // pools are owned by `view.vfx`, and a uniform that is not there is an
+    // error rather than a zero.
+    const vfx = window.__game.view && window.__game.view.vfx;
+    if (!vfx) return 0;
     let n = 0;
-    window.__game.engine.scene.traverse((o) => {
-      const m = o.material;
-      for (const mm of Array.isArray(m) ? m : [m]) {
-        if (mm && mm.uniforms && mm.uniforms.uFlat) { mm.uniforms.uFlat.value = Number(v); n++; }
-      }
-    });
+    for (const k of Object.keys(vfx)) {
+      const u = vfx[k] && vfx[k].mesh && vfx[k].mesh.material && vfx[k].mesh.material.uniforms;
+      if (u && u.uFlatShell) { u.uFlatShell.value = Number(v); n++; }
+    }
     return n;
   }, FLAT);
-  say(`flatheat=${FLAT} on ${n} shell materials`);
-}
+};
+// The scene is `__game.view.scene`, NOT `__game.engine.scene` -- the first
+// version of this reached for the wrong handle, found nothing, set nothing and
+// printed `flatheat=1 on 0 shell materials`. It is re-applied immediately
+// before every capture as well as here, because a count of zero is the only
+// thing standing between this diagnostic and a confidently wrong ruling, and
+// the pools are built when the first blast is spawned rather than at boot.
+if (FLAT !== null) say(`flatheat=${FLAT} on ${await applyFlat()} shell materials at setup (0 here is fine, the view is built later)`);
 await page.waitForTimeout(600);
 
 const meta = await page.evaluate(`(${INSTALL_FN})(${JSON.stringify({ seed: SEED, arena: ARENA, vfxSeed: VFX_SEED })})`);
@@ -463,6 +475,11 @@ for (const age of AGES) {
   // The FIGHT card is taken down by a 900ms setTimeout in real time; with the
   // clock driven by hand it may still be up. Removing it is what play does.
   await page.evaluate(() => { try { window.__game.hud.hideBanner(); } catch (e) {} });
+  if (FLAT !== null) {
+    const n = await applyFlat();
+    say(`  flatheat=${FLAT} on ${n} shell materials at age ${age}`);
+    if (!n) throw new Error('--flatheat matched no shell material: the diagnostic did nothing');
+  }
   const pad = String(age).padStart(2, '0');
   const ui = (show) => page.evaluate((s) => {
     for (const id of ['ui-layer', 'hud-layer', 'splash']) {
