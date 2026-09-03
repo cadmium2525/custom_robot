@@ -61,6 +61,28 @@ const SETTLE_FN = `(n) => {
   if (g.engine.quality) g.engine.quality.auto = false;
   return true;
 }`;
+/**
+ * INSTRUMENT FAULT — found and fixed in round 18, and it invalidated every
+ * TOP1% figure this tool has ever printed for orbital.
+ *
+ * `shots/_salience.mjs` (the authority meter), `shots/_r15dump.mjs` and every
+ * meter fed by that dump zero the robots' transient shell uniforms —
+ * `uHitFlash`, `uCharge`, `uRimWash`, `uDissolve` — before they photograph.
+ * This tool did not. At the pinned orbital frame robot 1 is carrying
+ * `uHitFlash = 0.42`, so this tool was photographing a machine mid-hit-flash
+ * and the others were not: the brightest 1% of the frame started at luminance
+ * **205.5 here and 176.6 there**, on the same build, same seed, same tick.
+ *
+ * That is not a rounding difference. The attribution table's TOP1% column was
+ * being read straight across against clause E and clause H numbers taken on a
+ * different photograph — exactly the tool-crossing RULING 5 banned — and it is
+ * why this table appeared to say that nothing in orbital's stage owns the top
+ * of the value range while the authority meter said the stage owns 80% of it.
+ *
+ * Suppression is now identical to `_salience.mjs`'s, character for character,
+ * and the suppressed transients are printed so the two runs can be checked
+ * against each other by eye.
+ */
 const VFX_OFF_FN = `() => {
   const v = window.__game.view;
   const keep = new Set([v.stage.group, ...v.models.map((m) => m.group), ...v.blobs]);
@@ -69,6 +91,15 @@ const VFX_OFF_FN = `() => {
     o.visible = false;
   }
   for (const k of ['motes', 'shafts', 'sweep']) if (v.stage[k]) v.stage[k].visible = false;
+  const was = [];
+  for (let i = 0; i < v.models.length; i++) {
+    const u = v.models[i].matShell && v.models[i].matShell.userData.u;
+    if (!u) continue;
+    for (const k of ['uHitFlash', 'uCharge', 'uRimWash', 'uDissolve']) {
+      if (u[k] && u[k].value > 0.001) { was.push('robot ' + (i + 1) + ' ' + k + '=' + u[k].value.toFixed(2)); u[k].value = 0; }
+    }
+  }
+  return was;
 }`;
 const STENCIL_FN = `(on) => {
   const v = window.__game.view;
@@ -186,10 +217,14 @@ const BASE_FN = async ({ aUri, mUri }) => {
       if (near) ring[p] = 1;
     }
   }
-  let nTop = 0, nRing = 0, nLit = 0;
-  for (let p = 0; p < NP; p++) { if (La[p] >= top1) nTop++; if (ring[p]) nRing++; if (!mask[p] && La[p] >= 90) nLit++; }
+  let nTop = 0, nTopM = 0, nRing = 0, nLit = 0;
+  for (let p = 0; p < NP; p++) {
+    if (La[p] >= top1) { nTop++; if (mask[p]) nTopM++; }
+    if (ring[p]) nRing++;
+    if (!mask[p] && La[p] >= 90) nLit++;
+  }
   window.__base = { La, mask, ring, top1, W, H };
-  return { W, H, NP, top1: Math.round(top1 * 10) / 10, nTop, nRing, nLit };
+  return { W, H, NP, top1: Math.round(top1 * 10) / 10, nTop, nTopM, nRing, nLit };
 };
 
 (async () => {
@@ -217,7 +252,8 @@ const BASE_FN = async ({ aUri, mUri }) => {
   await page.waitForTimeout(1200);
   await page.evaluate((n) => window.__game.fastForward(n), TICKS);
   if (!await page.evaluate(`(${SETTLE_FN})(240)`)) throw new Error('rig unavailable');
-  await page.evaluate(`(${VFX_OFF_FN})()`);
+  const transient = await page.evaluate(`(${VFX_OFF_FN})()`);
+  if (transient && transient.length) console.log('  suppressed transients:', transient.join(', '));
   for (const id of ['ui-layer', 'hud-layer', 'splash']) {
     await page.evaluate((i) => { const el = document.getElementById(i); if (el) el.style.display = 'none'; }, id);
   }
@@ -237,7 +273,7 @@ const BASE_FN = async ({ aUri, mUri }) => {
   const uri = (b) => 'data:image/png;base64,' + b.toString('base64');
   const base = await probe.evaluate(BASE_FN, { aUri: uri(A), mUri: uri(M) });
   console.log(`\nWHO OWNS THE LIGHT — ${ARENA} @ tier ${TIER}, seed ${SEED}, ${base.W}x${base.H}`);
-  console.log(`  brightest 1% starts at luminance ${base.top1}  (${base.nTop} px)`);
+  console.log(`  brightest 1% starts at luminance ${base.top1}  (${base.nTop} px) — MACHINES own ${(100 * base.nTopM / Math.max(1, base.nTop)).toFixed(1)}% of it (clause E), so the stage rows below have ${(100 - 100 * base.nTopM / Math.max(1, base.nTop)).toFixed(1)}% to account for`);
   console.log(`  contour background ring: ${base.nRing} px;  lit non-machine pixels (>=90): ${base.nLit}`);
   console.log(`  objects: ${names.join(', ')}   (${names.filter((n) => n.startsWith('#')).length} unnamed)\n`);
   console.log('object            footprint    dLum mean/max     TOP1% owned    RING owned    LIT owned');
