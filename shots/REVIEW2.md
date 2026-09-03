@@ -5816,3 +5816,281 @@ conclusion gets stronger, not weaker.
 - Two changes were measured and **reverted rather than shipped**, with the measurement left in the
   comment: `PRACTICAL_CEIL 0.92 -> 0.62` (0.2 points) and a per-theme deck albedo ceiling (nine
   points, against roughness' thirty-three).
+
+---
+
+## Round 18 — VERDICT — 2026-09-03
+
+**Written before I measured anything this session**, which is the rule that ended six consecutive
+rounds of PENDING and which I broke three times this round by starting with a capture and dying with
+the work unscored. Round 18 shipped eleven commits, four new or repaired instruments, two art changes
+and one instrument fault that had been eating two fifths of a machine — and not one line of it had a
+verdict against it. This is that verdict. It scores all eight clauses of `SPEC-CRV2`, all five blind
+points, and it separates the cells that went green **because a meter was corrected** from the cells
+that went green **because the renderer got better**, because those are different claims and only one
+of them is worth anything in a blind side-by-side.
+
+#### What I verified before writing, and what I did not
+
+Everything below that I could check without a browser, I checked. `shots/_r16chroma.mjs` and
+`shots/_r18e.mjs` are **offline** meters: they read a committed dump pair and take no capture, so they
+are re-runnable at zero cost and I re-ran them.
+
+```
+    node shots/_r16chroma.mjs shots/_d_base    {grid,orbital,foundry}    — clause D, head
+    node shots/_r16chroma.mjs shots/_d_r18b    {grid,orbital,foundry}    — clause D + top 1%, final
+    node shots/_r18e.mjs      shots/_d_s11     {grid,orbital,foundry}    — clause E budget, seed 11
+```
+
+Reproduced exactly: grid machine/stage median chroma **0.161 / 0.129 MET**, orbital **0.161 / 0.129
+MET** (its median moved 0.165 -> 0.161 across the round, which the round's own table did not report
+because it quoted the mean as unchanged), foundry **0.145 / 0.145 NOT MET**. Grid's stage mean
+**ceiling is 0.609**, so the filed stage chroma of 0.748 is above the arithmetic ceiling of the pixels
+it claims to describe and cannot be a measurement — **the withdrawal of 0.449 / 0.748 is accepted in
+full.** Final-build top 1%: grid **52.0%**, orbital **65.3%**, foundry **18.5%**. Seed 11 clause E
+budget: grid **MET, 2611 px slack**, orbital **MET, 4385 px**, foundry **MET, 1890 px**. The fault-19
+fix is present in all five stencil copies (`m0.depthWrite === false` -> hide, not blacken, in
+`tools/contour.mjs:125`, `tools/mass.mjs:110`, `shots/_salience.mjs:136`, `shots/_owner.mjs:131`,
+`shots/_r15dump.mjs:143`). Tree clean at `8f39f5c`.
+
+**Not verified this session and taken on the record:** every figure that needs a browser —
+`tools/contour.mjs`, `tools/mass.mjs`, `shots/_salience.mjs`, `shots/_r17-edge.mjs`. Those are quoted
+below as filed, and where I doubt one I say so rather than scoring it.
+
+---
+
+### RULING 12 — **this round's card moved on corrected instruments, not on a better renderer**, and the two must never be added together again
+
+Eight clause-cells changed state in round 18. **One** of them changed because a pixel changed.
+
+| what moved | from -> to | meter | **why it moved** |
+|---|---|---|---|
+| **D, grid + orbital** | NOT MET (inverted 1.7x) -> **MET** | `_r16chroma.mjs` | **INSTRUMENT, 100%.** No pixel changed. The filed pair never existed; the meter also printed the mean where the clause is written on the median. |
+| **E, grid** | 47.7% -> **52.0%** | `_salience.mjs` | **ART.** Crowd bank `emissiveIntensity` 2.2 -> 1.5, practicals gain 1.0 -> 0.80 (`e0b4473`). |
+| **E, orbital** | 19.5% -> **65.5%** | `_salience.mjs` | **ART.** `theme.deckRough` 1 -> 2 (`7cd67d7`). The single largest genuine render gain in this document. |
+| **H1, grid + orbital** | 53.9% / 80.5% -> 48.0% / 34.5% | `_salience.mjs` | **NOT AN INDEPENDENT GAIN.** See below: H1 is arithmetically `100% - E`. |
+| **A coverage half** | never quoted -> **5/6 MET** | `tools/mass.mjs` | **INSTRUMENT.** The column was printed for seventeen rounds and never read; its host `_massdrive.mjs` aborted at head. |
+| **C** | UNMEASURABLE -> **6/6 FAIL** | `_massdrive.mjs` clause-C mode | **INSTRUMENT.** New meter. The card gets **worse**. |
+| **F** | eyeball FAIL -> **measured NOT MET, 2/2 sub-clauses** | `_r17-edge.mjs` | **INSTRUMENT.** New meter. Verdict unchanged, diagnosis overturned. |
+| **B, foundry** | 52.6% -> **71.4%** clean | `tools/contour.mjs` | **INSTRUMENT.** Fault 19. No pixel changed. |
+
+**One roughness value, one emissive intensity and one gain constant are the entire art delta of round
+18.** Everything else on the card that moved, moved because an instrument was wrong. That is a
+statement in the renderer's favour on two counts — the frame was never as bad as the card said, and
+the project can now see three clauses it was blind to — and it is a statement against it on one: **a
+blind viewer does not benefit from a corrected meter.** Round 18 is the best instrumentation round in
+this document and one of the thinnest art rounds, and the verdict has to be scored on the second
+number.
+
+#### RULING 12b — **clause H's first sub-clause is not a clause.** It is clause E subtracted from one
+
+`_r16chroma.mjs` and `_salience.mjs` both partition the frame into machine pixels and stage pixels with
+no third class. So `stage share of the top 1% = 100% - machine share`, exactly, on every arena: grid
+52.0 / 48.0, orbital 65.5 / 34.5, foundry 18.5 / 81.5. **"Clause E MET and clause H's first half MET"
+is one measurement reported twice**, and round 18 filed it as two greens on two arenas — four cells
+off one number. `SPEC-CRV2` is amended here: **H1 is struck as a scored cell.** Clause H stands on its
+second sub-clause alone (no single stage element ranks 1 in more than 25% of salience cells), which is
+independent, which is measured at **2/24 = 8.3%** on `_salience.mjs --gate`, and which is genuinely
+MET. The eight-clause card is now seven-and-a-half clauses and I would rather have that than four
+false greens.
+
+---
+
+### The eight clauses, re-scored
+
+Every row names the meter that produced it in the row. No row crosses two meters.
+
+| Clause | Threshold | Where head stands | Meter | **Verdict** | moved by |
+|---|---|---|---|---|---|
+| **A. Few, large masses** | count 4-6; **top-4 >= 85%** | count **6/6 MET**. Coverage **86.1 / 87.6 / 86.1 / 86.7 / 91.3%** on five cells; foundry R1 **84.8%** on a mask now known to be missing 40% of the machine | `tools/mass.mjs` via repaired `_massdrive.mjs` | **MET on 5 cells, foundry R1 WITHDRAWN** (not "unresolved" — invalid, see RULING 13) | instrument |
+| **B. Silhouette carries everything** | **>= 90%** clean boundary | grid **83.8%**, orbital **82.9%**, foundry near machine **71.4%** (was 52.6% under fault 19) | `tools/contour.mjs` | **NOT MET on 3/3.** Best arena is **6.2 points** under, and it is the clause with no route that does not cost another | instrument (foundry only); no art change |
+| **C. Value belongs to form** | per-mass sd **< half** the between-mass step (ratio < 1.00) | **4.01 / 1.80 / 3.70 / 1.39 / 4.09 / 1.49** | `_massdrive.mjs` clause-C mode (null quoted: a linear ramp scores 0.577 and passes) | **NOT MET 6/6, by 1.4x to 4.1x.** Attributed: **not shading.** Zeroing every view-dependent term gives 3.01; outline+normals+textures+env off gives 3.39; `--nopaint` gives **5.07, worse** | instrument (first measurement) |
+| **D. Machines are the colour** | machine **median** chroma > stage median | grid **0.161 vs 0.129**, orbital **0.161 vs 0.129**, foundry **0.145 vs 0.145** (on a 4854 px mask that should be 8138) | `_r16chroma.mjs`, re-run this session on `shots/_d_r18b` | **MET on grid and orbital. Foundry WITHDRAWN, not failed** | **instrument, entirely** |
+| **E. Machines own the top of the value range** | **>= 50%** of the brightest 1% | grid **52.0%** (sat 0.347, clipped 0.00%), orbital **65.5%** (0.352, 0.00%), foundry **18.5%** (0.323, 0.00%) | `_salience.mjs` (authority) | **MET on grid and orbital — on a still frame. Foundry unscorable at this framing.** See RULING 14: it is 0% during a detonation | **ART**, and the only art on this card |
+| **F. Effects large, few, hard-edged** | falloff **< 10%** of own radius; **< 25%** of opponent altered | 10-90 boundary **21.5-32 px** against a **1.25 px** hard-edge floor rasterised by the same code in the same frame = **17-26x**; **11.6-21.3%** of radius; far-machine occlusion **59.5 / 66.4 / 73.0%** | `_r17-edge.mjs` | **NOT MET on both sub-clauses.** Cause isolated to **128 elements per detonation** — it fails on `few` | instrument (first measurement) |
+| **G. Opponent resolvable** | **>= 36 rendered px** tall | desktop grid **79 px**; **foundry far machine 33 px** on `tools/mass.mjs`'s box — under the floor, never scored; phone **~27 rendered px** by arithmetic | `tools/contour.mjs` box / `tools/mass.mjs` box | **NOT MET on phone. UNRESOLVED on foundry's opponent** — and the product goal names the phone | untouched |
+| **H. Stage is quiet** | H1 struck (= 100% - E); **H2: no element ranks 1 in > 25% of cells** | **2 / 24 cells = 8.3%** | `_salience.mjs --gate`, fair rule and filed rule agree | **MET.** The only outright, independent, art-earned MET on this card | earned in round 17 (`RULING 11`), held |
+
+**Score: one clause MET outright (H2). Two MET on two of three arenas (D, E) — and D's pass is an
+instrument correction, not a render change. Four NOT MET with numbers (B, C, F, G). One clause (A) is
+MET on five of six cells with the sixth withdrawn.** Entering the round the card read "one of eight
+met outright, two unmeasurable, four missed." It now reads **"one met outright, none unmeasurable,
+five missed or partial"** — the card is *better informed* and it is not *better*.
+
+---
+
+### RULING 13 — **every foundry figure filed in round 18 is measured on the fault-19 mask, and the fix re-baselined only one of the five tools**
+
+`bf17a94` fixed the stencil in all five copies atomically — correct, and the right way to do it — and
+then re-baselined with **`tools/contour.mjs` only**. That is one tool of five. The other four were
+changed in the same commit and have not been re-read on foundry since:
+
+```
+    tool                    foundry figure filed this round      state after the fix
+    tools/contour.mjs       clean 52.6 -> 71.4%                  RE-BASELINED
+    tools/mass.mjs          clause A top-4 84.8%, count 5.0      NOT RE-READ
+    shots/_r15dump.mjs      clause D 0.145 vs 0.145 (tie)        NOT RE-READ  (4854 px mask)
+    shots/_salience.mjs     clause E 18.5%, clause H 81.5%       NOT RE-READ
+    shots/_owner.mjs        foundry attribution rows             NOT RE-READ
+```
+
+I re-ran `_r16chroma.mjs` on the committed dumps this session and it prints the foundry machine
+stencil at **4854 px**. The un-eroded machine is **8138 px**. **So foundry's clause D tie, foundry's
+clause A 84.8%, foundry's clause C 3.70/1.39, foundry's clause E 18.5% and foundry's clause G box are
+all statements about 60% of a machine**, and the missing 40% is a specific region — the part lying
+under a large translucent red practical, which is not a random sample of the body. Round 18 withdrew
+the foundry contour row for the second time and correctly said "everything mask-derived ever taken of
+foundry is affected"; it then left five foundry cells on the card anyway. **I withdraw all five.** They
+are not failures and they are not passes; they are unmeasured. Re-reading them costs one dump pair and
+three commands.
+
+**This is the second time this document has had to withdraw a foundry row for a reason that was not
+foundry's fault**, and both times the row had already been used to argue about the arena's art. The
+lesson is written down as a standing rule below.
+
+### RULING 14 — **clause E is met when nothing is happening**, and the blind comparison is not a still-frame comparison
+
+`_r17-edge.mjs` on the same build, grid, HIGH tier, 1400 particles, seed 1234567: with the blast on,
+**the machines take 0% of the brightest 1% of the frame for the first 333 ms while the effect takes
+84-100%.** Every clause E figure on this card — including the two MET cells I just granted, including
+the orbital 65.5% that is the round's one real art win — is taken on `engine.paused` at tick 420 with
+nothing detonating. **Clause E as scored is a statement about a photograph of a lull.** I am not
+striking the MET cells, because the clause is written against a frame and they are honestly measured
+on one. I am recording that a blind viewer watches the game move, that this game's own instrument says
+the machines lose the top of the value range entirely every time a shot lands, and that **the same 128
+elements that fail clause F are what takes it.**
+
+### RULING 15 — what the withdrawn chroma pair cost, accounted
+
+`0.449 / 0.748` was filed in round 15, carried unchallenged through rounds 16 and 17, promoted into
+`SPEC-CRV2` as clause D's scored row, and used to justify a work programme: `851d077` records **both
+routes to machine chroma failing**, and rounds 15-17 spent measurable effort trying to raise the
+saturation of machines that were **already 1.64x more chromatic than their stage**. No round re-ran the
+meter the clause names. The rule that catches this is not "check your numbers"; it is **a filed figure
+that no round has re-run is not evidence, it is a memory** — which is exactly the failure mode this
+document has already ruled on three times under other names. It is added to the standing rules with
+teeth this time: a clause row that has not been reproduced in the round that quotes it is marked
+`STALE` and does not count toward the card.
+
+---
+
+### The five blind points, re-scored
+
+| # | Point | R15 | R16 | R17 | **R18** | Why |
+|---|---|---|---|---|---|---|
+| 1 | Robots brightest and most saturated (D + E) | FAIL | FAIL | FAIL | **PASS on grid and orbital, UNMEASURED on foundry** | D MET on both (`_r16chroma.mjs`, re-run this session); E 52.0% / 65.5% (`_salience.mjs`). **Half of this pass is an instrument correction and the other half does not survive a detonation (RULING 14).** |
+| 2 | Stage quieter than subjects (H) | FAIL | FAIL | FAIL | **PASS on grid and orbital, UNMEASURED on foundry** | H2 **2/24 cells** (`_salience.mjs --gate`) is the real content; H1 is struck as a duplicate of point 1 (RULING 12b). **Not an independent pass from point 1.** |
+| 3 | Both machines legible at once (G) | FAIL | FAIL | FAIL | **FAIL** | Phone **~27 rendered px** against a 36 px floor, by arithmetic on `quality.js` and never yet by device capture; foundry's far machine **33 px** on `tools/mass.mjs`'s box, under the floor and never scored; and `_r17-edge.mjs` says the opponent loses **59.5-73.0%** of itself to one detonation. |
+| 4 | Very few, very large forms (A + B + C) | FAIL | FAIL | FAIL | **FAIL, and now measured to fail** | A 5/6 MET but every cell within 1.3 points of its floor; B **83.8%** against 90% on the best arena; C **6/6 FAIL at 1.39-4.09** against 1.00, with the failure **scaling with rendered size** — the signature of resolved geometry, not shading. |
+| 5 | Effects enormous, hard-edged, drawn (F) | PASS | FAIL | FAIL | **FAIL** | `_r17-edge.mjs`: **17-26x** softer than a hard edge in its own pipeline, **59.5-73.0%** of the opponent swallowed. RULING 3's "mud core" is **overturned at HIGH** — the core is rgb(255,255,252) at age 1 and white-to-yellow through age 20, muddy only at age 32+ — but the diagnosis changing does not change the verdict. |
+
+**Two of five pass, on two of three arenas, and the two that pass are one measurement plus an
+instrument correction.** Three of five fail, and points 4 and 5 are the two a viewer reads in the first
+second of a blind comparison: what shape is that machine, and what happens when it shoots.
+
+---
+
+## VERDICT: **NO.**
+
+**HOLOSSEUM does not win a blind side-by-side against Custom Robo V2 today**, and round 18 did not
+change that. It changed how much of the gap is visible, which is not the same thing.
+
+The case, stated so it can be argued with:
+
+1. **Blind point 4 is the identity of the target and it is now measured to fail 6/6 by up to 4.1x.**
+   A CRV2 machine is a poster: four or five flat forms with the step at the edge between them. This
+   machine's value variation *inside* one mass is roughly **twice** the step *between* masses
+   (`_massdrive.mjs` clause-C mode, null 0.577 quoted). The attribution is the harsh part: zeroing
+   **every** view-dependent term moves it 4.06 -> 3.01, and turning off outline, normal maps, every
+   texture and the env map together leaves 3.39. **Nothing available switches it off**, and
+   `--nopaint` makes it *worse* — the paint is currently the only thing holding it down. What is left
+   is the Lambert response of a body with too many facets. That is a modelling problem, it is on
+   screen in every frame of every arena, and no round has yet aimed at it.
+
+2. **Blind point 5 fails on a word nobody read.** Three rounds hardened edges. `b5d6c9f` collapsed the
+   fireball's density window 0.28 -> 0.07 on a field whose 90% band is 0.27 wide, flattened the
+   rim-driven alpha falloff, and replaced the shock front's Gaussian with a hard shoulder — **the
+   measured 10-90 edge did not move at all** (31.75 -> 31.75 px at age 1). Bloom, isolated with a new
+   `--bloom` diagnostic, is about a third of it at peak and not the cause. The cause is that one
+   detonation spawns **128 elements** and the measured boundary is the statistical thinning of sparse
+   debris in the outer envelope, which no per-element alpha can harden. `SPEC-CRV2` clause F says
+   "large, **few** and hard-edged." It fails on `few`; large and hard-edged are consequences.
+
+3. **Blind point 3 fails on the platform the product goal names.** ~27 rendered px against a 36 px
+   floor on an iPhone 12 in portrait, by arithmetic off `quality.js:12-31,54,186`, never yet confirmed
+   or refuted by a device capture. A blind comparison run on a phone loses on legibility before any of
+   the art is considered.
+
+4. **The two passing points are thinner than they look.** They are one number (RULING 12b), half of it
+   is an instrument correction that changed no pixels (RULING 12), and the other half evaporates for a
+   third of a second every time a weapon fires (RULING 14). Grid's clause E margin is **2.0 points**
+   against a statistic with **no measured noise floor** — the round-trip floor this project measured
+   (0.2 contour, 0.05 ratio, 0.2 top-4) does not cover the top-1% share.
+
+5. **And one arena is not scorable at all.** Five of foundry's cells are withdrawn (RULING 13). A game
+   does not win a blind comparison on two of its three arenas.
+
+**What would change the answer.** All five of these, in order, and I will not grant a YES on fewer:
+
+- clause C under **1.00** on the near machines with clause B **not** regressing on the same commit —
+  and the rim route is already measured and closed as a way to get there (4.06 -> 2.73 is still FAIL,
+  and it costs clause B 83.8 -> 81.8 and separation 69.5 -> 66.8);
+- clause F under **10%** of radius and under **25%** opponent occlusion, at HIGH, in a real match;
+- clause B at **>= 90%** clean on all three arenas;
+- clause G **>= 36 rendered px** on an actual iPhone-12-class capture, not on arithmetic;
+- foundry's five withdrawn cells re-read on the fixed stencil and passing on their own thresholds.
+
+### The one piece of work that would move the most
+
+**Compose a detonation from a handful of large drawn elements instead of 128.**
+
+Not because clause F is the worst number on the card — clause C is. Because it is the only failing
+clause in `SPEC-CRV2` whose cause has been **isolated to a named quantity with a route nobody has
+tried**, and because that one change is load-bearing for three of the five blind points at once:
+
+- it is **point 5** directly, and `b5d6c9f` has already proved the other two hypotheses wrong, so the
+  search space is one item long;
+- it is **point 3** in combat, where the opponent currently loses **59.5-73.0%** of its pixels to a
+  single blast (`_r17-edge.mjs`) — the aiming target disappearing is a legibility failure a blind
+  viewer sees instantly and a player *feels*;
+- it is **clause E in motion** (RULING 14), where the machines currently hold **0%** of the brightest
+  1% for 333 ms while the effect holds 84-100% — so the round's one genuine art win only exists in the
+  gaps between shots until this is fixed.
+
+Every other candidate is either closed (clause C's shading levers, all of them, measured), a trade
+against a clause already six points under (the rim route), or a re-model. **7 billows + 3 smoke shells
++ 18 dust + 16 plume + 72 sparks + 12 chunks is not an N64 explosion and it is not a *drawn* explosion
+— it is a particle system wearing one.** Four or five large camera-facing quads with hard alpha
+boundaries, authored as shapes, is both the cheaper frame on an iPhone 12 and the thing the blind
+comparison is asking for. The runner-up, and it is genuinely close, is **clause C by geometry** —
+fewer, larger facets on the machine shell, with `tools/contour.mjs` run on the same commit because B
+and C share the silhouette and have already been shown to pull against each other.
+
+### Standing rules, two added
+
+- **A figure no round has re-run is a memory, not evidence.** A clause row quoted from a previous
+  round without being reproduced in the round that quotes it is marked `STALE` and does not count
+  toward the card. `0.449 / 0.748` survived three rounds and set a work programme because nobody ran
+  the file the clause names (RULING 15).
+- **An instrument fix is not complete until every tool it touched is re-baselined.** `bf17a94` changed
+  five tools atomically — right — and re-read one. The other four still carry the fault in their filed
+  numbers, which is the same defect as not fixing it, one level up (RULING 13).
+- Restated, because this round is the proof: **`_salience.mjs` is the authority for clause E.**
+  `_r18e.mjs` is a budget, not a verdict. The seed-11 pass on all three arenas is quoted from
+  `_r18e.mjs`, was taken **before** the fault-19 fix, and is a **prediction that the authority meter
+  has not confirmed.** It is not on the card.
+
+#### The ranked list, re-issued
+
+1. **Clause F's `few`** — compose the detonation from a handful of large drawn elements. Carries points
+   5, 3-in-combat and clause-E-in-motion. Cause isolated, route untried.
+2. **Clause C by geometry** — the machine has too many facets and every shading lever is measured and
+   closed. Must be measured with `tools/contour.mjs` on the same commit; B and C share the silhouette.
+3. **Re-read foundry's five withdrawn cells** on the fixed stencil (one dump pair, `tools/mass.mjs`,
+   `_r16chroma.mjs`, `_salience.mjs`, `_owner.mjs`). Cheapest item on this list and it un-blanks a
+   third of the card.
+4. **Clause B to 90%** — 6.2 points on the best arena, with the one known lever pulling against C.
+5. **Clause G on a real phone** — the arithmetic says 27 px against a 36 px floor and the product goal
+   names the device. Never captured.
+6. **The `RIM_FRAG` up-bias literal** — the one clause-C lever left unmeasured, named at `uRimEdge` in
+   `src/gfx/materials.js`, unreachable by uniform so it needs a rebuild per point.
