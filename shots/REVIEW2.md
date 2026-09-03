@@ -6945,3 +6945,170 @@ envelope throughout, and a fire lever measured against the as-shipped column whi
 in the frame reads backwards (see section 2). The instrument, the control and the four attribution
 columns are committed so the next hand starts from measurements rather than from the stale row.
 
+
+---
+
+## Round 19 verdict, addendum — **the rank-1 item, executed and measured, and it is half a fix on the half I aimed at and no fix at all on the half I named**
+
+The verdict above named one piece of work: cut the detonation's point lights down to the blast's own
+envelope. It is done, measured at seven ages, kept, and the account of it is not the account I wrote.
+Four findings, in the order they arrived, plus two instrument faults found on the way.
+
+Everything below is `shots/_r17-edge.mjs` only, same pin as every blast figure in this file — grid,
+seed 1234567, tick 1195, `TIER.HIGH`, 1400 particles, `engine.paused`, tick-at-a-time settle — from my
+own build root on :4322, and every A/B pair names its bundle. `npm run build`, `node
+tools/simtest.mjs` **ALL PASS** and `node tools/deploycheck.mjs` **DEPLOY OK on all three arenas**
+before each capture. A concurrent commit (`55851e7`) touched `src/core/quality.js` mid-session; it is
+**comment-only**, verified by reading the diff, and both my builds contain it, so the A/B is clean.
+
+### 1. RULING 20 is settled and round 19's headline claim is false
+
+`shots/r22base-edge.txt`, bundle `1c263efdbfc9`, all seven ages of round 19's own baseline. It
+reproduces `9dcf651`'s four ages **to the digit**, which is what makes the other three worth anything:
+
+```
+    far-machine occlusion, clause F sub-clause 2, < 25%
+    age            1      7     14     20     26     32     48
+    r19 baseline 19.3   22.5   88.7   71.1   50.2   66.1    7.1
+    9dcf651      16.7   22.2     --   62.6     --   22.1     --
+    HEAD         16.7   22.2   84.7   62.6   57.5   22.1    7.0
+                  MET    MET   FAIL   FAIL   FAIL    MET    MET
+```
+
+**Three failing ages, not one.** And the erosion exponent's effect is not uniform: 233 ms −4.0, 333 ms
+−8.5, 533 ms −44.0, and **433 ms +7.3 — worse than the baseline it was measured against.** One age
+fixed, two improved and still failing, one regressed. The 533 ms win stands and is untouched by this.
+
+### 2. The blast light was ten times the sun at the aiming target, and the rule was already in the repo
+
+`src/gfx/stage.js` took the foundry gate lamp from 26 to 7 and its range from 16 m to 6.5 m under the
+heading *"a practical is not allowed to out-light the sun — which this one did, by a factor of eight at
+the surface it was closest to"*, and it did the arithmetic in lux: decay 2, illuminance is intensity
+over distance squared, against a key of about 3.2.
+
+The detonation light was **300 at a range of R × 9 = 30.6 m on a 3.4 m blast**. The opponent stands
+**3.7-4.0 m** from the detonation (reconstructed from the capture's own metadata), so it was taking
+**~20-22 lux — six to seven times the key — at the aiming target**, and the range reached the far wall.
+It was the largest light in the game by two orders of magnitude and no round had measured it against
+the arena it lights. It is now **60 at R × 4 = 13.6 m**.
+
+```
+    far-machine occlusion, < 25%          1      7     14     20     26     32     48
+    before (300 @ 30.6 m)              16.7   22.2   84.7   62.6   57.5   22.1    7.0
+    after  (60 @ 13.6 m)                1.4   19.9   47.1   28.4   52.2    6.0    7.0
+    --kill light, same bundle           0.2   19.0   11.1   28.0   52.2    6.0    7.0
+```
+
+The third row is the **ceiling** — the light deleted outright — and it is the useful column. Against it
+the change takes **100% of the available gain at 333 ms (62.6 → 28.4 against a floor of 28.0), 100% at
+433 ms and 533 ms, and 51% at 233 ms (84.7 → 47.1 against a floor of 11.1).** Five ages improve, two
+are unchanged, **none regress.**
+
+**And it settles what the rank-1 item can and cannot do.** With the light deleted entirely, 333 ms
+still reads **28.0%** and 433 ms **52.2%**. **Clause F's second sub-clause cannot be closed by the
+light**, at either of those ages, by any reduction. It was worth doing — it is the largest movement
+available on the worst age on the card — and it is not the close.
+
+**Clause D, in motion, for the first time.** This meter's own chroma column, machine mean saturation
+minus stage mean saturation, during the blast:
+
+```
+    age        1      7     14     20     26     32
+    before -0.002 -0.072 -0.021 +0.051 +0.014 -0.002     inverted at four of six
+    after  +0.043 +0.011 +0.035 +0.082 +0.032 +0.009     positive at all six
+```
+
+The wash was taking the machines' colour as well as their value. (This is `_r17-edge.mjs`'s **mean**,
+not `_r16chroma.mjs`'s **median** — it is its own row and it does not go on clause D's.)
+
+### 3. My hypothesis for the legibility half is falsified, and the frame says what does it
+
+The verdict chose this work partly on the 117 ms outline collapse — 69.2% invisible, contour step 79.6
+→ 1.4. After the change it is **68.0% and the step is still exactly 1.4.** The light is not the cause.
+
+Cropping the frame is what explains it, and it is the most useful picture taken this round: **at 117 ms
+the opponent is standing inside the fireball's screen footprint**, the fireball's core is
+rgb(255,255,251), and the machine is white on white. Taking light *off* the machine cannot separate it
+from a white background. Reconstructed geometry confirms it: the opponent sits at **0.67-0.85 of the
+blast's own projected radius — inside its disc at every age.**
+
+### 4. Bloom is 45% of the worst legibility figure in this document, and it is what holds the top of the value range in motion
+
+`--bloom 0`, a capture-only diagnostic, on the reduced-light build:
+
+```
+    far machine, invisible contour        1      7     14     20     26     32     48
+    bloom on                            5.8   68.0   13.2   27.0   41.6   16.5    3.2
+    bloom off                           5.8   37.6    9.8   26.5   41.4   11.3    0.8
+    bloom's share                         0   30.4    3.4    0.5    0.2    5.2    2.4
+
+    contour step at 117 ms   1.4 -> 19.2      (blast off: 150.2)
+
+    machines' share of the brightest 1%   (clause E asks 50%)
+    bloom on                              0   11.7      0    0.8   26.1   37.5   41.9
+    bloom off                           7.0   13.1    0.6    4.1   32.6   50.0   53.5
+```
+
+**Bloom is 30.4 of the 68.0 points of the worst legibility figure on this record**, and it is small at
+every other age — which is why round 18's bloom isolation, aimed at the 10-90 **edge**, found "about a
+third at peak and not the cause" and did not see it. The edge question and the legibility question have
+different answers and nobody had asked the second one.
+
+And with bloom off the machines reach **50.0% at 533 ms and 53.5% at 800 ms — the first time clause E's
+floor has been met during a detonation by any measurement in this project.** RULING 14 said the
+machines lose the top of the value range every time a weapon fires. This names what takes it, and
+`SPEC-CRV2` P6 predicted it in writing: *"no framebuffer post-processing of the modern kind: no bloom…
+nothing in the frame glows outside its own geometry."*
+
+**This is not a proposal to ship with bloom off.** Every figure above is taken during a detonation.
+Clause E on the still frame, clause B's three arena figures and the whole look of the machines'
+highlights are measured **with** bloom and none has been re-read without it. Turning it off is a large
+art change needing its own round and a three-arena re-baseline. What is established is the
+**attribution**, and it is the strongest single lever this project has found for blind point 3.
+
+### Two instrument faults, found doing this
+
+**INSTRUMENT FAULT 25 — `shots/_r17-edge.mjs` silently answers from a different capture.** It takes its
+frames from `--prefix` and **ignores a positional argument**. `node shots/_r17-edge.mjs shots/r22base`
+printed a complete, plausible, correctly-formatted table of **round 17's** numbers under my capture's
+name, and overwrote `shots/r17h-edge.txt` with them. I caught it only because the summary line named
+the wrong prefix. A meter handed a path it does not use must refuse, not answer from another frame.
+(The clobbered round-17 record is restored from git.)
+
+**INSTRUMENT FAULT 26 — fault 23, one level deeper: the meter's operating point is a function of the
+blast light.** `_r17-edge.mjs` sets its threshold from the 99.9th percentile of `C` over the quarter of
+the frame furthest from the blast. The blast light **was** that noise floor — 31.2 / 51.8 / 46.6 /
+22.8 / 9.1 before, 2.3 / 5.5 / 4.0 / 2.1 / 1.6 after — so the threshold fell about **eightfold** and the
+`cover%`, `outer radius` and `10-90` columns are computed against a **different definition of "the
+effect"** in the two builds. **Sub-clause 1 is not comparable across any change to the blast light**,
+and I quote no delta for it. Fault 23 is not merely a contaminated column; it makes the whole meter's
+operating point depend on the thing being changed. The columns that survive are the ones on fixed
+thresholds — the occlusion percentage (`C > 25` per pixel) and the contour columns — and those are the
+only ones quoted above. Audited before filing, in both directions.
+
+### What this does to the card
+
+| clause | before this addendum | after | why |
+|---|---|---|---|
+| **F sub-2** | NOT MET, "one failing age" | **NOT MET, three failing ages, two of them now close** | 233 ms 84.7 → **47.1**, 333 ms 62.6 → **28.4**, 433 ms 57.5 → **52.2**, 533 ms 22.1 → **6.0**. **ART.** |
+| **F sub-1** | NOT MET | **NOT MET, and not comparable across this change** | fault 26 |
+| **E in motion** | 0 / 10.7 / 0.8 / 36.1% | **0 / 11.7 / 0.8 / 37.5%** shipped; **7.0 / 13.1 / 4.1 / 50.0%** with bloom off | ART on the first, diagnostic on the second |
+| **B in combat** (own column) | 69.2% invisible at 117 ms | **68.0% shipped, 37.6% with bloom off** | the light is not the cause; bloom is 45% of it |
+
+**The verdict does not move. It is still NO**, and the reasons under it are the same five. What moved
+is that the rank-1 item has been executed, its ceiling is now known, and it does not reach the clause.
+
+### Rank 1 for round 20, amended on evidence rather than on argument
+
+> **Stop the effect glowing outside its own geometry.** `SPEC-CRV2` P6 is the only clause-level platform
+> fact in the spec that this renderer contradicts by design, and the measurement now says it costs
+> **30.4 points of the opponent's outline at 117 ms** and **8-13 points of the machines' share of the
+> brightest 1% at every age of a detonation**, including the two ages where removing it is the
+> difference between failing clause E in motion and meeting it. It must be scored against the still
+> frame on all three arenas on the same commit, because clause E, clause B and the machines' own
+> highlights have only ever been measured with it on.
+
+Rank 2 is now **clause F sub-clause 2 at 433 ms**, which the light cannot reach (floor 52.2%) and which
+`9dcf651` made worse by 7.3 points; rank 3 is **clause C by geometry** at 1.705 against 1.00, with
+every shading lever now measured and closed in both directions; rank 4 is **re-reading B, D and E at
+head**, which is the same nine stale cells and is now staler by one art change than when I filed it.
