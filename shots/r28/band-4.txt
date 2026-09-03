@@ -1,0 +1,46 @@
+  bundle: 4182abf463f1   base: http://127.0.0.1:4350/custom_robot/
+  bundle: fc777480 (17 script bytes)   base: http://127.0.0.1:4350/custom_robot/
+  suppressed transients: robot 1 uCharge=0.37, robot 2 uCharge=0.12
+  uniform uBandX -> uBandX = 4  read back 4 on 2 material(s)
+
+MASSES — grid @ tier 3, 1600x900  [ON-BODY]
+  ROBOT 1  156x283px at 735,610   blur sigma 8.84
+     stencil 22270px   segmented 22270px   (on-body)
+     value  p2=48 median=127 p98=205   spread 157 levels
+     step      24    30    36    42    51    60    72    85
+     mass     5.8   6.3   6.8   5.8   4.3   3.8   4.3   3.3
+     top4%     64    72    76    81    85    88    88    92
+     @51 (five bands): 4.3 masses, largest 57.8%, top4 84.5%
+     curve mean: 5 masses
+  ROBOT 2  53x79px at 765,158   blur sigma 2.47
+     stencil 1943px   segmented 1943px   (on-body)
+     value  p2=53 median=108 p98=184   spread 131 levels
+     step      24    30    36    42    51    60    72    85
+     mass     7.8   8.0   6.8   6.3   5.5   4.8   3.8   3.0
+     top4%     63    71    79    80    85    90    93    95
+     @51 (five bands): 5.5 masses, largest 56.5%, top4 84.7%
+     curve mean: 5.8 masses
+
+SPEC-CRV2 CLAUSE A — 4-6 masses AND top-4 >= 85% of the silhouette
+  (count half scored since round 12; the coverage half has never been quoted)
+  ROBOT 1  156x283px   count 4.3 (max 6) MET   top4 84.5% FAIL
+  ROBOT 2  53x79px   count 5.5 (max 8) MET   top4 84.7% FAIL
+  CLAUSE A: FAIL on grid @ tier 3
+
+SPEC-CRV2 CLAUSE C — per-mass luminance sd < half the between-mass step
+  ratio = sd / (step/2); PASS < 1.00. A LINEAR RAMP SCORES 0.577 AND PASSES,
+  so the ramp null is quoted with every number: this meter reads variance
+  inside a mass IN EXCESS of a gradient — speculars, rims, flashes.
+  ROBOT 1  156x283px   3.3 touching mass pairs at step 51
+     step      24    30    36    42    51    60    72    85
+     sd      42.0  42.5  43.1  43.1  44.3  45.5  45.5  46.3
+     gap     31.4  40.2  42.5  47.5  52.9  37.5  43.0  27.5
+     ratio   2.68  2.12  2.03  1.81  1.67  2.42  2.12  3.36
+     @51: sd 44.25 (worst mass 54.08)  step 52.86  ratio 1.674  FAIL
+  ROBOT 2  53x79px   4.3 touching mass pairs at step 51
+     step      24    30    36    42    51    60    72    85
+     sd      25.1  25.5  26.3  27.1  27.9  28.7  29.6  30.6
+     gap     27.0  33.3  34.9  39.1  42.0  30.4  32.8  22.4
+     ratio   1.86  1.53  1.51  1.39  1.33  1.89  1.80  2.74
+     @51: sd 27.95 (worst mass 37.97)  step 42.05  ratio 1.329  FAIL
+  CLAUSE C: FAIL on grid @ tier 3   (vs ramp null: NO FLATTER THAN A GRADIENT)

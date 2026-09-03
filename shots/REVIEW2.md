@@ -8339,3 +8339,182 @@ the cause", and never learns it was "not present". `shots/` is gitignored; it is
 rounds on the reasoning that the shading levers were closed so the geometry must be open. The geometry
 is now closed at eleven readings, with the arithmetic that says why it was never going to open, and the
 clause's remaining lever is one file this round was not allowed to touch.
+
+---
+
+## Round 28 — 2026-09-03 — **illumination banding, swept at seven points: it does not move clause C's numerator at all, and clause C is now closed on its last named lever**
+
+Round 24 closed clause C's geometry at eleven readings and named exactly one lever left, in a file it
+was not allowed to touch: quantise the diffuse response, because **every closed lever removes a term
+and this one keeps the term and quantises it**, and because the clause responds only to the SHAPE of
+the within-mass luminance histogram. `41a903a` built the mechanism, shipped it at `uBandX = 0`, and
+correctly refused to report the two figures it had — because the sweep knob was not reaching the
+uniform. This round fixed the knob and ran the sweep. **It fails, at every N, and it fails in an
+informative way.**
+
+### 1. INSTRUMENT FAULT 29 — `--u` dropped every key it could not resolve, in silence
+
+`tools/mass.mjs`'s `--u` applier was:
+
+```js
+    const name = 'u' + k[0].toUpperCase() + k.slice(1);
+    if (u[name]) u[name].value = v;
+```
+
+Two faults that compound into the `ssao` fault exactly:
+
+1. The name is built by **prefixing**. A caller who passes the uniform's own name — `--u uBandX=4`,
+   which is what it is called in `materials.js`, in the shader, and in every probe that reads it
+   back — gets `uUBandX`, which exists nowhere.
+2. `if (u[name])` then swallows the miss **without a word**, and the confirmation line
+   `console.log('  uniforms:', ...)` was built from the ARGUMENT LIST rather than from anything the
+   meter had set. So the run positively asserted it had applied a uniform it had never touched, and
+   returned a full report for an unmodified machine.
+
+That is why `41a903a` read 1.706 at N=4 and 1.708 at N=1 against a 1.705 baseline: **those were the
+control, printed three times.** Its author was right to refuse to quote them.
+
+**The repair is the fault, not the symptom.** `--u` now (a) resolves both spellings, `bandX` and
+`uBandX`; (b) **verifies by read-back** — every applied key is re-read from the uniform and printed as
+`uniform uBandX -> uBandX = 4  read back 4 on 2 material(s)`, with a mismatch marker; (c) **aborts with
+exit 3** on a key that resolves to nothing, naming every settable uniform on the running build; and
+(d) walks `matShell, matOutline, matFrame, matEmis, matFlare, shellMats` rather than `matShell` alone.
+*A sweep knob is allowed to say no. It is not allowed to say nothing.*
+
+**Which other uniforms `--u` was missing.** Every one, under its own name — the bug was in the
+spelling, not in a subset. Under the documented short spelling the only permanent misses are the three
+that are not numbers and that no `--u` can ever set: **`uTeamColor`, `uFillUp`, `uFillDown`** (all
+`THREE.Color`). These are now reported by name in the abort text instead of being silently skipped.
+The `matShell`-only scope was a latent second miss and not an active one: `robot.js` `Object.assign`s
+the outline and frame tables into `matShell.userData.u` and the uniform OBJECTS are shared by
+reference, so today the readings are identical — the applier prints the material count so a future
+divergence shows up as a number rather than as nothing.
+
+`tools/contour.mjs` had **no `--u` at all**, which is why clause B has never been quoted on a swept
+point, and why every acceptance test in this document ("C under X with A above Y and B not below Z")
+required a rebuild per point to evaluate. It has the same applier now. It is a deliberate **copy, not
+a shared import**: `shots/_massdrive.mjs` relocates `tools/mass.mjs` into `shots/` before running it,
+so a relative import in `mass.mjs` would not resolve in the copy — the same class of breakage as the
+vanished settle anchor RULING 10 found. Both copies carry the contract and point at each other.
+
+### 2. The bench, and the control that says it is the same bench
+
+Bundle `fc777480 / 4182abf463f1`. Clause A and C: `shots/_massdrive.mjs --onbody`, grid, tier 3, seed
+1234567. Clause B: `tools/contour.mjs`, same arena/tier/seed, same bundle. No figure below crosses the
+two meters.
+
+```
+    head (round 24 filed)   C 1.705 / 1.288   A top4 85.2 / 86.2   B 84.8  (86.2 / 80.0)
+    my control              C 1.706 / 1.288   A top4 85.2 / 86.2   B 84.8  (86.2 / 80.0)
+```
+
+Reproduced to the third decimal on C and exactly on A and B, so these seven readings are comparable to
+round 24's eleven and to the record.
+
+### 3. The sweep. **No N passes, and nothing is close.**
+
+Acceptance test, round 24's, unchanged: **near ratio under 1.35, clause A top-4 at or above 85.0 on
+BOTH machines, clause B not below 84.6.**
+
+| N | C near | C far | A near top-4 | A far top-4 | B overall | verdict |
+|---|---|---|---|---|---|---|
+| **0 = control** | **1.706** | **1.288** | **85.2 MET** | **86.2 MET** | **84.8** | — |
+| 1 | 1.925 | 1.048 | 81.7 FAIL | 77.3 FAIL (count 7.0 FAIL) | — | FAIL |
+| 2 | 1.783 | 1.269 | 84.6 FAIL | 81.5 FAIL (count 6.8 FAIL) | 83.7 | FAIL |
+| 3 | 1.876 | 1.395 | 85.0 MET | 87.0 MET | 84.8 | **FAIL on C, and C is WORSE** |
+| 4 | **1.674** | 1.329 | 84.5 FAIL | 84.7 FAIL | 81.3 | FAIL |
+| 6 | 1.707 | 1.265 | 85.4 MET | 87.9 MET | 84.8 | FAIL on C (inert) |
+| 8 | 1.717 | 1.286 | 85.3 MET | 87.6 MET | 84.8 | FAIL on C (inert) |
+| 12 | 1.708 | 1.243 | 85.3 MET | 86.9 MET | 84.8 | FAIL on C (inert) |
+
+Round-trip floor is 0.05 of ratio and 0.2 of top-4, as in round 24. Read it three ways:
+
+1. **The best point is inside the noise and it is bought with both other clauses.** N=4's 1.674 is
+   −0.032 against a 0.05 floor — not distinguishable from the control — against a target of 1.35. It
+   is the only N that moves C downward at all, and it costs 0.7 points of clause A near (to 84.5,
+   FAIL), 1.5 far, and **3.5 points of clause B** (84.8 to 81.3).
+2. **Two points make clause C measurably worse.** N=2 at 1.783 and N=3 at 1.876 both clear the floor
+   in the wrong direction. N=3 is the one point that keeps clause A and clause B whole, and it is the
+   worst reading in the table on the clause it was supposed to fix.
+3. **From N=6 up the lever is inert.** Every clause returns to the control within its floor.
+
+### 4. Why: **banding does not touch the numerator.** sd is invariant to it across the whole curve.
+
+This is the finding, and it is stronger than the table.
+
+```
+    per-mass sd at step 51, near machine
+    ctl 44.22   N=2 45.17   N=3 43.58   N=4 44.25   N=6 44.32   N=8 44.28   N=12 44.20
+```
+
+Across N=2..12 that is a spread of 1.6% on a 44-level figure. The **entire eight-step sd curve
+overlays the control to within a level**:
+
+```
+    step      24    30    36    42    51    60    72    85
+    ctl     41.8  42.6  42.9  43.9  44.2  45.4  45.5  46.3
+    N=4     42.0  42.5  43.1  43.1  44.3  45.5  45.5  46.3
+    N=12    41.8  42.6  43.0  43.8  44.2  45.4  45.5  46.2
+```
+
+So N=4's apparent gain is **not a flatter mass at all** — it is entirely in the between-mass GAP
+(52.9 against 51.8), a 1.1-level wobble in the denominator. And round 24's constant survives every
+reading:
+
+```
+    sd / spread, near     ctl 0.280   N=2 0.282   N=3 0.278   N=4 0.282
+                          N=6 0.281   N=8 0.280   N=12 0.280
+    round 24 filed        0.280 +/- 0.003        uniform null 1/sqrt(12) = 0.289
+```
+
+**Not one banded point leaves the band.** The only reading that does is the degenerate N=1 at 0.301,
+and it leaves it **upward**.
+
+**This is a null about the clause, not about the plumbing** — which is the whole reason fault 29 had
+to be fixed before the sweep could mean anything. The lever is emphatically not inert in the render:
+at N=1 the near machine blows out, clause A collapses to 81.7 / 77.3, the far mass count breaks to
+7.0, and the kept frames show it plainly. `shots/r28/frame-ctl.png` and `shots/r28/frame-band1.png`
+are the pair.
+
+**Round 24 said banding was the one lever that changes the shape of the histogram. It changes the
+RENDERED shape and not the MEASURED one.** The mechanism most consistent with the readings is the
+meter's own blur: it blurs the near machine at **sigma 8.84 px** before it segments, and this band
+edge is softened by `fwidth` on top of that, so a staircase whose tread is narrower than the kernel
+integrates back to the ramp. The directional check supports it — the far machine, blurred at **sigma
+2.47**, moves its sd about four times as far (27.64 to 29.56 at N=2) — and note that it moves **up**.
+That is evidence and not proof, and it is filed as the next question rather than as a finding.
+
+### 5. What is shipped
+
+**`uBandX` ships at 0. Nothing on the card moves.** Re-measured at the new head on bundle
+`fc777480 / 4182abf463f1`: clause A **85.2% / 86.2% MET**, clause B **84.8%** (robot 1 86.2, robot 2
+80.0), clause C **1.706 / 1.288 FAIL**. `npm run build` clean, `npm test` ALL PASS,
+`node tools/deploycheck.mjs` **DEPLOY OK** on grid, foundry and orbital.
+
+The mechanism is kept at 0 rather than deleted, with the seven-point table written into the comment
+that sits on it, so the next agent who finds the uniform reads the result before sweeping it again.
+That is the `ssao` guard applied to this round's own leftovers: round 24 filed its probe as a patch
+for exactly this reason, and a live uniform needs the numbers attached instead.
+
+### 6. Card
+
+**Clause C is now closed on its last named lever.** Shading closed at `55851e7`, geometry closed at
+eleven readings in round 24, illumination banding closed at seven here. Round 24 asked for clause C by
+geometry to be struck from the rank list; **clause C should now come off the rank list entirely** —
+not because it passes, it fails at 1.706 against 1.00, but because this document no longer contains a
+proposal for it. The arithmetic that says why is round 24's and it has now survived a lever that was
+specifically designed to break it: per-mass sd is 0.280 of the machine's own spread, the step is
+spread-invariant, the spread cancels, and the ratio is a quotient of two constants that **eighteen
+independent perturbations have failed to move.**
+
+Anything that reopens it has to start by moving that 0.280, and it must do so on the number the meter
+reads **after** its own 8.84 px blur — which is a statement about the meter as much as about the
+renderer, and is the one thing in this round that nobody has measured.
+
+### 7. Instruments kept
+
+- `tools/mass.mjs`, `tools/contour.mjs` — the repaired `--u` (fault 29), shipped source in both.
+- `shots/r28/` — the sixteen raw meter reports behind every figure above (`band-N.txt` = clause A and
+  C, `B-N.txt` = clause B, `ctl-onbody.txt` = the control; `ctl.txt` is the same control run WITHOUT
+  `--onbody` and is kept only to show what the withdrawn default mode reads, 3.988 / 1.988 — it is
+  quoted nowhere above), plus the control and N=1 frames. `git add -f`'d, `shots/` being gitignored.
