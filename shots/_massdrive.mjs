@@ -94,7 +94,17 @@ const ANCHORS = [
    'the first line after navigation, where the bundle-hash print is injected.\n' +
    '  Injecting BEFORE the goto photographs a blank page and hashes zero bytes.'],
   ['REPORT-TAIL', "  if (errors.length) console.log(", 1,
-   'the last line of the report, where the clause A scoring is injected.'],
+   'the last line of the report, where the clause A and C scoring is injected.'],
+  ['SEGMENT', '      sizes.push(n);\n    }\n    sizes.sort((a, b) => b - a);', 1,
+   'the end of the region flood fill. Clause C\'s per-region mean and sd are\n' +
+   '  injected between the push and the sort, because the sort destroys the\n' +
+   '  id-to-size map every one of those figures is indexed by. If the sort has\n' +
+   '  moved, the injection would index the WRONG regions and still print a\n' +
+   '  number — which is the fault class this whole table exists to stop.'],
+  ['REGION-RETURN', '      top4: top4 * 100,\n    };', 1,
+   'the per-phase return, extended with the clause C figures.'],
+  ['PHASE-AVG', "      top4: Math.round(avg('top4') * 10) / 10,\n    };", 1,
+   'the phase-averaging return, extended with the clause C figures.'],
 ];
 
 let bad = 0;
@@ -166,10 +176,186 @@ const CLAUSE_A_INJECT =
   "    console.log('  CLAUSE A: ' + (_allPass ? 'MET' : 'FAIL') + ' on ' + ARENA + ' @ tier ' + TIER);\n" +
   "  }\n";
 
+/* ================================================================== */
+/* SPEC-CRV2 CLAUSE C — value belongs to form, not to view            */
+/* ================================================================== */
+/**
+ * The clause, from the hardware: N64 lighting is per-vertex Gouraud with no
+ * programmable per-pixel stage, so within one mass the value is near-constant
+ * and between masses it STEPS. No gradient inside a face, no view-dependent
+ * highlight travelling across one. Threshold: per-mass luminance sd < half the
+ * between-mass step.
+ *
+ * NO METER HAS EVER EXISTED FOR THIS. It is the mechanism the whole look rests
+ * on and it has gone unmeasured for seventeen rounds, because the file the spec
+ * named as its host would not start.
+ *
+ * The measurement rides on segmentation the stock meter already does and adds no
+ * geometry of its own:
+ *
+ *   sd    Per-mass luminance sd, taken on the ORIGINAL luminance, not the blur
+ *         the segmentation runs on. Measuring sd on the blurred image would be
+ *         measuring the blur — the mass would look flat because we flattened it.
+ *         Area-weighted across masses, so the torso counts for what it covers.
+ *
+ *   step  The median absolute difference in mean luminance between masses THAT
+ *         TOUCH. Two masses on opposite sides of the body share no edge for the
+ *         eye to read a step across, and averaging them in inflates the step
+ *         until anything passes. Contact is counted in pixels of shared
+ *         4-neighbour border, and a pair under 6px of contact is dropped as an
+ *         incidental corner touch.
+ *
+ *   ratio sd / (step / 2). The clause passes below 1.0.
+ *
+ * ---------------------------------------------------------------------------
+ * THE METER'S OWN NULL, WHICH MUST BE QUOTED WITH EVERY NUMBER IT RETURNS
+ * ---------------------------------------------------------------------------
+ *
+ * A perfect linear ramp across the body — the exact thing clause C forbids —
+ * scores 0.577, not 1.0, and therefore PASSES the spec's threshold. The
+ * arithmetic is forced and takes one line: quantisation at step S cuts a ramp
+ * into strips of width S, a uniform distribution of width S has sd = S/sqrt(12)
+ * = 0.289S, adjacent strip means differ by exactly S, so the ratio is
+ * 0.289S / 0.5S = 0.577 at EVERY step in the sweep.
+ *
+ * So this meter is not a gradient detector, and anyone who quotes a passing
+ * ratio as "the faces are flat" is over-reading it. What it detects is variance
+ * inside a mass in EXCESS of a ramp: a specular lobe sitting in the middle of a
+ * face, a Fresnel rim brightening one edge of a region, a hit flash — the
+ * view-dependent terms the clause is actually about, which pile variance into a
+ * region without moving its neighbours. That is the failure mode named in the
+ * clause and it is what this reads.
+ *
+ * Both figures are therefore printed: the spec's 1.0 gate, and the distance to
+ * the 0.577 ramp null. A ratio at 0.30 is a genuinely stepped body. A ratio at
+ * 0.58 is a body no flatter than a gradient that happens to satisfy the letter
+ * of the threshold, and it should be reported as such rather than as a pass.
+ */
+const CLAUSE_C_SEGMENT =
+  "      sizes.push(n);\n" +
+  "    }\n" +
+  "    /* --- SPEC-CRV2 clause C: per-region mean and sd, before the sort --- */\n" +
+  "    /* `sizes` is sorted immediately below, which destroys the id-to-size   */\n" +
+  "    /* map every one of these figures is indexed by. This must run first.  */\n" +
+  "    const _nR = sizes.length;\n" +
+  "    const _sum = new Float64Array(_nR), _sq = new Float64Array(_nR), _cnt = new Float64Array(_nR);\n" +
+  "    const _bx0 = B.x0, _by0 = B.y0;\n" +
+  "    for (let y = 0; y < bh; y++) {\n" +
+  "      for (let x = 0; x < bw; x++) {\n" +
+  "        const i = y * bw + x;\n" +
+  "        const id = seen[i];\n" +
+  "        if (id < 0) continue;\n" +
+  "        const L = Ln[(y + _by0) * W + (x + _bx0)];\n" +
+  "        _sum[id] += L; _sq[id] += L * L; _cnt[id]++;\n" +
+  "      }\n" +
+  "    }\n" +
+  "    const _mean = new Float64Array(_nR), _sd = new Float64Array(_nR);\n" +
+  "    for (let r = 0; r < _nR; r++) {\n" +
+  "      const c = _cnt[r] || 1;\n" +
+  "      _mean[r] = _sum[r] / c;\n" +
+  "      _sd[r] = Math.sqrt(Math.max(0, _sq[r] / c - _mean[r] * _mean[r]));\n" +
+  "    }\n" +
+  "    /* Big regions only, at the same 3% floor the count uses, so the sd and  */\n" +
+  "    /* the mass count describe the same set of regions. A 12px sliver is not */\n" +
+  "    /* a mass and its sd is not a fact about the mass read.                  */\n" +
+  "    const _big = (r) => sizes[r] / area >= 0.03;\n" +
+  "    let _wsd = 0, _wt = 0, _maxsd = 0;\n" +
+  "    for (let r = 0; r < _nR; r++) {\n" +
+  "      if (!_big(r)) continue;\n" +
+  "      _wsd += _sd[r] * sizes[r]; _wt += sizes[r];\n" +
+  "      if (_sd[r] > _maxsd) _maxsd = _sd[r];\n" +
+  "    }\n" +
+  "    const _sdw = _wt > 0 ? _wsd / _wt : 0;\n" +
+  "    /* Shared 4-neighbour border length per pair of regions. */\n" +
+  "    const _con = new Map();\n" +
+  "    const _bump = (a, b) => {\n" +
+  "      if (a === b || a < 0 || b < 0) return;\n" +
+  "      const k = a < b ? a * 1000000 + b : b * 1000000 + a;\n" +
+  "      _con.set(k, (_con.get(k) || 0) + 1);\n" +
+  "    };\n" +
+  "    for (let y = 0; y < bh; y++) {\n" +
+  "      for (let x = 0; x < bw; x++) {\n" +
+  "        const i = y * bw + x;\n" +
+  "        if (seen[i] < 0) continue;\n" +
+  "        if (x + 1 < bw) _bump(seen[i], seen[i + 1]);\n" +
+  "        if (y + 1 < bh) _bump(seen[i], seen[i + bw]);\n" +
+  "      }\n" +
+  "    }\n" +
+  "    const _st = [];\n" +
+  "    for (const [k, n2] of _con) {\n" +
+  "      if (n2 < 6) continue;\n" +
+  "      const a = Math.floor(k / 1000000), b2 = k % 1000000;\n" +
+  "      if (!_big(a) || !_big(b2)) continue;\n" +
+  "      _st.push(Math.abs(_mean[a] - _mean[b2]));\n" +
+  "    }\n" +
+  "    _st.sort((p, q) => p - q);\n" +
+  "    const _stepMed = _st.length ? _st[_st.length >> 1] : 0;\n" +
+  "    sizes.sort((a, b) => b - a);";
+
+const CLAUSE_C_RETURN =
+  "      top4: top4 * 100,\n" +
+  "      sd: _sdw,\n" +
+  "      sdMax: _maxsd,\n" +
+  "      gap: _stepMed,\n" +
+  "      pairs: _st.length,\n" +
+  "    };";
+
+const CLAUSE_C_AVG =
+  "      top4: Math.round(avg('top4') * 10) / 10,\n" +
+  "      sd: Math.round(avg('sd') * 100) / 100,\n" +
+  "      sdMax: Math.round(Math.max(...runs.map((r) => r.sdMax)) * 100) / 100,\n" +
+  "      gap: Math.round(avg('gap') * 100) / 100,\n" +
+  "      pairs: Math.round(avg('pairs') * 10) / 10,\n" +
+  "    };";
+
+/**
+ * The report. Prints the ratio across the whole sweep as well as at 51, because
+ * the sweep is what separates the two ways of passing: a genuinely stepped body
+ * holds a low ratio as the step coarsens and real form steps survive, while a
+ * ramp sits pinned at the 0.577 null at every step by construction.
+ */
+const CLAUSE_C_REPORT =
+  "  {\n" +
+  "    const RAMP = Math.sqrt(1 / 12) / 0.5;\n" +
+  "    console.log('');\n" +
+  "    console.log('SPEC-CRV2 CLAUSE C — per-mass luminance sd < half the between-mass step');\n" +
+  "    console.log('  ratio = sd / (step/2); PASS < 1.00. A LINEAR RAMP SCORES ' + RAMP.toFixed(3) + ' AND PASSES,');\n" +
+  "    console.log('  so the ramp null is quoted with every number: this meter reads variance');\n" +
+  "    console.log('  inside a mass IN EXCESS of a gradient — speculars, rims, flashes.');\n" +
+  "    let _cPass = true, _cFlat = true;\n" +
+  "    out.bodies.forEach((b, i) => {\n" +
+  "      const f = b.curve.find((c) => c.step === 51);\n" +
+  "      const rat = (c) => (c.gap > 0 ? c.sd / (c.gap / 2) : NaN);\n" +
+  "      const head = b.curve.map((c) => String(c.step).padStart(6)).join('');\n" +
+  "      const row = b.curve.map((c) => (isNaN(rat(c)) ? '   n/a' : rat(c).toFixed(2).padStart(6))).join('');\n" +
+  "      const sdr = b.curve.map((c) => c.sd.toFixed(1).padStart(6)).join('');\n" +
+  "      const stp = b.curve.map((c) => c.gap.toFixed(1).padStart(6)).join('');\n" +
+  "      console.log('  ROBOT ' + (i + 1) + '  ' + b.box + 'px   ' + f.pairs + ' touching mass pairs at step 51');\n" +
+  "      console.log('     step  ' + head);\n" +
+  "      console.log('     sd    ' + sdr);\n" +
+  "      console.log('     gap   ' + stp);\n" +
+  "      console.log('     ratio ' + row);\n" +
+  "      const r51 = rat(f);\n" +
+  "      const ok = r51 < 1;\n" +
+  "      const flat = r51 < RAMP;\n" +
+  "      if (!ok) _cPass = false;\n" +
+  "      if (!flat) _cFlat = false;\n" +
+  "      console.log('     @51: sd ' + f.sd.toFixed(2) + ' (worst mass ' + f.sdMax.toFixed(2) + ')' +\n" +
+  "        '  step ' + f.gap.toFixed(2) + '  ratio ' + r51.toFixed(3) +\n" +
+  "        '  ' + (ok ? 'MET' : 'FAIL') + (ok ? (flat ? ', below the ramp null' : ', BUT ABOVE THE RAMP NULL') : ''));\n" +
+  "    });\n" +
+  "    console.log('  CLAUSE C: ' + (_cPass ? 'MET' : 'FAIL') + ' on ' + ARENA + ' @ tier ' + TIER +\n" +
+  "      '   (vs ramp null: ' + (_cFlat ? 'flatter than a gradient' : 'NO FLATTER THAN A GRADIENT') + ')');\n" +
+  "  }\n";
+
 let out = src;
 out = out.replace('  await page.waitForFunction(() => window.__game',
   BUNDLE_INJECT + '  await page.waitForFunction(() => window.__game');
-out = out.replace("  if (errors.length) console.log(", CLAUSE_A_INJECT + "  if (errors.length) console.log(");
+out = out.replace('      sizes.push(n);\n    }\n    sizes.sort((a, b) => b - a);', CLAUSE_C_SEGMENT);
+out = out.replace('      top4: top4 * 100,\n    };', CLAUSE_C_RETURN);
+out = out.replace("      top4: Math.round(avg('top4') * 10) / 10,\n    };", CLAUSE_C_AVG);
+out = out.replace("  if (errors.length) console.log(",
+  CLAUSE_A_INJECT + CLAUSE_C_REPORT + "  if (errors.length) console.log(");
 
 /*
  * Written INSIDE the project so `import { chromium } from 'playwright'` and
