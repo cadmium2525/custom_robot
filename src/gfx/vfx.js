@@ -1071,7 +1071,28 @@ void main() {
       // spreading instead of lagging a half-life behind it. The cluster still
       // blows apart; what it can no longer do is stay a solid object while it
       // does so.
-      float bite = mix(0.06, 1.00, pow(vT, 1.30));
+      //
+      // ROUND 19: 1.30 is still half a life behind the field it thresholds, and
+      // the arithmetic is decidable rather than a matter of taste. The field is
+      // turb + fade * 0.26, so the EFFECTIVE threshold on turb is bite minus
+      // fade * 0.26, and turb runs p05 0.367, p50 0.502, p95 0.637 (measured,
+      // see the smoke branch). At vT 0.59 -- which is where a long-lived lobe
+      // sits at 533ms -- 1.30 puts the effective threshold at 0.266, BELOW the
+      // whole distribution: the lobe is not eroded at all, it is solid, and it
+      // is standing in front of the opponent while carrying a heat of 0.15.
+      //
+      // That is the mass shots/_r17-edge.mjs measures as 66.1% of a 67px
+      // opponent at 533ms, and stage attribution says so directly: with the
+      // fire shells killed the same age reads 21.6%, with everything else in
+      // the detonation killed it does not move at all.
+      //
+      // 0.95 walks the effective threshold through the field where the fire is
+      // actually going out instead of after it has: p05 at vT 0.45, p50 at
+      // 0.59, past p95 by 0.72. Early life is untouched -- at vT 0.39 the
+      // threshold is 0.284, still under p05, so the young fireball is as solid
+      // as it was. What changes is only the half-second-old mass that is no
+      // longer burning and is still opaque.
+      float bite = mix(0.06, 1.00, pow(vT, 0.95));
       // THE WINDOW IS THE EDGE. 0.28 was the whole reason the blast measured
       // soft, and the number that proves it is in this file's own smoke branch:
       // the turbulence field runs p05 0.367, p50 0.502, p95 0.637, so ninety
@@ -2058,9 +2079,24 @@ export class VFX {
       // grown a little larger, than it was: the lobes have to stay overlapped
       // enough to share one silhouette.
       const sp = R * (1.1 + vfxRng.f() * 1.6);
+      // ROUND 19 — THE LIFETIME SPREAD IS A COVERAGE DEFECT, NOT ONLY A COLOUR
+      // ONE. The heat ramp was already taken off per-lobe lifetime fraction and
+      // put on one shared curve in seconds, because "the mass never agrees with
+      // itself about how hot it is". The same spread does the same thing to the
+      // mass: 0.50..0.90 means that at 533ms the short lobes are out at vT 0.9+
+      // while the long ones are barely past half, still eroding on the early
+      // part of their own curve, and still solid. Stage attribution on the
+      // pinned blast puts 44.5 of the 66.1 points of far-machine occlusion at
+      // that age on these shells and nothing else in the detonation.
+      //
+      // Narrowed to 0.46..0.74, which is a shorter tail rather than fewer or
+      // smaller lobes -- the element-count cut is on the record above as tried,
+      // measured and reverted, and this is not that. The cluster still dies at
+      // different times, it just stops having a third of itself lagging the
+      // rest by four hundred milliseconds.
       this.fireballs.spawn(
         x + ca * rad, y + ea * rad * 0.8 + R * 0.04, z + sa * rad, null,
-        t + i * 0.016, 0.50 + vfxRng.f() * 0.40, R * 0.09, R * (0.30 + vfxRng.f() * 0.18),
+        t + i * 0.016, 0.46 + vfxRng.f() * 0.28, R * 0.09, R * (0.30 + vfxRng.f() * 0.18),
         hr, hg, hb, 1,
         ca * sp, ea * sp + R * 0.50, sa * sp
       );
