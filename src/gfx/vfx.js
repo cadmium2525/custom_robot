@@ -2089,7 +2089,48 @@ export class VFX {
       // and at 500ms are three different shapes. Thrown a little less far, and
       // grown a little larger, than it was: the lobes have to stay overlapped
       // enough to share one silhouette.
-      const sp = R * (1.1 + vfxRng.f() * 1.6);
+      //
+      // ROUND 20 — THE THROW IS THE OCCLUSION, AND IT IS NOT THE SIZE. What
+      // clause F's second sub-clause has been failing on is not how big the
+      // fireball is, it is how far the lobes are FLUNG PAST IT. The geometry
+      // was never written down before: reconstructed from the capture's own
+      // metadata, the "far machine" in every clause F table is 3.7-4.0 m from
+      // the blast (it is the machine that was HIT; the label is distance from
+      // the CAMERA, and the big "near machine" is 10.2 m away). It sits at
+      // 0.67-0.85 of the blast's own projected radius, inside its disc.
+      //
+      // At 333 ms a lobe's centre is at rad + sp * (1 - e^-2.6t)/2.6, i.e. out
+      // to 1.09 + 2.05 = 3.14 m, with its own body on top of that. The lobes
+      // were therefore being thrown THROUGH the target and parking there,
+      // while the core -- which stays put -- was measured at 0.0 points of the
+      // 333 ms figure by --kill firecore. Cutting the launch speed by about a
+      // third pulls the outermost centre back to 2.4 m and leaves everything
+      // else alone: the count is unchanged (the element-count cut is on the
+      // record above as tried, measured and reverted, and this is not that),
+      // the radii are unchanged, the erosion is unchanged, the heat ramp is
+      // unchanged, and the blast's own footprint does not move.
+      //
+      // Measured on the pinned blast, shots/_r17-blast.mjs + _r17-edge.mjs,
+      // seven ages, far-machine alteration against the clause's < 25%, both
+      // columns as-shipped on one commit (mine 0904a9f1ee52 against HEAD's
+      // 9f1f30b943dc, which differ by this line only):
+      //
+      //   age            1     7    14    20    26    32    48
+      //   ms            17   117   233   333   433   533   800
+      //   before       1.4  19.9  47.1  28.4  52.2   6.0   7.0
+      //   after        1.4  20.0  44.5  11.7  11.9   0.5   7.0
+      //
+      // 333 ms 28.4 -> 11.7 and 433 ms 52.2 -> 11.9, both from FAIL to MET,
+      // with 17 / 117 / 800 ms unmoved and 533 ms improved. 233 ms is the age
+      // this does not reach and it is not fire: with the blast light deleted
+      // outright that age reads 11.1%, so what is left there is the light.
+      //
+      // THE BLAST IS NOT SMALLER. The effect's own coverage of the frame, same
+      // captures, runs 15.2 / 19.0 / 17.8 / 15.1 / 14.1 / 12.7 / 6.7 against
+      // 15.2 / 19.0 / 18.0 / 15.4 / 14.5 / 12.8 / 6.7 -- inside 0.4 points at
+      // every age -- and the 10-90 boundary is inside 1.25 px at every age.
+      // This moves where the mass goes, not how much of it there is.
+      const sp = R * (0.72 + vfxRng.f() * 1.05);
       // ROUND 19 — THE LIFETIME SPREAD IS A COVERAGE DEFECT, NOT ONLY A COLOUR
       // ONE. The heat ramp was already taken off per-lobe lifetime fraction and
       // put on one shared curve in seconds, because "the mass never agrees with
