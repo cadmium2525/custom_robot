@@ -66,6 +66,8 @@ const ARENA = flag('arena', 'grid');
 // run measures a different fight and nothing can be compared to anything.
 const SEED = Number(flag('seed', 1234567));
 const KEEP = !!flag('keep');
+/** --bloom X: composite bloomStrength for this capture only. See the block below. */
+const BLOOM = flag('bloom', null) === null ? null : Number(flag('bloom', null));
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /**
@@ -392,6 +394,40 @@ const bar = (pct, width = 28) => {
     await page.evaluate((i) => { const el = document.getElementById(i); if (el) el.style.display = 'none'; }, id);
   }
   await page.waitForTimeout(700);
+
+  /**
+   * `--bloom X` sets the composite's bloomStrength for this capture only.
+   *
+   * Clause B's three arena figures have only ever been measured with the post
+   * chain's glow on. `0dbaa12` showed bloom is 30.4 of the 68.0 points of the
+   * opponent's outline collapse DURING A DETONATION and said in terms that the
+   * still frame had not been re-read without it. This is the knob that lets it
+   * be, on the meter clause B is actually scored on.
+   *
+   * Diagnostic only: nothing is written to src and the uniform is restored by
+   * the next settings change. It is safe to set here because the engine's frame
+   * loop calls onRender whether or not the sim is paused, so the pinned frame is
+   * re-composited during the wait, and because this capture turns the automatic
+   * tier switcher off so nothing re-applies the tier underneath it.
+   *
+   * IT REFUSES rather than reporting a number from an unchanged composite.
+   */
+  if (BLOOM !== null) {
+    const got = await page.evaluate((b) => {
+      const u = window.__game.engine.postfx && window.__game.engine.postfx.uniforms;
+      if (!u || !u.bloomStrength) return null;
+      const was = u.bloomStrength.value;
+      u.bloomStrength.value = Number(b);
+      return was;
+    }, BLOOM);
+    if (got === null) throw new Error('--bloom: no bloomStrength uniform on this build — the diagnostic did nothing');
+    await page.waitForTimeout(500);
+    const held = await page.evaluate(() => window.__game.engine.postfx.uniforms.bloomStrength.value);
+    if (Math.abs(held - Number(BLOOM)) > 1e-6) {
+      throw new Error(`--bloom: set ${BLOOM} but the composite holds ${held} — something re-applied the tier`);
+    }
+    console.log(`  bloomStrength ${got} -> ${held}  (diagnostic, not written to src)`);
+  }
 
   const N = await page.screenshot({ timeout: 180000 });
   await page.evaluate(`(${STENCIL_FN})(true)`);
