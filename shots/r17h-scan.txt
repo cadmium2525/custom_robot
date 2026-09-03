@@ -1,0 +1,19 @@
+tier=HIGH particleBudget=1400 seed=1234567 arena=grid vp=1600x900
+  blast @tick 264 R=2.80 kind=2 screen=(555,746) p1=(814,777) p2=(784,207) QUALIFIES
+  blast @tick 265 R=2.60 kind=1 screen=(243,461) p1=(814,777) p2=(784,207) QUALIFIES
+  blast @tick 311 R=2.80 kind=2 screen=(868,240) p1=(813,827) p2=(806,146) QUALIFIES
+  blast @tick 400 R=3.40 kind=1 screen=(995,433) p1=(981,690) p2=(720,245) QUALIFIES
+  blast @tick 449 R=2.60 kind=1 screen=(220,821) p1=(992,935) p2=(755,256) skip
+  blast @tick 455 R=2.80 kind=2 screen=(432,908) p1=(954,801) p2=(767,182) QUALIFIES
+  blast @tick 528 R=2.80 kind=2 screen=(871,197) p1=(960,1125) p2=(763,137) skip
+  blast @tick 616 R=2.80 kind=2 screen=(711,727) p1=(908,1068) p2=(774,115) skip
+  blast @tick 652 R=2.80 kind=2 screen=(955,179) p1=(629,1743) p2=(839,57) skip
+  blast @tick 838 R=2.80 kind=2 screen=(871,532) p1=(923,635) p2=(677,264) QUALIFIES
+  blast @tick 896 R=2.60 kind=1 screen=(773,200) p1=(712,804) p2=(887,91) QUALIFIES
+  blast @tick 956 R=2.60 kind=1 screen=(605,461) p1=(821,623) p2=(751,370) QUALIFIES
+  blast @tick 963 R=2.80 kind=2 screen=(956,367) p1=(703,1066) p2=(795,299) skip
+  blast @tick 1098 R=2.60 kind=1 screen=(549,679) p1=(932,515) p2=(754,427) QUALIFIES
+  blast @tick 1105 R=2.80 kind=2 screen=(698,702) p1=(932,515) p2=(754,427) QUALIFIES
+  blast @tick 1111 R=3.40 kind=1 screen=(566,585) p1=(904,652) p2=(819,382) QUALIFIES
+  blast @tick 1195 R=3.40 kind=1 screen=(924,372) p1=(947,707) p2=(750,319) QUALIFIES
+scanned 1200 ticks, 17 blasts
