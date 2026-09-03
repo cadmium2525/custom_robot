@@ -1972,6 +1972,51 @@ export class VFX {
     // was thrown and nothing stayed behind to bridge them.
     this.fireballs.spawn(x, y + R * 0.04, z, null, t, 0.72, R * 0.22, R * 0.72,
       hr, hg, hb, 1, 0, R * 0.16, 0);
+    /**
+     * -----------------------------------------------------------------------
+     * THE COMPOSITION CUT: TRIED, MEASURED, REVERTED. FOURTH HYPOTHESIS DOWN.
+     * -----------------------------------------------------------------------
+     * SPEC-CRV2 clause F asks for effects that are "large, FEW and hard-edged",
+     * and round 18's verdict named recomposing the detonation from a handful of
+     * large elements as the single piece of work that would move the card most.
+     * It was done and it does not work. Recorded here so nobody spends the
+     * round again.
+     *
+     * Counts were cut roughly to a third — billows 7 -> 4, smoke shells 3 -> 2,
+     * dust 18 -> 5, plume 16 -> 5, sparks 72 -> 14, chunks 12 -> 6, 128 elements
+     * down to about 37 — with the survivors grown (lobe radius 0.30-0.48 R ->
+     * 0.44-0.68 R) and thrown less far so they still shared one silhouette.
+     * Measured on the same pinned blast by shots/_r17-edge.mjs:
+     *
+     *     age        1     4     7    12    20    32    48    72
+     *     before  31.75  30.0  23.0  28.8  25.5  22.0  25.5  28.8
+     *     after   31.75  29.3  21.8  30.0  29.0  28.3   2.5  29.3
+     *
+     * **The 10-90 boundary does not move**, exactly as it did not move for the
+     * shell-alpha hypothesis before it. The single figure that did move is the
+     * regression: coverage at 800ms fell from 6.7% of frame to 0.4%, which is
+     * this file's own documented failure — "there was no late blast left to be
+     * muddy because there was no late blast".
+     *
+     * WHAT THE FOUR FAILED HYPOTHESES POINT AT. Shell alpha, the post chain,
+     * and now element count have each been changed hard and none moved the
+     * number. What is left is the thing none of them touched: the radial
+     * TEMPERATURE gradient. A lobe is white at the centre, yellow and orange
+     * around it, deep red at the rim and soot at the silhouette, deliberately,
+     * at every age — see the heat ramp in SHELL_FRAG. That gradient IS the soft
+     * boundary the meter measures, and it is not an accident or a soft-particle
+     * artifact; it is the thing that makes the mass read as burning gas rather
+     * than as a decal.
+     *
+     * So clause F and this effect's art direction are in direct conflict, and
+     * that is a judgement the review has to make rather than a defect a builder
+     * should quietly fix. The spec's own warning cuts both ways here: "we are
+     * not obliged to inherit the limitation, only to beat the result." Deleting
+     * the temperature field to pass a clause derived from hardware that could
+     * not draw one is exactly the regression that warning describes — but so is
+     * carrying a FAIL forever because the fix is unpalatable. **Whoever takes
+     * this next should get a ruling on that before writing any code.**
+     */
     const billows = Math.round((s > 0.5 ? 7 : 4));
     for (let i = 0; i < billows; i++) {
       const a = (i / billows) * 6.283 + vfxRng.f() * 0.8;
