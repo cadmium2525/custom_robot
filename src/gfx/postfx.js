@@ -269,7 +269,35 @@ class Pass {
   }
 }
 
-const MIPS = [3, 4, 5, 6];   // per bloomQuality tier
+/**
+ * Bloom pyramid depth per `bloomQuality` tier — i.e. HOW FAR a seeded pixel's
+ * glow spreads. RULING 22 decided this is the knob, and it decided it against
+ * the two obvious alternatives.
+ *
+ * `SPEC-CRV2` platform fact P6: the N64 has no framebuffer post-processing, so
+ * nothing glows outside its own geometry. It is the only platform fact this
+ * renderer contradicts by design, and the contradiction is measurable — with the
+ * composite's bloom at zero the opponent's coverage at 117 ms falls from 100.0%
+ * to 59.3% on the render meter, which is the largest single contribution to the
+ * worst cell on the card.
+ *
+ * WHY NOT THE THRESHOLD. P6 is a statement about the SUPPORT of the glow, and
+ * `threshold`/`knee` decide only WHICH pixels seed it. Raising the threshold
+ * removes the dimmest emitters — whose glow is already nearest their own
+ * geometry — and leaves the brightest ones spreading exactly as far. It answers
+ * a different question.
+ *
+ * WHY NOT `bloomStrength`. That is HOW MUCH is added, not how far, and `--bloom
+ * 0` is a ceiling measurement, never a ship setting: deleting the chain because
+ * it fails a clause derived from hardware that could not run one is the move
+ * RULING 16 refused for the temperature gradient. Bloom's near field is the
+ * look; its far field is the defect; they have different knobs and this is the
+ * one that separates them.
+ *
+ * Each mip halves the resolution, so dropping one roughly halves the radius the
+ * glow reaches while leaving the near field — the part that is the look — intact.
+ */
+const MIPS = [2, 3, 3, 4];   // per bloomQuality tier
 
 export class PostFX {
   constructor(renderer, settings, ditherTex) {
