@@ -2020,7 +2020,7 @@ export class VFX {
 
   /**
    * THE COMPOSITION RULE FOR OVERLAPPING DETONATIONS — how much of this
-   * detonation's core is already burning in the frame before it is drawn.
+   * detonation's sightline is already burning before it is drawn.
    *
    * -----------------------------------------------------------------------
    * WHY THERE IS A RULE HERE AT ALL
@@ -2030,7 +2030,7 @@ export class VFX {
    * within 117 ms of each other, `1098/1105/1111` is a triple inside 217 ms,
    * and every close pair crosses weapon kind — a bomb and a pod, never two of
    * the same. Two detonations 100 ms apart therefore ADD on one target, and the
-   * frame this project has spent six rounds on is one of them.
+   * one cell clause F sub-clause 2 fails is one of them.
    *
    * Every previous attempt at that cell was a TUNING — the shell alpha, the
    * element count, the erosion exponent, the flash core's radius — and each one
@@ -2042,29 +2042,47 @@ export class VFX {
    * A rule cannot charge that price, because it does not fire on a lone
    * detonation. The first blast of a burst sees an empty frame, `occ` is 0, and
    * every number it draws is the number it drew before this file was touched.
-   * Only the SECOND blast into an occupied sightline yields, and it yields only
+   * Only a SECOND blast into an occupied sightline yields, and it yields only
    * the part of itself that is redundant.
    *
    * -----------------------------------------------------------------------
-   * WHAT "OCCUPIED" MEANS, IN THREE TERMS THAT ALL HAVE TO AGREE
+   * THE SUBJECT IS THE MACHINE, AND THAT IS A MEASUREMENT, NOT A PREFERENCE
    * -----------------------------------------------------------------------
-   *   lap     the two detonations' own discs overlap IN THE FRAME. Clause F is
-   *           a statement about the frame — "the effects live in the frame do
-   *           not, together, swallow the opponent" — so composition is judged
-   *           where the viewer judges it. The pinned blast and the one 100 ms
-   *           after it are 2.6 m apart in depth and read as one mass from the
-   *           camera; a world-space overlap test scores that pair at almost
-   *           nothing and would not fire on the very frame it is for.
-   *   shared  both discs claim the same MACHINE. This is the gate, and it is
-   *           what keeps the rule off two detonations that merely happen to
-   *           line up across an empty deck: nothing is being swallowed there,
-   *           so nothing yields.
-   *   rem     the earlier fire is still burning. A cluster core lives 0.72 s;
-   *           past that there is nothing there to be redundant with.
+   * This was first written as an overlap between the two DETONATIONS: a new
+   * fireball born inside a still-burning one. The pinned pair says that is the
+   * wrong subject. In the frame, at the moment the second one is born:
    *
-   * `occ = lap * shared * rem`, worst case over every live detonation. All
-   * three are continuous, so the rule has no cliff a player could see and no
-   * threshold anybody has to defend.
+   *   blast-to-blast separation   0.649     radii 0.556 and 0.564
+   *   the new disc's area inside the old one         30.1%
+   *   the MACHINE's disc inside the older blast      85.5%
+   *   the MACHINE's disc inside the newer blast      79.0%
+   *
+   * The two detonations are 1.16 radii apart — they are not on top of each
+   * other, and a rule keyed on their mutual overlap scores this pair at 0.29
+   * and would barely fire on the very frame it exists for. What they share is
+   * the TARGET: they stand on either side of one machine and each of them
+   * engulfs it. Clause F sub-clause 2 is a sentence about a machine — "the
+   * effects do not, together, swallow the opponent" — so the rule's subject is
+   * the machine, and the critic's own words for it are the right ones: a budget
+   * per target, and a second blast entering an occupied sightline yields
+   * instead of adding.
+   *
+   * -----------------------------------------------------------------------
+   * THE TWO TERMS
+   * -----------------------------------------------------------------------
+   *   shared  how deeply a machine's disc sits inside BOTH blasts' discs, in
+   *           the frame, worst of the two. 1.0 is a machine wholly swallowed by
+   *           each; 0 is a machine outside either. Frame, not world: clause F
+   *           is a statement about the frame, and the pinned pair is 2.6 m
+   *           apart in DEPTH, which the camera flattens and the clause counts.
+   *   rem     the earlier fire is still burning, on the cluster core's own
+   *           0.72 s lifetime. Past that there is nothing to be redundant with.
+   *
+   * `occ = shared * rem`, worst case over every live detonation. Both terms are
+   * continuous, so the rule has no cliff a player could see and no threshold
+   * anybody has to defend. It also self-limits: a machine has to be within
+   * about a blast radius of BOTH detonations for `shared` to be non-zero at
+   * all, which is the definition of the burst frame and nothing else.
    *
    * The RADIUS used for a detonation's disc is the event's own R, not the
    * current radius of any one shell. R is what `_detonate` scales every stage
@@ -2083,28 +2101,22 @@ export class VFX {
       const age = t - d.birth;
       if (!(age > 0) || age >= DET_FIRE_LIFE) continue;
       const rem = 1 - age / DET_FIRE_LIFE;
+      if (rem <= worst) continue;
       if (!this._disc(d.x, d.y, d.z, d.R, _dB)) continue;
-      const sep = Math.hypot(_dA.u - _dB.u, _dA.v - _dB.v);
-      const lap = clamp((_dA.r + _dB.r - sep) / (2 * Math.min(_dA.r, _dB.r)), 0, 1);
-      if (lap <= 0) continue;
-      let shared = 0;
       for (let m = 0; m < robos.length; m++) {
         const p = robos[m] && robos[m].pos;
         if (!p) continue;
         // A machine is a metre-radius sphere at chest height for this purpose.
-        // The stencil it actually casts is 50x94 px on the pinned frame; the
-        // test below only has to say WHICH machine is under both discs, and a
-        // sphere says that without the model or a render.
+        // The stencil it actually casts is 50x94 px on the pinned frame; this
+        // test only has to say how far inside each blast that machine sits, and
+        // a sphere says it without the model, a render or a stencil pass.
         if (!this._disc(p.x, p.y + 0.9, p.z, MACH_R, _dM)) continue;
         const inNew = clamp((_dA.r + _dM.r - Math.hypot(_dA.u - _dM.u, _dA.v - _dM.v)) / (2 * _dM.r), 0, 1);
         if (inNew <= 0) continue;
         const inOld = clamp((_dB.r + _dM.r - Math.hypot(_dB.u - _dM.u, _dB.v - _dM.v)) / (2 * _dM.r), 0, 1);
-        const both = Math.min(inNew, inOld);
-        if (both > shared) shared = both;
+        const occ = Math.min(inNew, inOld) * rem;
+        if (occ > worst) worst = occ;
       }
-      if (shared <= 0) continue;
-      const occ = lap * shared * rem;
-      if (occ > worst) worst = occ;
     }
     return clamp(worst, 0, 1);
   }
