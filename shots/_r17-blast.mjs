@@ -155,6 +155,19 @@ const AGES = String(flag('ages', '2,7,14,28,48')).split(',').map(Number);
  *   fireshell   fireball-kind shells in `vfx.fireballs` (flash core + cluster)
  *   firecore    the UNTHROWN fire shells only: the flash and the cluster core
  *   firelobes   the THROWN fire shells only: the seven billows
+ *   flashcore   ROUND 29. The flash's own white-hot ball ALONE — stage 1's
+ *               `fireballs.spawn(..., 0.075, R*0.30, R*0.52, ...)`, which is
+ *               the one fire shell spawned with kind 0. `firecore` kills it
+ *               together with the cluster core and so cannot say which of the
+ *               two is standing on the opponent; at 117 ms they are 75 ms and
+ *               17 ms old respectively and they are not the same object.
+ *   latefire    ROUND 29, and `latelight`'s missing other half. Only the FIRE
+ *               shells born after the pinned blast. `latelight` separates a
+ *               second detonation's LIGHT from the pin's; nothing separated its
+ *               FIRE, so a covering figure could not say which detonation was
+ *               doing the covering. Both are needed to obey the standing rule
+ *               of RULING 23 — a figure names the layer, not the emitter,
+ *               unless a kill column isolates that emitter in the same bundle.
  *   smokeshell  smoke-kind shells in `vfx.fireballs` (stage 5, the three volumes)
  *   light       every live blast point light, in both passes
  *   latelight   ROUND 21. Only the point lights born AFTER the pinned blast.
@@ -176,7 +189,7 @@ const AGES = String(flag('ages', '2,7,14,28,48')).split(',').map(Number);
 const KILL = flag('kill', null);
 const KILL_LIST = KILL === null ? [] : String(KILL).split(',').map((s) => s.trim()).filter(Boolean);
 const KILL_NODES = ['flares', 'shockwaves', 'sparks', 'energy', 'decals', 'trails', 'particles', 'light', 'latelight'];
-const KILL_KINDS = { fireshell: 0, smokeshell: 1, firecore: 2, firelobes: 3 };
+const KILL_KINDS = { fireshell: 0, smokeshell: 1, firecore: 2, firelobes: 3, flashcore: 4, latefire: 5 };
 /** Stages that actually matched something, at any age. See the guard below. */
 const KILL_SEEN = new Set();
 for (const k of KILL_LIST) {
@@ -487,6 +500,15 @@ const KILL_FN = `(names, pinT) => {
     const wantSmoke = n === 'smokeshell';
     const coreOnly = n === 'firecore';
     const lobesOnly = n === 'firelobes';
+    // ROUND 29. Two finer knives on the same pool, both needed because the
+    // 117 ms cell turned out to be a SECOND detonation's flash standing on the
+    // machine and 'firecore' can say neither WHICH core nor WHOSE.
+    //   flashcore  kind 0 exactly -- stage 1's white-hot ball, nothing else in
+    //              _detonate spawns a fire shell with kind 0
+    //   latefire   fire shells whose birth is later than the pin, the exact
+    //              analogue of 'latelight' on the mass instead of the light
+    const flashOnly = n === 'flashcore';
+    const lateOnly = n === 'latefire';
     const p = f.fireballs;
     // Census first. A kill that matches nothing has to be able to say what WAS
     // in the pool, or the refusal is as uninformative as the zero it replaces.
@@ -504,7 +526,12 @@ const KILL_FN = `(names, pinT) => {
       const i4 = i * 4;
       if (!(p.life[i4 + 1] > 0)) continue;
       const isSmoke = p.tint[i4 + 3] > 1.5;
-      if (coreOnly || lobesOnly) {
+      if (flashOnly) {
+        if (isSmoke || p.tint[i4 + 3] > 0.5) continue;
+      } else if (lateOnly) {
+        if (isSmoke) continue;
+        if (!(p.life[i4] > pinT + 0.02)) continue;
+      } else if (coreOnly || lobesOnly) {
         if (isSmoke) continue;
         const thrown = Math.abs(p.motion[i4]) > 1e-4 || Math.abs(p.motion[i4 + 2]) > 1e-4;
         if (thrown !== lobesOnly) continue;

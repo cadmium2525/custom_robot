@@ -2022,6 +2022,61 @@ export class VFX {
     _v.set(x, y, z);
     this.flares.spawn(x, y, z, this._faceCamera(_v), t, 0.050,
       R * 0.85, R * 1.30, 6.6, 5.7, 4.6);
+    //
+    // -----------------------------------------------------------------------
+    // ROUND 29 — THE FLASH CORE'S RADIUS: TRIED, MEASURED, REVERTED. FIFTH
+    // HYPOTHESIS DOWN, AND THE FIRST ONE AIMED AT THE CORE.
+    // -----------------------------------------------------------------------
+    // 0562782 reconstructed where the LOBES go and closed 333 and 433 ms with
+    // it. Nobody had done the same for the CORE, and the critic had filed twice
+    // that the opponent stands inside the fireball's disc. Written down here at
+    // last, in R, over the 75 ms this shell is alive (fireball ease 2.2):
+    //
+    //   ms            0     17     33     75
+    //   flash core  0.30   0.395  0.457  0.52
+    //   cluster     0.22   0.245  0.269  0.327
+    //
+    // At every instant of its life the flash ball is 1.4 to 1.6 times the
+    // radius of the fireball it is supposed to be the white-hot middle of. It
+    // is also, alone in the detonation, SMOOTH: SHELL_FRAG's vTint.w < 0.5
+    // branch replaces the turbulence erosion with dens = smoothstep(0.02, 0.50,
+    // rim), a ramp across the whole ball, and pins heat at 1.32 so every pixel
+    // lands past C_WHITE. A saturated unbroken disc is the largest bloom source
+    // in the frame as well as its most opaque object.
+    //
+    // That is a real description and it does not survive being acted on.
+    // Pulled inside the cluster core's own curve at every instant of its life
+    // (R*0.19 -> R*0.30, which runs 0.19 / 0.237 / 0.270 / 0.30 against the
+    // cluster's 0.220 / 0.245 / 0.269 / 0.327), measured on the pinned blast by
+    // shots/_r25-cover.mjs -- coverage as a RENDER, fault 28's fix, L>25:
+    //
+    //   ms            17    117    233    333    433    533    800
+    //   before       0.1  100.0   11.4    6.1   12.7    0.3    5.8
+    //   after        0.0   73.2   11.4    6.1   12.7    0.3    5.8
+    //
+    // 26.8 points off the worst cell on the card, nothing else moved by a tenth
+    // -- and it takes essentially ALL of that element's available gain, because
+    // killing the flash core outright reads 73.1. The cell still FAILS at 73.2,
+    // and the price is the regression 0562782's own acceptance test exists to
+    // catch. The effect's own footprint, same meter, whole frame, L>25:
+    //
+    //   ms            17    117    233    333    433    533    800
+    //   before     39693  65887  72100  97214 106322  71202  49808  px
+    //   after      23877  48622  72100  97214 106322  71202  49808  px
+    //
+    // MINUS 39.8% AT THE FLASH. In frame terms 2.76% -> 1.66% at 17 ms and
+    // 4.58% -> 3.38% at 117 ms, against an acceptance test of 0.4 points, and
+    // the stills say the same thing the number does: shots/r29base-a01.png is a
+    // hard white detonation and shots/r29fc-a01.png is an orange wisp. The
+    // rayed card does NOT carry the flash on its own -- this ball is 40% of
+    // what the first frame of a blast is, which is the claim the paragraph
+    // above makes and this is the measurement of it.
+    //
+    // So it is reverted, on RULING 16's rule: a change that buys half a clause
+    // at the price of the thing the clause is about is refused, and this one
+    // does not even buy half -- 73.2 is a FAIL. The cell it was aimed at is
+    // OVER-DETERMINED and no element of the detonation owns it; see REVIEW2.md
+    // round 29 for the six kill columns that say so.
     this.fireballs.spawn(x, y, z, null, t, 0.075, R * 0.30, R * 0.52,
       1.0, 0.96, 0.90, 0);
 
