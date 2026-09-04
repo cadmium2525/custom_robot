@@ -136,6 +136,8 @@ const TICKSEL = flag('tick', null) == null ? null : Number(flag('tick'));
 const VW = Number(flag('vw', 1600));
 const VH = Number(flag('vh', 900));
 const LIST = !!flag('list');
+/** Walk the ages and log the geometry, writing no PNG. See the pre-flight below. */
+const NOSNAP = !!flag('nosnap');
 const AGES = String(flag('ages', '2,7,14,28,48')).split(',').map(Number);
 /**
  * --kill a,b,c   ATTRIBUTION. Suppress named stages of the detonation in BOTH
@@ -276,6 +278,21 @@ const INSTALL_FN = `(cfg) => {
         R(TICK, 1, g.engine.clock.elapsed);
       }
       return { tick: this.tick, blasts: this.blasts.length, phase: g.world ? g.world.phase : -1 };
+    },
+    /**
+     * ROUND 34 — THE COMPOSITION RULE'S OWN STRENGTH, READ OFF THE LIVE PAGE.
+     *
+     * _recordDet keeps occ on every detonation for exactly this: the rule's
+     * strength is a number the renderer computes and nothing consumes, so a
+     * search for a pin where the rule FIRES does not have to predict it from a
+     * listing. Absent on a build without the rule, where it returns null and
+     * the column prints a dash rather than a zero -- a zero there would read as
+     * "the rule declined" when the truth is "there is no rule".
+     */
+    dets() {
+      const v = g.view && g.view.vfx;
+      if (!v || !v._dets) return null;
+      return v._dets.map((d) => ({ birth: d.birth, occ: d.occ, R: d.R }));
     },
     /** Where the blast centre and both machines land in CSS pixels. */
     project(p) {
@@ -778,12 +795,24 @@ for (let done = 0; done < SCAN; done += 30) {
       (pr.blast.rpx + far.rpx - far.sep) / (2 * far.rpx)));
     const dt = lastTick === null ? null : b.tick - lastTick;
     lastTick = b.tick;
+    // The rule's own strength at this detonation, matched to it by birth time.
+    // On a build without the rule there is no ring at all and this prints '-'.
+    const dets = await page.evaluate(() => window.__blast.dets());
+    let rec = null;
+    if (dets) {
+      for (const d of dets) {
+        if (d.birth < 0) continue;
+        if (Math.abs(d.birth - b.t) > 0.05) continue;
+        if (!rec || Math.abs(d.birth - b.t) < Math.abs(rec.birth - b.t)) rec = d;
+      }
+    }
     say(`  blast @tick ${b.tick} R=${b.radius.toFixed(2)} kind=${b.kind} ` +
         `screen=(${pr.blast.x.toFixed(0)},${pr.blast.y.toFixed(0)}) ` +
         `d=${pr.blast.dist.toFixed(1)}m rpx=${pr.blast.rpx.toFixed(0)} ` +
         `p1=(${pr.robo0.x.toFixed(0)},${pr.robo0.y.toFixed(0)}) p2=(${pr.robo1.x.toFixed(0)},${pr.robo1.y.toFixed(0)}) ` +
         `far=${farKey === 'robo1' ? 'p2' : 'p1'} fd=${far.dist.toFixed(1)}m fsep=${far.sep.toFixed(0)} ` +
         `frpx=${far.rpx.toFixed(0)} in=${inBlast.toFixed(2)} dt=${dt === null ? '-' : dt} ` +
+        `occ=${dets === null ? '-' : rec ? rec.occ.toFixed(2) : 'none'} ` +
         `${ok ? 'QUALIFIES' : 'skip'}`);
     if (ok && !chosen) {
       // --tick names the blast outright, which is the form a finding should be
@@ -841,6 +870,28 @@ for (const age of AGES) {
     for (const k of KILL_LIST) if (hits[k]) KILL_SEEN.add(k);
   }
   const pad = String(age).padStart(2, '0');
+  // ROUND 34 — THE PRE-FLIGHT. --nosnap walks the pin's ages and logs the
+  // geometry without writing a single PNG. A capture costs half an hour and
+  // `_r25-cover.mjs` refuses any age whose stencil is not exactly two machine
+  // boxes, so the two things worth knowing before spending one are whether
+  // both machines stay in frame across the whole age window and whether the
+  // composition rule fires inside it. Both are readable here for the price of
+  // a scan.
+  if (NOSNAP) {
+    const pr0 = await page.evaluate((p) => window.__blast.project(p), chosen);
+    const dets0 = await page.evaluate(() => window.__blast.dets());
+    const live = dets0 ? dets0.filter((d) => d.birth >= 0 && d.birth > chosen.t - 0.75)
+      .map((d) => `${((d.birth - chosen.t) * 1000).toFixed(0)}ms occ=${d.occ.toFixed(2)}`) : ['-'];
+    const inFrame = (q) => q.x > 0 && q.x < VW && q.y > 0 && q.y < VH && q.z < 1;
+    say(`  age ${age}t (${Math.round(age * 1000 / 60)}ms)  ` +
+        `p1=(${pr0.robo0.x.toFixed(0)},${pr0.robo0.y.toFixed(0)})${inFrame(pr0.robo0) ? '' : ' OFF'} ` +
+        `p2=(${pr0.robo1.x.toFixed(0)},${pr0.robo1.y.toFixed(0)})${inFrame(pr0.robo1) ? '' : ' OFF'} ` +
+        `far=${pr0.robo1.dist > pr0.robo0.dist ? 'p2' : 'p1'} ` +
+        `sep12=${Math.hypot(pr0.robo0.x - pr0.robo1.x, pr0.robo0.y - pr0.robo1.y).toFixed(0)}px ` +
+        `dets[${live.join('  ')}]`);
+    shots.push({ age, tick: target, ms: Math.round(age * 1000 / 60), pr: pr0, lights: [] });
+    continue;
+  }
   const ui = (show) => page.evaluate((s) => {
     for (const id of ['ui-layer', 'hud-layer', 'splash']) {
       const el = document.getElementById(id);
