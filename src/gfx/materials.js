@@ -472,7 +472,23 @@ const RIM_FRAG = /* glsl */`
   // The tell is NOT deleted: RULING 16 applies to it, and a hit that cannot be
   // seen is a worse defect than a hit that blooms. What changed is only which
   // axis it is built on.
-  gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.88, 0.34, 0.30), uHitFlash);
+  // FINISHED AS A CHROMA TELL. The previous value was half the job and the
+  // commit that landed it said so wrongly: "the punch is bought back in chroma"
+  // is FALSE, measured — the tell's chroma delta was 0.000. What vec3(0.88,
+  // 0.34, 0.30) actually did was stop the tell DESTROYING chroma (-0.113 -> 0),
+  // leaving a pure luminance tell at half amplitude, and it missed its own
+  // acceptance test: the opponent's pre-effect luma came out 174.5 against a
+  // stated 150.
+  //
+  // 0.34/0.30 sat near the machine's own paint chroma, so mixing toward it
+  // changed the hue balance and nothing else. Green and blue now go far below
+  // it, which is what makes the pixel MORE chromatic than the armour it is
+  // painted over rather than equally so — and being chromatic is what lets the
+  // max channel come down to 0.62 while the tell stays obvious. Under 0.88
+  // (threshold minus knee) it still contributes exactly nothing to the bright
+  // pass, so the machine remains a non-source; the 0.26 of headroom bought by
+  // the saturation is spent on the luma the acceptance test asks for.
+  gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.62, 0.08, 0.05), uHitFlash);
 `;
 
 /**
