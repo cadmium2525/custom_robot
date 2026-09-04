@@ -9789,7 +9789,7 @@ Ruled out by measurement, not by argument:
 | **D** | machine median chroma > stage | **0.149 vs 0.129** | `_r16chroma.mjs`, mine, `shots/r34dump` | **MET** | — |
 | **E** | >= 50% of brightest 1% | grid **58.9**, orbital **66.5**, foundry **33.3** | `_salience.mjs`, mine, 3 arenas | **MET on grid and orbital, NOT MET on foundry** | — |
 | **F-1** | 10-90 < 10% of radius | 117 ms **30.25 px on 73 px = 41.4%** | `_r17-edge.mjs`, mine, `23dc643dceac` | **NOT MET — and 5.6 points better**, on the renderer | **renderer** |
-| **F-2** | < 25% of opponent covered | **0.0 / 60.2 / 10.6 / 5.9 / 12.7 / 0.2 / 5.1** | `_r25-cover.mjs`, mine | **NOT MET on 1 cell of 7 — and 39.8 points better**, on the renderer | **renderer** |
+| **F-2** | < 25% of opponent covered | tick 1195 **0.0 / 60.2 / 10.6 / 5.9 / 12.7 / 0.2 / 5.1**; **tick 956 100.0 / 20.3 / 100.0 / 100.0 / 81.2 / — / 100.0** | `_r25-cover.mjs`, mine, both pins | **NOT MET on 1 of 7 at the pin the card has used and on 5 of 7 at a pin nobody had captured.** See RULING 34 | **renderer on one pin; the clause's BASIS on the card** |
 | **G** | >= 36 rendered px | grid far machine **71 px** | `contour.mjs` box, mine | **MET** | — |
 | **H2** | no element ranks 1 in > 25% of cells | **2 / 24 = 8.3%** | `_salience.mjs --gate`, mine | **MET** | — |
 | **I-1** | legged sole gap < 1 rendered px | **7.3 px and 3.2 px** | `_r17ground.mjs`, mine | **NOT MET — first ever scored** | **instrument** |
