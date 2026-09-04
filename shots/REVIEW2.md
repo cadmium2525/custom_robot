@@ -10406,3 +10406,173 @@ from the register. **It is the first fault this document has ever withdrawn**, a
 is the way it should have been avoided: build the tree the figure was taken on, and switch the suspected
 cause off.
 
+
+## 2026-09-04 — Round 36, builder: **pin 956 fails on where the sim put the bomb, not on how any stage is drawn** — the opponent is nine metres BEHIND a blast it is never inside, and no sub-stage of that blast owns the cells
+
+Two questions were put, in order. Both are answered with measurements, and the answer to the second is
+a **negative result with a priced ceiling**, in the shape of `4af84c2`: I am proposing no change, and
+that is the finding rather than a shortfall.
+
+Everything below is `shots/_r25-cover.mjs`, the **RENDER** meter (fault 28's fix), **L>25** column,
+never the difference, on **one bundle throughout — `23dc643dceac`**, built into my own root
+`dist-r37-attrib` and served on :4396 with the hash verified against the served page. That bundle's
+pin-956 baseline is identical cell for cell to the OFF bundle `4af84c2` and `f9860f1` used
+(`shots/r34c-on-cover.txt` against `shots/r34c-off-cover.txt`), so their rows and mine are comparable
+as filed. **533 ms at pin 956 is never quoted at any age: the cover meter flags it at three machine
+boxes.** At pin 1195 every one of the eight ages segments to exactly two boxes and none is flagged.
+
+### 1. The geometry, and it cost no capture at all
+
+`shots/_r36-geom.mjs`, new. `_r17-blast.mjs` has been storing the pinned blast's projection and both
+machines' projections into every `-meta.json` since round 34, and **nothing had ever read them back**.
+
+| | pin 956 | pin 1195 |
+|---|---|---|
+| mass radius 1.5R | 3.90 m | 5.10 m |
+| opponent centre, as a fraction of the projected radius (`sep/R`) | **0.118 – 0.411** | **0.674 – 0.886** |
+| opponent's FAR EDGE, same units (`far/R`) | **0.291 – 0.546** | **0.879 – 1.048** |
+| 3-D blast-to-opponent distance in mass radii (`d3/M`) | **1.73 – 2.35** | **0.70 – 1.12** |
+| blast camera distance vs opponent's (`bd` vs `fd`) | 6.70–13.97 vs 15.58–20.69 | 14.49–15.94 vs 13.90–17.57 |
+| pinned light's distance to the NEAR machine | **2.65 m** | 10.79 m |
+| pinned light's lux on the opponent (arena key ≈ 3.2) | **0.03 – 0.07** | 0.36 – 4.02 |
+
+**The two pins are opposite cases, and the card has never said so.**
+
+- **At 1195 the opponent IS in the fire.** 3.3–5.0 m from a blast of mass radius 5.10 m; it sits at
+  0.67–0.89 of the projected radius, which is the critic's twice-filed 0.67–0.85 **confirmed**; and at
+  533/800 ms its far edge is *outside* the projected mass. It stands on the rim of a blast it is inside.
+- **At 956 the opponent is never inside the blast at any age** — 1.73 to 2.35 mass-radii away, never
+  within 6.7 m of the fire. What makes the cell 100.0 is that the blast is **between it and the
+  camera**: a 2.6 m detonation at 6.70 m projects to 445 px against the opponent's 49 px, so the
+  opponent's whole disc lies inside the **inner half** of the projected mass.
+
+**`d3` is checked, not trusted.** The capture's light census stores the pinned light's distance to each
+machine, and that light is spawned *at* the blast point — an independent measurement of the same
+quantity, out of a field nothing else reads. It agrees within **0.05 m at every age of pin 956** and
+0.28 m at 1195.
+
+**And at pin 956 the bomb went off on the NEAR machine** — 2.65 m from it, inside the 3.90 m mass —
+while the machine clause F scores as "the opponent" is 9.21 m behind it. Round 20's note in
+`src/gfx/vfx.js` records 1195's arrangement as though it were general ("the far machine … is the
+machine that was HIT"). At 956 it is the other way round. **Clause F sub-2 is scoring a machine that
+was neither hit nor engulfed.** That is a fact, not a ruling; RULING 38's new screen — `in >= 1.00 AND
+d < fd` — is already the right shape for it.
+
+### 2. What is standing on the opponent, before any kill was spent
+
+`shots/_r36-what.mjs`, new. It reads the same two files the cover meter reads, picks the opponent by the
+same rule, carries the same `nbox` guard, and reproduces the cover meter's L>25 and L>60 columns **to
+the digit** at all eight ages — which is the check that it is reading the same thing.
+
+    pin 956    ms      L>25   L>60 | Lmed  Lp90 |    R    G    B   warm
+               17     100.0   54.9 |   70   228 |  132  109  112   0.15
+              117      20.3   17.4 |  107   213 |  142  107   89   0.38
+              133      24.5   20.7 |   98   221 |  156  103   49   0.69
+              233     100.0  100.0 |  203   228 |  246  197    3   0.99
+              333     100.0   92.0 |  133   165 |  201  117    5   0.98
+              433      81.2   59.2 |   68   109 |  110   61   20   0.82
+              800     100.0    0.0 |   39    42 |   50   36   32   0.35
+
+**233, 333 and 433 ms are fire** — warm 0.99/0.98/0.82, blue channel 3, 5 and 20 of 255, and at 233 ms
+the median covering pixel is luminance **203**. **800 ms is a different defect**: near-neutral, median
+39, 90th percentile 42 — a veil four levels wide sitting just above the L>25 line, which is exactly what
+`L>25 100.0` with `L>60 0.0` is made of.
+
+**One thing this rules out with no capture.** The cover meter scores `-vfxonly.png`, which hides the
+arena and both machines and clears to black. A point light illuminates the arena and the machines.
+**It cannot be producing these cells**, independently of the census reading of 0.03–0.07 lux above.
+
+### 3. The attribution and the ceiling — five kill columns of mine, two of `4af84c2`'s
+
+    PIN 956                   17    117    133    233    333    433    800
+    (none)                 100.0   20.3   24.5  100.0  100.0   81.2  100.0
+    flares                 100.0   16.3   18.7  100.0  100.0   81.2  100.0
+    firecore               100.0   20.3   24.5  100.0   99.9   41.8  100.0
+    firelobes              100.0   15.0    9.3  100.0  100.0   78.2  100.0
+    fireshell              100.0   15.0    9.3    3.3    9.8   25.4  100.0
+    smokeshell             100.0   20.3   24.5  100.0  100.0   81.1    0.0
+    latecore   (4af84c2)   100.0   20.3   24.5  100.0  100.0   81.2  100.0
+    latefire   (4af84c2)   100.0   15.0    9.3  100.0  100.0   78.2  100.0
+
+    PIN 1195                  17    117    133    233    333    433    533    800
+    (none)                   0.0   60.2   55.1   10.6    5.9   12.7    0.2    5.1
+    fireshell                0.0   26.4   14.8    3.9    3.8    0.4    0.0    5.1
+
+1. **233 and 333 ms are the pinned blast's fire, and neither half owns them.** Killing every unthrown
+   fire shell moves 233 by 0.0 and 333 by 0.1; killing every thrown lobe moves both by 0.0; killing
+   **both** takes them to **3.3** and **9.8**. Over-determination, exactly as predicted by the geometry:
+   a 49 px disc inside a 416 px mass is still covered by whichever half is left. `latefire` is 0.0 at
+   both, so what the union removes is the **first** blast's fire.
+2. **433 ms is the only cell a single stage owns** — the cluster core, 81.2 → 41.8. Still a FAIL, and
+   the union only reaches 25.4, a FAIL by 0.4.
+3. **800 ms is the smoke shells, alone and completely: 100.0 → 0.0**, moving no other age by more than
+   0.1. The cleanest single-stage attribution on the card.
+4. **17 ms is not attributable, because there is nothing left to attribute:** at that age the effect
+   covers **1 440 000 px at L>25 — the entire 1600×900 frame**. 100% of the opponent is then arithmetic.
+5. **At pin 1195 deleting the whole fire still does not pass**: 60.2 → **26.4**, a FAIL by 1.4. That
+   reproduces `fea9d65`'s figure to the digit on an independently rebuilt tree.
+
+### 4. The ceiling PRICED — `0562782`'s acceptance test on the only lever that reaches the cells
+
+`shots/_r29-where.mjs`, the effect's own footprint, whole frame, L>25, A = baseline, B = `--kill
+fireshell`. The bar `0562782` set for itself is **0.4 points of frame**.
+
+    pin 956        17     117     133     233     333     433     800
+    A         1440000  124677  137258  132315  147012   98991   28750  px
+    B         1440000   82599   83549   37867   67487   44663   28750  px
+    of frame     0.00   -2.92   -3.73   -6.56   -5.52   -3.77    0.00  points
+
+    pin 1195       17     117     133     233     333     433     533     800
+    A           26604   41491   45894   65563   91981  100652   62248   49396  px
+    B           14444   20937   21275   21555   26543   38205   42229   49396  px
+    of frame    -0.84   -1.43   -1.71   -3.06   -4.54   -4.34   -1.39    0.00  points
+
+**Minus 6.56 points at 233 ms — sixteen times the bar, and 71% of the effect deleted at that age.**
+Pin 1195's A row reproduces `fea9d65`'s footprint numbers **exactly** at every shared age
+(26604 / 41491 / 65563 / 91981 / 100652 / 62248 / 49396), which is an instrument-health result this
+document has wanted for several rounds.
+
+### 5. Why no change is proposed
+
+- **The fire cells (233/333) have ceilings of 96.7 and 90.2 points and no partial version.** Core alone
+  and lobes alone are each worth 0.0. The only instrument that reaches them is deleting the fireball
+  wholesale, which is the element-count / flash-core class already on file as tried, measured and
+  reverted, at 16× the acceptance bar.
+- **The 800 ms cell has a ceiling of the whole cell** but the same mechanism: at 800 ms the smoke stands
+  **6.74 m in front of** an opponent 20.69 m away, and the two have converged to **25.6 px apart** on
+  screen. The available levers are size and opacity on the one stage whose previous size cut *is* the
+  documented 800 ms regression (128 → 37 elements, footprint 6.7% → 0.4% of frame).
+- **Grazing the threshold is not available.** The 800 ms veil is at median luminance **39** against a cut
+  of **25**; a small value trim would pass the meter without changing what a player sees, and RULING 36
+  has already said an outline is a step and not a brightness.
+
+**So the measured position is that pin 956 fails on where the sim put the bomb relative to the camera,
+not on how any stage is drawn** — the geometry says it from one side and the attribution confirms it
+from the other. **If a rank-1 item is wanted out of this round it is not a renderer change**: it is that
+clause F sub-2 currently scores foreground occlusion of a machine standing outside the effect, and the
+critic's `in >= 1.00 AND d < fd` screen is the instrument that separates the two cases.
+
+### 6. Correction on the record: `f9860f1` read its `occ` off the wrong row
+
+`f9860f1` justified pin 956 as the harder case on *"the rule's own internal indicator reads `occ = 0.54`
+there"*. Its own scan file, `shots/r34c-occhouse-scan.txt`, lines 14 and 15:
+
+    blast @tick 956 ... in=1.00 dt=60 occ=0.00 QUALIFIES
+    blast @tick 963 ... in=0.30 dt= 7 occ=0.54 skip
+
+**0.54 belongs to tick 963**, a different detonation seven ticks later which the scan marks `skip`. The
+pinned blast reads **occ = 0.00**, reproduced on my own bundle. The rule therefore does not fire on the
+pin at all, which is the plain explanation for ON and OFF being identical to the digit at every age.
+*"Its own trigger fires and it changes nothing"* should read *"its own trigger does not fire"*, and the
+claim that its `occ` probe is falsified is withdrawn — the probe was read off the wrong row. **Nothing
+is reopened**: `4af84c2`'s nil ceiling for the whole second-detonation family stands however the trigger
+reads.
+
+### 7. Instruments left behind
+
+- `shots/_r36-geom.mjs` — the pin's geometry out of any `-meta.json`, no capture spent, with `d3`
+  checked against the light census. Refuses rows from pre-round-34 captures rather than printing a
+  number it did not measure.
+- `shots/_r36-what.mjs` — the intensity and colour of the covering pixels, same subject rule and same
+  `nbox` guard as the cover meter, cross-checked against it to the digit.
+
