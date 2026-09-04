@@ -168,6 +168,16 @@ const AGES = String(flag('ages', '2,7,14,28,48')).split(',').map(Number);
  *               doing the covering. Both are needed to obey the standing rule
  *               of RULING 23 — a figure names the layer, not the emitter,
  *               unless a kill column isolates that emitter in the same bundle.
+ *   latecore    ROUND 32. `latefire` AND `firecore` at once: only the UNTHROWN
+ *               fire shells of a detonation born after the pin — the later
+ *               blast's flash ball and cluster core, and neither of its lobes
+ *               nor any of the pin's own fire. Round 29's attribution says the
+ *               fire on the opponent at 117 ms is cores, not lobes (killing
+ *               every lobe in the frame left the cell at 100.0), and that half
+ *               of what is there belongs to the second detonation. This is the
+ *               intersection of those two facts and therefore the exact
+ *               CEILING of any composition rule that only declines to re-light
+ *               a core where one is already burning.
  *   smokeshell  smoke-kind shells in `vfx.fireballs` (stage 5, the three volumes)
  *   light       every live blast point light, in both passes
  *   latelight   ROUND 21. Only the point lights born AFTER the pinned blast.
@@ -189,7 +199,9 @@ const AGES = String(flag('ages', '2,7,14,28,48')).split(',').map(Number);
 const KILL = flag('kill', null);
 const KILL_LIST = KILL === null ? [] : String(KILL).split(',').map((s) => s.trim()).filter(Boolean);
 const KILL_NODES = ['flares', 'shockwaves', 'sparks', 'energy', 'decals', 'trails', 'particles', 'light', 'latelight'];
-const KILL_KINDS = { fireshell: 0, smokeshell: 1, firecore: 2, firelobes: 3, flashcore: 4, latefire: 5 };
+const KILL_KINDS = {
+  fireshell: 0, smokeshell: 1, firecore: 2, firelobes: 3, flashcore: 4, latefire: 5, latecore: 6,
+};
 /** Stages that actually matched something, at any age. See the guard below. */
 const KILL_SEEN = new Set();
 for (const k of KILL_LIST) {
@@ -509,6 +521,10 @@ const KILL_FN = `(names, pinT) => {
     //              analogue of 'latelight' on the mass instead of the light
     const flashOnly = n === 'flashcore';
     const lateOnly = n === 'latefire';
+    // ROUND 32. 'latecore' is 'latefire' AND 'firecore' at once: born after the
+    // pin, and with no lateral throw. It is the exact footprint a composition
+    // rule that declines to re-light an occupied core would remove.
+    const lateCoreOnly = n === 'latecore';
     const p = f.fireballs;
     // Census first. A kill that matches nothing has to be able to say what WAS
     // in the pool, or the refusal is as uninformative as the zero it replaces.
@@ -531,6 +547,10 @@ const KILL_FN = `(names, pinT) => {
       } else if (lateOnly) {
         if (isSmoke) continue;
         if (!(p.life[i4] > pinT + 0.02)) continue;
+      } else if (lateCoreOnly) {
+        if (isSmoke) continue;
+        if (!(p.life[i4] > pinT + 0.02)) continue;
+        if (Math.abs(p.motion[i4]) > 1e-4 || Math.abs(p.motion[i4 + 2]) > 1e-4) continue;
       } else if (coreOnly || lobesOnly) {
         if (isSmoke) continue;
         const thrown = Math.abs(p.motion[i4]) > 1e-4 || Math.abs(p.motion[i4 + 2]) > 1e-4;

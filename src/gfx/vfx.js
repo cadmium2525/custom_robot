@@ -1441,6 +1441,22 @@ function hotNorm(hex, out) {
 
 const _rgb = [0, 0, 0];
 
+/**
+ * The composition rule's scratch discs and its two constants.
+ *
+ * `DET_FIRE_LIFE` is the cluster core's own lifetime in `_detonate` — the
+ * longest-lived fire shell a detonation spawns — so "still burning" is read off
+ * the thing that is actually still burning rather than off a number picked to
+ * make a rule fire. `MACH_R` is a machine as a sphere: it decides WHICH machine
+ * two discs share, not how much of it is covered, and one metre at chest height
+ * is the same proxy `_proximity` and the contact blob already work in.
+ */
+const _dA = { u: 0, v: 0, r: 0 };
+const _dB = { u: 0, v: 0, r: 0 };
+const _dM = { u: 0, v: 0, r: 0 };
+const DET_FIRE_LIFE = 0.72;
+const MACH_R = 1.0;
+
 export class VFX {
   constructor(scene, settings, camera, theme) {
     this.scene = scene;
@@ -1532,6 +1548,15 @@ export class VFX {
     this.slotTrail = new Int16Array(MAX_PROJ).fill(-1);
     this.trailOwner = new Int16Array(this.trails.slots).fill(-1);
     this.prevPos = new Float32Array(MAX_PROJ * 3);
+
+    // --- detonation composition ------------------------------------------
+    // A short ring of recent detonations, so a new one can ask what is already
+    // burning in the frame before it decides how much fire to add. Eight is
+    // more than can be alive at once: nothing here lives past DET_FIRE_LIFE and
+    // the sim has never emitted eight EV.EXPLODE inside 0.72 s.
+    this._dets = [];
+    for (let i = 0; i < 8; i++) this._dets.push({ x: 0, y: 0, z: 0, R: 0, birth: -99, occ: 0 });
+    this._detCursor = 0;
 
     // Rate limiting: identical impacts inside one frame collapse into one.
     this._impactBudget = 0;
@@ -1635,7 +1660,7 @@ export class VFX {
         case EV.FIRE_BOMB: this._launchPuff(ev, 0xffb84d); break;
         case EV.DEPLOY_POD: this._launchPuff(ev, 0x5ee0ff); break;
         case EV.HIT: this._hit(ev); break;
-        case EV.EXPLODE: this._explode(ev); break;
+        case EV.EXPLODE: this._explode(ev, world); break;
         case EV.WALL_HIT: this._wallHit(ev); break;
         case EV.BULLET_EXPIRE: this._fizzle(ev); break;
         case EV.JUMP: this._jump(ev); break;
@@ -1965,10 +1990,137 @@ export class VFX {
     );
   }
 
-  _explode(ev) {
+  _explode(ev, world) {
     const isPod = ev.kind === PK.POD;
     const part = isPod ? PODS[ev.part] || PODS[0] : BOMBS[ev.part] || BOMBS[0];
-    this._detonate(ev.x, ev.y, ev.z, ev.radius || 3, part.look.colour);
+    this._detonate(ev.x, ev.y, ev.z, ev.radius || 3, part.look.colour, world);
+  }
+
+  /**
+   * Project a world sphere into the frame as a circle.
+   *
+   * Aspect-corrected NDC: x is divided by the same half-height term as y, so a
+   * sphere is a CIRCLE in these units at any aspect and two of them can be
+   * compared with one distance and two radii. Returns false behind the camera,
+   * where a projected radius is meaningless rather than merely large.
+   */
+  _disc(x, y, z, R, out) {
+    const cam = this.camera;
+    if (!cam) return false;
+    _v.set(x, y, z).applyMatrix4(cam.matrixWorldInverse);
+    const depth = -_v.z;
+    if (!(depth > 0.25)) return false;
+    const h = depth * Math.tan((cam.fov * 0.5 * Math.PI) / 180);
+    if (!(h > 1e-4)) return false;
+    out.u = _v.x / h;
+    out.v = _v.y / h;
+    out.r = R / h;
+    return true;
+  }
+
+  /**
+   * THE COMPOSITION RULE FOR OVERLAPPING DETONATIONS — how much of this
+   * detonation's core is already burning in the frame before it is drawn.
+   *
+   * -----------------------------------------------------------------------
+   * WHY THERE IS A RULE HERE AT ALL
+   * -----------------------------------------------------------------------
+   * The scan listing for the house seed says the burst frame is the ORDINARY
+   * frame, not an edge case: of eighteen consecutive detonation pairs, six land
+   * within 117 ms of each other, `1098/1105/1111` is a triple inside 217 ms,
+   * and every close pair crosses weapon kind — a bomb and a pod, never two of
+   * the same. Two detonations 100 ms apart therefore ADD on one target, and the
+   * frame this project has spent six rounds on is one of them.
+   *
+   * Every previous attempt at that cell was a TUNING — the shell alpha, the
+   * element count, the erosion exponent, the flash core's radius — and each one
+   * paid for the cell by making the FIRST detonation smaller, which is the
+   * thing the clause is about. `59ef4d4` measured the price precisely: pulling
+   * the flash core in cost 39.8% of the effect's own footprint at 17 ms, on a
+   * frame where nothing was overlapping anything.
+   *
+   * A rule cannot charge that price, because it does not fire on a lone
+   * detonation. The first blast of a burst sees an empty frame, `occ` is 0, and
+   * every number it draws is the number it drew before this file was touched.
+   * Only the SECOND blast into an occupied sightline yields, and it yields only
+   * the part of itself that is redundant.
+   *
+   * -----------------------------------------------------------------------
+   * WHAT "OCCUPIED" MEANS, IN THREE TERMS THAT ALL HAVE TO AGREE
+   * -----------------------------------------------------------------------
+   *   lap     the two detonations' own discs overlap IN THE FRAME. Clause F is
+   *           a statement about the frame — "the effects live in the frame do
+   *           not, together, swallow the opponent" — so composition is judged
+   *           where the viewer judges it. The pinned blast and the one 100 ms
+   *           after it are 2.6 m apart in depth and read as one mass from the
+   *           camera; a world-space overlap test scores that pair at almost
+   *           nothing and would not fire on the very frame it is for.
+   *   shared  both discs claim the same MACHINE. This is the gate, and it is
+   *           what keeps the rule off two detonations that merely happen to
+   *           line up across an empty deck: nothing is being swallowed there,
+   *           so nothing yields.
+   *   rem     the earlier fire is still burning. A cluster core lives 0.72 s;
+   *           past that there is nothing there to be redundant with.
+   *
+   * `occ = lap * shared * rem`, worst case over every live detonation. All
+   * three are continuous, so the rule has no cliff a player could see and no
+   * threshold anybody has to defend.
+   *
+   * The RADIUS used for a detonation's disc is the event's own R, not the
+   * current radius of any one shell. R is what `_detonate` scales every stage
+   * off — the flash card alone reaches R*1.30 — so R is the sightline the
+   * detonation claims, and it is claimed from the first frame rather than grown
+   * into over 700 ms.
+   */
+  _composeOcc(x, y, z, R, world) {
+    const robos = world && world.robos;
+    if (!robos || robos.length === 0) return 0;
+    if (!this._disc(x, y, z, R, _dA)) return 0;
+    const t = this.time;
+    let worst = 0;
+    for (let i = 0; i < this._dets.length; i++) {
+      const d = this._dets[i];
+      const age = t - d.birth;
+      if (!(age > 0) || age >= DET_FIRE_LIFE) continue;
+      const rem = 1 - age / DET_FIRE_LIFE;
+      if (!this._disc(d.x, d.y, d.z, d.R, _dB)) continue;
+      const sep = Math.hypot(_dA.u - _dB.u, _dA.v - _dB.v);
+      const lap = clamp((_dA.r + _dB.r - sep) / (2 * Math.min(_dA.r, _dB.r)), 0, 1);
+      if (lap <= 0) continue;
+      let shared = 0;
+      for (let m = 0; m < robos.length; m++) {
+        const p = robos[m] && robos[m].pos;
+        if (!p) continue;
+        // A machine is a metre-radius sphere at chest height for this purpose.
+        // The stencil it actually casts is 50x94 px on the pinned frame; the
+        // test below only has to say WHICH machine is under both discs, and a
+        // sphere says that without the model or a render.
+        if (!this._disc(p.x, p.y + 0.9, p.z, MACH_R, _dM)) continue;
+        const inNew = clamp((_dA.r + _dM.r - Math.hypot(_dA.u - _dM.u, _dA.v - _dM.v)) / (2 * _dM.r), 0, 1);
+        if (inNew <= 0) continue;
+        const inOld = clamp((_dB.r + _dM.r - Math.hypot(_dB.u - _dM.u, _dB.v - _dM.v)) / (2 * _dM.r), 0, 1);
+        const both = Math.min(inNew, inOld);
+        if (both > shared) shared = both;
+      }
+      if (shared <= 0) continue;
+      const occ = lap * shared * rem;
+      if (occ > worst) worst = occ;
+    }
+    return clamp(worst, 0, 1);
+  }
+
+  /**
+   * Remember this detonation so the next one can see it.
+   *
+   * `occ` is kept on the record purely so it can be READ BACK: a rule whose
+   * strength cannot be printed is a rule that gets argued about instead of
+   * measured, and `shots/_r32-occ.mjs` reads exactly this array off the live
+   * page. Nothing in the renderer consumes it.
+   */
+  _recordDet(x, y, z, R, occ) {
+    const d = this._dets[this._detCursor];
+    this._detCursor = (this._detCursor + 1) % this._dets.length;
+    d.x = x; d.y = y; d.z = z; d.R = R; d.birth = this.time; d.occ = occ;
   }
 
   /**
@@ -1994,12 +2146,25 @@ export class VFX {
    * Positional args rather than an event object: this is called from event
    * handling, where allocating anything at all is off the table.
    */
-  _detonate(x, y, z, R, colourHex) {
+  _detonate(x, y, z, R, colourHex, world) {
     const t = this.time;
     const s = this._budgetScale();
     const scale = clamp(R / 3.4, 0.55, 2.0);
     const grounded = y < 3.2;
     const deck = 0.06;
+
+    // How much of this detonation's sightline is already on fire. 0 for a lone
+    // blast — which is every blast in this file until now, and is why nothing
+    // below changes for one. See `_composeOcc`.
+    const occ = this._composeOcc(x, y, z, R, world);
+    this._recordDet(x, y, z, R, occ);
+    // The two UNTHROWN fire shells are the redundant half of a second
+    // detonation: they are the mass that sits AT the point of the blast, which
+    // is the part of it that is already burning. The thrown lobes are new mass
+    // going somewhere nothing is, and are left alone — round 29's attribution
+    // measured every lobe in the frame at zero points of the failing cell.
+    const coreK = 1 - 0.90 * occ;
+    const bridgeK = 1 - 0.55 * occ;
 
     // Hue only — the fire ramp in the shader supplies the value, the part just
     // leans it. An HE bomb and a plasma pod should not be the same colour.
@@ -2077,7 +2242,20 @@ export class VFX {
     // does not even buy half -- 73.2 is a FAIL. The cell it was aimed at is
     // OVER-DETERMINED and no element of the detonation owns it; see REVIEW2.md
     // round 29 for the six kill columns that say so.
-    this.fireballs.spawn(x, y, z, null, t, 0.075, R * 0.30, R * 0.52,
+    // ROUND 32 — and this is the one line the composition rule is for. A
+    // second white-hot ball is not added where one is already burning; below a
+    // sixth of its radius there is no ball left to draw and it is not drawn at
+    // all, rather than left as a bright speck the bloom can still find.
+    //
+    // It is SPAWNED EITHER WAY, at radius zero when there is nothing left of
+    // it. `ShellPool.spawn` draws from `vfxRng` for its per-instance seed, so
+    // an early return here would shift the random stream and every lobe, spark
+    // and dust particle after it would be a different draw — the A/B would then
+    // be measuring a different blast, not this rule. A shell of scale 0 has no
+    // area and writes no pixels, and the pool slot is consumed exactly as
+    // before, so the two builds differ by this radius alone.
+    const fcK = coreK > 0.16 ? coreK : 0;
+    this.fireballs.spawn(x, y, z, null, t, 0.075, R * 0.30 * fcK, R * 0.52 * fcK,
       1.0, 0.96, 0.90, 0);
 
     // --- 2. fireball cluster ---------------------------------------------
@@ -2085,7 +2263,7 @@ export class VFX {
     // stops the blast becoming a handful of separate balloons drifting apart at
     // half a second — which is exactly what it used to do, because every part
     // was thrown and nothing stayed behind to bridge them.
-    this.fireballs.spawn(x, y + R * 0.04, z, null, t, 0.72, R * 0.22, R * 0.72,
+    this.fireballs.spawn(x, y + R * 0.04, z, null, t, 0.72, R * 0.22 * bridgeK, R * 0.72 * bridgeK,
       hr, hg, hb, 1, 0, R * 0.16, 0);
     /**
      * -----------------------------------------------------------------------
@@ -2651,7 +2829,7 @@ export class VFX {
     const r = loser >= 0 ? world?.robos?.[loser] : null;
     if (!r) return;
     // Reuse the detonation recipe at a much larger radius, twice, offset in time.
-    this._detonate(r.pos.x, r.pos.y + 0.9, r.pos.z, 6.5, 0xffd166);
+    this._detonate(r.pos.x, r.pos.y + 0.9, r.pos.z, 6.5, 0xffd166, world);
     this.fireballs.spawn(r.pos.x, r.pos.y + 1.2, r.pos.z, null, this.time + 0.12, 0.9, 0.35, 4.6,
       1.0, 0.72, 0.4, 1, 0, 2.2, 0);
     this._addShake(vfxRng.s() * 1.2, 0.6, vfxRng.s() * 1.2, vfxRng.s() * 0.06);
@@ -2978,6 +3156,10 @@ export class VFX {
     this.slotAlive.fill(0);
     this.slotTrail.fill(-1);
     this.trailOwner.fill(-1);
+    // Composition history. A wipe means a new match, and the first detonation
+    // of a new match must see an empty frame however recently the last one
+    // detonated on the old clock.
+    for (let i = 0; i < this._dets.length; i++) this._dets[i].birth = -99;
     this.bolts.count = 0;
     this.bombs.count = 0;
     this.pods.count = 0;
