@@ -10018,3 +10018,226 @@ No `--kill` ceiling column at this pin, so the 6689 px removed at 133 ms is not 
 extra matches were scanned for `occ` only. Nothing here says whether the rule helps at a pin where the
 follow-up stands on the opponent AND the cell fails — tick 1195 is still the only known example of
 that geometry, which is precisely the difficulty.
+
+---
+
+## Round 30 verdict, SECOND addendum — **the card was tracking a sample of one, the pin it tracked is near the BEST of its population, and my rank list for four rounds was ranked on it**
+
+The verdict close above was written before pin 956 existed as a measurement. **It is superseded here rather
+than edited**, because the record of what I wrote before the new number is the only thing that makes the
+new number worth anything. My root `dist-r34-critic` on :4364, bundle `23dc643dceac`, `npm run build`
+clean, `npm test` ALL PASS, `deploycheck` DEPLOY OK on grid, foundry and orbital.
+
+### 12. Pin 956, captured and measured by me — **and it is worse than it was reported to me**
+
+`shots/_r17-blast.mjs --tick 956`, then `shots/_r25-cover.mjs`, my capture, my bundle:
+
+```
+    ms                    17    117    233    333    433    533    800
+    L>8               100.0   23.0  100.0  100.0   89.5    3.0*  100.0
+    L>25 (the clause) 100.0   20.3  100.0  100.0   81.2    1.6*  100.0
+    L>60               54.9   17.4  100.0   92.0   59.2    0.5*  100.0 -> 0.0
+
+    * 533 ms segmented to THREE machine boxes; the meter's own guard flags it and I score it as absent,
+      not as 1.6.
+
+    tick 1195, same meter, same bundle, for comparison
+    L>25                0.0   60.2   10.6    5.9   12.7    0.2     5.1
+```
+
+**Five of seven ages at or above 81.2, four of them at 100.0.** The reported column began at 117 ms;
+**17 ms is also 100.0**, which is an age nobody had read, and it is the age at which tick 1195 reads
+**0.0** — the two pins are at opposite ends of the same column.
+
+### RULING 34 — **clause F sub-2's four-round headline is withdrawn. "The only failing cell" was never a fact about the clause; it was a fact about the one blast anybody had captured, and that blast is near the BEST of its population.**
+
+I ran the population count RULING 33 asked for, on the search columns `f4cafb9` added — which are exactly
+the enumeration I demanded and were built before I asked, so the credit is the builder's:
+
+```
+    node shots/_r17-blast.mjs --list --scan 1260      19 blasts, 14 qualifying, 36 s, no capture
+
+    `in` = how much of the far machine's disc lies inside the blast's disc; 1.00 = wholly inside
+    in = 1.00 at ticks   838   896   956   1105   1195   1248        SIX pins
+    in = 0.91 / 0.70 / 0.53 / 0.30 / 0.28 / 0.15 at six more
+    in = 0.00 at the remaining seven
+```
+
+**Six of nineteen blasts on the house seed put the aiming target wholly inside the effect's mass. Clause
+F sub-2 has been scored on one of the six for four rounds**, and the second one to be captured fails on
+five ages where the first fails on one.
+
+> **RULING 34.** Every sentence in this document of the form *"117 ms is the only failing cell of clause
+> F sub-2"* is **withdrawn**, including four of my own and the ranking that rested on them. No figure is
+> withdrawn — tick 1195's column is correct for tick 1195 — but **its scope is.** A single-pin cell may
+> be written *"the failing cell at tick 1195"* and may not be written *"the failing cell"*.
+>
+> **And the rank list built on it is withdrawn as a ranking.** Rank 1 for rounds 27, 28, 29 and 30 was
+> *"get the opponent out of the second detonation at 117 ms"*. At pin 956 the opponent is swallowed by
+> the **first** blast, `--kill latefire` moves the three 100.0 cells by **exactly zero** (`4af84c2`), and
+> the entire family of second-detonation rules has a measured ceiling of **nil**. The work done under
+> those rankings stands as measured; the rankings do not.
+
+**This is the third fault of one shape in two rounds and I am naming the shape.** Fault 30 was one draw of
+a meter. RULING 33 was one pin for a rule. RULING 34 is one pin for a clause. **All three were found by
+running the same thing more than once, and all three had been sitting in plain sight for rounds.** The
+characteristic failure of this document is not a bad measurement — it is a good measurement quoted as
+though its sample were its population.
+
+### RULING 35 — **clause F sub-2's basis, answered: a PIN SET, screened for free, scored on the worst cell over the set, with the set size in the cell**
+
+The question is fair and it is mine to answer, so here is a rule that can be applied without me.
+
+> **RULING 35.** Clause F sub-2 is scored over a **pin set**, never a pin.
+>
+> 1. **The population is enumerated, not chosen.** `_r17-blast.mjs --list` over the standard 1260-tick
+>    scan on the house seed. That is 19 blasts and it costs 36 seconds and no capture.
+> 2. **The set is screened by `in`, the listing's own geometric column**, because `in` is a prediction of
+>    the clause's own sentence — *the effects do not, together, swallow the opponent* — computed without
+>    rendering anything. **The scored set is `in >= 1.00`: the opponent's disc wholly inside the blast's
+>    disc.** Six members on the house seed. A blast at `in = 0.00` cannot swallow anything and captures
+>    spent on it are captures wasted, which is exactly what tick 264 was.
+> 3. **The cell is the WORST age over the set**, and the cell is written with the set size beside it:
+>    `100.0 (worst of 7 ages x 6 pins, 2 captured)`. A clause scored on a maximum over an enumerated set
+>    is a clause; a clause scored on whichever frame somebody photographed is not one yet.
+> 4. **Screening is not scoring.** `in` selects what to capture. It never substitutes for
+>    `_r25-cover.mjs`, and no figure derived from `in` may be quoted as a coverage percentage.
+> 5. **Two of six are captured.** Until the other four are, clause F sub-2's cell is **100.0 on 2 pins of
+>    a 6-pin set**, and it is quoted that way.
+>
+> The same rule applies to any clause measured on a captured event rather than on the pinned still frame.
+> Clause F sub-1 is the other one and it has the same exposure.
+
+### RULING 36 — **which cut the clause means, and the 800 ms row: L>25 stands, the row is a FAIL, and the reading is an UPPER BOUND because the column that would settle it does not exist**
+
+The three-threshold column was built so somebody would have to say this, and it is my clause, so it is me.
+
+At pin 956, 800 ms: **L>8 100.0, L>25 100.0, L>60 0.0.** At 233 ms: **100.0 at all three.** Those are not
+the same phenomenon and the card must not spend them as the same point.
+
+> **RULING 36.** **L>25 is the clause and it does not move.** It is the cut every filed figure was taken
+> on, and shifting a threshold after seeing which rows it flatters is the move I have refused builders
+> four times.
+>
+> **The 800 ms row is a FAIL, and the reason is not a technicality.** Clause F sub-2's currency is the
+> legibility of the aiming target. An outline is a **step across a boundary**, not a brightness. A veil
+> that covers the target *and its background equally* preserves the step and the machine stays readable;
+> a veil that stops at the silhouette destroys it, at any intensity. **So the intensity of the covering is
+> the wrong axis to decide swallowing on, and continuity across the boundary is the right one.**
+>
+> **And no column in this document measures the right axis.** The instrument is one addition to
+> `_r25-cover.mjs`: report the effect's coverage of a **dilated ring outside the machine's stencil**
+> beside its coverage of the machine. Equal coverage inside and outside means the outline survived and the
+> cell is a false positive; coverage that stops at the silhouette means the cell is real. **Until that
+> column exists, every L>25 cell in this clause is an UPPER BOUND and I score it as one** — the identical
+> disposition I gave the render column in RULING 24, for the identical reason.
+
+### 13. The composition rule, final disposition — **credited at what it measurably does, renamed for what it measurably is**
+
+Three measurements now bear on it, two of them the builder's and filed against his own change:
+
+- `fea9d65`: tick 1195, 117 ms, **83.0 -> 60.2**. Verified by me on my own bundle, exactly.
+- `f9860f1`: tick 956, rule ON and OFF **identical at every age to the digit**, on a pin whose own `occ`
+  indicator reads **0.54** against 0.33 at the pin where the rule works.
+- `4af84c2`: tick 956, **`--kill latefire`** — the strongest possible version of any rule acting on the
+  second detonation — **moves the three 100.0 cells by exactly zero.**
+
+> **The rule ships, is credited at 22.8 points on one frame of one pin, and is NOT a rule about
+> overlapping detonations.** RULING 33's count, taken: its predicate has something to act on at **3 of 19
+> blasts** (`occ` non-zero at ticks 963, 1111, 1201) and it demonstrably acts at **1 of the 3**. The
+> ledger must carry it as *"the 1195 pin is handled"*. `4af84c2` is the better half of this round's
+> builder work and it is a **ceiling measured against the author's own change** — the second time in three
+> commits somebody has gone looking for the number that would embarrass him. That is worth more than the
+> 22.8 points.
+
+### 14. RULING 21, discharged — **stated a third time because it keeps being asked**
+
+Section 2 above is the answer and it was measured before any of this. `shots/_salience.mjs`, tier 3, tick
+420, seed 1234567, **on the `25dfee6` bundle** (`766a1ae2d08b`, my root :4362):
+
+```
+    machines' share of the brightest 1%     round 20      mine, at 25dfee6
+    grid                                      58.9              58.9
+    foundry                                   33.3              33.3
+    orbital                                   66.5              66.5
+```
+
+**Clause E is re-measured on all three arenas and no arena moved by a tenth.** Clause B is section 1's
+paired leg-3 table, also three arenas, also two bundles. **RULING 21 is discharged for `25dfee6`. The
+outstanding item is not the measurement — it is that RULING 22's two GAIN legs both miss** (leg 1: 65.6
+against 49.8; leg 2: 39.1 and 44.7 against 45.0 and 48.9).
+
+### 15. Clause C — carrying the builder's correction
+
+`700037b` claimed a compression sweep and claimed clause C had no proposal left; `fdc3806` withdraws both,
+and the withdrawal is correct. `7113e7e` and the builder's own 1.901 at `uFlat=0.5` agree that **`uFlat`
+moves the machine's p2-p98 spread by 7 levels of 158 and is therefore not a compression knob.**
+**RULING 25's compression question is open, there is no knob in the renderer that answers it, and the
+durable result is the one neither of us predicted: the ratio does not track the machine's value spread.**
+That is the first non-null fact anybody has established about clause C, it cost one command, and it was
+bought by two people running the same falsification test on the same day.
+
+---
+
+## VERDICT, re-scored on pin 956: **still NO — and clause F is further from passing than any card in this document has said**
+
+The close above stands on everything except its last two sections, and those are replaced:
+
+1. **The renderer really did move this round, and I am not taking that back.** F sub-2 at tick 1195
+   100.0 -> 60.2; F sub-1 47% -> 41.4% of radius; blind point 3's invisible contour 68.0 -> 58.0, its
+   first movement in five rounds; the opponent's novfx luma 220.3 -> 120.7 with **+0.29 of measured
+   chroma** on the flashed machine. Three shipped commits, all correctly aimed, one of them refused by its
+   own author before a better version shipped.
+2. **And every one of those figures is now known to be a figure about one pin of six.** At the second pin
+   captured, the clause reads 100.0 at four ages and 81.2 at a fifth, the second detonation is not the
+   cause, and the ceiling of the whole family of rules aimed at it is nil.
+3. **Clause A is a trustworthy MET again** with a spread beside it, and my round-29 downgrade was one draw
+   too pessimistic. That is the round's only clause state change and it is on an instrument.
+4. **Clause I is scored for the first time and fails on both sub-clauses**, after I corrected it in the
+   round I wrote it because one of the two machines has no feet.
+5. **Clause C is not closed, not measured, and now has a dead model of mine on top of a dead headline of
+   round 24's.**
+
+**Two of six blind points pass.** The three that fail are the three that have always failed, plus the one
+I only just wrote down.
+
+### The one thing that would move most — **capture the other four `in = 1.00` pins, and it is rank 1 because it un-blocks everything else rather than because measurement beats art**
+
+Four rounds of rank-1 items were ranked on tick 1195's 117 ms cell. **Both times a second pin was
+measured, the ranking turned out to be wrong** — tick 264 had no power, tick 956 has a different
+mechanism and a nil ceiling for the lever that was ranked first. **Six captures, about eighty minutes of
+wall clock, no renderer change, no research, no new instrument**, and the screening that says which six is
+already built and costs 36 seconds. It either confirms that tick 1195 is representative — in which case
+every ranking below resumes — or it replaces the ranking with one that is about the clause instead of
+about a photograph.
+
+I would not normally rank a measurement first two rounds running. I am doing it because **this is the
+second consecutive round in which the headline number turned out to be a sample of one**, and no lever can
+be sized against a clause whose value depends on which frame somebody captured.
+
+Rank 2 is **RULING 22's radius sweep**, unchanged and still the strongest art item on the list: a measured
+ceiling of roughly 23.7 points remaining, a proven move on **two** clause rows (F sub-2 −17.0 and F sub-1
+−8.8 points of radius), zero measured cost on three arenas paired across two bundles, an acceptance test
+already written, and **a mechanism that is pin-independent** — bloom is a post-process and does not care
+which blast it is spreading. 1/2/2/3 and 1/1/2/2 are two builds and two captures. Rank 3 is **RULING 36's
+dilated-ring column**, without which every F sub-2 cell is an upper bound. Rank 4 is **clause C's
+synthetic-target audit**, now mandatory. Rank 5 is **clause I**, newly scoreable, never attacked. Rank 6
+is **clause B to 90%**. Rank 7 is **`tools/contour.mjs`'s bundle hash**, four rounds overdue and the reason
+fault 31 cannot be resolved.
+
+**Struck from the rank list:** *"get the opponent out of the second detonation"*, held at rank 1 for four
+rounds. `4af84c2` measured its ceiling at nil on the pin where the clause fails worst, and a ranked item
+whose ceiling is nil is not a ranked item.
+
+### Standing rules, two added to the three above
+
+- **NEW — a figure taken on a captured event is quoted with its pin, and a clause scored on captured
+  events is scored on an enumerated pin SET.** RULING 35. The population is enumerated by a listing, the
+  set is screened by a geometric column that costs no capture, and the cell carries the set size.
+- **NEW — a threshold may not be reinterpreted after the rows it decides are known.** RULING 36. L>25 was
+  the clause before pin 956 was captured and it is the clause after. Where a row is genuinely a different
+  phenomenon, the answer is a new column, not a new cut.
+
+**Thirty-one faults on file**, and the three rulings of this round that matter most — 33, 34 and 35 — are
+one fault wearing three hats: **a sample of one, quoted as a population.**
+
