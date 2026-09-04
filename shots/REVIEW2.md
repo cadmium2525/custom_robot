@@ -9145,3 +9145,296 @@ audit).
 **Thirty faults on file.** Fault 30 was found by running one command four times, which is the cheapest
 audit available and the one no round had performed on the meter carrying two clauses.
 
+
+---
+
+## Round 30 — VERDICT — 2026-09-04 — **committed before I built a bundle or ran a meter, and it refuses the round's headline on the round's own acceptance test**
+
+Everything in this section was written and committed at head `25dfee6` **before I ran `npm run build`,
+started a server, or opened a capture.** Nothing that landed was reported to me before I read it; I read
+`SPEC-CRV2`, my own round-29 verdict, RULINGS 22-26, and the four commit messages. The measurement is in
+the addendum below and where it contradicts this section I will say so in the words I used to be wrong.
+
+# VERDICT: **NO.**
+
+Thirtieth round, same sentence, and for the first time in four rounds **a shipped renderer change moved a
+scored clause figure.** That is the news and I am not going to bury it: `25dfee6` moved clause F
+sub-clause 2's worst cell by 17.0 points on the render meter, which is more than every renderer change of
+rounds 27, 28 and 29 combined moved on every clause. It is still a NO, and the reason it is still a NO is
+that the change **was scored on a column its own ruling does not name**, and the two columns its ruling
+does name were not measured at all.
+
+### RULING 27 — **RULING 22 is implemented on the right knob, and reported on the wrong column. Its acceptance test has two legs; neither was walked, and the commit's stated reason for skipping the second one cites the exact measurement I called a licence rather than a gain.**
+
+The knob is right and I want that on the record before the complaint. `MIPS` 3/4/5/6 -> 2/3/3/4 is
+the pyramid, not the threshold and not the strength, which is what RULING 22(a) ruled and refused two
+alternatives to reach. The commit's own paragraph restates the reasoning correctly and does not
+overclaim the mechanism. **Nothing below is a dispute about what was built.**
+
+**What was measured is a different question from what was ruled.** RULING 22's acceptance test was
+re-keyed by me in round 20's addendum, section 4, in a block headed *"RULING 22's acceptance test,
+re-keyed"*, for a stated reason: the original still-frame test was **vacuous**, because the still-frame
+background drop under `--bloom 0` is 0.4 points on grid and zero on the other two arenas, so there was
+nothing to take 60% of. The re-keyed test names two gain legs and one cost leg:
+
+```
+    leg 1  GAIN   >= 60% of what --bloom 0 takes on the opponent's INVISIBLE CONTOUR at 117 ms
+                  ceiling 68.0 -> 37.6, i.e. 30.4 points, i.e. land at or below 49.8
+    leg 2  GAIN   >= 60% of the CLAUSE E gain at 533 and 800 ms
+                  ceilings 37.5 -> 50.0 and 41.9 -> 53.5, i.e. land at or above 45.0 and 48.9
+    leg 3  COST   clean% inside 0.6 points and machine body luminance inside +/-2.0,
+                  ON ALL THREE ARENAS, at the pinned still frame
+```
+
+`25dfee6` reports **none of leg 1, none of leg 2, and one arena of leg 3.** What it reports instead is
+`_r25-cover.mjs`'s seven-age render column, which is clause F sub-clause **2** — a column that did not
+exist when RULING 22 was written, that I re-homed the previous column off in RULING 24, and that appears
+nowhere in the acceptance test. **The figure is real and it is good news. It is not the test.**
+
+I am not being pedantic about paperwork, and here is the reason, in one sentence I have written against
+myself twice: **a change cannot be accepted on a column chosen after the result is known.** RULING 19
+refused a builder the flattering column when the unflattering one was the clause. RULING 24 took the
+unflattering column when it cost me 55.5 points of my own scorecard and struck one of my own ranked
+items. The rule does not acquire an exception when the surprise column is the *good* news.
+
+**And leg 2's omission is argued, in the commit, from the one measurement my own re-key declared
+irrelevant.** The commit says clause E was not re-measured because *"the critic's round-20 sweep found E
+flat under bloom removal outright (58.9 -> 58.6, 66.5 -> 66.1, 33.3 -> 33.3)"*. Those three pairs are the
+**still frame** on three arenas. The re-keyed test's leg 2 is clause E **at 533 and 800 ms, during the
+blast**, ceilings 37.5 -> 50.0 and 41.9 -> 53.5 — a 12.5-point and an 11.6-point ceiling, against a
+still-frame ceiling of 0.3. Round 20's addendum states the distinction in bold and gives the mechanism:
+*"On the still frame almost nothing clears 1.04, so the pyramid has nearly nothing to spread and its
+radius does not matter. During a detonation the core is rgb(255,255,251) and covers 15-19% of the
+frame."* And it labels the still-frame null exactly: **a licence, not a gain.** The commit has used the
+licence as the evidence. That is a citation of the right document to the wrong end, it is honestly made,
+and it is the single reason RULING 22 is not accepted this round.
+
+> **RULING 27.** `25dfee6` is **PROVISIONALLY ACCEPTED as a shipped change and NOT ACCEPTED against
+> RULING 22's acceptance test**, which remains unwalked. I walk it myself below, because leaving my own
+> test unmeasured for a second round would make it decoration. The coverage move is credited in full as
+> an **unrequested finding** and enters the card as one. Leg 3 is owed on foundry and orbital and I take
+> that too, under RULING 21, which is mine.
+
+**My blind arithmetic on the one column that does exist, so this ruling can be caught being wrong.**
+`59ef4d4` measures bloom's whole share of the 117 ms cell as **40.7 points** — 100.0 as shipped, 59.3
+with `--bloom 0`. `25dfee6` takes **17.0** of those points. That is **41.8% of the bloom ceiling on the
+coverage column, against a 60% bar on two other columns.** If the three columns are even roughly
+proportional in their response to the pyramid's support — and the mechanism is the same halo in all
+three — then **leg 1 and leg 2 both miss**, and the correct disposition of RULING 22 becomes the branch I
+wrote into it and have never had to take:
+
+> *"If no radius setting separates the near glow from the far one, bloom stays and P6 is annotated in
+> `SPEC-CRV2` with the arithmetic that beat it."*
+
+I am not taking that branch tonight on an argument. **2/3/3/4 is one point on a line and the line has not
+been swept.** A miss at 41.8% is a reason to try 1/2/2/3 and 1/1/2/2 and read leg 1 at each, not a reason
+to conclude the knob is exhausted. The exception route stays closed until a **sweep**, not a sample,
+fails it.
+
+### RULING 28 — **clause F sub-clause 2 at 117 ms is now MAJORITY A POST-PROCESS READING, and I am ruling that it counts — which makes P6 and clause F the same defect on that cell, for the first time in this document.**
+
+`59ef4d4` is the best measurement of the round and possibly of the last five. Six kill columns on a
+render meter, two new knives built because the question could not be asked without them, a fix tried,
+measured and **reverted on its own acceptance test** rather than shipped with a caveat. That last part is
+the rarest thing in this file and I want it named: `-39.8%` of the effect's own footprint at 17 ms, a
+hard white detonation reduced to an orange wisp, in exchange for 73.2 which is still a FAIL — that is
+RULING 16's trade offered and refused by the builder without my having to refuse it. **Refusing your own
+change on a test you wrote before you ran it is the behaviour this document exists to produce.**
+
+Now the ruling it forces, which nobody has asked for.
+
+```
+    117 ms, coverage of the opponent, render meter, L>25
+    as shipped                                100.0
+    --bloom 0                                  59.3      bloom's share  40.7
+    kill latefire                              48.9      latefire share 51.1
+    kill latefire AND --bloom 0                19.1      MET
+```
+
+**40.7 of the 100 points of the worst cell on this card are contributed by a framebuffer post-process.**
+Clause F sub-2's meter, as I amended it in RULING 24, is *"the intersection of the VFX layer's own
+rendered footprint with the opponent's machine stencil."* A bloom halo is not the VFX layer's geometry —
+it is a convolution of the VFX layer, painted across the frame by a pass the effect does not own. A
+builder is entitled to ask whether that belongs in a clause about **quads with texture-edge boundaries**.
+
+**It belongs, and RULING 19 is why.** *A player aiming at a machine does not get to subtract the other
+explosion*, and he does not get to subtract the glow either; the pixels covering the target are covering
+the target whatever pass wrote them. Clause F asks whether the effects **swallow the opponent** and 100.0
+is the honest answer to that question. But the consequence must be stated out loud because it changes
+what the cell is:
+
+> **RULING 28.** Clause F sub-clause 2 at 117 ms is scored at its as-rendered value with the bloom in it,
+> and it is hereby recorded that **the cell is jointly owned by clause F and by P6, and no work item may
+> be credited twice against it.** A bloom radius cut that moves this cell is a P6 fix showing up on
+> clause F's row; a composition fix that moves it is a clause F fix. **`25dfee6`'s 17.0 points are P6's
+> points appearing on F's line, and I am scoring them once.** Any future round reporting a coverage gain
+> at 117 ms must state its bloom setting on the same line, and any round reporting both a P6 gain and an
+> F gain from one change must pick one.
+
+**And the finding underneath it retires an assumption this document has held for six rounds.** With the
+second detonation's late fire removed and bloom off, *the blast everyone has been arguing about* covers
+**19.1%** — MET. Six rounds of erosion exponents, throw-through lobes, radial ramps and core curves have
+been aimed at an effect that **passes the clause when the two things standing on top of it are removed.**
+The pinned blast is not the defect. I said in round 29 that the cell everyone was aiming at was never the
+defect; this round says the **effect** everyone was aiming at was never the defect either.
+
+**The number that would settle rank 1 and does not exist.** 19.1 is a double ceiling: it requires killing
+latefire *and* switching off a chain my own RULING 22 says is never a ship setting. The measurement that
+decides whether composition alone can close this cell is **latefire killed with bloom AS SHIPPED at
+2/3/3/4** — one capture, one existing knife, one existing flag. If that reads under 25 the rank-1 item is
+a fix; if it reads 40 the rank-1 item is another contribution to an over-determined cell and the cell
+needs both halves. **I take that measurement myself below.** Nobody should have to be told twice that a
+cell with two owners cannot be closed by one of them.
+
+### RULING 29 — **`3a0f570` PASSES leg 1 of RULING 26's acceptance test, and the thing I most want to credit is the paragraph that refuses to claim a win.**
+
+220.3 -> 174.5 -> 120.8 against a stated target of 150. **Leg 1 is met**, by 29.2 levels of margin, and
+the age is now 6.9 levels *below* its neighbour's 127.3 instead of 93 above it. `vec3(0.62, 0.08, 0.05)`
+against the previous `vec3(0.88, 0.34, 0.30)` is the correct reading of why the first attempt did
+nothing — 0.34/0.30 sat at the armour's own chroma, so the mix was very nearly the identity on the two
+channels that were supposed to move. That is a builder who went back and read the pass instead of
+turning the amplitude up, and 0.62 held under the bright-pass threshold minus knee keeps the machine a
+non-source for bloom, which is the constraint that makes the whole tell legal under RULING 22.
+
+**And then it does the thing that is worth more than the fix.** RULING 26 caught a chroma claim where the
+measured delta was 0.000. This commit does not repeat it. It says, in its own words, that
+`_r17-edge.mjs`'s saturation column averages both machines while only the far one is flashed — 93 px
+against 283 — so **no meter in this repository can currently show a chroma gain on a flashed machine**,
+and it therefore files **no chroma result at all**. It then names the instrument that would settle it: a
+per-machine chroma column.
+
+> **RULING 29.** A round that declines to report a number because it has established that its meter
+> cannot see the effect **has produced a result, and it is filed as one.** *"No meter here can show it"*
+> is a stronger sentence than any number that meter could have printed, and it is the second time in two
+> commits this round that a builder has scored against himself before I could. The per-machine chroma
+> column is **granted and ranked**: `_r16chroma.mjs` already has the stencil that separates the two
+> machines, so this is a column split, not a new instrument.
+
+**Legs 2, 3 and 4 are still owed and leg 2 is still the clause.** The commit reports the invisible contour
+at 117 ms as 66.9 -> 68.0 and calls it noise, and says plainly that the outline collapse is not the
+machine's brightness because a machine 100% inside the effect's footprint has no outline to lose. **I
+agree with the mechanism and it does not discharge the leg.** RULING 26 said: *if the contour at 117 ms
+has not moved, the fix bought a diagnosis and not a point.* Two commits later the diagnosis is complete,
+correct, and worth having — 220.3 to 120.8 is the largest move ever made on that number and it is the
+right axis — and **the clause underneath it has not moved by more than noise in three rounds.** That is
+not a criticism of the commit. It is the card.
+
+### RULING 30 — **fault 30: clause A does NOT stay unscored. The meter gets a repeat protocol, and the protocol is stricter than the one the rule implies.**
+
+The question is put to me directly and it deserves a direct answer. **A cell whose margin is smaller than
+its meter's repeat spread is unscored *until the meter is given a spread*, not forever.** Leaving clause A
+unscored is the correct emergency measure and the wrong permanent state: it converts an instrument defect
+into a permanent hole in the card, which is the failure mode I have accused four rounds of.
+
+> **RULING 30.** `shots/_massdrive.mjs` takes **`--repeat N`**. It runs the capture and the segmentation N
+> times on one binary, prints **every draw**, and reports **median, min, max and spread** for clause A's
+> top-4 coverage, clause A's mass count and clause C's ratio, on both machines. A cell is then scored by
+> this rule, which is not the median rule and is deliberately harsher:
+>
+> - **MET** requires the whole observed range on the passing side of the threshold.
+> - **NOT MET** requires the whole observed range on the failing side.
+> - **A range straddling the threshold is UNSCORED, and the spread is quoted in the cell.**
+>
+> The median alone is not enough, because a cell that passes on median and fails on one draw in four is a
+> cell a rebuild can flip, and this document has been flipped by a rebuild before (fault 27). N is **at
+> least 6** for any cell whose last measured margin was under 2.0 points. The spread goes in the card
+> next to the figure, permanently, on every clause-A and clause-C row — fault 15's rule, which I have
+> been applying to seeds and not to binaries for fifteen rounds.
+
+I build this below. It is one flag on one file, it needs no renderer, and it either restores a scored
+clause or converts a knife-edge MET into an honest UNSCORED with a number attached. **My prediction, so
+it can be caught: the far machine's range over six draws straddles 85.0 and clause A stays UNSCORED.**
+
+### RULING 31 — **clause C: compression is still the only live proposal, it is mine, and I am not allowed to leave it on the list a third round. But the audit outranks it and the audit has a cheaper form than the one I specified.**
+
+RULING 25 put clause C on the instrument list and specified a synthetic-target audit. Round 29's addendum
+added a second, independent route to the same doubt: the denominator is 51 +/- 2 on every reading ever
+taken and the meter's quantiser bin at the scored operating point is exactly 51. The model
+`ratio ~= 0.011 * spread` predicts five of seven readings inside the round-trip floor.
+
+**Nobody has taken it, and the reason is that I specified the expensive half.** The synthetic target needs
+an image built to a known answer. The **model** needs no image at all: it is a prediction about how the
+ratio responds to a knob that already exists. If clause C's ratio is a linear function of the machine's
+p2-p98 spread and of nothing else, then **compressing the spread must move the ratio proportionally, and
+compressing it 42% must land the near machine at 1.00.** Round 24 swept translation, which preserves
+spread by construction and therefore had to be null; eighteen perturbations later, nobody has moved the
+one quantity the model says is the only live input.
+
+> **RULING 31.** Clause C's audit is re-specified in two parts, ranked in this order and **both cheap**:
+> **(a) the compression sweep**, which is a `--u` on an existing uniform if one exists and a four-line
+> shader term if not, read on `_massdrive.mjs --onbody --repeat 6`; and **(b) the synthetic target.** (a)
+> is a **falsification test of my own model**, and I would rather be caught wrong by it than keep writing
+> the model down. If compression moves the ratio on the predicted line, clause C is real, the denominator
+> is the machine's, and the clause is closed at nineteen readings with a lever attached. If compression
+> moves it not at all, the ratio is a property of the segmentation and **every clause-C figure in this
+> document is withdrawn.**
+
+### RULING 32 — **`SPEC-CRV2` gains a ninth clause, and it is my fault it has taken three rounds. Clause I: THE MACHINES STAND ON THE DECK.**
+
+The machines' feet interpenetrate the deck by up to 39 mm and one tick in 21 has a contact at all. This
+has been on the record since round 19, I have written *"my spec has no clause for this because I wrote
+eight clauses about a still photograph of a lull"* twice, and twice I have left it there. **A review that
+names a defect and then declines to score it because its own instrument list is the wrong shape is doing
+the thing it exists to prevent.**
+
+A ninth clause needs a derivation from P1-P8 or it is not part of this spec, and it has one — the same
+derivation clause B has:
+
+> **Clause I — the machines stand on the deck.** *Derived from P2 and P6.* There is no contact shadow, no
+> ambient occlusion and no per-pixel shading on this platform; **nothing in the frame hides the join
+> between a foot and the floor except the geometry of the join itself.** Clause B says the outline is the
+> only cue that separates the machine from the stage; clause I is the same sentence pointed downward. A
+> machine sunk into the deck or floating above it is not a physics bug that art can cover — on a renderer
+> with no contact cue **it is a drawn defect, visible at exactly the size of the error.**
+>
+> **Threshold, and it is derived rather than chosen.** P7 says the video filter softens edges by about one
+> pixel, uniformly. So: **the signed foot-to-deck distance must be under one RENDERED pixel at the
+> machine's own scale, for both machines, on the pinned still frame and across the walk** — sub-pixel is
+> invisible and is not a defect; supra-pixel is drawn. Contact frequency gets its own sub-clause: **a
+> machine in a standing or walking pose has a foot in contact on the majority of ticks.** One tick in 21
+> is not a threshold question.
+>
+> **Meter:** `shots/_ground.mjs` and `shots/_r17ground.mjs` exist and produced the 39 mm figure. `FACT`
+> on the mechanism (P2 and P6 are hardware), `JUDGEMENT` on the one-pixel threshold, which is the
+> tightest defensible number and is deliberately tighter than the millimetre figure would suggest,
+> because **39 mm on a machine 283 px tall is roughly 7 rendered pixels and on one 71 px tall is under
+> 2.** The clause must be scored in pixels or it will pass on the far machine and fail on the near one
+> for reasons that have nothing to do with the defect.
+
+Clause I enters **UNSCORED pending my own measurement below**, and it enters the blind-point map as a
+sixth point rather than being smuggled into an existing one: **blind point 6 — the machines are standing
+in the room.** Five points were mine and they were about a photograph. This one is about a game.
+
+### What I am predicting, before I run anything, so this verdict can be caught being wrong
+
+1. **Leg 1 of RULING 22 misses.** Invisible contour at 117 ms on the post-radius-cut bundle lands **above
+   49.8** (the 60% bar off the 68.0 -> 37.6 ceiling).
+2. **Leg 2 of RULING 22 misses on at least one of the two ages.** Clause E at 533 ms lands **below 45.0**.
+3. **Leg 3 passes on all three arenas.** The still frame does not notice a radius cut, because almost
+   nothing on it clears 1.04 — round 20's addendum, and the builder's grid reading of 84.8/4.5/71.6 is
+   consistent with it.
+4. **`_r25-cover.mjs` reproduces 83.0 +/- the round-trip floor at 117 ms** on my own bundle in my own root.
+5. **Clause A's far cell straddles 85.0 over six draws and stays UNSCORED** under RULING 30's protocol.
+6. **Killing latefire with bloom as shipped leaves the 117 ms cell above 25%** — i.e. the composition half
+   alone does not close it either, and the cell needs both owners.
+
+### The one thing that would move most — **unchanged in target for a fourth round, and now it is a two-owner cell and I am saying so**
+
+**Get the opponent out of the second detonation at 117 ms.** `59ef4d4` has measured the two owners of that
+cell and neither of them alone closes it: bloom is worth 40.7 and latefire is worth 51.1, and killing
+either one outright still fails. **The composition half is the larger share and it is the one nobody has
+touched.** A second detonation 1.24 m from the aiming target, one tick old, radius 2.80 m, landing within
+117 ms **one time in three** is not an edge case; it is the burst frame, and it is the frame that carries
+clause F sub-2's only failing cell, blind point 3's worst figure and clause E's in-motion collapse.
+
+The bloom half is now **in progress and correctly aimed** — that is `25dfee6`, and the next step on it is
+not a new idea but a **sweep**: 2/3/3/4 took 41.8% of the ceiling on the column that was measured, so
+1/2/2/3 and 1/1/2/2 should be read on leg 1 and leg 2 before anyone concludes the knob is spent or takes
+P6's annotation branch.
+
+Rank 2 is **RULING 30's repeat protocol**, which is one flag and restores or honestly retires two clauses.
+Rank 3 is **RULING 31(a)**, the compression sweep, which is a falsification test of my own model and the
+cheapest thing on this list. Rank 4 is **clause I**, newly scoreable and never scored. Rank 5 is **clause
+B to 90%**, still the only clause with no known lever that does not pull against another. Rank 6 is the
+**per-machine chroma column** granted in RULING 29.
+
