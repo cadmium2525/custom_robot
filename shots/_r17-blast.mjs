@@ -88,6 +88,7 @@
 
 import { chromium } from 'playwright';
 import { writeFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import process from 'node:process';
 
@@ -112,6 +113,32 @@ async function bundleHash(base) {
   } catch (e) {
     return 'unavailable (' + String(e.message || e).slice(0, 40) + ')';
   }
+}
+
+/**
+ * Write the scan listing, refusing to overwrite ANOTHER ARENA's record.
+ *
+ * `${PREFIX}-scan.txt` is keyed on the prefix and not on the arena, and the
+ * prefix defaults to `shots/r17h` — the house grid pin. So
+ * `--arena foundry --list` with no prefix silently replaced grid's committed
+ * listing with foundry's, under grid's name, and the substitution was committed
+ * before anyone read the second line of the file. I did that.
+ *
+ * It is the same shape as instrument faults 25 and 29: a tool allowed to answer
+ * about one subject under another subject's name. The fix is the same one those
+ * got — refuse, and say what it found instead of what it expected.
+ */
+async function writeScan(path, arena, body) {
+  try {
+    const prev = readFileSync(path, 'utf8');
+    const m = prev.match(/\barena=(\w+)/);
+    if (m && m[1] !== arena) {
+      console.error(`refusing to overwrite ${path}: it holds arena=${m[1]}, this run is arena=${arena}`);
+      console.error('pass --prefix so each arena keeps its own listing');
+      process.exit(3);
+    }
+  } catch { /* no previous listing is fine */ }
+  await writeFile(path, body);
 }
 
 const args = process.argv.slice(2);
@@ -850,13 +877,13 @@ for (let done = 0; done < SCAN; done += 30) {
 }
 if (LIST) {
   say(`scanned ${step?.tick} ticks, ${found} blasts, ${qual} qualifying`);
-  await writeFile(`${PREFIX}-scan.txt`, log.join('\n') + '\n');
+  await writeScan(`${PREFIX}-scan.txt`, ARENA, log.join('\n') + '\n');
   await browser.close();
   process.exit(0);
 }
 if (!chosen) {
   say('NO QUALIFYING BLAST FOUND — widen --scan or change --seed');
-  await writeFile(`${PREFIX}-scan.txt`, log.join('\n') + '\n');
+  await writeScan(`${PREFIX}-scan.txt`, ARENA, log.join('\n') + '\n');
   await browser.close();
   process.exit(2);
 }
