@@ -10576,3 +10576,25 @@ reads.
 - `shots/_r36-what.mjs` — the intensity and colour of the covering pixels, same subject rule and same
   `nbox` guard as the cover meter, cross-checked against it to the digit.
 
+### 8. A note for RULING 38's gate 1, since `3258408` built it while this round was in flight
+
+Gate 1 is `in >= 1.00 AND d < fd`, and pin 956 **passes** it: `d` 6.9 m against `fd` 15.8 m. It is
+rejected only by gate 2, on the 533 ms age.
+
+**`d < fd` says the blast is in front of the opponent. It does not say whether the opponent is inside
+the effect**, and those are different questions with different fixes — which is the whole content of
+section 1 above. The quantity that separates them is already computed by `shots/_r36-geom.mjs` from
+fields every post-round-34 capture stores, at no capture cost:
+
+    d3 / M  =  (3-D blast-to-opponent distance) / (1.5 R, the effect's own mass radius)
+
+    pin 1195   0.70 - 1.12   the opponent is IN the fire, on its rim
+    pin 956    1.73 - 2.35   the opponent is OUTSIDE the fire at every age
+
+Both pins pass `d < fd`. Only one of them is a machine being swallowed by an explosion; the other is a
+machine being hidden by an explosion happening to somebody else, nine metres in front of it. **If the
+enumerated set is meant to be a set of pins where clause F sub-2 means what it says, `d3/M` is the
+third column it needs**, and it is free. Whether a pin with `d3/M > 1` should be scored, scored
+separately, or excluded is the critic's ruling to make — this is only the observation that the two
+cases are currently indistinguishable in the set.
+
