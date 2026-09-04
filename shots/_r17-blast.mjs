@@ -304,6 +304,21 @@ const INSTALL_FN = `(cfg) => {
       for (let i = 0; i < 2; i++) {
         const r = g.world.robos[i];
         put('robo' + i, r.pos.x, r.pos.y + 0.9, r.pos.z);
+        // ROUND 34. Which machine is the OPPONENT, and how deep it stands
+        // inside this blast, are the two things that decide whether a pin can
+        // fail clause F sub-2 at all -- and both were being computed by hand
+        // off a listing that did not print them. The opponent is the FAR
+        // machine (_r25-cover.mjs takes the smaller stencil box), so its camera
+        // distance is what names it; a metre-radius sphere at chest height is
+        // the same proxy the composition rule itself uses for a machine.
+        const cam2 = g.camera.position;
+        const rd = Math.hypot(r.pos.x - cam2.x, r.pos.y + 0.9 - cam2.y, r.pos.z - cam2.z);
+        const f2 = window.innerHeight / (2 * Math.tan(g.camera.fov * Math.PI / 360));
+        out['robo' + i].dist = rd;
+        out['robo' + i].rpx = 1.0 / Math.max(rd, 0.001) * f2;
+        if (p) {
+          out['robo' + i].sep = Math.hypot(out['robo' + i].x - out.blast.x, out['robo' + i].y - out.blast.y);
+        }
       }
       return out;
     },
@@ -734,6 +749,7 @@ say(`tier=${meta.tier} particleBudget=${meta.budget} seed=${SEED} arena=${ARENA}
 let chosen = null;
 let found = 0;      // every blast seen, qualifying or not
 let qual = 0;       // qualifying blasts only — what --index counts
+let lastTick = null; // previous EV.EXPLODE, for the dt column
 let step;
 for (let done = 0; done < SCAN; done += 30) {
   step = await page.evaluate(() => window.__blast.step(30));
@@ -744,10 +760,30 @@ for (let done = 0; done < SCAN; done += 30) {
     const ok = pr.blast.z < 1 && pr.robo0.z < 1 && pr.robo1.z < 1
       && pr.robo0.x > 0 && pr.robo0.x < VW && pr.robo0.y > 0 && pr.robo0.y < VH
       && pr.robo1.x > 0 && pr.robo1.x < VW && pr.robo1.y > 0 && pr.robo1.y < VH;
+    // ROUND 34 — THE TWO COLUMNS A PIN IS CHOSEN ON.
+    //
+    //   far   which machine is the OPPONENT. `_r25-cover.mjs` scores the
+    //         SMALLER stencil box, so the opponent is the machine further from
+    //         the camera, and a listing that does not say which one that is
+    //         cannot be used to predict the cell.
+    //   in    how much of that machine's disc the blast's disc covers, on the
+    //         metre-radius sphere the composition rule itself uses. 1.00 is a
+    //         machine wholly inside the mass. The cell can only FAIL where this
+    //         is large, which is what makes a pin have power.
+    //   dt    ticks since the previous EV.EXPLODE. A second detonation within
+    //         ~12 ticks (200 ms) is the other half of the requirement.
+    const farKey = pr.robo1.dist > pr.robo0.dist ? 'robo1' : 'robo0';
+    const far = pr[farKey];
+    const inBlast = Math.max(0, Math.min(1,
+      (pr.blast.rpx + far.rpx - far.sep) / (2 * far.rpx)));
+    const dt = lastTick === null ? null : b.tick - lastTick;
+    lastTick = b.tick;
     say(`  blast @tick ${b.tick} R=${b.radius.toFixed(2)} kind=${b.kind} ` +
         `screen=(${pr.blast.x.toFixed(0)},${pr.blast.y.toFixed(0)}) ` +
         `d=${pr.blast.dist.toFixed(1)}m rpx=${pr.blast.rpx.toFixed(0)} ` +
         `p1=(${pr.robo0.x.toFixed(0)},${pr.robo0.y.toFixed(0)}) p2=(${pr.robo1.x.toFixed(0)},${pr.robo1.y.toFixed(0)}) ` +
+        `far=${farKey === 'robo1' ? 'p2' : 'p1'} fd=${far.dist.toFixed(1)}m fsep=${far.sep.toFixed(0)} ` +
+        `frpx=${far.rpx.toFixed(0)} in=${inBlast.toFixed(2)} dt=${dt === null ? '-' : dt} ` +
         `${ok ? 'QUALIFIES' : 'skip'}`);
     if (ok && !chosen) {
       // --tick names the blast outright, which is the form a finding should be
