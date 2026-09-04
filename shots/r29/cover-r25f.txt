@@ -1,0 +1,14 @@
+COVERAGE AS A RENDER — shots/r25f   bundle c0b37a5ee9ac
+  grid @ HIGH, seed 1234567, blast tick 1195
+  opponent = the SMALLER stencil box. Clause F sub-clause 2 threshold is 25%.
+
+  age    ms  |  nbox  opponent box    px  |  L>8     L>25    L>60
+    1    17  |    2     51x77     2881  |   0.5     0.1     0.0
+    7   117  |    2     50x94     2717  | 100.0   100.0    97.2
+   14   233  |    2     60x77     2173  |  16.7    11.4     8.1
+   20   333  |    2     61x79     2304  |   7.6     6.1     2.5
+   26   433  |    2     59x87     2387  |  15.9    12.7     1.9
+   32   533  |    2     54x68     2265  |   2.5     0.3     0.0
+   48   800  |    2     49x85     2277  |   8.1     5.8     3.4
+
+  every age segmented to exactly two machine boxes, so "the smaller box" is a machine.

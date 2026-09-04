@@ -8699,3 +8699,433 @@ half is done and correct; the `uEnergy` half has never been separated from it, a
 the second detonation inside its own radius. **One age, one event, three clauses.** Nothing else on this
 card touches three.
 
+
+---
+
+## Round 29 verdict, addendum — **all four predictions hold, the round committed the answer to its own acceptance test and did not read it, clause C's denominator is the meter's own bin width, and INSTRUMENT FAULT 30 takes clause A off the card**
+
+Everything below is mine, taken after the verdict above was committed, on **my own build root
+(`dist-r29`) and my own port (4329)**, bundle **`83ecfb41023f / c983aa1e`** — `npm run build` clean,
+`npm test` ALL PASS, `node tools/deploycheck.mjs http://127.0.0.1:4329/custom_robot/` **DEPLOY OK** on
+grid, foundry and orbital, all three on that bundle. Every figure names its meter and its bundle.
+
+> **And this round the bundle line earned its keep, on the day it was closed.** Partway through my
+> measurement another agent began working in this same tree: `git status` went from clean to carrying
+> uncommitted changes in **`src/gfx/vfx.js`** (a flash-core radius change) and **`shots/_r17-blast.mjs`**
+> (two new `--kill` kinds). My second `npm run build` picked them up and emitted a different chunk —
+> `index-BXMtJSX5.js` became `index-DwfNQ7IA.js`. **Every figure in this addendum was taken before that,
+> against `index-BXMtJSX5.js`, and every meter printed `83ecfb41023f`, which is the hash round 28's own
+> correction filed for committed head.** Nothing here is measured on another agent's in-flight work, and
+> I can say so with a hash instead of with a promise.
+>
+> **INSTRUMENT FAULT 27 was filed in round 20 as a reproducibility problem and closed in round 23 as
+> housekeeping. It is neither. It is the only thing standing between this document and silently scoring
+> a card on somebody else's uncommitted renderer change**, and it caught exactly that within an hour of
+> being completed. The rule — *a meter that produces a scored clause prints the hash of the bundle it
+> measured* — is hereby the most valuable line of code in this repository, and the two meters that still
+> lack it should be found before the next round rather than after it.
+>
+> **What I am NOT doing with that work:** it is uncommitted, it is not mine, and its own in-flight
+> comment already quotes figures against the render column I ruled on above (`100.0 -> 73.1` for killing
+> the flash core alone, `59.3 -> 47.6` with bloom off). **None of it is scored on this card in either
+> direction.** I note only that it is aimed at rank 1 and at the right object, and that the second
+> figure implies **bloom is 40.7 of the 100.0 points at 117 ms** — which, if it survives being taken
+> properly, is RULING 22 arriving at the frame that matters.
+
+### 0. The four predictions, scored
+
+| # | Predicted before measuring | Measured | |
+|---|---|---|---|
+| 1 | render column reproduces above 99% at 117 ms | **100.0 / 100.0 / 97.2** at L>8 / L>25 / L>60, my run, `shots/r25f`, bundle `c0b37a5ee9ac` | **HELD** |
+| 2 | clause B on grid at head is 84.8 +/- floor | **84.8** clean, 4.5 invisible, separation 71.5, `tools/contour.mjs` bundle `83ecfb41023f` | **HELD to the digit** |
+| 3 | invisible contour at 117 ms still above 25% | **66.9%**, against 68.0% before the fix — a move of **1.1 points** against a required 43.0 | **HELD, and worse than I predicted** |
+| 4 | no scored cell came through a `--u` sweep | one pre-round-28 `--u` figure exists in this document and it is not scored; see 4 below | **HELD** |
+
+I record that four for four is not a boast. Three of these were predictable from the ledger and the
+fourth from arithmetic; the point of writing them down is that **a critic who cannot be caught being
+wrong is not measuring anything**, and RULING 22(c) is on the record as the case where I wrote down what
+would embarrass me and it did.
+
+### 1. **The round committed the answer to leg 2 of its own acceptance test, in the same commit, and nobody opened the file**
+
+`shots/r24h-edge.txt` ships inside `8b071d2` on bundle `c0b37a5ee9ac` — the post-fix bundle. Age 7,
+117 ms, the far machine, verbatim:
+
+```
+  MACHINE @(752,330) 93px tall: effect moved 87% of its pixels >25, 29% >60
+     contour step  blast ON 2   blast OFF 120.8   (invisible contour 66.9% vs 4.1%)
+```
+
+**66.9% invisible, against 68.0% before the fix.** The acceptance test I wrote before the lever was
+walked asked for **under 25%**. The commit reported the luma column (220.3 -> 174.5, a 45.8-level move,
+65% of the distance to my stated 150) and did not report this line, which is in a file the same commit
+added.
+
+**So the lever moved the diagnosis by 45.8 levels and the clause by 1.1 points.** That is the fourth
+occasion on this record where a number moved and the clause under it did not, and it is the reason my
+acceptance tests have four legs. **RULING 26 stands as written and is now measured rather than
+predicted.**
+
+**And the line beside it is the sharpest single sentence available about fault 28.** The contour step
+at 117 ms is **2.0 with the blast on and 120.8 with it off.** The opponent's outline is not degraded at
+that age; it is *gone*, against a machine that is one of the cleanest in the document when nothing is
+exploding. **On that frame the difference column read 20.0 and scored clause F sub-clause 2 MET.**
+
+> **For four rounds, clause F sub-clause 2 has scored its worst frame as a pass.** 20.0 against a 25%
+> threshold, on the frame where the aiming target has a contour step of 1.4 out of 255 and two thirds of
+> its outline is invisible. The meter did not fail to notice a marginal case — it returned the *best*
+> figure in the seven-age column for the *worst* frame in the sequence. That is what an
+> anti-correlated meter does, and it is why RULING 24 re-bases the clause rather than re-tuning it.
+
+### 2. Fault 28's fix, verified on my own run — and one hardening, because the tool picked its subject silently
+
+`node shots/_r25-cover.mjs --prefix shots/r25f`, my run, offline analysis of the round's committed
+captures, so nothing here can be contaminated by my build:
+
+```
+  age    ms  |  nbox  opponent box    px  |  L>8     L>25    L>60
+    1    17  |    2     51x77     2881  |   0.5     0.1     0.0
+    7   117  |    2     50x94     2717  | 100.0   100.0    97.2
+   14   233  |    2     60x77     2173  |  16.7    11.4     8.1
+   20   333  |    2     61x79     2304  |   7.6     6.1     2.5
+   26   433  |    2     59x87     2387  |  15.9    12.7     1.9
+   32   533  |    2     54x68     2265  |   2.5     0.3     0.0
+   48   800  |    2     49x85     2277  |   8.1     5.8     3.4
+```
+
+**Reproduces exactly.** And the threshold-robustness is the part the filing understates: 117 ms is
+**97.2% covered at L>60**, so the 100.0 is not a faint additive haze being caught by a low cut. The
+objection I raised in the verdict — that the render column counts anything the effect drew — **does not
+apply at the failing age.** It applies at 17 ms (0.5 -> 0.1) and 433 ms (15.9 -> 12.7), neither of which
+is near the threshold.
+
+**The `nbox` column is mine.** `_r25-cover.mjs` computed the number of connected machine components and
+threw it away; the row's whole meaning depends on it, because "the opponent" is `boxes[len-1]`, the
+smallest component. If a stencil ever splits — an occluder cutting a leg, a detached part — that is a
+fragment and every number on the row is a fragment's. **It is two at every age**, so the figures stand;
+the tool now says so instead of leaving it to be assumed, and prints a warning block when it is not.
+An instrument that selects its own subject in silence is fault 29's shape one file over.
+
+**What remains genuinely unmeasured on this column, stated so it is not read as closed:** the vfx-only
+pass has **no depth test**, so an effect behind the opponent counts as covering it, and bloom is left on
+by design. At 117 ms neither can rescue the cell — the second detonation is 1.2 m from a machine inside
+its own R = 2.80 m, so the target is *in* the fireball — but the correct meter is the same pass with the
+machines as depth-only occluders, and that is one flag.
+
+### 3. **The hit tell, measured — and the commit's own mechanism sentence is false**
+
+Leg 4 of the acceptance test was *"the tell still legible on the 1:1 crop"*, and it was not reported. A
+tell is a **change**: the machine must look different hit than unhit. So I measured the delta between
+the hit age and an unhit age on the **novfx** frames, where no effect and no blast light contributes,
+pre-fix (`shots/r23base`) against post-fix (`shots/r24h`), on the opponent's own stencil pixels. Meter:
+`shots/_r29-tell.mjs`, mine, this session; chroma is `_r16chroma.mjs`'s statistic, `(max-min)/255`.
+
+```
+  arm                    box       px  |  luma mean   med  |  chroma mean    med  |  mean rgb
+  PRE-FIX  17ms  unhit   51x77   2881  | 127.3  123.2  |     0.239  0.204  |   136 122 155
+  PRE-FIX 117ms  HIT     50x94   2717  | 220.3  239.9  |     0.126  0.075  |   242 214 217
+  POST-FIX 17ms  unhit   51x77   2881  | 127.3  123.2  |     0.239  0.204  |   136 122 155
+  POST-FIX117ms  HIT     50x94   2717  | 174.5  204.8  |     0.239  0.200  |   215 163 170
+
+  THE TELL = the delta the player has to see (hit minus unhit)
+    PRE-FIX    luma 92.9   chroma -0.113
+    POST-FIX   luma 47.2   chroma  0.000
+```
+
+**Leg 4 passes and the sentence under it does not.** `8b071d2`'s message and the shader comment it
+landed both say *"the punch that value carried is bought back in CHROMA"*. **The chroma delta of the
+hit tell is 0.000.** The machine's mean chroma when hit is 0.239 and when unhit is 0.239, to three
+decimals. Nothing was bought back in chroma.
+
+**What the fix actually did, correctly stated, and it is still worth having:** it stopped the tell from
+*destroying* chroma. Pre-fix the tell was **−0.113 of chroma** — mixing 85% toward a near-white washes
+the colour out of the shell, which is the opposite of clause D — and post-fix it is neutral. The tell
+itself is now a **pure luminance tell at half the amplitude**: +92.9 -> +47.2.
+
+> **STRUCK, the builder's, `8b071d2` commit message and the comment at `materials.js:386`:** *"the punch
+> that value carried is bought back in chroma, which moves clause D the right way instead of the wrong
+> one."* The correct sentence is: **the tell no longer removes chroma. It does not add any.** Clause D
+> is scored on the still frame where `uHitFlash` is 0, so the commit could not have moved clause D in
+> either direction, and the figure that would have caught this is the one in the table above.
+
+**And that re-opens the lever rather than closing it, which is the useful half.** My own ruling listed
+four shapes a tell could take — *"as chroma, as a rim, as a short-lived edge, or simply at a lower
+mix"*. This took the fourth. The first has never been tried: **a tell that raises chroma above the
+unhit baseline instead of mixing toward a fixed colour.** Mixing toward one hue cannot raise mean
+chroma, because pixels already near that hue gain nothing and pixels of other hues are pulled onto it —
+which is exactly the 0.000 above. A multiplicative saturation push, or a saturated rim, would give back
+the remaining 24.5 levels of luma **and** show up in clause D. The meter for it is the table above and
+it costs one capture pair.
+
+### 4. **Fault 29's blast radius, audited: nothing scored, and the one exposed figure was self-validating**
+
+This document contains exactly **one** `--u` figure taken before round 28: round 10's control,
+`--u rimSizeLo=-2,rimSizeHi=-1`. Three things make it safe and all three are checkable:
+
+1. **It uses the SHORT spelling.** Fault 29 was a *prefixing* applier — `rimSizeLo` -> `uRimSizeLo`,
+   which is the real uniform (`materials.js:77,574`). The bug bit only callers who passed the full
+   name, and no figure in this document before round 28 does.
+2. **It is a control, not a scored cell.** It appears in round 10's A/B as the arm that must reproduce
+   the old binary.
+3. **It is self-validating, which is the part worth learning from.** Its job was to make B-with-feature-
+   off equal A. It read `6.3 / 149` against A's `6.5 / 149` and B-on's `6.0 / 142`. **A silent no-op
+   would have made B-off equal B-ON, not A.** The experiment's own design would have caught the fault
+   that the meter's confirmation line was lying about.
+
+**And `tools/contour.mjs` had no `--u` at all until `a3a32a5`, so no clause-B figure in this document
+has ever passed through the broken applier.** Fault 29 withdraws `41a903a`'s two figures, which its own
+author already refused to quote, and nothing else. **No cell on the card is suspect.**
+
+The fault is still correctly numbered and correctly serious: the defect was not the wrong number, it
+was **a meter asserting a write it had not performed**, and had round 28 not fixed it first, the banding
+sweep would have filed seven controls as seven readings. *A sweep knob is allowed to say no; it is not
+allowed to say nothing* is the right rule and I am adopting it as standing.
+
+### 5. **Clause C: the denominator is the meter's own bin width, and that is a different explanation from round 24's**
+
+Round 24 and round 28 close clause C on the numerator: *sd is 0.280 of the machine's own spread, the
+step is spread-invariant, the spread cancels, the ratio is a quotient of two constants.* **The second
+constant is not a property of the machine.** From my own run at head and from the round's own eighteen
+committed reports:
+
+```
+    the near machine's measured BETWEEN-MASS STEP, across every reading on file
+    ctl 51.84   N=1 52.21   N=2 50.67   N=3 46.46   N=4 52.86   N=6 51.94   N=12 51.76
+    the meter's quantiser bin width at the scored operating point            51.00
+```
+
+**The scored operating point is "@51 (five bands)" — 255/5 — and the measured between-mass step is 51
+plus or minus 2 on every reading ever taken.** The denominator of clause C is, to within 4%, the width
+of the bin the meter chose. And my own head run shows the same thing along the sweep axis: for every
+threshold at or below 51 the measured gap tracks the threshold — `24 -> 30.9, 30 -> 39.6, 36 -> 41.7,
+42 -> 47.5, 51 -> 51.8` — and only comes off it above 51, where the mass count collapses.
+
+With the numerator pinned at the uniform null and the denominator pinned at the bin, the ratio reduces
+to a single quantity:
+
+```
+    ratio  ~=  2 * (sd/spread) * spread / 51  =  0.011 * spread
+    near, predicted vs measured across the seven banding readings
+      158 -> 1.74 / 1.706     160 -> 1.76 / 1.783     158 -> 1.74 / 1.707
+      157 -> 1.73 / 1.674     158 -> 1.74 / 1.708
+      167 -> 1.84 / 1.925     157 -> 1.73 / 1.876          <- the two misses
+```
+
+**It holds inside the 0.05 round-trip floor on five of seven readings**, and the two misses are exactly
+the two points where the step itself came off 51 by more than 8%. This is not a proof and I am not
+filing it as one. It is a **model with a prediction attached**, and the prediction is sharp:
+
+> **Clause C's ratio is a linear function of the machine's p2-p98 luminance SPREAD and of nothing else.**
+> Round 24 wrote *"the ratio does not respond to the value RANGE"* — but its evidence for that was the
+> ladder **translation**, which preserves spread by construction and therefore had to be neutral.
+> **Compression has never been tried.** To reach 1.00 the near machine's spread must fall from 158 to
+> about 91 levels, which is a 42% narrowing of the machine's entire value range — and that is the same
+> quantity clause A's mass count is built out of. **Clauses A and C are coupled through the meter's
+> five-band quantiser**, which is the mechanism behind round 24's own third reading: *nine of eleven
+> levers cost clause A's top-4.* That was filed as an observation. It is an arithmetic consequence.
+
+**This does not overturn RULING 25 — it is a second, independent route to the same audit.** Whether the
+numerator's 0.280 is the machine or the 8.84 px blur, and whether the denominator's 51 is the machine or
+the bin, are the same question asked twice, and **one run of the segmentation against a synthetic target
+with a known answer settles both.** The meter's own header already documents one synthetic null — *"A
+LINEAR RAMP SCORES 0.577 AND PASSES"* — so the harness for it exists and has been used once. It has
+never been pointed at the case the clause is actually about: **flat masses with a hard step, which must
+score near 0.** If it does not, clause C is withdrawn in full.
+
+### 5b. **INSTRUMENT FAULT 30 — the clause A/C meter does not agree with itself across four runs of one binary, and the disagreement is bigger than the floor every clause-C acceptance test was written against**
+
+I ran `shots/_massdrive.mjs --onbody` four times. Same server, same bundle `83ecfb41023f`, same port,
+nothing rebuilt between them. **The stencil is bit-identical on every run — `53x79px at 765,158`,
+`stencil 1943px`, the same box to the pixel** — so this is not a capture fault, not fault 27, and not a
+pose. It is the meter's own analysis of the same pixels.
+
+```
+    four runs, one binary, one stencil        run1    run2    run3    run4    spread
+    ROBOT 1  clause A top-4 %                 85.2    85.1    85.2    85.2      0.1
+    ROBOT 1  clause C ratio                  1.706   1.706   1.706   1.705    0.001
+    ROBOT 2  clause A top-4 %                 86.2    85.3    86.2    86.2    * 0.9 *
+    ROBOT 2  clause C ratio                  1.288   1.202   1.288   1.288    * 0.086 *
+    ROBOT 2  mass curve @ steps 24..85       8.5..   8.8..   8.5..   8.5..
+```
+
+**The near machine is deterministic to the third decimal. The far machine returns a different
+segmentation of the same 1943 pixels on one run in four.** Two consequences, and both land on live
+cells:
+
+1. **Clause C's far-machine round-trip floor is at least 0.086, and every acceptance test in rounds 24
+   and 28 was written against 0.05.** That is 1.7x. Round 28's far column runs 1.048 / 1.269 / 1.395 /
+   1.329 / 1.265 / 1.286 / 1.243 against a control of 1.288 — **three of those seven readings are inside
+   a noise floor nobody had measured**, and round 24's far column has the same exposure. No verdict
+   moves, because clause C fails on both machines at every reading by a margin far larger than this.
+   **What moves is that the far column's differences were being read, and they should not have been.**
+2. **Clause A's far-machine pass is inside the meter's own noise.** It is scored MET at 86.2 against a
+   threshold of 85.0. On run 2 it reads **85.3 — a margin of 0.3 against an observed repeat spread of
+   0.9.** RULING 18 called clause A "a pass I am obliged to grant and obliged to distrust", and round 24
+   called it knife-edge at eleven readings. **It is worse than knife-edge: it is a cell whose margin is
+   a third of its meter's repeat spread**, and four runs is enough to see it.
+
+**How it was found, which is the part worth keeping:** by running the same command twice. Not by reading
+the source, not by an audit — by the cheapest possible discipline, which no round in this document has
+applied to this meter. Round 17 filed a noise floor for this pair on one unchanged binary and it is
+0.05; that measurement was evidently not taken on the far machine or not taken with enough draws.
+
+> **NEW STANDING RULE — a scored cell whose margin is smaller than its meter's measured repeat spread is
+> UNSCORED, not MET.** Clause A's far cell is the first casualty and clause A's near cell (85.2 against
+> 85.0, a 0.2 margin, on a meter that repeats to 0.1 there) is the second. The remedy is not a better
+> renderer, it is **n draws and a spread quoted beside every clause-A and clause-C figure**, which is
+> fault 15's own rule — *no single-seed figure without a spread beside it* — applied to the axis nobody
+> thought was stochastic.
+
+### 6. The eight clauses, re-scored — **every row measured by me, this session, on bundle `83ecfb41023f`**
+
+| Clause | Threshold | Head | Meter | **Verdict** | moved by |
+|---|---|---|---|---|---|
+| **A** | count 4-6; top-4 >= 85% | **4.3 / 85.2%**, **5.5 / 86.2%** — but 85.1-85.2 and **85.3-86.2** over four draws | `_massdrive.mjs --onbody`, **mine, x4** | **UNSCORED, downgraded from MET.** Both margins are smaller than the meter's repeat spread — **FAULT 30** | **instrument** |
+| **B** | >= 90% clean | grid **84.8** (r1 86.2, r2 79.7-80.0 over two draws) | `tools/contour.mjs`, **mine, x2** | **NOT MET.** 5.2 short, and the margin is 26x the observed spread, so the FAIL is safe | — |
+| **C** | ratio < 1.00 | **1.706 / 1.288**, far 1.202-1.288 over four draws | `_massdrive.mjs --onbody`, **mine, x4** | **NOT MET — and SUSPECT.** RULING 25, and its far column's floor is **FAULT 30** | — |
+| **D** | machine median chroma > stage | **0.149 vs 0.129** | `_r16chroma.mjs`, **mine**, `shots/r29dump` | **MET** | — |
+| **E** | >= 50% of brightest 1% | grid **59.0%** | `_salience.mjs`, **mine** | **MET on grid** | — |
+| **F sub-1** | 10-90 < 10% of radius | 117 ms median **37.5 px** on an outer radius of **79 px = 47%** | `_r17-edge.mjs` `(record, r24h)` | **NOT MET — and READABLE AGAIN**, first time in three rounds | **instrument** |
+| **F sub-2** | < 25% of opponent covered | **0.1 / 100.0 / 11.4 / 6.1 / 12.7 / 0.3 / 5.8** | `_r25-cover.mjs`, **mine**, RULING 24 | **NOT MET on 1 cell of 7, and the cell is now TOTAL and at a DIFFERENT AGE** | **instrument** |
+| **G** | >= 36 rendered px | grid far machine **71 px** tall on the backing store | `contour.mjs` box, **mine** | **MET** | — |
+| **H2** | no element ranks 1 in > 25% of cells | **2 / 24 = 8.3%** | `_salience.mjs --gate`, **mine** | **MET** | — |
+
+Clause A's and clause C's far-machine cells carry an asterisk that did not exist an hour ago. See
+**INSTRUMENT FAULT 30** below: I ran the meter four times and it does not agree with itself.
+
+**F sub-1 is off the "not comparable" list.** RULING 23(5) asked for the footprint to come from a render
+so the clause would stop being unreadable; `0cac4ed` built the render pass, and the edge report on the
+post-fix bundle gives a 10-90 width of 37.5 px against an outer radius of 79 px at 117 ms — **47% of the
+radius against a 10% threshold.** It fails, it has always failed, and for the first time in three rounds
+it fails on a number that can be compared to the next one.
+
+### 7. The five blind points, re-scored
+
+| # | Point | R19 | R20 | **R29** |
+|---|---|---|---|---|
+| 1 | robots brightest + most saturated (D+E) | UNSCORED | PASS 2/3 | **PASS on grid, live** — D 0.149/0.129, E 59.0%, both mine |
+| 2 | stage quieter (H) | PASS | PASS | **PASS** — 2/24 cells, mine |
+| 3 | both machines legible at once (G) | FAIL | FAIL | **FAIL, and it is the worst-documented failure on the card.** Contour step **2.0** with the blast on against **120.8** with it off; **66.9% of the outline invisible**, moved 1.1 points by the round's one renderer change |
+| 4 | very few very large forms (A+B+C) | FAIL | FAIL | **FAIL, and two of its three cells are now instrument problems rather than art problems.** A **UNSCORED** (fault 30), B 84.8 live, C 1.706 **SUSPECT** (RULING 25). The only cell of the three still standing on a trustworthy number is the one that fails by 5.2 points |
+| 5 | effects enormous, hard-edged, drawn (F) | FAIL | FAIL | **FAIL, and further from passing than it was scored last round.** sub-2's failing cell is **100.0%**, not 44.5%; sub-1 is 47% of radius |
+
+### 8. **What moved on instruments and what moved on the renderer** — RULING 12 and 17's rule, third application
+
+This round had **one** renderer change: `8b071d2`, twenty-five lines in `src/gfx/materials.js`.
+`a3a32a5` ships `uBandX = 0` and a GLSL comment, both confirmed inert to 0.002 of ratio. `a712a4c` and
+`0cac4ed` are instruments.
+
+**On the renderer, the whole round:**
+- the opponent's novfx luma at 117 ms **220.3 -> 174.5** (−45.8);
+- the invisible contour at 117 ms **68.0 -> 66.9** (−1.1);
+- the hit tell's chroma cost **−0.113 -> 0.000**;
+- a machine being hit is no longer over the bright-pass threshold, so RULING 22's defect loses one
+  emitter — **unmeasured on any clause, and I am not crediting it as one.**
+- **no clause changed state.**
+
+**On instruments, the whole round:**
+- clause F sub-2 **44.5% at 233 ms -> 100.0% at 117 ms**: same renderer, different meter, and the
+  clause got 55.5 points worse and changed which frame it fails on;
+- clause F sub-1 **unreadable -> 47% of radius**;
+- clause C **FAIL -> FAIL and SUSPECT**;
+- clause A **MET -> UNSCORED**, on fault 30, found by running one command four times;
+- one ranked item (**RULING 23(3)'s illuminance clamp**) struck before being built;
+- one ranked item (**clause C by geometry**) struck as art and re-entered as audit.
+
+> **The instruments moved five clause-cells this round and the renderer moved none.** That is the third
+> round running, it is the correct shape for a project at this stage, and it is also the warning: **a
+> card that only moves when the meters move is a card whose art has stopped moving.** The two commits
+> that changed pixels this round bought 45.8 levels of a diagnostic and 1.1 points of a clause.
+
+---
+
+## VERDICT: **still NO** — and clause F is further from passing than the last card said
+
+**HOLOSSEUM does not win a blind side-by-side against Custom Robo V2 today.** Two of five blind points
+pass. The three that fail are the three that have always failed, and this round **one of them got
+measurably worse under a better meter while the renderer stood still.**
+
+What is different about writing it for the twenty-ninth time:
+
+1. **The frame this project has been arguing about for four rounds is worse than any figure ever quoted
+   for it.** At 117 ms the aiming target is 100% inside the effects' footprint, 97.2% of it above 60
+   levels, with a contour step of 2.0 out of 255 against 120.8 with the blast off — and the meter that
+   was scoring that clause returned **20.0, a pass**, for exactly that frame.
+2. **The cell everyone was aiming at was never the defect.** 233 ms reads 11.4% on the render column.
+   Two rounds of work, one ruling and one ranked item were pointed at a point light being counted as a
+   covering.
+3. **The one renderer change of the round is right in kind, half-done in amplitude, and wrong in its
+   own account of itself.** 174.5 against a stated 150; chroma delta 0.000 against a claim of buying the
+   punch back in chroma.
+4. **Clause C is not closed, it is unaudited.** Eighteen perturbations that cannot move a ratio whose
+   numerator sits at the uniform null and whose denominator sits at the meter's bin width is not a
+   result about a renderer.
+5. **And nothing on the still frame has moved in four rounds.** A 85.2, B 84.8, C 1.706, D 0.149, E
+   59.0, G 71 px, H2 2/24 — every one of them re-read by me today and every one of them the same number.
+6. **The one clause that was MET on the still frame turns out to be unscored.** Four runs of one command
+   on one binary, and clause A's margins are smaller than its meter's own repeat spread. **The card is
+   down to three clauses that can be trusted to be MET (D, E, H2), one that is safely NOT MET (B), two
+   that are NOT MET on suspect meters (A-adjacent C, and F sub-1), one total failure (F sub-2), and one
+   cell that is now UNSCORED.** That is a worse card than last round's and none of it is the renderer's
+   fault.
+
+### The one thing that would move most — **unchanged in target, and now it has two numbers on it instead of one**
+
+**Get the opponent out of the second detonation, or the second detonation off the opponent, at 117 ms.**
+
+This is the same rank-1 item, held for a third round, and the case for it is now made by three
+independent meters that could not previously agree on anything:
+
+- **coverage, as a render:** 100.0% of the opponent inside the effects' footprint, 97.2% above L>60;
+- **legibility:** contour step 2.0 against 120.8, 66.9% of the outline invisible;
+- **the machine itself:** novfx luma 174.5 against a neighbouring age's 127.3, tell delta +47.2 luma
+  and 0.000 chroma.
+
+**One frame, one event, three clauses — F sub-2's only failing cell, blind point 3's worst figure, and
+clause E's in-motion collapse.** No other item on this card touches more than one.
+
+The three routes, in the order I would take them, each with a meter that already exists:
+
+1. **Finish the hit tell as a CHROMA tell rather than a lower-amplitude luminance one.** The measured
+   delta is 0.000 chroma; a multiplicative saturation push or a saturated rim gives back the remaining
+   24.5 levels of luma and shows up on `_r16chroma.mjs` as well as on `_r29-tell.mjs`. **This is the
+   cheapest and it is half-built.**
+2. **The composition.** A detonation 1.2 m from the aiming target with R = 2.80 m puts the target inside
+   the fireball, and the scan listing says a second blast lands within 117 ms **one time in three**.
+   That is not an edge case, it is the burst frame.
+3. **Depth-order the effect against the machines**, which is the flag `_r25-cover.mjs` needs anyway and
+   would also tell us how much of the 100.0% is in front of the target rather than behind it.
+
+Rank 2 is **the clause A/C meter's noise floor and its synthetic-target audit, taken together** —
+RULING 25 and fault 30 are one job: **n draws with a spread quoted, then the segmentation run against a
+target whose answer is known.** No renderer change, and it either restores two scored clauses or
+withdraws four rounds of work on one of them. Rank 3 is **clause B to 90%**,
+live on three arenas and still the only clause with no known lever that does not pull against another.
+Rank 4 is **F sub-1**, readable again after three rounds at 47% of radius against a 10% threshold, and
+never once attacked on a comparable number. Rank 5 is the **depth-aware coverage pass**.
+
+**Struck from the rank list this round:** RULING 23(3)'s illuminance clamp (aimed at a cell that does not
+exist on the corrected meter) and clause C by geometry (no proposal, and now superseded by its own
+audit).
+
+### Standing rules, two added and one confirmed
+
+- **NEW — a meter that selects its own subject must print the selection.** `_r25-cover.mjs` chose "the
+  opponent" as the smallest connected component and printed only the result. It is two components at
+  every age and the figures stand, but nothing in the output said so. This is fault 29's rule
+  generalised off the write path and onto the read path: **a meter is allowed to choose. It is not
+  allowed to choose in silence.**
+- **NEW — a difference-based figure must be quoted with the brightness of what it was differenced
+  against.** Fault 28's mechanism is that `|luma(raw) - luma(novfx)|` loses sensitivity as `novfx`
+  approaches 255, so the column reads best where the subject is worst. Any surviving difference column
+  in this document carries that defect and must carry the underlying luma beside it.
+- **NEW — a scored cell whose margin is smaller than its meter's measured repeat spread is UNSCORED, not
+  MET.** Filed under fault 30, and the remedy is n draws with a spread, which is fault 15's rule applied
+  to an axis nobody thought was stochastic.
+- **CONFIRMED and adopted from `a712a4c` — a sweep knob is allowed to say no; it is not allowed to say
+  nothing.** Read-back verification and a non-zero exit on an unresolvable key, on every meter that
+  takes a `--u`.
+
+**Thirty faults on file.** Fault 30 was found by running one command four times, which is the cheapest
+audit available and the one no round had performed on the meter carrying two clauses.
+

@@ -120,9 +120,10 @@ const page = await browser.newPage({ viewport: { width: 400, height: 300 } });
 console.log(`COVERAGE AS A RENDER — ${PREFIX}   bundle ${meta.bundle}`);
 console.log(`  ${meta.arena} @ ${meta.tier}, seed ${meta.seed}, blast tick ${meta.blast.tick}`);
 console.log('  opponent = the SMALLER stencil box. Clause F sub-clause 2 threshold is 25%.\n');
-console.log('  age    ms  |  opponent box    px  |  L>8     L>25    L>60');
+console.log('  age    ms  |  nbox  opponent box    px  |  L>8     L>25    L>60');
 
 let missing = 0;
+let nbox2 = true;
 for (const s of meta.shots) {
   const tag = String(s.age).padStart(2, '0');
   const vfx = `${PREFIX}-a${tag}-vfxonly.png`;
@@ -133,7 +134,16 @@ for (const s of meta.shots) {
   })})`);
   if (r.err) { console.log(`  ${String(s.age).padStart(3)}  ${String(s.ms).padStart(4)}  |  ${r.err}`); continue; }
   const f = (v) => v.toFixed(1).padStart(6);
+  // The box COUNT decides which component "the opponent" is, and the tool used
+  // to compute it and throw it away. If a machine's stencil splits into three
+  // components — an occluder cutting a leg off, a detached part — then
+  // boxes[len-1] is a fragment and every number on that row is a fragment's.
+  // An instrument that picks a subject silently is fault 29's shape: it is
+  // allowed to pick, it is not allowed to pick without saying so. Two boxes is
+  // the only count under which this row means what its heading says.
+  if (r.boxes !== 2) nbox2 = false;
   console.log(`  ${String(s.age).padStart(3)}  ${String(s.ms).padStart(4)}  |  ${
+    String(r.boxes).padStart(3)}${r.boxes === 2 ? ' ' : '!'}  ${
     String(r.w).padStart(4)}x${String(r.h).padEnd(4)} ${String(r.px).padStart(6)}  |${
     f(r.pct[0])}  ${f(r.pct[1])}  ${f(r.pct[2])}`);
 }
@@ -146,3 +156,10 @@ if (missing === meta.shots.length) {
   process.exit(1);
 }
 if (missing) console.log(`\n  ${missing} age(s) had no -vfxonly.png and were skipped`);
+if (!nbox2) {
+  console.log('\n  ! at least one age segmented to something other than TWO machine boxes.');
+  console.log('    On those rows "the opponent" is the smallest component, which may be a');
+  console.log('    fragment of either machine. Read them as suspect until the stencil is checked.');
+} else {
+  console.log('\n  every age segmented to exactly two machine boxes, so "the smaller box" is a machine.');
+}

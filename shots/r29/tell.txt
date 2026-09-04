@@ -1,0 +1,10 @@
+THE HIT TELL, MEASURED — opponent pixels in the novfx frame (no VFX, no blast lights)
+  arm                    box       px  |  luma mean   med  |  chroma mean    med  |  mean rgb
+  PRE-FIX  17ms  unhit   51x77   2881  | 127.3  123.2  |     0.239  0.204  |   136 122 155
+  PRE-FIX 117ms  HIT     50x94   2717  | 220.3  239.9  |     0.126  0.075  |   242 214 217
+  POST-FIX 17ms  unhit   51x77   2881  | 127.3  123.2  |     0.239  0.204  |   136 122 155
+  POST-FIX117ms  HIT     50x94   2717  | 174.5  204.8  |     0.239  0.200  |   215 163 170
+
+  THE TELL = the delta the player has to see (hit minus unhit)
+    PRE-FIX    luma 92.9   chroma -0.113
+    POST-FIX   luma 47.2   chroma 0.000
