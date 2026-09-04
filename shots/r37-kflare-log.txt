@@ -1,0 +1,43 @@
+bundle=23dc643dceac
+tier=HIGH particleBudget=1400 seed=1234567 arena=grid vp=1600x900
+  blast @tick 264 R=2.80 kind=2 screen=(555,746) d=6.7m rpx=518 p1=(814,777) p2=(784,207) far=p2 fd=24.7m fsep=585 frpx=33 in=0.00 dt=- occ=0.00 QUALIFIES
+  blast @tick 265 R=2.60 kind=1 screen=(243,461) d=14.1m rpx=228 p1=(814,777) p2=(784,207) far=p2 fd=24.7m fsep=598 frpx=33 in=0.00 dt=1 occ=0.00 QUALIFIES
+  blast @tick 311 R=2.80 kind=2 screen=(868,240) d=24.4m rpx=145 p1=(813,827) p2=(806,146) far=p2 fd=21.4m fsep=113 frpx=39 in=0.91 dt=46 occ=0.00 QUALIFIES
+  blast @tick 400 R=3.40 kind=1 screen=(995,433) d=15.7m rpx=266 p1=(981,690) p2=(720,245) far=p2 fd=18.9m fsep=333 frpx=43 in=0.00 dt=89 occ=0.00 QUALIFIES
+  blast @tick 449 R=2.60 kind=1 screen=(220,821) d=10.4m rpx=307 p1=(992,935) p2=(755,256) far=p2 fd=24.8m fsep=778 frpx=33 in=0.00 dt=49 occ=0.00 skip
+  blast @tick 455 R=2.80 kind=2 screen=(432,908) d=9.4m rpx=361 p1=(954,801) p2=(767,182) far=p2 fd=27.6m fsep=800 frpx=29 in=0.00 dt=6 occ=0.00 QUALIFIES
+  blast @tick 528 R=2.80 kind=2 screen=(871,197) d=27.5m rpx=125 p1=(960,1125) p2=(763,137) far=p2 fd=25.3m fsep=123 frpx=32 in=0.53 dt=73 occ=0.00 skip
+  blast @tick 616 R=2.80 kind=2 screen=(711,727) d=7.7m rpx=447 p1=(908,1068) p2=(774,115) far=p2 fd=21.9m fsep=616 frpx=37 in=0.00 dt=88 occ=0.00 skip
+  blast @tick 652 R=2.80 kind=2 screen=(955,179) d=22.6m rpx=153 p1=(629,1743) p2=(839,57) far=p2 fd=23.1m fsep=168 frpx=36 in=0.28 dt=36 occ=0.00 skip
+  blast @tick 838 R=2.80 kind=2 screen=(871,532) d=7.6m rpx=459 p1=(923,635) p2=(677,264) far=p2 fd=16.3m fsep=331 frpx=51 in=1.00 dt=186 occ=0.00 QUALIFIES
+  blast @tick 896 R=2.60 kind=1 screen=(773,200) d=11.8m rpx=279 p1=(712,804) p2=(887,91) far=p2 fd=14.7m fsep=158 frpx=57 in=1.00 dt=58 occ=0.00 QUALIFIES
+  blast @tick 956 R=2.60 kind=1 screen=(605,461) d=6.9m rpx=454 p1=(821,623) p2=(751,370) far=p2 fd=15.8m fsep=172 frpx=51 in=1.00 dt=60 occ=0.00 QUALIFIES
+chosen blast at tick 956 (scan reached 960); replaying
+  kill flares at age 1: {"flares":1}
+    light 2 PINNED  intensity 42.2 range 10.4m  robo0 2.6m 5.97lux  robo1 9.2m 0.07lux
+  age 1t (17ms) -> shots/r37-kflare-a01.png  blast=(606,473) p1=(830,651) p2=(740,367)
+  kill flares at age 7: {"flares":1}
+    light 2 PINNED  intensity 25.6 range 10.4m  robo0 2.7m 3.50lux  robo1 9.1m 0.06lux
+  age 7t (117ms) -> shots/r37-kflare-a07.png  blast=(617,470) p1=(817,612) p2=(757,377)
+  kill flares at age 8: {"flares":1}
+    light 0 late +117ms  intensity 45.5 range 11.2m  robo0 11.2m 0.00lux  robo1 2.4m 7.62lux
+    light 2 PINNED  intensity 23.6 range 10.4m  robo0 2.7m 3.14lux  robo1 9.0m 0.06lux
+  age 8t (133ms) -> shots/r37-kflare-a08.png  blast=(620,473) p1=(818,613) p2=(757,378)
+  kill flares at age 14: {"flares":1}
+    light 0 late +117ms  intensity 27.6 range 11.2m  robo0 11.6m 0.00lux  robo1 3.6m 2.02lux
+    light 2 PINNED  intensity 14.3 range 10.4m  robo0 3.0m 1.57lux  robo1 8.6m 0.05lux
+  age 14t (233ms) -> shots/r37-kflare-a14.png  blast=(646,491) p1=(820,626) p2=(735,368)
+  kill flares at age 20: {"flares":1}
+    light 0 late +117ms  intensity 16.7 range 11.2m  robo0 13.3m 0.00lux  robo1 4.2m 0.92lux
+    light 2 PINNED  intensity 8.7 range 10.4m  robo0 4.4m 0.42lux  robo1 8.3m 0.05lux
+  age 20t (333ms) -> shots/r37-kflare-a20.png  blast=(691,494) p1=(776,747) p2=(762,365)
+  kill flares at age 26: {"flares":1}
+    light 0 late +117ms  intensity 10.1 range 11.2m  robo0 15.4m 0.00lux  robo1 4.3m 0.51lux
+    light 2 PINNED  intensity 5.3 range 10.4m  robo0 6.5m 0.09lux  robo1 7.9m 0.04lux
+  age 26t (433ms) -> shots/r37-kflare-a26.png  blast=(733,456) p1=(725,921) p2=(784,342)
+  kill flares at age 32: {"flares":1}
+    light 0 late +117ms  intensity 6.2 range 11.2m  robo0 17.6m 0.00lux  robo1 4.5m 0.29lux
+    light 2 PINNED  intensity 3.2 range 10.4m  robo0 8.7m 0.01lux  robo1 7.6m 0.03lux
+  age 32t (533ms) -> shots/r37-kflare-a32.png  blast=(765,397) p1=(701,1077) p2=(793,310)
+  kill flares at age 48: {"flares":1}
+  age 48t (800ms) -> shots/r37-kflare-a48.png  blast=(796,296) p1=(773,825) p2=(798,270)
