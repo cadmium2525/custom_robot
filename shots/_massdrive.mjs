@@ -501,6 +501,136 @@ writeFileSync(TMP, out);
  * how the first version of this file left `.massdrive-*.mjs` through tools/.
  * Unlink first, exit second.
  */
-const r = spawnSync(process.execPath, [TMP, ...process.argv.slice(2)], { stdio: 'inherit' });
+/*
+ * RULING 30 — `--repeat N`. INSTRUMENT FAULT 30 is that this meter does not
+ * agree with itself across runs of one binary: four draws on bundle
+ * `83ecfb41023f` returned ROBOT 2 top-4 of 86.2 / 85.3 / 86.2 / 86.2 and clause
+ * C ratios of 1.288 / 1.202 / 1.288 / 1.288, on a stencil that was
+ * bit-identical every time. The margin on clause A's far cell (86.2 against a
+ * threshold of 85.0) is a third of that spread, so the cell was scored MET on a
+ * number the meter cannot reproduce.
+ *
+ * The remedy is not a better renderer and not a fix to the segmentation — it is
+ * a SPREAD printed beside the figure, which is fault 15's rule (no single-seed
+ * figure without a spread) applied to the axis nobody thought was stochastic.
+ *
+ * This runs the patched meter N times as N separate processes, so every draw is
+ * an independent run of exactly the binary a single draw would have used, and
+ * reports:
+ *
+ *   every draw, in order          so a drifting run is visible, not averaged out
+ *   median, min, max, spread      per machine, for clause A count, clause A
+ *                                 top-4 and clause C ratio
+ *   the RULING 30 disposition     MET needs the WHOLE observed range on the
+ *                                 passing side; NOT MET needs the whole range on
+ *                                 the failing side; a range that straddles the
+ *                                 threshold is UNSCORED and the spread is quoted
+ *                                 in the cell
+ *
+ * The median alone is deliberately not the rule. A cell that passes on median
+ * and fails on one draw in four is a cell a rebuild can flip, and this document
+ * has been flipped by a rebuild before (INSTRUMENT FAULT 27).
+ */
+const REPEAT = (() => {
+  const i = process.argv.indexOf('--repeat');
+  if (i < 0) return 0;
+  const v = Number(process.argv[i + 1]);
+  return Number.isFinite(v) && v > 1 ? Math.floor(v) : 0;
+})();
+
+/* Child argv with `--repeat N` stripped: the patched meter knows nothing of it. */
+const CHILD_ARGV = (() => {
+  const a = process.argv.slice(2);
+  const i = a.indexOf('--repeat');
+  if (i >= 0) a.splice(i, 2);
+  return a;
+})();
+
+if (!REPEAT) {
+  const r = spawnSync(process.execPath, [TMP, ...CHILD_ARGV], { stdio: 'inherit' });
+  try { unlinkSync(TMP); } catch { /* best effort */ }
+  process.exit(r.status ?? 1);
+}
+
+const A_RE = /^\s{2}ROBOT (\d+)\s+(\S+)\s+count ([0-9.]+) \(max (\d+)\) (MET|FAIL)\s+top4 ([0-9.]+)% (MET|FAIL)/;
+const C_RE = /^\s+@51: sd ([0-9.]+) \(worst mass [0-9.]+\)\s+step ([0-9.]+)\s+ratio ([0-9.]+)/;
+
+const draws = [];
+let failed = 0;
+for (let n = 0; n < REPEAT; n++) {
+  const r = spawnSync(process.execPath, [TMP, ...CHILD_ARGV], { encoding: 'utf8' });
+  if (r.status !== 0) {
+    failed++;
+    process.stdout.write('DRAW ' + (n + 1) + ' FAILED, status ' + r.status + '\n');
+    process.stdout.write(String(r.stderr || '').slice(-800) + '\n');
+    continue;
+  }
+  const bots = [];
+  let ci = 0;
+  for (const line of String(r.stdout).split('\n')) {
+    const a = A_RE.exec(line);
+    if (a) { bots.push({ box: a[2], count: Number(a[3]), top4: Number(a[6]), ratio: NaN, step: NaN }); continue; }
+    const c = C_RE.exec(line);
+    if (c && bots[ci]) { bots[ci].sd = Number(c[1]); bots[ci].step = Number(c[2]); bots[ci].ratio = Number(c[3]); ci++; }
+  }
+  /* A draw that parsed no machine is a parse fault, not a quiet zero. */
+  if (!bots.length) {
+    failed++;
+    process.stdout.write('DRAW ' + (n + 1) + ' PARSED NOTHING — the report format moved under the harness\n');
+    continue;
+  }
+  draws.push(bots);
+  process.stdout.write('draw ' + (n + 1) + '  ' +
+    bots.map((b, i) => 'R' + (i + 1) + ' ' + b.box + ' count ' + b.count.toFixed(1) +
+      ' top4 ' + b.top4.toFixed(1) + ' ratio ' + (isNaN(b.ratio) ? 'n/a' : b.ratio.toFixed(3)) +
+      ' step ' + (isNaN(b.step) ? 'n/a' : b.step.toFixed(2))).join('   ') + '\n');
+}
 try { unlinkSync(TMP); } catch { /* best effort */ }
-process.exit(r.status ?? 1);
+
+if (!draws.length) { process.stdout.write('\nEVERY DRAW FAILED — nothing to score\n'); process.exit(1); }
+
+const med = (xs) => {
+  const s = [...xs].sort((a, b) => a - b);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+};
+const fmt = (x, d) => x.toFixed(d);
+
+/*
+ * The disposition rule. `dir` is '>=' when passing means at or above the
+ * threshold and '<' when passing means below it. A band is a straddle when the
+ * two ends disagree, and a straddle is UNSCORED — never MET, never NOT MET.
+ */
+const dispose = (lo, hi, thr, dir) => {
+  const pass = (v) => (dir === '>=' ? v >= thr : v < thr);
+  if (pass(lo) && pass(hi)) return 'MET';
+  if (!pass(lo) && !pass(hi)) return 'NOT MET';
+  return 'UNSCORED (straddles)';
+};
+
+const nBots = Math.max(...draws.map((d) => d.length));
+process.stdout.write('\nRULING 30 — ' + draws.length + ' draws' +
+  (failed ? ' (' + failed + ' failed)' : '') + ', one binary, spread quoted with every cell\n');
+process.stdout.write('  MET needs the WHOLE range on the passing side; a straddle is UNSCORED.\n');
+
+for (let i = 0; i < nBots; i++) {
+  const col = draws.map((d) => d[i]).filter(Boolean);
+  if (!col.length) continue;
+  const box = col[0].box;
+  const cell = (key, thr, dir, dec) => {
+    const xs = col.map((b) => b[key]).filter((v) => Number.isFinite(v));
+    if (!xs.length) return '    ' + key + ': no finite draw\n';
+    const lo = Math.min(...xs), hi = Math.max(...xs);
+    return '    ' + key.padEnd(6) +
+      ' median ' + fmt(med(xs), dec).padStart(7) +
+      '   min ' + fmt(lo, dec).padStart(7) +
+      '   max ' + fmt(hi, dec).padStart(7) +
+      '   spread ' + fmt(hi - lo, dec).padStart(7) +
+      '   vs ' + dir + ' ' + thr + '   ' + dispose(lo, hi, thr, dir) + '\n';
+  };
+  process.stdout.write('  ROBOT ' + (i + 1) + '  ' + box + '\n');
+  process.stdout.write(cell('count', 4, '>=', 1).replace('vs >= 4', 'vs 4-6  '));
+  process.stdout.write(cell('top4', 85, '>=', 1));
+  process.stdout.write(cell('ratio', 1, '<', 3));
+}
+process.exit(0);
