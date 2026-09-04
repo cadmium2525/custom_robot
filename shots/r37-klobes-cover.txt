@@ -1,0 +1,17 @@
+COVERAGE AS A RENDER — shots/r37-klobes   bundle 23dc643dceac
+  grid @ HIGH, seed 1234567, blast tick 956
+  opponent = the SMALLER stencil box. Clause F sub-clause 2 threshold is 25%.
+
+  age    ms  |  nbox  opponent box    px  |  L>8     L>25    L>60
+    1    17  |    2     48x76     2048  | 100.0   100.0    54.9
+    7   117  |    2     49x83     2438  |  16.9    15.0    12.8
+    8   133  |    2     47x83     2348  |  11.6     9.3     6.6
+   14   233  |    2     64x68     2145  | 100.0   100.0    98.6
+   20   333  |    2     46x76     1569  | 100.0   100.0    99.8
+   26   433  |    2     43x73     1609  |  86.8    78.2    58.1
+   32   533  |    3!    44x13      369  |   3.0     1.6     0.5
+   48   800  |    2     47x66     1467  | 100.0   100.0     0.0
+
+  ! at least one age segmented to something other than TWO machine boxes.
+    On those rows "the opponent" is the smallest component, which may be a
+    fragment of either machine. Read them as suspect until the stencil is checked.
