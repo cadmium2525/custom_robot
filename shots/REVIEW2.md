@@ -10241,3 +10241,168 @@ whose ceiling is nil is not a ranked item.
 **Thirty-one faults on file**, and the three rulings of this round that matter most — 33, 34 and 35 — are
 one fault wearing three hats: **a sample of one, quoted as a population.**
 
+
+---
+
+## Round 30, THIRD addendum — **INSTRUMENT FAULT 31 IS WITHDRAWN IN FULL. It was wrong on its premise and wrong on its conclusion, and what is underneath it is a real finding that credits a commit I had already accepted.**
+
+`npm run build` clean, `npm test` ALL PASS, `deploycheck` **DEPLOY OK** on grid, foundry and orbital
+against `dist-r37-critic` on :4367. The measurement below is on a fourth root I built for it:
+`dist-r20t` on **:4365**, from `git archive a544dae` — **and it emits `index-B-Pp4STY.js`, which is the
+exact bundle filename round 20's addendum names.** Bundle hash `0904a9f1ee52`.
+
+### 16. The withdrawal, in the order the errors were made
+
+**Error 1, the premise. I wrote that `tools/contour.mjs` "still prints no bundle hash, four rounds
+overdue".** It prints one. `f6c53b0` added it at `tools/contour.mjs:419` using the same helper
+`_r17-blast.mjs` uses, and `tools/mass.mjs` got it in the same commit. Every run I made this session
+printed it and **I did not look, because I had piped the meter through `tail -18` and `grep -A7
+"OVERALL"` and cut the first line off.** I filed a four-round-overdue instrument gap against a builder
+who had closed it a day earlier, and the evidence that he had closed it was in my own terminal.
+**Fault 27's second half is CLOSED, and my rank 7 is struck.**
+
+**Error 2, the exclusion.** I wrote *"not any source change — `git diff a544dae..3a0f570 -- src/`
+touches `materials.js` and `vfx.js` only, and no lighting default in either."* I reached that by reading
+a diff with a keyword grep. **RULING 25's own sentence is that reading a diff is an argument and not a
+measurement**, and I applied it to round 24 in the same document in which I failed to apply it to
+myself. Two things the grep could not see: I had restricted it to `src/`, so any change to the METER was
+invisible to it; and I grepped for names rather than reading the non-comment lines.
+
+**Error 3, the conclusion.** On those two errors I filed **INSTRUMENT FAULT 31: a meter that returns a
+stable reading within a build root and a 57.6-point different one across sessions.** It is not a meter
+fault. It is not a fault at all.
+
+### 17. What is actually there — **orbital's pinned still frame has a machine mid-hit-flash, and the OLD tell colour was `vec3(1.6, 0.9, 0.85)`**
+
+The only non-comment behavioural change in `materials.js` across `a544dae..3a0f570`, once the banding
+block (gated on `uBandX`, which is 0) is set aside:
+
+```
+    -  gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.6, 0.9, 0.85), uHitFlash);
+    +  gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.62, 0.08, 0.05), uHitFlash);
+```
+
+**1.6. Sixty percent above full white, written as a constant into the fragment colour of the object
+`SPEC-CRV2` clause B says is the only thing carrying the read.**
+
+`tools/contour.mjs`, tier 3, tick 420, seed 1234567, orbital, three readings, each naming its bundle:
+
+```
+    bundle                              clean %   invisible   separation    body
+    0904a9f1ee52  a544dae, as shipped     83.6        7.8        172.9      209.3
+    0904a9f1ee52  a544dae, --u uHitFlash=0 82.8       8.0        114.3      150.7
+    23dc643dceac  head, as shipped        82.1        8.2        115.3      151.7
+```
+
+**Round 20's filed row reproduces to the decimal on round 20's own tree** — 83.6 / 172.9 / 209.3, the
+figures I could not reproduce and therefore accused the meter of. **And zeroing the hit flash on that
+same bundle collapses it onto head's row: 150.7 against 151.7.** The mechanism is not inferred; it is
+switched off and the difference goes away.
+
+This also resolves the objection I raised against myself and could not answer. At **head**, `--u
+uHitFlash=0` moves orbital's body by **0.7**, which I read as proof the tell was not involved. Both
+readings are consistent with one number: **`uHitFlash` at orbital's pinned frame is small — of order
+0.1-0.2 — and the two tell colours respond to it utterly differently.** Mixing a 0.5-albedo pixel 15%
+toward **1.6** lifts it by about a sixth of full scale; mixing it 15% toward **0.62** lifts it by
+almost nothing. A small weight times a huge constant is a large number, and I had treated a null at head
+as evidence about a bundle where the constant was different.
+
+### RULING 37 — **round 20's orbital clause-B figure was FLATTERED BY A DEFECT, and the hit tell is credited with a second win nobody measured**
+
+> **Clause B on orbital is 82.1%, not 83.6%, and the 1.5-point difference is a defect being removed
+> rather than a regression being introduced.** The 83.6 was taken on a frame whose machine was being
+> mixed toward a colour 60% above white. It was never a silhouette reading; it was a silhouette reading
+> plus an overbright. **Round 20's orbital row is re-based, not withdrawn** — it is correct for the tree
+> it was taken on and it must never again be compared to a post-`8b071d2` figure without this note.
+
+And the credit, which is owed and was explicitly deferred:
+
+> Round 29's addendum recorded, of the chromatic hit tell: *"a machine being hit is no longer over the
+> bright-pass threshold, so RULING 22's defect loses one emitter — **unmeasured on any clause, and I am
+> not crediting it as one.**"* **It is now measured. On orbital's still frame the old tell was worth
+> 58.6 luminance points of machine body and 0.8 points of clean%, and the old constant was 1.6 — which
+> is not merely a bloom source, it is a guaranteed clip on the aiming target.** `8b071d2` and `3a0f570`
+> are hereby credited with a second, independent win on a second arena, found by a builder who thought
+> he was fixing a blast frame.
+
+**And the general lesson is RULING 21's, sharpened.** No round re-read orbital for nine commits. When I
+finally did, I found a 57.6-point move, and rather than ask *what changed*, I asked *what is wrong with
+the meter* — because the meter was the explanation that did not require me to have missed something.
+**A number that does not reproduce is a question about the code before it is an accusation against the
+instrument**, and I had that rule pointed the right way at four builders and the wrong way at myself.
+
+### RULING 38 — **RULING 35 is amended before it is used: the pin set is screened on ADMISSIBILITY, not only on geometry, and `in` is demoted from a predictor to a candidate generator**
+
+`a811335` takes foundry tick 1198 — screened in at `in = 1.00` — and finds:
+
+```
+    ms          17    117    233    333    433    533    800
+    L>25      48.9! 100.0!  26.8    0.0!   0.0!   0.0!   0.2!
+    nbox         1      1      2      3      3      3      1
+```
+
+**Six of seven ages fail `_r25-cover.mjs`'s own subject-selection guard.** Foundry's near machine stands
+among occluders that cut its stencil into one piece or three; grid's does not. That is a real defect in
+my ruling and the builder is right to hand it back:
+
+> **RULING 38, amending RULING 35 clause 2.** A pin enters the scored set only if it passes **both**
+> screens:
+>
+> - **geometric** — `in >= 1.00` on the listing, which costs no capture; and
+> - **admissible** — `_r25-cover.mjs` segments the frame to **exactly two machine boxes** at the age
+>   being scored. An age that does not is **ABSENT**, never a number, and a pin whose majority of ages
+>   are absent is **not a member of the set** and must be reported as attempted-and-rejected rather than
+>   dropped.
+>
+> **Screening only on geometry silently redefines the pin set as "the pins where the stencil happened to
+> segment", which is the sample-of-one problem with more steps.** The set must therefore be published
+> with its rejections: *N screened in, M admissible, and here are the N−M that were not.*
+
+**And `in` is demoted in the same breath.** `in = 1.00` gave **26.8%** at foundry 1198 and **100.0%** at
+grid 956. One reading each, so this is a caution and not a finding — but it is a caution about the
+column I was about to standardise on, and the honest statement of what `in` is has changed:
+
+> **`in` is a CANDIDATE GENERATOR, not a predictor of coverage.** It says a capture is worth spending.
+> It does not say what the capture will read, no ranking may be built on it, and **no pin may be
+> excluded from the set on a low `in` until a low-`in` pin has been captured and read** — otherwise the
+> screen is assumed correct by the very sampling argument RULING 34 was written to stop.
+
+The reason the two can disagree is already visible in the listing and it is the same one the builder
+found at grid 956 (`946eab4`): `in` is computed on **projected discs**, with no depth. A machine can be
+wholly inside a blast's disc on screen and **nine metres behind it**, or in front of it. **`in` measures
+overlap; the clause is about occlusion; those are the same only when the effect is nearer the camera
+than the machine.** The listing already prints both distances — the blast's `d` and the opponent's `fd`
+— so the correct screen is available today and is arithmetic: **`in >= 1.00` AND `d < fd`.**
+
+### 18. Pin allocation, stated so we do not shoot the same frame
+
+Grid's `in = 1.00` set is **838, 896, 956, 1105, 1195, 1248**; 1195 and 956 are captured. **I am taking
+none of the remaining four, and the reason is a measurement rather than a budget:** the screen they would
+be captured against has just been shown to be wrong in two ways — no admissibility test, and `in`
+disagreeing with coverage by 73 points across two arenas. **Captures spent against a broken screen are
+captures spent badly**, and RULING 34 exists because this project keeps buying figures faster than it
+buys the right to quote them.
+
+**The order I would take them, once RULING 38's two screens are in the listing:** re-screen on
+`in >= 1.00 AND d < fd`, publish the set with its rejections, and capture in decreasing `in`. Builders
+have foundry 1198 and grid 956's first blast in flight; the four grid pins are theirs, and I will score
+what comes back.
+
+### 19. What still stands from the second addendum, since it has been asked three times
+
+**The card IS written and committed** — `e5c6e19`, the nine-clause table, six blind points, RULINGS 34,
+35 and 36. Three items asked of me again are answered there and I am pointing rather than repeating:
+
+- **The 800 ms L>60 reading** is **RULING 36**: L>25 is the clause and does not move, the row is a FAIL
+  because an outline is a step and not a brightness, and every F sub-2 cell is an **upper bound** until
+  `_r25-cover.mjs` reports coverage of a dilated ring outside the stencil beside coverage of the machine.
+- **RULING 21 on `25dfee6`** is discharged in section 14: clause E re-measured on **all three arenas** at
+  bundle `766a1ae2d08b` — **58.9 / 33.3 / 66.5**, identical to round 20 to the decimal. What is
+  outstanding is not the measurement but that RULING 22's two **gain** legs both miss.
+- **Clause C** carries the builder's correction `fdc3806` in section 15.
+
+**Thirty faults on file — one FEWER than last round, and the withdrawn one is mine.** Fault 31 is struck
+from the register. **It is the first fault this document has ever withdrawn**, and the way it was struck
+is the way it should have been avoided: build the tree the figure was taken on, and switch the suspected
+cause off.
+
