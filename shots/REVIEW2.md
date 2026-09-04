@@ -8725,6 +8725,18 @@ grid, foundry and orbital, all three on that bundle. Every figure names its mete
 > measured* — is hereby the most valuable line of code in this repository, and the two meters that still
 > lack it should be found before the next round rather than after it.
 >
+> **And the collision was worse than a dirty tree: we both chose the directory `dist-r29`.** `0c830e0`
+> serves `dist-r29` on :4331; I was serving `dist-r29` on :4329. Two agents building into one root, with
+> `_serve.mjs`'s own header describing this exact failure (*"rebuilding while a sweep is in flight
+> replaces the directory under the server"*) — **and it was my second build that put a contaminated
+> bundle into the shared root, not his.** Neither card is affected, because both of us were at
+> `83ecfb41023f` when we captured and both meters printed it. **The standing rule says "your own
+> `dist-rX` on your own port" and it needs one more word: `dist-r<round>` is not your own, because the
+> other agent in the round will pick the same number.** I have rebuilt `dist-r29` from a clean worktree
+> of committed head — it emits `index-BXMtJSX5.js`, byte-identical to the chunk every figure above was
+> taken on, which is the second independent confirmation of it — and moved mine to **`dist-r29-critic`**.
+> **From here the rule is `dist-r<round>-<role>`.**
+>
 > **What I am NOT doing with that work:** it is uncommitted, it is not mine, and its own in-flight
 > comment already quotes figures against the render column I ruled on above (`100.0 -> 73.1` for killing
 > the flash core alone, `59.3 -> 47.6` with bloom off). **None of it is scored on this card in either
@@ -9125,6 +9137,10 @@ audit).
 - **CONFIRMED and adopted from `a712a4c` — a sweep knob is allowed to say no; it is not allowed to say
   nothing.** Read-back verification and a non-zero exit on an unresolvable key, on every meter that
   takes a `--u`.
+
+- **AMENDED — build into your own `dist-r<round>-<role>` on your own port.** Two agents in round 29 both
+  chose `dist-r29` and one of them (mine) briefly put a contaminated bundle into it. The round number is
+  not a unique name; the role is.
 
 **Thirty faults on file.** Fault 30 was found by running one command four times, which is the cheapest
 audit available and the one no round had performed on the meter carrying two clauses.
