@@ -843,6 +843,32 @@ for (let done = 0; done < SCAN; done += 30) {
     const far = pr[farKey];
     const inBlast = Math.max(0, Math.min(1,
       (pr.blast.rpx + far.rpx - far.sep) / (2 * far.rpx)));
+    /**
+     * ROUND 37 — THE THIRD COLUMN, and it is the one that separates the two
+     * cases `in` cannot.
+     *
+     * `in` is built from PROJECTED discs, so it says the blast's disc covers the
+     * opponent's disc on screen and nothing about depth. RULING 38 added
+     * `d < fd` on top, which says the blast is IN FRONT. Neither says the
+     * opponent is INSIDE the fire, and pin 956 passes both while sitting
+     * 1.73-2.35 mass radii outside it: the cell reads 100.0 there because the
+     * blast is between the opponent and the camera, and the bomb in fact went
+     * off on the NEAR machine, 2.65 m away, inside its mass.
+     *
+     * `d3` is the 3-D distance from the blast centre to the opponent in MASS
+     * RADII — 1.5 R, the width this file's own composition note gives the
+     * fireball cluster at its widest (core R*0.72 plus lobes thrown to about
+     * R*0.8). Under 1.0 the machine is in the fire; over it, the fire is merely
+     * in the way. It costs one evaluate and no capture.
+     */
+    const wp = await page.evaluate(() => {
+      const r = window.__game.world.robos;
+      return [{ x: r[0].pos.x, y: r[0].pos.y, z: r[0].pos.z },
+              { x: r[1].pos.x, y: r[1].pos.y, z: r[1].pos.z }];
+    });
+    const fw = wp[farKey === 'robo1' ? 1 : 0];
+    const massR = Math.max(1e-3, (b.radius || 3) * 1.5);
+    const d3 = Math.hypot(fw.x - b.x, fw.y - b.y, fw.z - b.z) / massR;
     const dt = lastTick === null ? null : b.tick - lastTick;
     lastTick = b.tick;
     // The rule's own strength at this detonation, matched to it by birth time.
@@ -861,7 +887,7 @@ for (let done = 0; done < SCAN; done += 30) {
         `d=${pr.blast.dist.toFixed(1)}m rpx=${pr.blast.rpx.toFixed(0)} ` +
         `p1=(${pr.robo0.x.toFixed(0)},${pr.robo0.y.toFixed(0)}) p2=(${pr.robo1.x.toFixed(0)},${pr.robo1.y.toFixed(0)}) ` +
         `far=${farKey === 'robo1' ? 'p2' : 'p1'} fd=${far.dist.toFixed(1)}m fsep=${far.sep.toFixed(0)} ` +
-        `frpx=${far.rpx.toFixed(0)} in=${inBlast.toFixed(2)} dt=${dt === null ? '-' : dt} ` +
+        `frpx=${far.rpx.toFixed(0)} in=${inBlast.toFixed(2)} d3=${d3.toFixed(2)} dt=${dt === null ? '-' : dt} ` +
         `occ=${dets === null ? '-' : rec ? rec.occ.toFixed(2) : 'none'} ` +
         `${ok ? 'QUALIFIES' : 'skip'}`);
     if (ok && !chosen) {

@@ -75,9 +75,9 @@ if (scan.status !== 0) {
 
 const rows = [];
 for (const line of scan.stdout.split('\n')) {
-  const m = line.match(/blast @tick (\d+) .*?\bd=([\d.]+)m\b.*?\bfd=([\d.]+)m\b.*?\bin=([\d.]+)\b/);
+  const m = line.match(/blast @tick (\d+) .*?\bd=([\d.]+)m\b.*?\bfd=([\d.]+)m\b.*?\bin=([\d.]+)\b.*?\bd3=([\d.]+)\b/);
   if (!m) continue;
-  rows.push({ tick: +m[1], d: +m[2], fd: +m[3], in: +m[4], line: line.trim() });
+  rows.push({ tick: +m[1], d: +m[2], fd: +m[3], in: +m[4], d3: +m[5], line: line.trim() });
 }
 
 if (!rows.length) {
@@ -85,16 +85,43 @@ if (!rows.length) {
   process.exit(1);
 }
 
+/**
+ * GATE 1, ROUND 37: three terms, not two.
+ *
+ * RULING 38 gave `in >= 1.00 AND d < fd`. Both are about the SCREEN: the blast's
+ * disc covers the opponent's, and the blast is in front. Neither says the
+ * opponent is INSIDE the fire — and the first pin this screen accepted, grid 838,
+ * reads `d3 = 2.32`, the same defect as pin 956 at 2.37. Both have the opponent
+ * more than two mass radii OUTSIDE the fire, with the cell reading high purely
+ * because the blast stands between it and the camera. At 956 the bomb in fact
+ * went off on the NEAR machine, 2.65 m away, inside its mass.
+ *
+ * `d3 < 1.0` is the term that separates "the effect swallowed the opponent" from
+ * "the effect was in the way". Clause F sub-2 asks the first question, so a pin
+ * that only satisfies the second is not evidence about the clause.
+ *
+ * AND `d < fd` IS DROPPED, which is a correction to RULING 38 rather than an
+ * implementation choice. Pin 1195 — the pin this project's entire card was built
+ * on for six rounds — reads `d = 16.1 m` against `fd = 14.3 m`, so the blast's
+ * CENTRE is 1.8 m behind the opponent and the term rejects it. But the blast is
+ * a volume: R 3.4 m, mass radius about 5.1 m, and `d3 = 0.72` says the opponent
+ * is well inside the fire. A centre-distance comparison cannot express "inside a
+ * sphere" and rejects exactly the pins where the clause's premise holds.
+ *
+ * `d3 < 1.0` already subsumes what `d < fd` was reaching for and does it in three
+ * dimensions, so the two-term gate is strictly worse than the one-term gate that
+ * replaces it.
+ */
 const g1 = [];
 const rejGeo = [];
 for (const r of rows) {
-  if (r.in >= 1.0 && r.d < r.fd) g1.push(r);
+  if (r.in >= 1.0 && r.d3 < 1.0) g1.push(r);
   else rejGeo.push(r);
 }
 g1.sort((a, b) => (b.in - a.in) || (a.d - b.d));
 
 console.log(`PIN SCREEN — ${ARENA}, seed ${SEED}, ${SCAN} ticks`);
-console.log(`  gate 1 (geometric): in >= 1.00 AND d < fd`);
+console.log(`  gate 1 (geometric): in >= 1.00 AND d3 < 1.00   (RULING 38's d < fd is DROPPED, see the note)`);
 console.log(`  gate 2 (admissible): stencil segments to exactly 2 machine boxes at every age\n`);
 console.log(`  ${rows.length} blasts scanned, ${g1.length} pass gate 1, ${rejGeo.length} rejected\n`);
 
@@ -168,7 +195,7 @@ for (const r of g1.slice(0, MAX)) {
   const shown = boxes.map((b) => (b === null ? '-' : b)).join(' ');
   if (ok) {
     accepted.push({ ...r, boxes });
-    console.log(`  tick ${String(r.tick).padStart(5)}  ACCEPT  in ${r.in.toFixed(2)}  d ${r.d.toFixed(1)}m < fd ${r.fd.toFixed(1)}m  boxes ${shown}`);
+    console.log(`  tick ${String(r.tick).padStart(5)}  ACCEPT  in ${r.in.toFixed(2)}  d3 ${r.d3.toFixed(2)}  d ${r.d.toFixed(1)}m < fd ${r.fd.toFixed(1)}m  boxes ${shown}`);
   } else {
     rejAdm.push({ ...r, why: 'stencil', boxes });
     console.log(`  tick ${String(r.tick).padStart(5)}  REJECT  gate 2, boxes ${shown}`);
@@ -178,15 +205,15 @@ for (const r of g1.slice(0, MAX)) {
 await browser.close();
 
 console.log(`\nTHE SET — ${accepted.length} pin(s), in decreasing \`in\``);
-for (const a of accepted) console.log(`  ${ARENA} ${a.tick}   in ${a.in.toFixed(2)}   d ${a.d.toFixed(1)}m   fd ${a.fd.toFixed(1)}m`);
+for (const a of accepted) console.log(`  ${ARENA} ${a.tick}   in ${a.in.toFixed(2)}   d3 ${a.d3.toFixed(2)}   d ${a.d.toFixed(1)}m   fd ${a.fd.toFixed(1)}m`);
 
 console.log(`\nREJECTED AT GATE 2 — ${rejAdm.length}, published because a set without them is a selection`);
 for (const r of rejAdm) console.log(`  ${ARENA} ${r.tick}   ${r.why}   boxes ${r.boxes.map((b) => (b === null ? '-' : b)).join(' ')}`);
 
 console.log(`\nREJECTED AT GATE 1 — ${rejGeo.length} of ${rows.length}`);
-const near = rejGeo.filter((r) => r.in >= 1.0).length;
-console.log(`  ${near} had in >= 1.00 but the blast BEHIND the opponent (d >= fd) — the depth term RULING 38 added`);
-console.log(`  ${rejGeo.length - near} failed on \`in\` alone`);
+const outside = rejGeo.filter((r) => r.in >= 1.0 && r.d3 >= 1.0).length;
+console.log(`  ${outside} had in >= 1.00 but the opponent OUTSIDE the fire (d3 >= 1.00) — the round-37 term`);
+console.log(`  ${rejGeo.length - outside} failed on \`in\` alone`);
 
 if (!accepted.length) {
   console.error('\nno pin passed both gates — the set is empty and nothing may be scored on this arena');
