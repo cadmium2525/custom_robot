@@ -1,0 +1,22 @@
+bundle=23dc643dceac
+tier=HIGH particleBudget=1400 seed=42 arena=grid vp=1600x900
+  blast @tick 297 R=2.80 kind=2 screen=(747,459) d=16.0m rpx=213 p1=(935,692) p2=(779,364) far=p2 fd=18.0m fsep=99 frpx=45 in=1.00 dt=- occ=0.00 QUALIFIES
+  blast @tick 320 R=2.60 kind=1 screen=(558,435) d=13.1m rpx=243 p1=(961,812) p2=(780,230) far=p2 fd=23.5m fsep=301 frpx=35 in=0.00 dt=23 occ=0.00 QUALIFIES
+  blast @tick 347 R=3.40 kind=1 screen=(1055,273) d=22.5m rpx=177 p1=(989,917) p2=(786,215) far=p2 fd=26.3m fsep=275 frpx=30 in=0.00 dt=27 occ=0.00 skip
+  blast @tick 389 R=2.80 kind=2 screen=(345,1131) d=4.3m rpx=792 p1=(929,936) p2=(789,191) far=p2 fd=24.0m fsep=1040 frpx=34 in=0.00 dt=42 occ=0.00 skip
+  blast @tick 504 R=2.80 kind=2 screen=(714,651) d=5.8m rpx=591 p1=(1132,824) p2=(582,162) far=p2 fd=19.8m fsep=506 frpx=41 in=1.00 dt=115 occ=0.00 QUALIFIES
+  blast @tick 545 R=2.60 kind=1 screen=(1293,462) d=12.9m rpx=254 p1=(775,1869) p2=(765,164) far=p2 fd=18.7m fsep=607 frpx=45 in=0.00 dt=41 occ=0.00 skip
+  blast @tick 613 R=1.96 kind=2 screen=(1050,366) d=20.0m rpx=108 p1=(1215,884) p2=(732,348) far=p2 fd=22.0m fsep=318 frpx=33 in=0.00 dt=68 occ=0.00 QUALIFIES
+  blast @tick 659 R=2.60 kind=1 screen=(237,432) d=16.6m rpx=184 p1=(1136,927) p2=(751,248) far=p2 fd=24.9m fsep=545 frpx=31 in=0.00 dt=46 occ=0.00 skip
+  blast @tick 681 R=2.80 kind=2 screen=(571,945) d=7.2m rpx=487 p1=(796,975) p2=(775,174) far=p2 fd=26.3m fsep=798 frpx=32 in=0.00 dt=22 occ=0.00 skip
+  blast @tick 703 R=2.80 kind=2 screen=(930,233) d=26.8m rpx=133 p1=(805,1068) p2=(768,151) far=p2 fd=24.3m fsep=182 frpx=35 in=0.00 dt=22 occ=0.00 skip
+  blast @tick 829 R=2.80 kind=2 screen=(784,453) d=16.2m rpx=212 p1=(961,645) p2=(767,345) far=p2 fd=19.0m fsep=109 frpx=43 in=1.00 dt=126 occ=0.00 QUALIFIES
+  blast @tick 846 R=2.60 kind=1 screen=(594,457) d=15.7m rpx=203 p1=(920,868) p2=(786,278) far=p2 fd=22.6m fsep=262 frpx=36 in=0.00 dt=17 occ=0.00 QUALIFIES
+  blast @tick 858 R=3.40 kind=1 screen=(1162,371) d=21.6m rpx=192 p1=(920,868) p2=(786,278) far=p2 fd=22.6m fsep=387 frpx=36 in=0.00 dt=12 occ=0.00 QUALIFIES
+  blast @tick 935 R=2.80 kind=2 screen=(221,7985) d=5.1m rpx=641 p1=(743,504) p2=(790,345) far=p2 fd=16.6m fsep=7661 frpx=47 in=0.00 dt=77 occ=0.00 QUALIFIES
+  blast @tick 995 R=2.60 kind=1 screen=(480,481) d=11.3m rpx=283 p1=(929,568) p2=(854,357) far=p2 fd=15.0m fsep=394 frpx=55 in=0.00 dt=60 occ=0.00 QUALIFIES
+  blast @tick 1013 R=2.80 kind=2 screen=(584,690) d=7.5m rpx=456 p1=(929,568) p2=(854,357) far=p2 fd=15.0m fsep=429 frpx=55 in=0.75 dt=18 occ=0.04 QUALIFIES
+  blast @tick 1068 R=3.40 kind=1 screen=(627,345) d=23.5m rpx=174 p1=(910,661) p2=(707,315) far=p2 fd=14.0m fsep=85 frpx=57 in=1.00 dt=55 occ=0.00 QUALIFIES
+  blast @tick 1074 R=2.80 kind=2 screen=(837,404) d=15.1m rpx=223 p1=(910,661) p2=(707,315) far=p2 fd=14.0m fsep=157 frpx=57 in=1.00 dt=6 occ=0.00 QUALIFIES
+  blast @tick 1124 R=2.60 kind=1 screen=(992,929) d=8.1m rpx=396 p1=(719,765) p2=(763,332) far=p2 fd=25.7m fsep=640 frpx=32 in=0.00 dt=50 occ=0.00 QUALIFIES
+scanned 1140 ticks, 19 blasts, 13 qualifying

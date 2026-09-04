@@ -1,0 +1,40 @@
+WHERE THE MASS IS — age 08 (133 ms), L>25
+  A = shots/r34c-off   B = shots/r34c-on   DIFF = A minus B, i.e. the layer B removed
+  pinned blast projects at (620,473) rpx 432
+  robo0 (818,613)  robo1 (757,378)
+  light born 1016.050 at (11.65,0.83,11.82)  robo0 11.20m 0.00lux  robo1 2.44m 7.62lux
+  light born 1015.933 at (14.40,2.23,2.61)  robo0 2.73m 3.14lux  robo1 9.00m 0.06lux
+  opponent box (731,338)-(777,420)  2348 px
+  A     px  137258  centroid (751,484)  bbox (25,45)-(1277,899)  r_eq 209  covers opponent 24.5%
+  B     px  130569  centroid (745,488)  bbox (25,45)-(1277,899)  r_eq 204  covers opponent 24.5%
+  DIFF  px    6689  centroid (877,400)  bbox (806,337)-(946,468)  r_eq 46  covers opponent 0.0%
+WHERE THE MASS IS — age 14 (233 ms), L>25
+  A = shots/r34c-off   B = shots/r34c-on   DIFF = A minus B, i.e. the layer B removed
+  pinned blast projects at (646,491) rpx 416
+  robo0 (820,626)  robo1 (735,368)
+  light born 1016.050 at (11.65,0.83,11.82)  robo0 11.65m 0.00lux  robo1 3.65m 2.02lux
+  light born 1015.933 at (14.40,2.23,2.61)  robo0 3.00m 1.57lux  robo1 8.61m 0.05lux
+  opponent box (689,345)-(752,412)  2145 px
+  A     px  132315  centroid (732,442)  bbox (260,0)-(1307,899)  r_eq 205  covers opponent 100.0%
+  B     px  130513  centroid (730,442)  bbox (260,0)-(1307,899)  r_eq 204  covers opponent 100.0%
+  DIFF  px    1802  centroid (916,431)  bbox (865,365)-(966,468)  r_eq 24  covers opponent 0.0%
+WHERE THE MASS IS — age 20 (333 ms), L>25
+  A = shots/r34c-off   B = shots/r34c-on   DIFF = A minus B, i.e. the layer B removed
+  pinned blast projects at (691,494) rpx 359
+  robo0 (776,747)  robo1 (762,365)
+  light born 1016.050 at (11.65,0.83,11.82)  robo0 13.26m 0.00lux  robo1 4.18m 0.92lux
+  light born 1015.933 at (14.40,2.23,2.61)  robo0 4.40m 0.42lux  robo1 8.28m 0.05lux
+  opponent box (732,337)-(777,412)  1568 px
+  A     px  147012  centroid (749,457)  bbox (303,0)-(1324,816)  r_eq 216  covers opponent 100.0%
+  B     px  145056  centroid (747,457)  bbox (303,0)-(1324,816)  r_eq 215  covers opponent 100.0%
+  DIFF  px    1967  centroid (950,452)  bbox (893,364)-(1012,493)  r_eq 25  covers opponent 0.0%
+WHERE THE MASS IS — age 26 (433 ms), L>25
+  A = shots/r34c-off   B = shots/r34c-on   DIFF = A minus B, i.e. the layer B removed
+  pinned blast projects at (733,456) rpx 309
+  robo0 (725,921)  robo1 (784,342)
+  light born 1016.050 at (11.65,0.83,11.82)  robo0 15.44m 0.00lux  robo1 4.34m 0.51lux
+  light born 1015.933 at (14.40,2.23,2.61)  robo0 6.49m 0.09lux  robo1 7.93m 0.04lux
+  opponent box (757,292)-(799,364)  1602 px
+  A     px   98991  centroid (777,409)  bbox (331,91)-(1359,899)  r_eq 178  covers opponent 81.2%
+  B     px   96639  centroid (773,409)  bbox (331,91)-(1359,899)  r_eq 175  covers opponent 81.2%
+  DIFF  px    2357  centroid (963,435)  bbox (902,331)-(1023,478)  r_eq 27  covers opponent 0.0%

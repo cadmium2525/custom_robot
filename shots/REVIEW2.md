@@ -9438,3 +9438,583 @@ cheapest thing on this list. Rank 4 is **clause I**, newly scoreable and never s
 B to 90%**, still the only clause with no known lever that does not pull against another. Rank 6 is the
 **per-machine chroma column** granted in RULING 29.
 
+
+---
+
+## Round 30 verdict, addendum — **five of six predictions hold, the sixth is wrong in the build's favour, and this is the first round in five where the RENDERER moved more than the instruments**
+
+Everything below is mine, taken after the verdict above was committed at `79d89e7`. Three roots, three
+ports, three bundles, all built by me:
+
+```
+    dist-r32-critic  :4362   bundle 766a1ae2d08b   the 25dfee6 tree — RULING 22's radius cut
+    dist-r32-pre     :4363   3a0f570 tree          the same tree with MIPS [3,4,5,6] — the control
+    dist-r34-critic  :4364   bundle 23dc643dceac   head, with the composition rule
+```
+
+`npm run build` clean and `npm test` **ALL PASS** on both live roots; `node tools/deploycheck.mjs`
+**DEPLOY OK on grid, foundry and orbital** on :4362 and on :4364. `766a1ae2d08b` is **the same bundle
+hash the builder reported for `25dfee6`**, independently built in a different directory — the cleanest
+control this document has ever had, and it is why every figure below can be compared to that commit's.
+
+### 0. The six predictions, scored
+
+| # | Prediction, committed before measuring | Result |
+|---|---|---|
+| 1 | RULING 22 leg 1 misses: invisible contour at 117 ms above 49.8 | **HELD.** 65.6 at `25dfee6`, 58.0 at head |
+| 2 | RULING 22 leg 2 misses: clause E at 533 ms below 45.0 | **HELD.** 39.1 at `25dfee6`, 38.9 at head — and 800 ms misses too, 44.7 against 48.9 |
+| 3 | Leg 3 passes on all three arenas | **HELD**, on a paired two-bundle control |
+| 4 | `_r25-cover.mjs` reproduces 83.0 at 117 ms | **HELD, to the digit, and so does every other age** |
+| 5 | Clause A's far cell straddles 85.0 over six draws and stays UNSCORED | **WRONG.** Six draws give 85.5-86.2 and the whole range passes |
+| 6 | The composition half alone leaves the cell above 25% | **HELD.** 60.2 |
+
+**Prediction 5 is wrong and it is wrong in the build's favour**, which is the direction I am least likely
+to be believed on and therefore the one worth stating first: **clause A is MET, not UNSCORED**, and my
+own emergency measure in round 29 was one draw too pessimistic.
+
+### 1. RULING 22's acceptance test, walked — **cost passes on three arenas, both gain legs miss, and the miss is on the column the ruling names**
+
+**Leg 3, the cost.** `tools/contour.mjs`, tier 3, tick 420, seed 1234567, **paired across two bundles I
+built today** — `3a0f570` (MIPS 3/4/5/6) on :4363 against `25dfee6` (MIPS 2/3/3/4) on :4362:
+
+```
+                clean %          invisible %      separation        body
+    grid     84.9 -> 84.8       4.5 -> 4.5      71.3 -> 71.6    148.7 -> 148.9
+    foundry  70.7 -> 71.0       8.7 -> 8.7      83.9 -> 84.1    134.6 -> 134.8
+    orbital  82.1 -> 82.1       8.2 -> 8.2     115.3 -> 115.3   151.7 -> 151.7
+```
+
+**Clean% moves −0.1 / +0.3 / 0.0 against a bound of 0.6; body luminance +0.2 / +0.2 / 0.0 against a bound
+of ±2.0. Leg 3 PASSES on all three arenas**, and the builder's single-arena grid reading was right.
+
+**Leg 1, the gain the ruling names.** `shots/_r17-edge.mjs`, opponent's invisible contour at 117 ms:
+
+```
+    filed, pre-tell                       68.0        ceiling under --bloom 0: 37.6
+    after the radius cut  (766a1ae2d08b)  65.6        60% bar: land at or below 49.8
+    after the composition rule (head)     58.0
+```
+
+**The radius cut took 2.4 points of the 30.4 available — 7.9%. Leg 1 MISSES by 8.2 points**, and it still
+misses after the composition rule takes another 7.6.
+
+**Leg 2, clause E during the blast.** Same meter, machines' share of the brightest 1% with the blast on:
+
+```
+                    533 ms          800 ms
+    filed            37.5            41.9          ceilings 50.0 and 53.5
+    radius cut       39.1            44.7          60% bars  45.0 and 48.9
+    head             38.9            44.7
+```
+
+**12.8% and 24.1% of the two ceilings. Leg 2 MISSES on both ages.**
+
+> **RULING 27 stands as written and the disposition is now measured rather than predicted.** `25dfee6` is
+> a correct implementation of RULING 22 on the correct knob, its cost condition passes on three arenas,
+> and **it does not pass RULING 22's acceptance test.** The 17.0 points it took off the coverage column
+> are real, unrequested and credited — see section 3 — but they are not the test.
+
+**And I am NOT taking P6's annotation branch, because the sweep still has not been run.** RULING 22
+reserved the right to annotate `SPEC-CRV2` if *"no radius setting separates the near glow from the far
+one"*. **2/3/3/4 is one point on a line.** At HIGH the shipped change is `MIPS[2]` 5 -> 3 and at ULTRA it
+is `MIPS[3]` 6 -> 4 — a **two-mip** drop at both tiers every measurement in this document is taken at,
+which the commit message describes as *"dropping one"*. The next points down are 1/2/2/3 and 1/1/2/2 and
+neither has been read on either leg. A miss at one setting is a reason to take the next one, not a reason
+to close the question.
+
+**One unreported gain, and it is a clause figure.** `_r17-edge.mjs`'s 10-90 edge width at 117 ms:
+
+```
+    round 29, pre-cut     37.5 px on an outer radius of 79 px    = 47.0% of radius
+    after the radius cut  28.0 px on 73.25 px                    = 38.2%
+    head                  30.25 px on 73.0 px                    = 41.4%
+```
+
+**Clause F sub-clause 1 improved 8.8 points of radius on the bloom radius cut and nobody reported it.**
+That is P6 doing exactly what P6 predicts — the ray walk had been measuring the halo as part of the
+effect's own boundary — and it is a second clause figure bought by that commit. **The sweep therefore
+buys two clause rows, not one.**
+
+### 2. RULING 21 discharged on `25dfee6` — **clause E and clause B re-read on all three arenas, and neither moved**
+
+The commit said clause E was not re-measured and declined to claim it. Taken, by me, `shots/_salience.mjs`
+at tier 3, tick 420, seed 1234567, on the radius-cut bundle:
+
+```
+    machines' share of the brightest 1%     round 20      mine, at 25dfee6
+    grid                                      58.9              58.9
+    foundry                                   33.3              33.3
+    orbital                                   66.5              66.5
+```
+
+**Identical to the decimal on all three arenas.** Clause E on the still frame is **MET on grid and
+orbital, NOT MET on foundry**, unchanged, and the builder's reasoning — that a partial radius cut cannot
+move a figure that a full bloom removal does not move — was correct. It was still owed as a measurement
+and now it is paid. Clause B is section 1's leg-3 table. **RULING 21 is discharged for this round.**
+
+### 3. The composition rule, verified — **60.2 reproduces exactly, and the mechanism is visible in the capture's own light listing**
+
+`shots/_r17-blast.mjs` and `shots/_r25-cover.mjs` on my own root :4364, bundle `23dc643dceac`, same pin:
+
+```
+    ms                 17    117    233    333    433    533    800
+    25dfee6           0.0   83.0   10.6    5.9   12.7    0.2    5.1
+    head              0.0   60.2   10.6    5.9   12.7    0.2    5.1
+```
+
+**60.2, and every other age identical to the digit.** The claim reproduces in full.
+
+**And the mechanism is checkable in the capture log rather than only in the diff.** At `766a1ae2d08b` the
+117 ms frame carries `light 2 late +100ms intensity 45.5 range 11.2m robo1 1.2m 29.60lux`. **At head there
+is no light 2 at 117 ms at all** — it first appears at 233 ms, at 0.61 lux and 4.9 m. The rule suppresses
+exactly the emitter that was putting 29.6 lux on a machine 1.2 m away, and nothing else.
+
+**Answer to question 1: no clause changes state, and the news is not the size of the remaining share — it
+is that blind point 3 moved for the first time in five rounds.** 60.2 against 25 is NOT MET exactly as
+100.0 was. But the outline collapse at 117 ms — the figure this document has quoted at 68.0 through four
+verdicts — is **58.0**, and 7.6 of the 10.0 points came from this commit. That is the first movement
+above noise on blind point 3's own number since it was filed, and it is on the renderer.
+
+The arithmetic of what is left, on `59ef4d4`'s own ceilings:
+
+```
+    as shipped at 25dfee6~                     100.0
+    radius cut                                  83.0   -17.0   bloom's ceiling share was 40.7
+    composition rule                            60.2   -22.8   latefire's ceiling share was 51.1
+    double ceiling (kill latefire, bloom off)   19.1           MET, and not a ship setting
+```
+
+**Two shipped changes have taken 39.8 of the 80.9 points that separate the as-shipped cell from a ceiling
+that is itself unreachable.** No single remaining named lever closes the other 35.2: bloom's unswept
+radius has roughly 23.7 points of measured ceiling left and the second detonation's **fire** — as distinct
+from its light, which this rule handles — has never been touched. **The cell still has two owners and now
+each of them has had exactly one commit aimed at it.**
+
+### RULING 33 — **answer to question 2: a rule that fires on one pin is admissible as a SHIPPED CHANGE and inadmissible as a CLOSED ITEM, and the test that would close it is arithmetic, not another capture**
+
+This is the right question and this document has confused the two claims before, so here is the standard,
+stated generally enough to be used again.
+
+**A change ships on three things**, and `7a6299d` has all three: a stated mechanism, a measured gain on at
+least one pin, and measured absence of collateral damage. `0f6f1d2` is an honest generality check and it
+establishes precisely what it claims — *no collateral damage* — and nothing about the predicate, because
+the pin it tested already passes with the rule off. The commit says so itself. **Shipped, credited, and
+the 22.8 points are on the card.**
+
+**A change CLOSES on a fourth thing, and this is where "fires once" and "is correct" come apart.** A
+composition rule is not a claim about a frame; it is a claim about a **class** of frames — *"a second
+blast does not re-light a core into a sightline that is already burning"* quantifies over every pair of
+overlapping detonations in the game. **A claim about a class is scored on the class.**
+
+> **RULING 33.** A rule whose statement quantifies over a class is CLOSED only when the class has been
+> **enumerated and the rule's predicate counted over it.** For this rule the enumeration already exists
+> and costs no capture: `shots/_r17-blast.mjs --list` prints every `EV.EXPLODE` in a 1260-tick scan with
+> its tick, radius, screen position and both machines' positions. The population is *blasts with a second
+> detonation within 7 ticks and an opponent inside the second detonation's radius*; that is a filter over
+> a listing, not a browser run per pin. **Report: how many members the population has, and on how many of
+> them the predicate fires.** If it fires on all of them the rule is general and I will close it on that
+> line. If it fires on one of N it is a special case wearing a general name, and the ledger must say
+> *"the 1195 pin is handled"* rather than *"overlapping detonations are handled"*.
+>
+> **The searching-for-a-second-failing-pin approach is the expensive way to ask this and it is not
+> required.** A pin where the cell already passes cannot show the rule firing; a pin where it fails is
+> being hunted by hand. The listing answers both questions in one run, and it also bounds the risk nobody
+> has named: **a rule that suppresses a second core's light can suppress a second blast the player needs
+> to see**, and the size of that exposure is the same count.
+
+Until that count exists: **SHIPPED, CREDITED, NOT CLOSED.** It is on the card at its measured value and
+it stays on the rank list at rank 2 rather than being struck as done.
+
+### 4. RULING 30 applied — **clause A is MET again, and my own emergency measure was one draw too pessimistic**
+
+`shots/_massdrive.mjs --onbody --repeat 6`, grid, tier 3, head, six independent processes on one binary
+(the protocol recovered as `adc783b`; the flag is mine and the disposition rule is mine):
+
+```
+    draw          R1 count  R1 top4  R1 ratio  R1 step | R2 count  R2 top4  R2 ratio  R2 step
+      1               4.3     85.3    1.708    51.81   |    5.5     86.2    1.288    42.89
+      2               4.3     85.2    1.708    51.80   |    5.5     86.2    1.288    42.92
+      3               4.3     85.2    1.706    51.83   |    5.5     86.2    1.288    42.92
+      4               4.3     85.3    1.707    51.82   |    5.5     86.2    1.288    42.89
+      5               4.3     85.1    1.707    51.83   |    5.5     85.5    1.205    45.90
+      6               4.3     85.2    1.709    51.75   |    5.3     86.2    1.173    47.45
+
+    ROBOT 1   top4  median 85.2  [85.1, 85.3]  spread 0.2   vs >= 85    MET
+              ratio median 1.708 [1.706, 1.709] spread 0.003 vs < 1     NOT MET
+    ROBOT 2   top4  median 86.2  [85.5, 86.2]  spread 0.7   vs >= 85    MET
+              ratio median 1.288 [1.173, 1.288] spread 0.115 vs < 1     NOT MET
+```
+
+> **Clause A is MET, restored from UNSCORED**, because the whole observed range on both machines is on
+> the passing side, which is my own rule and it is stricter than a median. **The cell carries its spread
+> permanently from here.** And it carries one honest caveat in the same breath: the near machine's margin
+> is **0.1 against its own spread of 0.2**, so this is MET *on six draws* and one bad draw from a
+> straddle. That is what the spread is printed for.
+
+**Fault 30 is confirmed and it is bigger than filed on the axis that matters.** Clause C's far-machine
+repeat spread over six draws is **0.115**, against the **0.05** every clause-C acceptance test in rounds
+24 and 28 was written against — **2.3x**, where round 29's four draws said 1.7x. No verdict moves, because
+clause C fails on both machines by ten times that. **What moves is that no clause-C difference smaller
+than 0.115 on the far machine has ever been evidence**, and rounds 24 and 28 read several.
+
+### 5. RULING 31(a) walked — **my own model is FALSIFIED, and round 24's headline is contradicted by one command it never ran**
+
+Full detail is in `7113e7e`. The result in four lines, `--onbody`, grid, tier 3, head:
+
+```
+    uFlat=uFlatFar    near spread    near sd    near step    near ratio
+    0 (head, x6)             158      44.25        51.81     1.708 [1.706, 1.709]
+    0.35                     157      43.46        47.84     1.817
+    0.70                     153      42.78        35.28     2.425
+    1.00                     151      40.43        48.07     1.682
+```
+
+1. **My model is falsified.** `ratio ~= 0.011 * spread` predicts 1.68 at spread 153. The meter returns
+   **2.425** — a 44% miss on the one reading that moved. I put the model in a committed verdict so it
+   could be caught and it is caught.
+2. **`uFlat` is not a compression knob**, so the sweep could not test what it was built to test: at full
+   flatten the near machine still spans **151 of its 158 levels**. The light is worth 4.4% of the
+   machine's value range.
+3. **And that contradicts `5596167`'s title.** *"Clause C's numerator is the light, not the model"* closed
+   eleven geometry levers on that reading. With the lighting term replaced by a constant the ratio moves
+   1.708 -> 1.682. **The numerator is 95.6% albedo, texture and AO — the model — and clause C's lever, if
+   it has one, is the paint's value range**, which round 24 measured as *"most of the denominator"* and
+   then did not follow.
+4. **The denominator swings 32% under a perturbation that moves the image by 3%** (51.81 -> 35.28 ->
+   48.07) while the mass count goes 4.3 -> 4.8 -> 4.5 -> 5.0 underneath it. That is direct evidence for
+   RULING 25's hypothesis (b) rather than an inference from eighteen nulls. **The synthetic-target audit
+   is now mandatory, not one of two options.**
+5. One thing nobody has stated: the same meter, bundle and frame reports clause C as **1.708 with
+   `--onbody` and 3.992 without it.** Every clause-C figure in this document is the `--onbody` one. That
+   is the correct scoping and it has never been written down as a choice.
+
+### 6. RULING 29's instrument, built and run — **the chroma claim `3a0f570` refused to make is TRUE, and it is +0.29**
+
+`shots/_r32-permach.mjs`, new, committed as `11c1aca`. Per-machine luma and median chroma on the NOVFX
+frame — the frame RULING 26 leg 1 is written about — with every stencil component printed, not just the
+two that survive:
+
+```
+    age   ms  |  NEAR luma  chroMed  |  OPPONENT luma  chroMed
+      1   17  |     119.5    0.259   |      127.4    0.204
+      7  117  |     120.7    0.243   |      120.7    0.498     <- flashed
+     14  233  |     122.9    0.243   |      107.8    0.188
+     20  333  |     132.7    0.306   |      103.1    0.169
+     26  433  |     126.2    0.220   |      114.8    0.208
+     32  533  |     130.6    0.263   |      110.1    0.259
+     48  800  |     129.9    0.255   |      120.8    0.173
+```
+
+**RULING 26 leg 1 reproduces independently: 120.7 against the commit's 120.8, on a threshold of 150. MET.**
+
+**And the tell is a chroma tell, measured.** The flashed opponent reads **0.498** against 0.169-0.259 at
+its own six other ages and 0.243 for the unflashed near machine in the same frame — **2.4x to 2.9x its own
+baseline, +0.29 absolute.** `_r17-edge.mjs` moved 0.397 -> 0.401 for exactly the reason the commit gave:
+2716 flashed pixels against 19142 unflashed ones is a 12% area share before the stage dilutes it.
+
+> **The builder established that his meter could not see the effect and filed no number rather than a
+> small one. RULING 29 filed the refusal as a result. The instrument now says the mechanism worked.**
+> This is the best sequence in the document: a false claim caught, withdrawn, re-aimed, deliberately not
+> re-made, and then confirmed by the instrument the withdrawal asked for.
+
+**A third thing falls out of the column.** At 117 ms near and far are both at **120.7** luma. Before
+`8b071d2` the opponent sat at 220.3 while the near machine was near 120 — the aiming target was the
+brightest thing in the frame that was not the fireball. **The two machines are now equally bright at the
+burst frame.**
+
+### 7. RULING 32 amended in the round it was written — **clause I is wrong as I stated it, because one of the two machines does not have feet**
+
+`shots/_r17ground.mjs`, grid, seed 1234567, head. The survey over ticks 300-900 at step 10 returns
+**1 contact frame in 61**, and the measurement at it is:
+
+```
+    ROBOT 1  legs=sprinter   241px tall   83.4 px per deck metre   soles L/R 88 / 38 mm
+    ROBOT 2  legs=hover      83px tall    10.4 px per deck metre   soles L/R 210 / 210 mm
+                             (HOVER — no foot contact exists)      lowest vertex -51 mm
+```
+
+**The far machine is a hover chassis.** A hovering machine is not supposed to touch the deck, and
+"one tick in 21 has a contact at all" is a statistic computed over a walker and a hover together — which
+is RULING 7's foundry row exactly, a percentage over two things that are not the same thing. **My clause
+was wrong before it was scored and it is mine to fix.**
+
+> **Clause I, corrected: A MACHINE'S RELATIONSHIP TO THE DECK IS THE ONE ITS CHASSIS CLAIMS.** Derived
+> from P2 and P6 as before — there is no contact shadow, no ambient occlusion and no per-pixel stage, so
+> nothing hides the join between a machine and the floor except the geometry of the join. Two sub-clauses,
+> both thresholded in **rendered pixels** off P7's one-pixel video filter, both on `_r17ground.mjs`:
+>
+> - **I-1, legged: the sole gap is under one rendered pixel whenever the chassis is grounded.** Grid's
+>   near machine: 88 mm and 38 mm at 83.4 px/m = **7.3 px and 3.2 px. NOT MET**, by 3x to 7x.
+> - **I-2, hover: the lowest rendered vertex never goes below the deck.** Grid's far machine: **−51 mm,
+>   i.e. 0.53 px inside the floor. NOT MET** — and it is inside the floor on a chassis whose entire
+>   premise is that it is not touching it. Sub-pixel today only because that machine is 83 px tall; at
+>   the near machine's scale the same 51 mm would be 4.3 px.
+>
+> **The contact-frequency sub-clause is withdrawn.** It cannot be stated for a hover chassis, and for a
+> legged one the sim's `grounded` flag is not a foot contact — `_r17ground.mjs`'s own header says so and
+> is right. **The "one tick in 21" figure is withdrawn with it**: it is a measurement of a meter that was
+> asked the wrong question, and it was my question.
+
+### 8. INSTRUMENT FAULT 31 — **orbital's contour figures do not reproduce across sessions, on the one meter that still prints no bundle hash**
+
+Round 20 filed orbital's still frame at **body 209.3, separation 172.9, clean 83.6** and ran it twice.
+I read **151.7 / 115.3 / 82.1** — a **57.6-point** body difference — and I read it **twice, on two
+different bundles I built today** (`3a0f570` and `25dfee6`), which agree with each other to the decimal.
+
+Ruled out by measurement, not by argument:
+
+- **Not the radius cut.** Both my bundles give 151.7; only one has the cut.
+- **Not the hit tell.** `tools/contour.mjs --u uHitFlash=0`, read back 0 on 2 materials, moves the body
+  by **0.7** — so `uHitFlash` is already ~0 at the pinned orbital frame.
+- **Not any source change.** `git diff a544dae..3a0f570 -- src/` touches `materials.js` and `vfx.js` only,
+  and no lighting default in either.
+- **Not the meter's other arm.** `shots/_salience.mjs` reproduces orbital's clause E at **66.5%**, exactly
+  as round 20 filed it, on the same frame and the same bundle.
+
+> **INSTRUMENT FAULT 31: `tools/contour.mjs` returns a stable orbital reading within a build root and a
+> reading 57.6 luminance points different across sessions, with the source that could explain it excluded
+> and a second meter on the same frame reproducing exactly.** This is fault 27 grown by a factor of four,
+> and its remedy is fault 27's unpaid half: **`tools/contour.mjs` still prints no bundle hash**, four
+> rounds after round 14 asked for one and after RULING 9's list recorded it CLOSED — closed on one meter,
+> never on the meter that produces clauses B and G. **Until it does, no orbital contour delta may be
+> quoted across sessions.** Grid and foundry reproduce to 0.3 and their figures stand.
+
+### 9. The nine clauses, re-scored — **every row measured by me this session, every row naming its meter and its bundle**
+
+| Clause | Threshold | Head | Meter and bundle | **Verdict** | moved by |
+|---|---|---|---|---|---|
+| **A** | count 4-6; top-4 >= 85% | near **4.3 / 85.2** [85.1, 85.3]; far **5.5 / 86.2** [85.5, 86.2] | `_massdrive --onbody --repeat 6`, mine, `23dc643dceac` | **MET — restored from UNSCORED** | **instrument** |
+| **B** | >= 90% clean | grid **84.8**, foundry **71.0**, orbital **82.1** | `contour.mjs`, mine, 3 arenas x 2 bundles | **NOT MET 3/3.** Best is 5.2 short | — |
+| **C** | ratio < 1.00 | near **1.708** [1.706, 1.709]; far **1.288** [1.173, 1.288] | `_massdrive --onbody --repeat 6`, mine | **NOT MET and SUSPECT.** RULING 25, 31 | — |
+| **D** | machine median chroma > stage | **0.149 vs 0.129** | `_r16chroma.mjs`, mine, `shots/r34dump` | **MET** | — |
+| **E** | >= 50% of brightest 1% | grid **58.9**, orbital **66.5**, foundry **33.3** | `_salience.mjs`, mine, 3 arenas | **MET on grid and orbital, NOT MET on foundry** | — |
+| **F-1** | 10-90 < 10% of radius | 117 ms **30.25 px on 73 px = 41.4%** | `_r17-edge.mjs`, mine, `23dc643dceac` | **NOT MET — and 5.6 points better**, on the renderer | **renderer** |
+| **F-2** | < 25% of opponent covered | **0.0 / 60.2 / 10.6 / 5.9 / 12.7 / 0.2 / 5.1** | `_r25-cover.mjs`, mine | **NOT MET on 1 cell of 7 — and 39.8 points better**, on the renderer | **renderer** |
+| **G** | >= 36 rendered px | grid far machine **71 px** | `contour.mjs` box, mine | **MET** | — |
+| **H2** | no element ranks 1 in > 25% of cells | **2 / 24 = 8.3%** | `_salience.mjs --gate`, mine | **MET** | — |
+| **I-1** | legged sole gap < 1 rendered px | **7.3 px and 3.2 px** | `_r17ground.mjs`, mine | **NOT MET — first ever scored** | **instrument** |
+| **I-2** | hover never below the deck | **−51 mm = −0.53 px** | `_r17ground.mjs`, mine | **NOT MET — first ever scored** | **instrument** |
+
+### 10. The six blind points
+
+| # | Point | R29 | **R30** |
+|---|---|---|---|
+| 1 | robots brightest + most saturated (D+E) | PASS on grid | **PASS on grid and orbital** — D 0.149/0.129, E 58.9 and 66.5 |
+| 2 | stage quieter (H) | PASS | **PASS** — 2/24 |
+| 3 | both machines legible at once (G) | FAIL, worst on the card | **FAIL — and it MOVED for the first time in five rounds.** Invisible contour at 117 ms **68.0 -> 65.6 -> 58.0**, all of it renderer |
+| 4 | very few very large forms (A+B+C) | FAIL, 2 of 3 cells instrument problems | **FAIL — but A is a trustworthy MET again.** B 84.8 is the only honest failure of the three; C is SUSPECT |
+| 5 | effects enormous, hard-edged, drawn (F) | FAIL, further from passing | **FAIL — and closer than it has ever been.** sub-2's cell 100.0 -> 60.2, sub-1 47% -> 41.4% |
+| 6 | **the machines are standing in the room (I)** — NEW | — | **FAIL**, both sub-clauses, scored for the first time |
+
+### 11. What moved on the renderer and what moved on the instruments — **the sign flips this round**
+
+**On the renderer, three commits (`25dfee6`, `3a0f570`, `7a6299d`/`fea9d65`):**
+- clause F sub-2 at 117 ms **100.0 -> 60.2** (−39.8, of which 17.0 is the radius cut and 22.8 the rule);
+- clause F sub-1 at 117 ms **47% -> 41.4%** of radius, unreported by anyone;
+- the opponent's invisible contour at 117 ms **68.0 -> 58.0**, blind point 3's own number;
+- the opponent's novfx luma at 117 ms **220.3 -> 120.7**, and its chroma **+0.29 on the flashed machine**;
+- clause E during the blast **37.5 -> 38.9** at 533 ms and **41.9 -> 44.7** at 800 ms;
+- **and no clause changed state.**
+
+**On the instruments:**
+- clause A **UNSCORED -> MET**, on RULING 30's repeat protocol — the only state change of the round;
+- clause C's model **falsified by its own author** and its denominator shown to swing 32% under a 3%
+  perturbation;
+- clause I written, corrected, and **scored for the first time** — two sub-clauses, both NOT MET;
+- the per-machine chroma column built, and a claim the builder correctly declined to make is now true
+  with a number;
+- **INSTRUMENT FAULT 31.**
+
+> **Round 29 closed with *"the instruments moved five clause-cells and the renderer moved none."* This
+> round the renderer moved five figures across three clauses and the instruments moved one cell and
+> created one clause. That is the sign flipping, it is the thing I said the card most needed, and it is
+> the first honest good news in this document in five rounds.** It is still a NO, and the reason is
+> unchanged: **the figures moved a long way and not one of them crossed a threshold.**
+
+---
+
+## VERDICT: **still NO** — **and it is the first round in five where the reason is distance rather than direction**
+
+**HOLOSSEUM does not win a blind side-by-side against Custom Robo V2 today.** Two of six blind points
+pass. But the sentence I have written five times — *nothing on the card moves except the meters* — is
+false this round, and I am not going to keep it for symmetry.
+
+1. **The worst cell on the card fell 39.8 points on two shipped renderer changes**, both correctly aimed,
+   both measured, one of them refused by its own author on its own acceptance test before a better version
+   shipped. 100.0 -> 83.0 -> 60.2 against a threshold of 25.
+2. **Blind point 3's own number moved for the first time since it was filed.** 68.0 -> 58.0.
+3. **Clause A is a trustworthy MET again**, with a spread beside it, on a protocol that did not exist
+   yesterday — and my own round-29 downgrade was one draw too pessimistic.
+4. **A false claim was caught, withdrawn, re-aimed, deliberately not re-made, and then confirmed by the
+   instrument the withdrawal asked for.** +0.29 chroma on the flashed machine.
+5. **And clause C is worse than SUSPECT.** My own model for it is dead, round 24's headline is contradicted
+   by one command, and the denominator moves 32% under a perturbation that moves the picture by 3%.
+6. **Nothing crossed a threshold.** F sub-2 needs 35.2 more points, B needs 5.2, F sub-1 needs 31.4 points
+   of radius, foundry's E needs 16.7, and clause I has never been above its bar at all.
+
+### The one thing that would move most — **finish RULING 22's sweep, and it is the first time this rank-1 item is a knob rather than a research programme**
+
+**Take `MIPS` down the line and read it on RULING 22's own two columns.** The case is now arithmetic
+rather than argumentative:
+
+- the knob has a **measured ceiling**: bloom is worth 40.7 points of the 117 ms cell and the cut has taken
+  **17.0**, so roughly **23.7 remain** on a setting that has never been tried;
+- it has a **proven move on two clauses**, not one: F sub-2 −17.0 **and** F sub-1 −8.8 points of radius;
+- it has a **measured zero cost** on three arenas, paired, on the still frame;
+- its acceptance test is **already written and already closer**: leg 1 needs 49.8 and the composition rule
+  has already brought the frame to 58.0;
+- and it is **one constant in one file**. 1/2/2/3 and 1/1/2/2 are two builds and two captures.
+
+**If the sweep bottoms out and both legs still miss, then and only then does P6 get its annotation in
+`SPEC-CRV2` with the arithmetic that beat it** — the route I opened in RULING 22 and have refused to take
+twice on a single sample.
+
+Rank 2 is **RULING 33's population count** for the composition rule: one `--list` run and a filter, no
+capture, and it either closes the rule or renames it. Rank 3 is **clause C's synthetic-target audit**, now
+mandatory. Rank 4 is **the second detonation's FIRE**, the half of `59ef4d4`'s 51.1 points that the
+composition rule does not touch. Rank 5 is **clause I**, newly scoreable, never attacked. Rank 6 is
+**clause B to 90%**. Rank 7 is **`tools/contour.mjs`'s bundle hash**, which is four rounds overdue and is
+the reason fault 31 cannot be resolved.
+
+### Standing rules, three added
+
+- **NEW — a claim that quantifies over a class is scored on the class.** RULING 33. A measured gain on one
+  pin ships a change; it does not close one. The enumeration is usually cheaper than a second capture.
+- **NEW — a scored cell carries its meter's repeat spread beside it, permanently.** RULING 30's protocol,
+  now that one exists. `MET [min, max]`, and a cell whose margin is smaller than its spread says so in the
+  same breath.
+- **NEW — a change is accepted on the column its own acceptance test names, including when a different
+  column brings better news.** RULING 27. I have enforced this against builders twice; this is the first
+  time the unnamed column was the flattering one, and the rule does not acquire an exception for that.
+
+**Thirty-one faults on file.** Fault 31 was found by re-reading a two-round-old figure on a meter that
+still cannot say which bundle it read.
+
+
+---
+
+## Round 34 — 2026-09-04 — **the composition rule fires on a second failing pin, deletes 6689 px of fire, and moves clause F sub-2 by nothing at all: it is a fit to one frame**
+
+`0f6f1d2` left one question open and stated the test that would answer it: a pin where **clause F
+sub-2 FAILS with the rule OFF** and **a second detonation is present within ~200 ms**, other than tick
+1195. Tick 264 had no power — the cell passes there either way. This is that test, run to completion.
+
+**The answer is that the rule is a fit to one frame.** It is not that the rule fails to fire. It fires,
+harder than it fires at the pinned pair, it removes real mass from the frame, and every pixel it
+removes is somewhere the opponent is not.
+
+### How the pin was found, for a cost of scans rather than captures
+
+`shots/_r17-blast.mjs --list` gained four geometry columns (`far`, `fsep`, `in`, `dt`) in `f4cafb9` and
+an `occ` column in `fdbe41a`. `occ` is not a prediction: `_recordDet` keeps the composition rule's own
+strength on every detonation and nothing in the renderer consumes it, so the column reads the ring off
+the live page and matches each entry to its blast by birth time. On a build without the rule it prints
+`-`, never `0.00`.
+
+Read over the whole house match (1230 ticks, grid, HIGH), **the rule fires on exactly three detonations
+in the match**:
+
+    tick  963   occ=0.54     pin 956, second detonation at +117 ms
+    tick 1111   occ=0.42     inside the 1098/1105/1111 triple — unusable, single stencil box
+    tick 1201   occ=0.33     the pinned pair
+
+Two facts fall out before any capture. **The pinned frame is not where the rule is strongest**, and
+**tick 264 was never going to show anything**: both of its detonations record `occ 0.00`, and its
+opponent is 24.7 m away and 585 px from a blast of radius 518 px. A second match (seed 42, 1140 ticks)
+records a single firing anywhere in it, `occ 0.04` at tick 1013.
+
+`--nosnap` then walked tick 956's ages and logged the geometry without writing a PNG: both machines in
+frame at five of the seven standard ages, the near one dropping off the bottom at 433 and 533 ms. It
+also showed the follow-up detonation is raised on the step **into age 8**, not age 7 — the event
+carries the tick before the increment — so its flash core is alive at 133 ms and dead by 233 ms. An
+eighth age at 8t was captured alongside the seven, or the frame the rule acts hardest on is never
+photographed.
+
+### The A/B, eight ages, `shots/_r25-cover.mjs`, the RENDER meter, L>25 column — never the difference
+
+Pin **tick 956 of the house seed**, grid, HIGH, 1600x900. OFF is `shots/r34c-off`, bundle
+**766a1ae2d08b**, own root `dist-r34-off` on :4381, `src/gfx/vfx.js` from `7a6299d~1`. ON is
+`shots/r34c-on`, bundle **23dc643dceac**, own root `dist-r34-main` on :4380, head. The two arms differ
+by that file alone; both logs record the same chosen blast, the same machine positions and the same
+lights at every age.
+
+    ms                   17    117    133    233    333    433   [533]    800
+    rule OFF          100.0   20.3   24.5  100.0  100.0   81.2   [1.6]  100.0
+    rule ON           100.0   20.3   24.5  100.0  100.0   81.2   [1.6]  100.0
+                       FAIL    MET    MET   FAIL   FAIL   FAIL      !    FAIL
+
+**Identical at every age to the digit, and identical in the L>8 and L>60 columns too.** 533 ms is
+bracketed and not quoted: the meter's own guard segments it to **three** machine boxes, so "the
+opponent" there is a fragment. Every other row is `nbox 2`.
+
+**This pin has power.** Five unflagged ages FAIL with the rule off, three of them at 100.0 — there was
+more room to move here than anywhere the rule has ever been measured.
+
+### The arms are not the same capture, and the rule did fire — the frames prove both
+
+Md5 of the `-vfxonly.png` pass, which is the effects layer alone on black:
+
+    age            01     07     08     14     20     26     32     48
+    OFF vs ON    same   same   DIFF   DIFF   DIFF   DIFF   DIFF   same
+
+Ages 1 and 7 are byte-identical because the second detonation does not exist yet — the rule reads once,
+at spawn, and cannot touch the first blast. Ages 8 to 32 differ. The rule fired.
+
+### Where the mass it removed went — `shots/_r29-where.mjs`, OFF minus ON, L>25
+
+    ms     effect px OFF   removed px   % of effect   points of frame   centroid    covers opponent
+    133         137258         6689          4.9%          0.46           (877,400)       0.0%
+    233         132315         1802          1.4%          0.13           (916,431)       0.0%
+    333         147012         1967          1.3%          0.14           (950,452)       0.0%
+    433          98991         2357          2.4%          0.16           (963,435)       0.0%
+
+At 133 ms the removed layer's bounding box is **(806,337)-(946,468)** and the opponent's stencil box is
+**(731,338)-(777,420)**. They are at the same height and **29 px apart**, and they do not touch at any
+of the four ages. The rule deleted a fifth of the second detonation's fire into empty deck.
+
+### Why, stated as mechanism and marked as reasoning rather than measurement
+
+Two properties of `_composeOcc` explain the whole result, and both are readable in `src/gfx/vfx.js`:
+
+1. **`occ` is the worst over BOTH machines** (`for (let m = 0; m < robos.length; m++) ... if (occ >
+   worst) worst = occ`), while clause F sub-2 is scored on the FAR machine only — the smaller stencil
+   box. A rule can therefore fire at full strength on the near machine's geometry and be scored on the
+   far one's.
+2. **The discs are the event's own R**, 2.80 m, which at the follow-up's 20.7 m depth is a 108 px
+   radius. The shells the rule actually shrinks are much smaller: the flash core reaches `R*0.52` (43
+   px) and the cluster core `R*0.72` (78 px). The removed layer's measured equivalent radius at 133 ms
+   is **46 px**. So a detonation whose cores fall 29 px short of the opponent can still score `occ
+   0.54`: the gate is measured on a disc half again larger than anything it governs.
+
+At tick 1195 the second detonation stood **on** the aiming target — `fea9d65` located the removed layer
+there at centroid (718,372) against an opponent box of (728,281)-(777,374). At tick 956 it stands
+**beside** it. That difference, and not the rule, is what the 22.8 points were.
+
+### What stands, what does not, and one number that should stop being quoted
+
+- **STANDS:** the 22.8 points at tick 1195 are real and measured (`fea9d65`), and there is still no
+  collateral damage anywhere — tick 264 (`0f6f1d2`) and now tick 956 are unchanged to the digit.
+- **DOES NOT STAND:** any description of this as a general composition rule. Its demonstrated effect on
+  clause F sub-2 anywhere in three matches is **one cell of one blast**.
+- **NOT SUPPORTED EITHER WAY:** that it is harmless in general. At 133 ms it removes **0.46 points of
+  frame**, marginally outside `0562782`'s own 0.4-point acceptance bar, and buys 0.0 points of the
+  clause for it.
+- **A NUMBER TO STOP QUOTING:** the shipped rule records **occ 0.33** for the pinned pair, not the
+  **0.68** `fea9d65` derived by hand for the same pair. The A/B that commit ran is unaffected — it is a
+  measurement — but reasoning off 0.68 is reasoning off a number the renderer does not use.
+
+### The scorecard fact this turned up, which is larger than the rule
+
+**Tick 956 reads 100.0% at 233, 333 and 800 ms and 81.2% at 433 ms, on the render meter, with the rule
+on.** The card has tracked tick 1195's 117 ms cell — now 60.2 — as clause F sub-2's worst for four
+rounds. It is not the worst. A pin nobody had captured is at 100.0 on three separate ages, and at this
+pin the opponent is swallowed by the FIRST detonation, which no composition rule touches by
+construction.
+
+### What I did not measure
+
+No `--kill` ceiling column at this pin, so the 6689 px removed at 133 ms is not scored against what
+`latecore` is worth here. No second arena and no second seed carried through to a capture; the two
+extra matches were scanned for `occ` only. Nothing here says whether the rule helps at a pin where the
+follow-up stands on the opponent AND the cell fails — tick 1195 is still the only known example of
+that geometry, which is precisely the difficulty.
