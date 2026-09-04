@@ -59,6 +59,20 @@
  *            outside it, and any coverage is a foreground object standing in
  *            front of a background machine rather than a machine engulfed.**
  *
+ * AND `d3` IS CHECKED RATHER THAN TRUSTED. The capture's light census stores,
+ * for another purpose entirely, the distance from every live blast light to
+ * every machine — and the pinned blast's light is spawned AT the blast point.
+ * So the last two columns re-read that number straight out of the meta:
+ *
+ *   Ld3      the pinned light's own distance to the opponent, in metres. It is
+ *            an independent measurement of exactly what `d3` computes, by a
+ *            different route, out of a field nothing else reads.
+ *   lux      what that light delivers to the opponent, against an arena key of
+ *            about 3.2 — the unit `stage.js` and `c2db8b1` both argue it in.
+ *   nd       the pinned light's distance to the NEAR machine, which is the one
+ *            column that says which machine the detonation actually happened
+ *            on. A dash in these three means no pinned light was alive.
+ *
  * It reports the geometry and stops. Whether a machine standing wholly inside a
  * detonation may be drawn as covered is a reading of the clause and belongs to
  * the critic; this file's job is to say whether it IS standing inside one.
@@ -83,7 +97,7 @@ for (const f of files) {
   console.log('');
   console.log(`  mass radius 1.5R = ${(b.radius * 1.5).toFixed(2)} m`);
   console.log('');
-  console.log('   age    ms | far   fd(m)   sep    Rpx   frpx | sep/R  far/R    in |  bd(m)  d3(m)   d3/M');
+  console.log('   age    ms | far   fd(m)   sep    Rpx   frpx | sep/R  far/R    in |  bd(m)  d3(m)   d3/M | Ld3(m)   lux  nd(m)');
   for (const s of m.shots) {
     const pr = s.pr;
     // Pre-round-34 captures projected only x/y/z and carry no dist, rpx or sep.
@@ -119,10 +133,20 @@ for (const f of files) {
     const d3 = Math.sqrt(bd * bd + far.dist * far.dist - 2 * bd * far.dist * Math.cos(theta));
     const mass = b.radius * 1.5;
     const n = (v, w, d = 1) => v.toFixed(d).padStart(w);
+    // The pinned blast's own light, if one is still alive: born at or before
+    // the blast's time, the way `_r17-blast.mjs` labels it PINNED.
+    const farIdx = farKey === 'robo1' ? 1 : 0;
+    const pin = (s.lights || []).find((l) => l.birth <= b.t + 0.02);
+    let census = '     -     -      -';
+    if (pin) {
+      const atFar = pin.at.find((a) => a.robo === farIdx);
+      const atNear = pin.at.find((a) => a.robo !== farIdx);
+      census = `${n(atFar.d, 6, 2)} ${n(atFar.lux, 5, 2)} ${n(atNear.d, 6, 2)}`;
+    }
     console.log(`  ${String(s.age).padStart(4)}  ${String(s.ms).padStart(4)} | ` +
       `${farKey === 'robo1' ? 'p2 ' : 'p1 '} ${n(far.dist, 6, 2)} ${n(far.sep, 6)} ${n(Rpx, 6)} ${n(far.rpx, 6)} | ` +
       `${n(far.sep / Rpx, 5, 3)} ${n((far.sep + far.rpx) / Rpx, 6, 3)} ${n(inBlast, 5, 2)} | ` +
-      `${n(bd, 6, 2)} ${n(d3, 6, 2)} ${n(d3 / mass, 6, 2)}`);
+      `${n(bd, 6, 2)} ${n(d3, 6, 2)} ${n(d3 / mass, 6, 2)} | ${census}`);
   }
 }
 console.log('');
