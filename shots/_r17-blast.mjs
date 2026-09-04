@@ -138,6 +138,29 @@ const VH = Number(flag('vh', 900));
 const LIST = !!flag('list');
 /** Walk the ages and log the geometry, writing no PNG. See the pre-flight below. */
 const NOSNAP = !!flag('nosnap');
+/**
+ * --stenconly   ADMISSIBILITY SCREEN. Write ONLY the machine stencil.
+ *
+ * RULING 38 requires a pin to pass two screens before it joins the set: a
+ * GEOMETRIC one, which the scan listing already answers for free, and an
+ * ADMISSIBLE one — that `shots/_r25-cover.mjs` can actually resolve the opponent
+ * at the ages being scored. The second was found the expensive way: foundry
+ * 1198 screened in at `in = 1.00` and then failed the cover meter's own
+ * subject-selection guard at six of seven ages, because that arena's near
+ * machine stands among occluders that cut its stencil into one piece or three.
+ *
+ * Admissibility cannot be predicted from the scan — it depends on what the
+ * stencil does, which needs a render. But it needs ONLY the stencil: four of the
+ * five passes are the photograph and the three measurement frames, and none of
+ * them is consulted to count machine boxes. Skipping them turns a screening run
+ * from a full capture into roughly a fifth of one, which is what makes screening
+ * a whole candidate list affordable instead of a thing nobody does.
+ *
+ * The pin set is then published WITH ITS REJECTIONS. A set filtered on
+ * admissibility and quoted without them is "the pins where the stencil happened
+ * to segment", which is RULING 34's sample-of-one with more steps.
+ */
+const STENCONLY = !!flag('stenconly');
 const AGES = String(flag('ages', '2,7,14,28,48')).split(',').map(Number);
 /**
  * --kill a,b,c   ATTRIBUTION. Suppress named stages of the detonation in BOTH
@@ -900,29 +923,37 @@ for (const age of AGES) {
   }, show);
 
   // 1. the photograph, HUD and all.
-  await page.waitForTimeout(250);
-  await page.screenshot({ path: `${PREFIX}-a${pad}.png` });
+  if (!STENCONLY) {
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: `${PREFIX}-a${pad}.png` });
+  }
 
   // 2-4. the measurement passes. The UI is off for all three or the HUD's own
   // hard edges are measured as the blast's.
   await ui(false);
-  await page.waitForTimeout(250);
-  await page.screenshot({ path: `${PREFIX}-a${pad}-raw.png` });
+  if (!STENCONLY) {
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: `${PREFIX}-a${pad}-raw.png` });
+  }
 
   await page.evaluate(`(${VFX_TOGGLE_FN})(false)`);
-  await page.waitForTimeout(250);
-  await page.screenshot({ path: `${PREFIX}-a${pad}-novfx.png` });
+  if (!STENCONLY) {
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: `${PREFIX}-a${pad}-novfx.png` });
+  }
 
   // 5. the effects layer alone on black — the footprint as a render. See
   // VFX_ONLY_FN: the difference column above cannot tell coverage from a change
   // in what is underneath, and this one can.
-  await page.evaluate(`(${VFX_TOGGLE_FN})(true)`);
-  await page.evaluate(`(${VFX_ONLY_FN})(true)`);
-  await page.waitForTimeout(250);
-  await page.screenshot({ path: `${PREFIX}-a${pad}-vfxonly.png` });
-  await page.evaluate(`(${VFX_ONLY_FN})(false)`);
-  await page.evaluate(`(${VFX_TOGGLE_FN})(false)`);
-  await page.waitForTimeout(150);
+  if (!STENCONLY) {
+    await page.evaluate(`(${VFX_TOGGLE_FN})(true)`);
+    await page.evaluate(`(${VFX_ONLY_FN})(true)`);
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: `${PREFIX}-a${pad}-vfxonly.png` });
+    await page.evaluate(`(${VFX_ONLY_FN})(false)`);
+    await page.evaluate(`(${VFX_TOGGLE_FN})(false)`);
+    await page.waitForTimeout(150);
+  }
 
   // The stencil is taken with the effects still hidden, and that is deliberate:
   // STENCIL_FN overrides every visible mesh's material, which would turn the
