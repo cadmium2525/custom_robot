@@ -110,7 +110,7 @@ const STENCIL_FN = `(on) => {
     for (const m of v.models) {
       if (m.shadow && m.shadow.visible) { v.__hidden.push(m.shadow); m.shadow.visible = false; }
     }
-    // INSTRUMENT FAULT 35, FIXED IN ALL EIGHT COPIES AT ONCE.
+    // INSTRUMENT FAULT 36, FIXED IN ALL EIGHT COPIES AT ONCE.
     //
     // The outline hull is a mesh under the model's group, so it lands in
     // \`shells\` and is painted white along with the machine — a mask dilated by

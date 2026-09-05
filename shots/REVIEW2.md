@@ -11698,3 +11698,96 @@ budget in the header.
 - **The clause E cell during a detonation is still unscored by anybody**, five rounds after it was
   first noted. `_r17-edge.mjs` prints `BRIGHTEST 1% blast ON: machines 22.1%, effect 71.7%` at pin
   1248, 333 ms, and no round has claimed it in either direction.
+
+---
+
+## ROUND 38 — BUILDER, PART 4: **RULING 44 is right, my fault 34 was written backwards, and the correction is not the one I would have guessed**
+
+### 1. Fault 34's logic is inverted, and the correction changes what the columns mean
+
+I wrote that a kill column *"establishes SUFFICIENCY"* and *"has never been able to establish
+NECESSITY"*. That is exactly backwards, and the arithmetic is not arguable.
+
+`--kill X` renders `C(All \ X)`. If that collapses, the effect cannot cover the opponent without X,
+so **X is necessary**. If it holds, X is **not** necessary — and it says nothing whatever about
+whether X alone would do the job. Sufficiency needs `C({X})`, which is the *complement* kill:
+`--kill <everything but X>`. So a single-stage column speaks to necessity only, and the thing I said
+it could never do is the only thing it does.
+
+**The consequence for RULING 32 is that my re-reading of it was wrong and its original reading was
+right.** *"Killing every lobe in the frame left the cell at 100.0"* means the lobes are not necessary,
+and *"the lobes are not the cause"* is a fair statement of that. I filed it as an error; it was not
+one. The vfx source's `"with the fire shells killed the same age reads 21.6%, with everything else in
+the detonation killed it does not move at all"` is likewise sound — it is a necessity column and a
+sufficiency column quoted as a pair, which is the thing I proposed as the new standard while claiming
+the file had never done it.
+
+**What survives is the remedy, for a different reason than the one I gave.** A partition — `C(All\X)`
+and `C({X})` together — is still the right unit, because necessity and sufficiency are two questions
+and a stage is "the cause" only when both answer yes. My round-38 partition rows are correct as
+measurements and their labels were wrong: `--kill fireshell,smokeshell` collapsing to 3.7/10.6/19.3
+proves the shell pool is **necessary**, and `--kill particles,flares,sparks,shockwaves,decals` holding
+at 99.1/100.0/100.0/89.5 proves it is **sufficient**. Both conclusions stand; only my derivation of
+them was upside down.
+
+### 2. And the redundancy claim is over-stated, on the critic's evidence
+
+I wrote *"three independently opaque layers over the same thousand opponent pixels."* RULING 44
+measures the covering's brightness under each kill and finds it goes **up**: at 333 ms with the lobes
+gone, `L>100` runs 58.6 → 91.3 and `Lmed` 112 → 154; at 433 ms with the smoke gone, 0.3 → 77.7.
+Removing a layer reveals a brighter one behind it, so the shells are a **depth-ordered composite**,
+not a stack of equal veils, and "three redundant layers" is supported for at most two. **Coverage was
+the wrong statistic to notice that with, and the brightness column that does notice it is the
+critic's.**
+
+Its INSTRUMENT FAULT 35 is the sharper form of the same point and I accept it without reservation:
+`L>25` is **censored at 100.0**, so at the two cells that set the card no single-stage knockout could
+have returned anything but 100.0 whatever it did. My six captures at 333 and 433 ms were run against a
+ceiling. The 233 ms and 533 ms rows are not censored and are the only rows in that table that carried
+information.
+
+### 3. INSTRUMENT FAULT 36 — **the silhouette stencil removes the outline hull by accident, in all eight copies**
+
+Filed here for the record; fixed in `3617f4e`, before the number collided with the critic's 35 and was
+moved to 36.
+
+Every mask-derived figure in this project — clauses A, B, C, G, and the whole clause F sub-2 card —
+walks a stencil built by taking **every mesh under a machine's group** and painting it flat white. The
+outline hull is a mesh under that group. A white hull would dilate the mask by `OUTLINE_WIDTH` and
+make the walked boundary the contour's outer edge instead of the machine's silhouette.
+
+It does not happen, and the reason is two defaults meeting: the override material is a fresh
+`MeshBasicMaterial` at `FrontSide`, the hull is `BackSide`, and its faces are culled. **Give that
+material a `side` for any reason and every one of those figures changes at once, with nothing in any
+output to say so.** The hull is now hidden by name in all eight copies, found by searching for the
+line rather than listing the files from memory — fault 19 took three sweeps because it was listed from
+memory — and verified as a no-op on the same bundle: stencil 24415 px, clean 84.8 / 86.2 / 79.7,
+invisible 4.5 / 5.4 / 1.7, identical to the reading before it.
+
+### 4. Clause B: the hull is at its maximum and the failure is the machine's own value
+
+Two committed measurements this round, both on `23dc643dceac`, grid, tier 3, tick 420.
+
+**The hull's whole response curve** (`66ab2d9`): collapsed to nothing 80.8, as shipped 84.8, and
+falling to 83.4 / 82.8 as either width is widened. The shipped value is a maximum, the hull earns four
+points, and **no setting of it reaches the 90% threshold.** On the far machine it earns nothing
+measurable — 80.0 with no hull against 79.7 as shipped, inside the 0.2-point contour floor — and falls
+to 71.0 as its width triples.
+
+**Why the failing stretches fail** (`5c60b81`, a new column on the existing walk, not a new meter):
+
+```
+                       weak rows                 clean rows
+                   machine   behind          machine   behind
+    overall           69.2     65.0            148.3     52.4
+    near machine      68.2     73.5            156.3     53.1
+    far machine       72.8     52.0            117.5     50.1
+```
+
+**The background is the same on both populations and the machine is not.** On the far machine —
+the one at 79.7 that decides blind point 4 — the ground behind reads 52.0 where the contour fails and
+50.1 where it holds, a difference inside the noise, while the machine itself falls from **117.5 to
+72.8**. The weak contour is the machine's own unlit side, not a bright stage.
+
+**So the next attempt on clause B is a machine-value change and not an outline change**, and that is
+the first time this document has had a measurement that says which.
