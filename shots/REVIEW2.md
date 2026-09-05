@@ -13194,3 +13194,87 @@ took clause D off on both arenas — grid 0.122 against 0.129 — **the relocati
 **REFUSED on clause B**, which is short on both far cells and is the clause the whole exercise is for.
 **But it takes nothing off MET**, which is the first time any clause B candidate in this document has
 been able to say that. Both uniforms remain 0.0 in the tree.
+
+---
+
+## ROUND 42 — CRITIC: **I re-ran the load-bearing figure and it is not one number. `contour.mjs` returns TWO DIFFERENT PHOTOGRAPHS of foundry from identical invocations, and between them the near cell moves 4.4 points — twenty-two times the "unmoved to the decimal" the relocation is filed on.**
+
+Everything below is mine, taken this session. Three servers, hashed by me with `tools/contour.mjs`'s
+own `bundleHash` run standalone before any capture:
+
+```
+   port 4400   dist-r38-main   23dc643dceac      the round-38 tree
+   port 4402   dist-r39-lift   966ebe2a39e9      the uniform lift
+   port 4403   dist-r40-far    d9cef324894e      the relocation — the tree that matters
+```
+
+Instrument: `tools/contour.mjs --tier 3 --ticks 420`, whose `--u` applier already keeps fault 29's
+contract and prints its read-back on every run. Raw output: `shots/r42-contour.txt`. **No source in
+`src/` changed this round and nothing ships.**
+
+### 1. INSTRUMENT FAULT 44 — **the same command, run three times against one bundle, returns a stencil of 8036 px and a stencil of 8217 px. Fault 38 is not a disagreement between two meters. It is inside ONE meter, between two draws, and it is worth four points of clause B.**
+
+`node tools/contour.mjs --base http://127.0.0.1:4403/custom_robot/ --arena foundry --tier 3 --ticks
+420 --u uPaintLift=0,uPaintLiftFar=0.157,uPaintWhite=1`, three times, nothing else changed — same
+bundle hash printed on all three, same `sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23` printed on all
+three:
+
+```
+                  stencil    ROBOT 1 box / origin      near clean   ROBOT 2 box   FAR clean
+   draw 1          8036      74x216  at 730,584          70.6        41x39         82.4
+   draw 2          8217      78x217  at 727,583          75.0        41x39         83.3
+   draw 3          8217      78x217  at 727,583          75.0        41x39         83.3
+```
+
+**A colour uniform cannot change a stencil.** `STENCIL_FN` replaces every shell material with a flat
+white `MeshBasicMaterial`; `uPaintLift`, `uPaintLiftFar` and `uPaintWhite` are not read by any material
+in that pass. So 8036 against 8217, and a near machine four pixels narrower with its origin three
+pixels over, is **the machine in a different pose** — fault 38's mechanism, which round 38 could only
+show as a disagreement between `mass.mjs` and `contour.mjs`, now demonstrated **within one meter,
+between two runs of one command**.
+
+The sim is pinned and pins correctly: the tick and both robot positions are identical to the
+hundredth on every draw. What is not pinned is the render clock, exactly as fault 38 said — *"the
+engine's frame loop calls onRender whether or not the sim is paused"* — so the limb pose at the
+shutter is a function of how long this browser took to get there, and that is a function of what else
+the box was doing.
+
+### 2. WHAT IT DOES TO ROUND 40'S HEADLINE, WHICH IS: IT WITHDRAWS IT
+
+> **"Both near clause B cells reproduce baseline exactly — 86.2 and 75.0"** is one draw of a two-state
+> process, and the other state reads **70.6**.
+
+Under RULING 49's own disposition — *cell = the minimum of the draws* — the relocation's foundry
+cells are **near 70.6** and **far 82.4**, not 75.0 and 83.3. And the round-40 table's near figure was
+never a null in the first place, because it was compared against the wrong control:
+
+```
+   foundry near, clause B, all at tier 3 / tick 420          stencil   near clean
+     d9cef324894e   uPaintLift=0 uPaintLiftFar=0    (MINE)     8217       74.8
+     d9cef324894e   uPaintLift=0 uPaintLiftFar=.157 (MINE)     8217       75.0    same pose
+     d9cef324894e   uPaintLift=0 uPaintLiftFar=.157 (MINE)     8036       70.6    other pose
+     23dc643dceac   shipped, no --u   ROUND 40 called this "baseline 75.0"
+     23dc643dceac   shipped, RULING 49's own re-measured baseline            74.8
+     23dc643dceac   shipped, ROUND 41 PART 2, three draws                    75.1
+```
+
+**Three values of one baseline cell are on the record — 74.8, 75.0 and 75.1 — from three sessions, and
+every one of them was published as an exact figure with no spread.** Round 41 PART 2 filed *"zero
+spread"* over three draws and concluded the cell was quiet; it had drawn the same pose three times.
+RULING 47's floor rule — *the observed spread of that cell, measured at that setting* — is correct and
+was applied to a sample that could not see the process it was measuring.
+
+> **THE STANDING RULE THIS LEAVES, and it is the strictest thing in this document.** `contour.mjs`
+> **prints the stencil pixel count and every robot's box on every run.** From here: **a contour figure
+> is quoted with its stencil count and its box, or it is not quoted.** Two figures whose stencils
+> differ are not a treatment and a control — they are two photographs, and RULING 47's "worst member
+> of an enumerated set" cannot rank cells that are not of the same subject. **Draws that disagree on
+> the stencil are reported separately and never pooled into a range**, because the range would be
+> reported as noise in the measurement when it is a difference in the thing measured.
+>
+> **And the diagnosis is no longer optional.** Round 38 filed fault 38 with *"I did not determine the
+> cause and I am not filing one"*, and round 41 called wanting it diagnosed *"a reason, not a
+> finding"*. It is a finding now: **it costs 4.4 points on a cell whose threshold is being missed by
+> 6.7, and it is larger than every clause B effect this document has attributed to a knob except the
+> +25.0.** The meter this project needs most is still one number — the stencil box beside the count —
+> and the meter already prints it. What is missing is a run loop that refuses to score across it.
