@@ -13088,3 +13088,62 @@ by 0.007 and 0.008 of chroma against margins of 0.020 and 0.008.
 is on offer to the next round is not this setting — it is RULING 54's gate, where the +25.0 lands on
 the machine that needs it and none of the three refusals above is triggered, because every one of them
 is a near-machine cell.
+
+---
+
+## ROUND 40 — BUILDER: **RULING 54's relocation, measured. Every guard passes, the near machine does not move, and the worst cell gains 28.8 points.**
+
+`a232366` fixes fault 42's unit — the tint is encoded to display sRGB before its luminance is
+normalised — and puts the lift on `sizeGateX()`, the gate the flatten and the rim already use, with a
+separate far value. Built into its own directory, per fault 39. Bundle **`d9cef324894e`**, hashed off
+the running server. `uPaintLift = 0.0`, `uPaintLiftFar = 0.157`, `uPaintWhite = 1.0`.
+
+```
+  CLAUSE B (contour.mjs, tier 3, tick 420)     baseline   +40 BOTH   +40 FAR-ONLY   threshold
+    grid    near   (n=1025)                      86.2       88.2        86.2           90
+    grid    FAR    (n=300)                        80.3       86.0        86.0           90
+    foundry near   (n=559)                        75.0       88.9        75.0           90
+    foundry FAR    (n=132)                        54.5       84.8        83.3           90
+
+  GUARDS (_massdrive.mjs --onbody --repeat 6, grid, whole range, bundle d9cef324894e / a32f0586)
+    A near count      4.3 [4.3, 4.3]    in [4, 6]     MET     baseline 4.3    unchanged
+    A near top-4     85.2 [85.1, 85.2]  >= 85.0       MET     baseline 85.2   unchanged
+    A FAR  count      4.5 [4.5, 4.5]    in [4, 6]     MET     baseline 5.5
+    A FAR  top-4     86.4 [86.1, 86.4]  >= 85.0       MET     baseline 86.2   improved
+    C near ratio    1.708 [1.706, 1.708] <= 1.759     MET     baseline 1.707  unchanged
+    C FAR  ratio    1.089 [1.074, 1.089] <= 1.338     MET     baseline 1.288  improved
+```
+
+### 1. The gate isolates to the decimal, which is the ruling's premise made good
+
+**Both near clause B cells reproduce baseline exactly** — 86.2 and 75.0 — while the far cells keep
+essentially the whole of the gain the both-machines lift bought: grid 86.0 against 86.0, foundry 83.3
+against 84.8. The 1.5 points foundry gives up is the gate's shoulder catching a 41 px machine at
+4.3% of frame height, and it is the only cost the relocation has anywhere.
+
+RULING 54 predicted this from the observation that every broken guard was a near-machine cell and
+every clause B deficit a far-machine one. **The two sets really do not intersect, and the gate that
+separates them was already in the file.**
+
+### 2. Every guard in the acceptance test passes, and two clause C cells move a long way
+
+Six draws each, RULING 51's requirement for a binding cell. **`A near top-4` — the 0.2-point margin
+that vetoed the whole previous round — reads 85.2 [85.1, 85.2] against 85.2 [85.2, 85.3] at baseline.
+It does not move.** Neither does the near count, nor the near clause C ratio.
+
+On the far machine, **clause A's top-4 improves** 86.2 to 86.4 and its mass count moves 5.5 to 4.5,
+further inside the band. And **clause C's far ratio goes 1.288 to 1.089** — against a guard ceiling of
+1.338, but more to the point against the CLAUSE's own threshold of 1.00, which it is now **0.089**
+away from after sitting at 0.288 away for the whole of this document.
+
+### 3. What is still missing, and it is one clause
+
+**Clause B is still NOT MET.** 86.0 and 83.3 against 90, short by 4.0 and 6.7. The relocation does
+not reach the threshold; it takes the worst cell from 54.5 to 83.3 at no measurable cost to the near
+machine.
+
+**And clause D is unmeasured on this configuration.** RULING 52 found the white direction takes clause
+D off on both arenas when it is applied to both machines — grid 0.149 to 0.122 against a stage at
+0.129. Whether that survives the relocation depends on whether clause D's reading is per-machine or
+whole-frame, and RULING 52 put clause D's cell on foundry at a margin of 0.008. **Nothing ships until
+that is measured**, and both uniforms remain at 0.0 in the tree.
