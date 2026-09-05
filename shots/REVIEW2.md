@@ -12573,3 +12573,68 @@ column reads `5ce832710181`. Corrected here rather than by editing the section, 
 > meter prints after every rebuild, and never carry a bundle hash forward across one.** Better, build
 > each variant into its own directory — the cost is disk, and the cost of not doing it is a table that
 > compares two trees while claiming to compare two settings.
+
+---
+
+## ROUND 39 — BUILDER, PART 9: **the refusal I filed is wrong about why. One guard cell with a 0.2-point margin blocks the whole thing.**
+
+`c423898` refused the lift with: *"clause B is short by 1.1-5.2 points and wants more lift; both
+failing guards are already over and want less. There is no value of this knob that satisfies both."*
+That is an interpolation between two measured points and I filed it as a conclusion. **Measured at a
+third point it is wrong.** Bundle `966ebe2a39e9`, white direction, `uPaintLift = 0.05` (+13 levels).
+
+```
+  CLAUSE B (contour.mjs, tier 3, tick 420)      0      +13     +40    threshold
+    grid    near   (n=1025)                    86.2    87.4    88.2      90
+    grid    FAR    (n=300)                     80.3    85.7    86.0      90
+    foundry near   (n=559)                     75.0    83.4    88.9      90
+    foundry FAR    (n=132)                     54.5    79.5    84.8      90
+
+  GUARDS (_massdrive.mjs --onbody --repeat 3, whole range)
+    A near count                                4.3     4.8     5.3    in [4,6]   all MET
+    A near top-4                               85.2    83.8    82.4    >= 85.0    FAILS from +13
+    A FAR  count                                5.5     5.3     4.5    in [4,6]   all MET
+    A FAR  top-4                               86.2    87.1    86.0    >= 85.0    all MET
+    C near ratio                              1.707   1.491   1.265    <= 1.759   all MET
+    C FAR  ratio                              1.288   1.277   1.456    <= 1.338   MET to +13
+```
+
+### 1. At +13 levels, five of six guards pass and three of them IMPROVE
+
+The far machine's top-4 goes **86.2 to 87.1**. The near machine's clause C ratio goes **1.707 to
+1.491** and the far machine's **1.288 to 1.277** — clause C is NOT MET at both and this moves both
+toward their threshold rather than away. Both mass counts stay in band.
+
+Against that, clause B gains **+1.2, +5.4, +8.4 and +25.0**, and the worst cell on the card goes
+**54.5 to 79.5**.
+
+**The far machine's clause C guard is not "already over and wanting less" at all** — at +13 it is
+1.277, comfortably inside its 1.338 ceiling and better than baseline. My refusal named two failing
+guards pulling against clause B; at the value that matters there is **one**.
+
+### 2. The binding constraint is a 0.2-point margin, and it was never the one anybody named
+
+`A near top-4` is **85.2 against a floor of 85.0**. RULING 49 identified the near mass count as the
+binding number — *"it stands at 4.3 against a floor of 4.0 ... clause A's entire margin under a value
+change is 0.3 of a mass"* — and the count is not what breaks: it goes 4.3, 4.8, 5.3 and never leaves
+the band. **Top-4 does, immediately.**
+
+And it falls front-loaded: **1.4 points in the first 13 levels, 1.4 more over the next 27.** So the
+largest lift that keeps it at 85.0 is on the order of **two levels**, which buys no clause B at all.
+**Any value change on this machine, of any size worth making, takes clause A off** — not because of
+the margin the acceptance test was built to protect, but because of a cell with a tenth of that
+margin sitting beside it.
+
+### 3. This is a ruling and not a builder's call, and here is what it turns on
+
+The acceptance test refuses this and it is right to by its own text. But what it refuses is a change
+that:
+
+- moves clause B's worst cell **+25.0 points**, from 54.5 to 79.5;
+- moves **three** guard cells toward their thresholds, two of them on a clause that is NOT MET;
+- costs **1.4 points** on one cell of one clause, taking it from 0.2 above a floor to 1.2 below.
+
+**Nothing ships.** Both uniforms stay at 0.0 and the tree is unchanged. What has to be decided is
+whether a MET held by 0.2 points may veto a 25-point gain on the worst cell of a failing clause, and
+whether a `>= 85.0` floor a baseline clears by 0.2 is a threshold or a coincidence. Neither is a
+question a builder answers by picking a number.
