@@ -13496,3 +13496,177 @@ near one. **Clause D remains one of the four METs on this card and nothing on th
 **Clause E is not a cost either way and is quoted here because RULING 50 requires it beside clause B:**
 grid **58.9% -> 64.6%**, MET at both; foundry **33.4% -> 35.1%**, NOT MET at both and improving. The
 white lift buys clause E on both arenas. It is the only clause it buys outright.
+
+### 7. THE POSE IS TWO EXACTLY REPRODUCIBLE STATES, NOT SCATTER — and my own diagnosis probe FAILED, which I am filing rather than dropping
+
+Grid's minority pose came up twice in eighteen draws this session, and the two occurrences are
+**identical in every printed digit**:
+
+```
+   grid, d9cef324894e, uPaintLift = uPaintLiftFar = 0, the two minority draws
+     stencil 24209   ROBOT 1  156x283 at 735,610  n=1032  near 84.3
+                     ROBOT 2   53x79  at 765,158  n= 317  FAR  69.7
+                       far machine's clean rows:  machine 128.7   behind 61.3
+   the majority pose, eight draws
+     stencil 24415   ROBOT 1  157x284 at 734,610  n=1025  near 86.2
+                     ROBOT 2   52x71  at 767,163  n= 300  FAR  80.0 / 79.7 / 80.0 / 79.7
+                       far machine's clean rows:  machine 117.5   behind 50.1
+```
+
+**This is not a noisy meter. It is a meter with two settings and no control over which one it uses.**
+Each state is exact to the pixel and to the tenth; `n` itself moves 300 -> 317 and 1025 -> 1032, so the
+denominator RULING 47 required beside every clause B figure is a function of the state too. Frequency
+across the whole session: **3 minority draws in 17** (one foundry, two grid).
+
+#### My probe, and what it rules out
+
+`shots/_r42pose.mjs` (new file — round 41's rule bars editing a capture script mid-comparison, so this
+is a separate one) pins the frame exactly as `contour.mjs` pins it, runs the same 240-iteration settle,
+and prints the machine's free-running state instead of taking a picture. Four runs, then five more at
+waits of 900 / 1200 / 1500 / 1800 / 2400 ms:
+
+```
+   every run, all nine:  before settle frame=3 elapsed=1000
+                         model 1  spinAngle 3.8716  breathe 2208.7633  toeY 0       rootY 2.5211
+                         model 2  spinAngle 3.8716  breathe 2208.7633  toeY 45.3721 rootY 0.0728
+```
+
+**The accumulators I named in section 5 are identical in all nine runs, and the pre-settle frame count
+does not move even when the wait is more than doubled. My hypothesis is not confirmed and I am not
+keeping it.** What the probe establishes is narrower and still worth having: `engine.js:182` puts
+`clock.elapsed += dt` inside `if (!this.paused)`, so the round-10 clock pin holds; `clock.frame`
+reaches 3 and stays there under a 900-2400 ms wait, so **the wall-clock wait is not the variable**; and
+the machine's frozen pose after the settle is reproducible in the absence of whatever `contour.mjs`
+does that this probe does not.
+
+**Fault 44 therefore stands undiagnosed, with one hypothesis tested and rejected**, which is a better
+position than fault 38's *"I did not determine the cause and I am not filing one"* by exactly one
+tested hypothesis and no more. `clock.frame` is a candidate for the pose-print fault 38 asked for — it
+is one integer and the engine already increments it every frame, paused or not — but on this evidence
+it does not separate the two states either.
+
+### 8. RULING 56 — **THE PROGRESS TIER. RULING 49's null clause was INTENDED and it is REACHABLE; the builder's objection is aimed at the half of the test this candidate passes. It fails the other half, and it fails it on the machine it acts on.**
+
+#### 1. Was "inside its own repeat spread" intended, given spreads of 0.0 to 0.3?
+
+**Yes, and it is not unreachable by construction.** It is a NULL requirement, and a null is precisely
+what the word "isolated" means. A knob multiplied by a gate that is identically zero on the near
+machine moves the near machine by identically zero, which is inside a spread of 0.0 no matter how tight
+that spread is. **The relocation passes this clause** — that is what my own pose-matched control shows
+(section 4b, and clause D's near-machine chroma unchanged to three decimals on both arenas: 0.145 and
+0.153 before and after). The tier was not the obstacle the builder took it for.
+
+**What WAS wrong with it is worse and is not what was complained of: the spreads it is measured against
+were fictions.** 0.0 to 0.3 is the within-pose scatter of a two-state process, and RULING 49 wrote a
+null test whose tolerance was an order of magnitude under the meter's real state change. **The clause
+is kept and its tolerance is now per-pose.**
+
+#### 2. Where the relocation actually fails, which is on its OWN subject
+
+RULING 54's amendment requires the change to **improve every cell it acts on**. Sorted by that:
+
+```
+   ON THE FAR MACHINE — the subject                     baseline      +40 FAR      verdict
+     clause B  foundry FAR  41x39  n=132                  54.5          83.3       +28.8  REAL
+     clause B  grid    FAR  52x71  n=300               80.0/79.7     86.3/86.0      +6.3  pose A only
+     clause C  far ratio                                 1.288         1.089       improves, toward 1.00
+     clause A  far top-4                                  86.2          86.4       +0.2, and see below
+     clause A  far mass count                              5.5           4.5       NOT an improvement
+     clause D  far chroma grid    (stage 0.129)           0.200         0.106      MET -> NOT MET
+     clause D  far chroma foundry (stage 0.145)           0.173         0.141      MET -> NOT MET
+     clause E  grid / foundry                          58.9 / 33.4   64.6 / 35.1   improves both
+```
+
+**Two of those rows are being read backwards in round 40's text.**
+
+> **"its mass count moves 5.5 to 4.5, further inside the band" is FALSE.** The band is `[4, 6]`. **5.5
+> is 0.5 from the ceiling; 4.5 is 0.5 from the floor.** The margin is *unchanged* and the direction of
+> travel is toward **4.0** — the number RULING 49 named in bold as clause A's binding constraint. A
+> falling mass count is masses **merging**, on the 41x39 machine that clause G and blind point 3 exist
+> for, and it creates a second near-floor clause A cell where there was one.
+>
+> **And the "+0.2 improvement" in far top-4 is the same event with the other sign.** Top-4 coverage is
+> the share of the silhouette held by the four largest masses. When the count falls from 5.5 to 4.5 the
+> four largest cover more of what is left **because there is one fewer mass to cover**. Round 40 books
+> the merge as a gain on one row and as a gain on the next row too. It is one event and it is not a
+> gain twice.
+
+#### 3. The tier, restated
+
+> **ACCEPTED AS PROGRESS iff ALL of:**
+>
+> 1. **The subject is named before the measurement** — which machine, through which gate — and it is
+>    where the failing cell is. (RULING 54, unchanged.)
+> 2. **On every cell of every OTHER subject the change is a NULL**: nothing outside that cell's own
+>    repeat spread, measured **at the same setting, on the same bundle, in the same session, in the
+>    same pose**. Never against a baseline from another tree or another round. *Reachable by
+>    construction for any genuinely gated change; a candidate that fails it is not isolated, and
+>    isolation is the claim being tested.*
+> 3. **On its OWN subject, every clause improves or is a null, and NO clause goes from MET to NOT MET**
+>    — read per machine under RULING 55, on both arenas, with clause D and clause E beside clause B.
+>    **A cell that stays inside a band while its margin to the nearer edge does not grow is a NULL, not
+>    an improvement**, and a movement that is one physical event may be booked as a gain once or not at
+>    all.
+> 4. **Every figure carries its stencil count and its component boxes**, and a treatment draw is
+>    compared only against a control draw **in the same pose**. A candidate whose draw set contains a
+>    pose its control's draw set does not is **UNSCORED** on that cell — the meter failed, not the
+>    change.
+> 5. Unchanged and earned: **both arenas or it has not been read**; **the whole observed range and
+>    never the median**; **foundry's near machine is a bright-background failure.**
+>
+> **THE RELOCATION AGAINST IT.** Clause 1: passes. Clause 2: **passes** — the near machine is a null on
+> every cell I measured, on both arenas, pose-matched. Clause 4: the foundry near cell is UNSCORED
+> (one treatment draw in a pose the control never produced) and the grid far cell is scored in one pose
+> of two. Clause 3: **FAILS. Clause D goes from MET to NOT MET on the far machine on BOTH arenas**, and
+> clause A's far mass count is a merge booked as a gain.
+>
+> **REFUSED, and no longer only on clause B.** Round 40's *"it takes nothing off MET"* was true of the
+> **pooled** reading of clause D and true only because the machine that lost its colour is a twelfth of
+> the sample. Under RULING 55 it takes a MET off the very machine it was built to help. **Both uniforms
+> stay at 0.0 and nothing ships.**
+>
+> **The refusal on clause B is separately robust to fault 44**, because the pose only ever makes a cell
+> worse: the best reading of any of the four cells in any pose is **86.3**, against 90.
+
+#### 4. Where the last 3.7 and 6.7 points can come from — and it is not more of this knob
+
+**a. NOT from more lift.** At the one setting rendered, the far machine's chroma is already **below the
+stage on both arenas**. This knob is now bounded by **clause D**, where three rounds have assumed it
+was bounded by clause A. Under RULING 53 I may not name the level at which that crossing happens and I
+am not going to; what is *rendered* is that at +40 clause D is off and clause B is still 3.7 to 6.7
+short, so no larger setting of this knob can pass and the smaller ones have not been taken.
+
+**b. The gate's shoulder is worth about a quarter of one cell's deficit and nothing on the other.**
+Round 40 priced it at 1.5 points on foundry — the difference between the uniform lift's 84.8 and the
+far-only 83.3 on a machine at 4.3% of frame height, sitting partway up `smoothstep(0.09, 0.22)`. It
+buys nothing on grid, whose far machine is at 7.9%, and recovering it means widening the gate back
+toward the near machine, which is the thing the relocation exists to avoid.
+
+**c. THE OTHER TERM. Clause B's meter reads `|m - b|` at the boundary, and four rounds of candidates
+have moved only `m`.** `b` is the stage. Clause H is **NOT MET on both of its sub-clauses** — the grid
+stage owns 53.9% of the brightest 1% and the gate ranks 1 in 17 of 24 salience cells — and this
+document has had *"take the chroma out of the stage"* on its record since round 17 as clause D's third
+route, never built. **Lowering `b` moves clause B's difference, moves clause H toward MET, and moves
+clause D the RIGHT way**, because the machines' chroma advantage grows when the stage's shrinks —
+whereas every machine-side candidate so far has had to buy clause B by spending clause D. It is the
+only direction on the board that is not a trade. **That is where I would point the next round**, and it
+is a direction and not a quantity: RULING 53 forbids me a number and I have not got one.
+
+### 9. WHAT I DID NOT MEASURE, AND WHAT IN HERE IS SOMEBODY ELSE'S
+
+- **I did not re-take clause A or clause C.** Every guard figure in section 8's table is round 40's.
+  Under fault 44 they are all suspect in the same way clause B's are, and worse: **`shots/_massdrive.mjs`
+  prints `ROBOT i <box>` from the FIRST draw only** (`_massdrive.mjs:644`) and never checks that the
+  draws share it, so a six-draw guard block spanning two poses prints one box and pools the two states
+  into a "spread". **Every clause A and clause C range in this document may be a mixture.** That is the
+  next round's first job and it is a one-line change to that driver.
+- **The pose was not diagnosed**, my one hypothesis was tested and rejected, and I did not try to force
+  the minority state.
+- **Orbital was not captured**, on any clause, again.
+- **`_r15dump.mjs` still prints no bundle hash**, and it has its own pose — its grid stencil is 24457
+  with `robot 2` at `54x79`, a third box, distinct from contour's 52x71 and 53x79. Clause D and clause
+  B are therefore read on different photographs, which fault 38's rule already governs and which is now
+  worth restating: **the clause D verdicts in RULING 55 are internally pose-matched and are not
+  comparable frame-for-frame to any clause B figure in this document.**
+- **Nothing in `src/` changed this round and nothing ships.** `npm test` and a clean `vite build` were
+  run before committing anyway.
