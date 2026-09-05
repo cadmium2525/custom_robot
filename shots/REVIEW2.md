@@ -11121,3 +11121,86 @@ ever been tuned.
   construction for all three pins here: the screen and all three captures ran `1,7,14,20,26,32,48`
   and nothing else. This is the first round for which that is true.
 - Pin 838 and pin 956 remain out. No figure taken on either may be quoted.
+
+---
+
+## ROUND 38 — BUILDER, PART 2: **the attribution, and why five kill columns could not have found it**
+
+Pin 1248, bundle `23dc643dceac`, grid, seed 1234567, tier HIGH. Meter `shots/_r25-cover.mjs` — the
+VFX layer rendered alone on black against the machine stencil, never a difference. Column is
+`L>25`, the opponent's coverage in percent. Every row is a separate capture with `--kill` applied
+before all five passes, so the kill is in the render, not subtracted from it. Every age of every row
+segmented to exactly two machine boxes.
+
+```
+                                            233ms   333ms   433ms   533ms
+  baseline                                   99.1   100.0   100.0    90.4
+  --kill firelobes                           79.7   100.0   100.0    89.8
+  --kill firecore                            97.4   100.0   100.0    90.4
+  --kill smokeshell                          99.1   100.0   100.0    16.0
+  --kill fireshell,smokeshell                 3.7    10.6    19.3     7.3
+  --kill particles,flares,sparks,
+         shockwaves,decals                   99.1   100.0   100.0    89.5
+```
+
+### 1. The occlusion is `vfx.fireballs` and nothing else
+
+Killing every stage that is **not** a shell — the dust wave, the plume, the tumbling chunks, the
+rayed flash card, the debris streaks, the deck front and the scorch marks, all at once — moves the
+number by **0.0, 0.0, 0.0 and 0.9 points**. Killing every shell and leaving all of those alive puts
+all four ages **under the 25% threshold**: 3.7, 10.6, 19.3, 7.3.
+
+So the entire clause F sub-2 failure at this pin lives in one pool, `vfx.fireballs`, and the other
+seven stages of the detonation together cannot fail the clause even with the shells gone.
+
+### 2. Inside that pool the occlusion is REDUNDANT, and that is the finding
+
+Each of the three shell stages removed **alone** leaves 333 ms and 433 ms at **exactly 100.0**.
+Lobes gone: 100.0. Cores gone: 100.0. Smoke gone: 100.0. Remove all three and it is 10.6 and 19.3.
+
+There are three independently opaque layers over the same 986 and 1006 opponent pixels. No stage is
+"the" covering stage, because every stage is a complete covering stage on its own.
+
+**533 ms is the single exception in the table and it is smoke:** 90.4 → 16.0 on `--kill smokeshell`,
+the only single-stage kill anywhere here that crosses the threshold. At that age the fire has thinned
+and the smoke is alone, so the redundancy has ended and the method works again.
+
+> #### INSTRUMENT FAULT 34 — **the kill column has a null space, and it is exactly the case the clause is about. A kill column establishes SUFFICIENCY. It has never been able to establish NECESSITY, and this document has read it as necessity for four rounds.**
+>
+> `_r17-blast.mjs`'s `--kill` header states the method: *"Run once per stage and the drop in
+> far-machine occlusion names which stage is standing in front of the opponent."* **That inference is
+> only valid when at most one stage covers the opponent.** When two or more do it independently, every
+> single-stage column reads "not me", the drops sum to under two points, and the total is 100. The
+> method returns *no culprit* for the worst frame on the card — not a wrong culprit, which would at
+> least be visible, but a clean sheet.
+>
+> This is not hypothetical damage. The vfx source carries `"with the fire shells killed the same age
+> reads 21.6%, with everything else in the detonation killed it does not move at all"` as the
+> justification for the erosion exponent, and RULING 32's `latecore` reasoning turns on *"killing every
+> lobe in the frame left the cell at 100.0"* — which was read as **the lobes are not the cause** and is
+> in fact **the lobes are not the only sufficient cause**. Every such figure in this document is a
+> statement about sufficiency and several were used as statements about necessity.
+>
+> **THE STANDING METHOD CHANGES.** An attribution claim must come from a **partition** of the effect —
+> kill a whole complementary set and read what is left — not from a menu of single stages. Two
+> captures answer the question that five could not: `--kill <part>` and `--kill <everything but part>`,
+> and the pair must be quoted together. A single-stage kill column may be quoted only as *"stage X
+> alone is sufficient to cover N%"*, in those words, and may never be quoted as *"stage X is not the
+> cause"*.
+>
+> The partition is also cheaper, which is the part that stings: this round's answer cost two captures
+> and the four rounds of single-stage columns that did not find it cost far more than two.
+
+### 3. What this does and does not tell a builder
+
+It says the fix has to reduce what the shell pool puts over the opponent **in aggregate**, and that
+thinning any one stage will read as zero improvement on this pin because the other two close the gap
+behind it. That is a different instruction from every clause F sub-2 fix attempted since round 19,
+all of which tuned one stage and measured one stage.
+
+It does **not** say what the aggregate should be. Pin 1248's opponent is **40 px tall against the
+blast's 257 px projected radius** — one sixth — and sits at `d3 = 0.85`, inside the fire. Pin 1195 is
+the same blast kind at the same `R = 3.40` and reads 5.9 and 12.7 at the same two ages. **The two
+pins differ in the geometry of the encounter, not in the effect**, so before any shell is touched
+somebody has to rule on whether a machine standing that far inside a detonation is allowed to
+disappear. That ruling is the critic's and it is not a builder's to assume in either direction.
