@@ -11863,3 +11863,55 @@ it lifts both sides by similar amounts (+7.4 machine, +4.4 behind) and the step 
 stretch is weak because the inside is dark too. That is the mechanism behind `66ab2d9`'s response
 curve, which showed widening it only ever costs, and it closes the outline-width line of attack for
 good rather than by exhaustion.
+
+---
+
+## ROUND 38 — BUILDER, PART 6: **clause B has been scored on its best arena, and the far machine on foundry is 54.5**
+
+Same meter, same tier, same tick, same seed, same bundle `23dc643dceac`. The only thing that changes
+is the arena, and nothing in this document has read clause B's diagnosis anywhere but grid.
+
+```
+                 overall   near    FAR        far machine, weak rows / clean rows
+  arena          clean%   clean%  clean%   machine  behind  |  machine  behind   invisible%
+  --------------------------------------------------------------------------------------
+  grid            84.8     86.2    79.7       72.8    52.0  |   117.5    50.1       4.5
+  foundry         71.1     75.1    54.5       69.4    51.4  |   123.8    56.7       8.7
+  orbital         82.1     87.2    60.4       60.5    48.5  |   110.2    46.9       8.1
+```
+
+### 1. The far machine is 25 points worse off grid than on it
+
+**54.5 on foundry and 60.4 on orbital against grid's 79.7.** The near machine holds up everywhere —
+75.1 / 86.2 / 87.2 — so the whole of the spread is on the opponent, which is the machine clause G and
+blind point 3 are also about. Invisible contour nearly doubles off grid too: 8.7% and 8.1% against
+4.5%.
+
+**Every clause B figure in this document's history is a grid figure or an orbital overall.** The
+threshold is 90%, the card has carried 84.8, and on the arena where the meter has never been pointed
+the same machine reads **54.5**. If clause B's cell follows the convention this round set for clause F
+sub-2 — a cell is the worst member of the enumerated set, not a member chosen for being available —
+then **clause B's cell is 54.5 and not 84.8**, and blind point 4 fails by a margin nobody has been
+looking at. That is the critic's to rule; the measurement is not in doubt.
+
+### 2. The mechanism is the same on all three arenas, and one machine is the exception that proves it
+
+On the far machine, every arena: the background is the same in both populations — grid 52.0 against
+50.1, foundry 51.4 against 56.7, orbital 48.5 against 46.9 — while the machine falls by **44.7, 54.4
+and 49.7** points. The signature that `beb000a`'s controls traced to albedo on grid is the signature
+on all three.
+
+**Foundry's NEAR machine is the one place it is not.** There the weak rows read machine **83.8**
+against behind **83.6** — the background has risen 34 points to meet the machine rather than the
+machine having fallen — and that is a bright-background failure, the other of the two mechanisms the
+diagnosis column was built to separate. One arena, one machine, the opposite cause, and it would have
+been invisible for as long as clause B was a grid number.
+
+### 3. What this does to the plan
+
+The paint change that grid's controls point at is now a change that has to pay on **three** arenas
+against a far machine that starts 35 points below the threshold on the worst of them, and it has to do
+it without making foundry's near machine worse, where the machine is already the brighter of the two.
+**Nobody should ship a clause B change until the acceptance test names all three arenas and both
+machines**, because the one-arena version of this measurement would have called a foundry regression a
+success.
