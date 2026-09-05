@@ -1,0 +1,79 @@
+=== dump grid zero  uPaintLift=0,uPaintLiftFar=0,uPaintWhite=1 ===
+  suppressed transients: robot 1 uCharge=0.37, robot 2 uCharge=0.12
+  uniforms: uPaintLift=0 uPaintLiftFar=0 uPaintWhite=1
+  uniforms applied and read back on 2 shell bag(s)
+  grid -> shots/_r42/zero/grid-n.png + shots/_r42/zero/grid-mask.png
+--- chroma grid zero ---
+
+CHROMA — shots/_r42/zero / grid  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES        24457    1.70   0.206  0.149  0.676    31%  0.523  0.296  0.329   121.8    55   123   185
+    robot 1 157x283  22457    1.56   0.201  0.145  0.665    30%  0.527  0.294  0.322   123.0    54   125   186
+    robot 2 54x79   2000    0.14   0.261  0.200  0.804    33%  0.482  0.318  0.407   108.2    64   105   156
+  STAGE         1415543   98.30   0.132  0.129  0.609    22%  0.307  0.231  0.361    71.9    48    67    99
+
+  machine chroma / stage chroma = 1.558   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.149 vs stage 0.129  ->  MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.296 vs stage 0.231  — NOT clause D's statistic
+  headroom: the machines are at 31% of the chroma their own lightness allows
+  brightest 1% (>= 151.7): machines own 58.9%
+
+=== dump grid far  uPaintLift=0,uPaintLiftFar=0.157,uPaintWhite=1 ===
+  suppressed transients: robot 1 uCharge=0.37, robot 2 uCharge=0.12
+  uniforms: uPaintLift=0 uPaintLiftFar=0.157 uPaintWhite=1
+  uniforms applied and read back on 2 shell bag(s)
+  grid -> shots/_r42/far/grid-n.png + shots/_r42/far/grid-mask.png
+--- chroma grid far ---
+
+CHROMA — shots/_r42/far / grid  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES        24457    1.70   0.199  0.141  0.666    30%  0.536  0.290  0.315   125.3    56   130   187
+    robot 1 157x283  22457    1.56   0.201  0.145  0.664    30%  0.527  0.294  0.321   123.1    55   125   187
+    robot 2 54x79   2000    0.14   0.178  0.106  0.681    26%  0.630  0.248  0.241   149.8    82   161   190
+  STAGE         1415543   98.30   0.132  0.129  0.609    22%  0.307  0.231  0.361    71.9    48    67    99
+
+  machine chroma / stage chroma = 1.506   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.141 vs stage 0.129  ->  MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.290 vs stage 0.231  — NOT clause D's statistic
+  headroom: the machines are at 30% of the chroma their own lightness allows
+  brightest 1% (>= 152.4): machines own 64.6%
+
+=== dump foundry zero  uPaintLift=0,uPaintLiftFar=0,uPaintWhite=1 ===
+  uniforms: uPaintLift=0 uPaintLiftFar=0 uPaintWhite=1
+  uniforms applied and read back on 2 shell bag(s)
+  foundry -> shots/_r42/zero/foundry-n.png + shots/_r42/zero/foundry-mask.png
+--- chroma foundry zero ---
+
+CHROMA — shots/_r42/zero / foundry  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES         8138    0.57   0.196  0.153  0.660    30%  0.555  0.296  0.323   129.1    59   134   195
+    robot 1 76x217   7244    0.50   0.193  0.153  0.650    30%  0.566  0.295  0.315   132.2    60   141   196
+    robot 2 41x39    894    0.06   0.225  0.173  0.741    30%  0.464  0.308  0.390   103.7    56   104   155
+  STAGE         1431862   99.43   0.170  0.145  0.563    30%  0.282  0.304  0.457    63.7    46    58    86
+
+  machine chroma / stage chroma = 1.154   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.153 vs stage 0.145  ->  MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.296 vs stage 0.304  — NOT clause D's statistic
+  headroom: the machines are at 30% of the chroma their own lightness allows
+  brightest 1% (>= 113.8): machines own 33.4%
+
+=== dump foundry far  uPaintLift=0,uPaintLiftFar=0.157,uPaintWhite=1 ===
+  uniforms: uPaintLift=0 uPaintLiftFar=0.157 uPaintWhite=1
+  uniforms applied and read back on 2 shell bag(s)
+  foundry -> shots/_r42/far/foundry-n.png + shots/_r42/far/foundry-mask.png
+--- chroma foundry far ---
+
+CHROMA — shots/_r42/far / foundry  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES         8138    0.57   0.188  0.153  0.646    29%  0.568  0.293  0.308   133.2    60   143   196
+    robot 1 76x217   7244    0.50   0.192  0.153  0.649    30%  0.567  0.296  0.314   132.6    60   142   196
+    robot 2 41x39    894    0.06   0.155  0.141  0.621    25%  0.582  0.269  0.260   138.5    59   155   193
+  STAGE         1431862   99.43   0.170  0.145  0.563    30%  0.282  0.303  0.457    63.7    46    58    86
+
+  machine chroma / stage chroma = 1.108   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.153 vs stage 0.145  ->  MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.293 vs stage 0.303  — NOT clause D's statistic
+  headroom: the machines are at 29% of the chroma their own lightness allows
+  brightest 1% (>= 114.0): machines own 35.1%
+
+DDONE

@@ -1,0 +1,71 @@
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24415
+     step  p10=24.4  median=83.9  p90=126.7  mean=80.5  (n=1326)
+     clean    (>=40)  84.8%  ########################....
+                      clean rows: machine 148.4  behind  52.4
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26.2  median=97.6  p90=129.6  mean=87.5  (n=1025)
+     clean    (>=40)  86.2%  ########################....
+                      clean rows: machine 156.5  behind  53.1
+  ROBOT 2  52x71px (7.9% of frame height) at 767,163
+     step  p10=21.2  median=60.3  p90=82.4  mean=56.4  (n=300)
+     clean    (>=40)    80%  ######################......
+                      clean rows: machine 117.5  behind  50.1
+
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24415
+     step  p10=24.4  median=83.7  p90=126.8  mean=80.4  (n=1326)
+     clean    (>=40)  84.8%  ########################....
+                      clean rows: machine 148.4  behind  52.4
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26.2  median=97.6  p90=129.6  mean=87.5  (n=1025)
+     clean    (>=40)  86.2%  ########################....
+                      clean rows: machine 156.3  behind  53.1
+  ROBOT 2  52x71px (7.9% of frame height) at 767,163
+     step  p10=21.2  median=59.4  p90=82.4  mean=56.2  (n=300)
+     clean    (>=40)  79.7%  ######################......
+                      clean rows: machine 117.5  behind  50.1
+
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24415
+     step  p10=24.4  median=83.9  p90=126.7  mean=80.5  (n=1326)
+     clean    (>=40)  84.8%  ########################....
+                      clean rows: machine 148.4  behind  52.4
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26.2  median=97.6  p90=129.6  mean=87.5  (n=1025)
+     clean    (>=40)  86.2%  ########################....
+                      clean rows: machine 156.5  behind  53.1
+  ROBOT 2  52x71px (7.9% of frame height) at 767,163
+     step  p10=21.2  median=60.3  p90=82.4  mean=56.4  (n=300)
+     clean    (>=40)    80%  ######################......
+                      clean rows: machine 117.5  behind  50.1
+
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24415
+     step  p10=24.4  median=83.9  p90=126.7  mean=80.4  (n=1326)
+     clean    (>=40)  84.8%  ########################....
+                      clean rows: machine 148.5  behind  52.4
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26.2  median=97.6  p90=129.6  mean=87.5  (n=1025)
+     clean    (>=40)  86.2%  ########################....
+                      clean rows: machine 156.5  behind  53.1
+  ROBOT 2  52x71px (7.9% of frame height) at 767,163
+     step  p10=21.2  median=59.4  p90=82.4  mean=56.2  (n=300)
+     clean    (>=40)  79.7%  ######################......
+                      clean rows: machine 117.5  behind  50.1
+
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24209
+     step  p10=21.3  median=79.4  p90=118.7  mean=76.1  (n=1349)
+     clean    (>=40)  80.9%  #######################.....
+                      clean rows: machine 152.4  behind  60.3
+  ROBOT 1  156x283px (31.4% of frame height) at 735,610
+     step  p10=22.3  median=93.1  p90=120.4  mean=82.7  (n=1032)
+     clean    (>=40)  84.3%  ########################....
+                      clean rows: machine 161.2  behind  60.1
+  ROBOT 2  53x79px (8.8% of frame height) at 765,158
+     step  p10=19.8  median=58.4  p90=80.3  mean=54.4  (n=317)
+     clean    (>=40)  69.7%  ####################........
+                      clean rows: machine 128.7  behind  61.3
+
+NDONE

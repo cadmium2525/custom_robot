@@ -1,0 +1,40 @@
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  before settle: frame=3 elapsed=1000 spin=[0,0]
+  after  settle: frame=6 elapsed=1000
+    model 1  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":0,"rootY":2.5211}
+    model 2  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":45.3721,"rootY":0.0728}
+
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  before settle: frame=3 elapsed=1000 spin=[0,0]
+  after  settle: frame=6 elapsed=1000
+    model 1  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":0,"rootY":2.5211}
+    model 2  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":45.3721,"rootY":0.0728}
+
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  before settle: frame=3 elapsed=1000 spin=[0,0]
+  after  settle: frame=6 elapsed=1000
+    model 1  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":0,"rootY":2.5211}
+    model 2  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":45.3721,"rootY":0.0728}
+
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  before settle: frame=3 elapsed=1000 spin=[0,0]
+  after  settle: frame=6 elapsed=1000
+    model 1  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":0,"rootY":2.5211}
+    model 2  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":45.3721,"rootY":0.0728}
+
+PDONE
+--- wait 900 ---
+  before settle: frame=3 elapsed=1000 spin=[0,0]
+    model 1  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":0,"rootY":2.5211}
+--- wait 1200 ---
+  before settle: frame=3 elapsed=1000 spin=[0,0]
+    model 1  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":0,"rootY":2.5211}
+--- wait 1500 ---
+  before settle: frame=3 elapsed=1000 spin=[0,0]
+    model 1  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":0,"rootY":2.5211}
+--- wait 1800 ---
+  before settle: frame=3 elapsed=1000 spin=[0,0]
+    model 1  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":0,"rootY":2.5211}
+--- wait 2400 ---
+  before settle: frame=3 elapsed=1000 spin=[0,0]
+    model 1  {"spinAngle":3.8716,"spinRate":0,"breathe":2208.7633,"toeY":0,"rootY":2.5211}

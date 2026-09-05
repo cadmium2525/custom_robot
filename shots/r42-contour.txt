@@ -1,0 +1,148 @@
+=== --base http://127.0.0.1:4403/custom_robot/ --arena foundry --tier 3 --ticks 420 --u uPaintLift=0,uPaintLiftFar=0.157,uPaintWhite=1 ===
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+  uniform uPaintLift -> uPaintLift = 0  read back 0 on 2 material(s)
+  uniform uPaintLiftFar -> uPaintLiftFar = 0.157  read back 0.157 on 2 material(s)
+  uniform uPaintWhite -> uPaintWhite = 1  read back 1 on 2 material(s)
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8036
+     clean    (>=40)    73%  ####################........
+  ROBOT 1  74x216px (24% of frame height) at 730,584
+     clean    (>=40)  70.6%  ####################........
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     clean    (>=40)  82.4%  #######################.....
+
+=== --base http://127.0.0.1:4403/custom_robot/ --arena foundry --tier 3 --ticks 420 --u uPaintLift=0,uPaintLiftFar=0.157,uPaintWhite=1 ===
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+  uniform uPaintLift -> uPaintLift = 0  read back 0 on 2 material(s)
+  uniform uPaintLiftFar -> uPaintLiftFar = 0.157  read back 0.157 on 2 material(s)
+  uniform uPaintWhite -> uPaintWhite = 1  read back 1 on 2 material(s)
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8217
+     clean    (>=40)  76.6%  #####################.......
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     clean    (>=40)    75%  #####################.......
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     clean    (>=40)  83.3%  #######################.....
+
+=== --base http://127.0.0.1:4403/custom_robot/ --arena foundry --tier 3 --ticks 420 --u uPaintLift=0,uPaintLiftFar=0.157,uPaintWhite=1 ===
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+  uniform uPaintLift -> uPaintLift = 0  read back 0 on 2 material(s)
+  uniform uPaintLiftFar -> uPaintLiftFar = 0.157  read back 0.157 on 2 material(s)
+  uniform uPaintWhite -> uPaintWhite = 1  read back 1 on 2 material(s)
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8217
+     clean    (>=40)  76.6%  #####################.......
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     clean    (>=40)    75%  #####################.......
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     clean    (>=40)  83.3%  #######################.....
+
+=== --base http://127.0.0.1:4403/custom_robot/ --arena foundry --tier 3 --ticks 420 --u uPaintLift=0,uPaintLiftFar=0,uPaintWhite=1 ===
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+  uniform uPaintLift -> uPaintLift = 0  read back 0 on 2 material(s)
+  uniform uPaintLiftFar -> uPaintLiftFar = 0  read back 0 on 2 material(s)
+  uniform uPaintWhite -> uPaintWhite = 1  read back 1 on 2 material(s)
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8217
+     clean    (>=40)  71.1%  ####################........
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     clean    (>=40)  75.1%  #####################.......
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     clean    (>=40)  54.5%  ###############.............
+
+=== --base http://127.0.0.1:4403/custom_robot/ --arena foundry --tier 3 --ticks 420 --u uPaintLift=0,uPaintLiftFar=0,uPaintWhite=1 ===
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+  uniform uPaintLift -> uPaintLift = 0  read back 0 on 2 material(s)
+  uniform uPaintLiftFar -> uPaintLiftFar = 0  read back 0 on 2 material(s)
+  uniform uPaintWhite -> uPaintWhite = 1  read back 1 on 2 material(s)
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8217
+     clean    (>=40)    71%  ####################........
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     clean    (>=40)    75%  #####################.......
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     clean    (>=40)  54.5%  ###############.............
+
+=== --base http://127.0.0.1:4400/custom_robot/ --arena foundry --tier 3 --ticks 420 ===
+  bundle: 23dc643dceac   base: http://127.0.0.1:4400/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8217
+     clean    (>=40)  71.1%  ####################........
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     clean    (>=40)  75.1%  #####################.......
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     clean    (>=40)  54.5%  ###############.............
+
+=== --base http://127.0.0.1:4400/custom_robot/ --arena foundry --tier 3 --ticks 420 ===
+  bundle: 23dc643dceac   base: http://127.0.0.1:4400/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8217
+     clean    (>=40)  71.1%  ####################........
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     clean    (>=40)  75.1%  #####################.......
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     clean    (>=40)  54.5%  ###############.............
+
+=== --base http://127.0.0.1:4403/custom_robot/ --arena grid --tier 3 --ticks 420 --u uPaintLift=0,uPaintLiftFar=0.157,uPaintWhite=1 ===
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+  uniform uPaintLift -> uPaintLift = 0  read back 0 on 2 material(s)
+  uniform uPaintLiftFar -> uPaintLiftFar = 0.157  read back 0.157 on 2 material(s)
+  uniform uPaintWhite -> uPaintWhite = 1  read back 1 on 2 material(s)
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24415
+     clean    (>=40)  86.3%  ########################....
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     clean    (>=40)  86.2%  ########################....
+  ROBOT 2  52x71px (7.9% of frame height) at 767,163
+     clean    (>=40)  86.3%  ########################....
+
+=== --base http://127.0.0.1:4403/custom_robot/ --arena grid --tier 3 --ticks 420 --u uPaintLift=0,uPaintLiftFar=0.157,uPaintWhite=1 ===
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+  uniform uPaintLift -> uPaintLift = 0  read back 0 on 2 material(s)
+  uniform uPaintLiftFar -> uPaintLiftFar = 0.157  read back 0.157 on 2 material(s)
+  uniform uPaintWhite -> uPaintWhite = 1  read back 1 on 2 material(s)
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24415
+     clean    (>=40)  86.2%  ########################....
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     clean    (>=40)  86.2%  ########################....
+  ROBOT 2  52x71px (7.9% of frame height) at 767,163
+     clean    (>=40)    86%  ########################....
+
+=== --base http://127.0.0.1:4403/custom_robot/ --arena grid --tier 3 --ticks 420 --u uPaintLift=0,uPaintLiftFar=0,uPaintWhite=1 ===
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+  uniform uPaintLift -> uPaintLift = 0  read back 0 on 2 material(s)
+  uniform uPaintLiftFar -> uPaintLiftFar = 0  read back 0 on 2 material(s)
+  uniform uPaintWhite -> uPaintWhite = 1  read back 1 on 2 material(s)
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24209
+     clean    (>=40)  80.9%  #######################.....
+  ROBOT 1  156x283px (31.4% of frame height) at 735,610
+     clean    (>=40)  84.3%  ########################....
+  ROBOT 2  53x79px (8.8% of frame height) at 765,158
+     clean    (>=40)  69.7%  ####################........
+
+=== --base http://127.0.0.1:4403/custom_robot/ --arena grid --tier 3 --ticks 420 --u uPaintLift=0,uPaintLiftFar=0,uPaintWhite=1 ===
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+  uniform uPaintLift -> uPaintLift = 0  read back 0 on 2 material(s)
+  uniform uPaintLiftFar -> uPaintLiftFar = 0  read back 0 on 2 material(s)
+  uniform uPaintWhite -> uPaintWhite = 1  read back 1 on 2 material(s)
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24415
+     clean    (>=40)  84.8%  ########################....
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     clean    (>=40)  86.2%  ########################....
+  ROBOT 2  52x71px (7.9% of frame height) at 767,163
+     clean    (>=40)    80%  ######################......
+
+=== --base http://127.0.0.1:4400/custom_robot/ --arena grid --tier 3 --ticks 420 ===
+  bundle: 23dc643dceac   base: http://127.0.0.1:4400/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24415
+     clean    (>=40)  84.8%  ########################....
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     clean    (>=40)  86.2%  ########################....
+  ROBOT 2  52x71px (7.9% of frame height) at 767,163
+     clean    (>=40)  79.7%  ######################......
+
+ALLDONE
