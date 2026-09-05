@@ -48,6 +48,21 @@ const RESOLVE = 'for (const m of g.view.models) if (m._applyLod) m._applyLod(g.e
 const PATCHES = {
   frozen: null,
   live: [FREEZE, '/* r43 audit: LOD left live, as the shipped renderer runs it */'],
+  // The proposed one-line repair, measured rather than asserted. _applyLod
+  // reads camera.matrixWorldInverse and group.matrixWorld, and NOTHING but
+  // renderer.render() writes those — the settle loop is synchronous, so no
+  // frame renders inside it, so at the end of the settle both matrices still
+  // hold the last PRE-SETTLE frame: the unconverged, load-dependent camera the
+  // settle exists to discard. Forcing them current before the resolve is the
+  // difference between freezing the settled camera's budget and freezing a
+  // number that moves 11 pixels between runs of one command.
+  fresh: [
+    RESOLVE,
+    'g.view.scene.updateMatrixWorld(true); cam.updateMatrixWorld(true); ' +
+    'cam.matrixWorldInverse.copy(cam.matrixWorld).invert(); ' +
+    'for (const m of g.view.models) { m._lodBudget = -1; m._outBudget = -1; ' +
+    'if (m._applyLod) m._applyLod(g.engine.renderer, cam); }',
+  ],
   full: [
     RESOLVE,
     'for (const m of g.view.models) { m.lodMinPx2 = 0; m.outLodMinPx2 = 0; ' +
