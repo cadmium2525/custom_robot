@@ -468,14 +468,40 @@ const ANALYSE_FN = async ({ nUri, hUri, rect }) => {
   let mn = 0, msl = 0, mss = 0;
   for (let p = 0; p < NP; p++) if (mask[p]) { mn++; msl += L[p]; mss += S[p]; }
 
-  /* Who owns the brightest 1% of the frame. */
+  /* Who owns the brightest 1% of the frame.
+   *
+   * ROUND 39 — the two columns round 16's standing rule REQUIRES beside this
+   * figure. The rule reads: clause E is quoted "with the saturation and clipped
+   * fraction of the pixels that won it". This meter has never printed either.
+   * `families.machines.sat` is the saturation of EVERY machine pixel, which is a
+   * different quantity from the saturation of the machine pixels in the top 1%,
+   * and there has never been a clipped fraction at all — so every clause E
+   * figure in REVIEW2 has been filed in breach of REVIEW2's own rule, and it was
+   * invisible because the instrument silently did not compute it.
+   *
+   * Both are added here as REPORT-ONLY columns. `hot.machine` is untouched, so
+   * no filed figure moves and the before/after comparability that makes this the
+   * authority meter is preserved. `winSat` is the mean HSV saturation of the
+   * machine pixels above the cut; `winClip` is the fraction of them with any
+   * channel at 250 or more, i.e. the share of the win that is a clip rather than
+   * a highlight. The threshold `thr` is printed for the same reason: a share of
+   * the top 1% is a RANK statistic, so it is invariant to a lift that moves the
+   * machines and the cut together, and the cut is the only thing in the row that
+   * can say so. */
   const sortedL = Float32Array.from(L).sort();
   const thr = sortedL[Math.floor(NP * 0.99)];
   let hotN = 0, hotMachine = 0, hotCyan = 0, hotAmber = 0;
+  let winSat = 0, winClip = 0;
   for (let p = 0; p < NP; p++) {
     if (L[p] < thr) continue;
     hotN++;
-    if (mask[p]) { hotMachine++; continue; }
+    if (mask[p]) {
+      hotMachine++;
+      winSat += S[p];
+      const i = p * 4;
+      if (Math.max(N.d[i], N.d[i + 1], N.d[i + 2]) >= 250) winClip++;
+      continue;
+    }
     if (S[p] >= 0.35) {
       const h = Hue[p];
       if (h >= 165 && h <= 200) hotCyan++;
@@ -497,6 +523,10 @@ const ANALYSE_FN = async ({ nUri, hUri, rect }) => {
       machine: Math.round(hotMachine / hotN * 1000) / 10,
       cyan: Math.round(hotCyan / hotN * 1000) / 10,
       amber: Math.round(hotAmber / hotN * 1000) / 10,
+      n: hotN,
+      winN: hotMachine,
+      winSat: hotMachine ? Math.round(winSat / hotMachine * 1000) / 1000 : 0,
+      winClip: hotMachine ? Math.round(winClip / hotMachine * 1000) / 10 : 0,
     },
   };
 };
@@ -732,6 +762,9 @@ const pad = (v, n) => String(v).padStart(n);
   console.log(`    amber     ${pad(f.amber.pct + '%', 6)} ${pad(f.amber.lum, 7)} ${pad(f.amber.sat, 7)}`);
   console.log(`    MACHINES  ${pad(f.machines.pct + '%', 6)} ${pad(f.machines.lum, 7)} ${pad(f.machines.sat, 7)}`);
   console.log(`\n  brightest 1% of the frame (>= ${out.hot.threshold}): machines ${out.hot.machine}%, cyan ${out.hot.cyan}%, amber ${out.hot.amber}%`);
+  console.log('  CLAUSE E, QUOTED AS ROUND 16\'S RULE REQUIRES — the pixels that won it, not all machine pixels');
+  console.log(`    cut ${out.hot.threshold} of 255   top 1% = ${out.hot.n} px   machine winners ${out.hot.winN} px`
+    + `   their saturation ${out.hot.winSat}   CLIPPED (any channel >= 250) ${out.hot.winClip}%`);
 
   if (errors.length) console.log('\npage errors:', errors.slice(0, 4));
   await browser.close();

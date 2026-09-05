@@ -1,0 +1,7 @@
+GATE 2 RE-COUNTED OFF THE ROUND-38 SCREEN CAPTURES ALREADY ON DISK — no capture spent
+  ages 1,7,14,20,26,32,48
+  grid  838   boxes 2 2 2 2 2 2 2   7/7 admissible   strict ACCEPT   RULING 38 majority ACCEPT
+  grid  896   boxes 2 2 2 2 2 2 2   7/7 admissible   strict ACCEPT   RULING 38 majority ACCEPT
+  grid  956   boxes 2 2 2 2 2 3 2   6/7 admissible   strict REJECT   RULING 38 majority ACCEPT
+  grid 1195   boxes 2 2 2 2 2 2 2   7/7 admissible   strict ACCEPT   RULING 38 majority ACCEPT
+  grid 1248   boxes 2 2 2 2 2 2 2   7/7 admissible   strict ACCEPT   RULING 38 majority ACCEPT

@@ -1,0 +1,80 @@
+CLAUSE E — shots/_salience.mjs, the authority meter, tier 3, tick 420, seed 1234567
+Round 39. dist-r38-main :4400 = bundle 23dc643dceac; dist-r20t :4365 = bundle 0904a9f1ee52 (git archive a544dae).
+
+=== r39-E-grid ===
+  bundle: index-CosPVSZL.js   base: http://127.0.0.1:4400/custom_robot/
+ATTENTION — grid @ tier 3, tick 420, 1600x900
+  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)
+    cyan        0.2%   148.1   0.615
+    amber       2.8%   101.2   0.542
+    MACHINES    1.7%   122.2   0.328
+  brightest 1% of the frame (>= 151.7): machines 58.9%, cyan 3.9%, amber 5.9%
+
+=== r39-E-foundry ===
+  bundle: index-CosPVSZL.js   base: http://127.0.0.1:4400/custom_robot/
+ATTENTION — foundry @ tier 3, tick 420, 1600x900
+  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)
+    cyan          0%     101   0.411
+    amber       4.2%    87.9   0.726
+    MACHINES    0.6%   129.6   0.322
+  brightest 1% of the frame (>= 113.8): machines 33.3%, cyan 0%, amber 15.8%
+
+=== r39-E-orbital ===
+  bundle: index-CosPVSZL.js   base: http://127.0.0.1:4400/custom_robot/
+ATTENTION — orbital @ tier 3, tick 420, 1600x900
+  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)
+    cyan        1.1%   128.4   0.583
+    amber       0.4%    97.2   0.491
+    MACHINES    1.7%   122.7   0.346
+  brightest 1% of the frame (>= 140.1): machines 66.6%, cyan 3.5%, amber 3.2%
+
+=== r39b-E-grid ===
+  bundle: index-CosPVSZL.js   base: http://127.0.0.1:4400/custom_robot/
+ATTENTION — grid @ tier 3, tick 420, 1600x900
+  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)
+    cyan        0.2%   148.1   0.615
+    amber       2.8%   101.2   0.542
+    MACHINES    1.7%   122.3   0.328
+  brightest 1% of the frame (>= 151.7): machines 58.9%, cyan 3.9%, amber 5.9%
+    cut 151.7 of 255   top 1% = 14401 px   machine winners 8484 px   their saturation 0.219   CLIPPED (any channel >= 250) 0%
+
+=== r39b-E-foundry ===
+  bundle: index-CosPVSZL.js   base: http://127.0.0.1:4400/custom_robot/
+ATTENTION — foundry @ tier 3, tick 420, 1600x900
+  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)
+    cyan          0%     101   0.411
+    amber       4.2%    87.9   0.726
+    MACHINES    0.6%   129.8   0.322
+  brightest 1% of the frame (>= 113.8): machines 33.3%, cyan 0%, amber 15.8%
+    cut 113.8 of 255   top 1% = 14415 px   machine winners 4805 px   their saturation 0.21   CLIPPED (any channel >= 250) 0%
+
+=== r39b-E-orbital ===
+  bundle: index-CosPVSZL.js   base: http://127.0.0.1:4400/custom_robot/
+ATTENTION — orbital @ tier 3, tick 420, 1600x900
+  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)
+    cyan        1.1%   128.3   0.583
+    amber       0.4%    97.2   0.491
+    MACHINES    1.7%   122.7   0.346
+  brightest 1% of the frame (>= 140): machines 66.7%, cyan 3.5%, amber 3.2%
+    cut 140 of 255   top 1% = 14402 px   machine winners 9609 px   their saturation 0.234   CLIPPED (any channel >= 250) 0%
+
+=== r39b-r20t-orbital ===
+  bundle: index-B-Pp4STY.js   base: http://127.0.0.1:4365/custom_robot/
+ATTENTION — orbital @ tier 3, tick 420, 1600x900
+  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)
+    cyan        1.1%   128.4   0.583
+    amber       0.4%    97.2   0.491
+    MACHINES    1.7%   122.2   0.346
+  brightest 1% of the frame (>= 139.8): machines 66.5%, cyan 3.6%, amber 3.2%
+    cut 139.8 of 255   top 1% = 14400 px   machine winners 9570 px   their saturation 0.234   CLIPPED (any channel >= 250) 0%
+
+=== r39b-r20t-grid ===
+  bundle: index-B-Pp4STY.js   base: http://127.0.0.1:4365/custom_robot/
+ATTENTION — grid @ tier 3, tick 420, 1600x900
+  colour families (non-machine, sat>=0.35; cyan h165-200, amber h20-55)
+    cyan        0.2%   148.1   0.615
+    amber       2.8%   101.2   0.542
+    MACHINES    1.7%   122.3   0.328
+  brightest 1% of the frame (>= 151.7): machines 58.9%, cyan 3.9%, amber 5.9%
+    cut 151.7 of 255   top 1% = 14400 px   machine winners 8482 px   their saturation 0.219   CLIPPED (any channel >= 250) 0%
+

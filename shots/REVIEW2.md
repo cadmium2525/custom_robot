@@ -10598,3 +10598,409 @@ third column it needs**, and it is free. Whether a pin with `d3/M > 1` should be
 separately, or excluded is the critic's ruling to make — this is only the observation that the two
 cases are currently indistinguishable in the set.
 
+
+---
+
+## 2026-09-04 — Round 39, critic: **RULING 36's dilated-ring column is built, and on the first frame it is ever pointed at it calls the worst cell on the card a false positive — at the age where 58% of the opponent's outline is gone. The column is struck. The axis it was reaching for has been printing three lines above it since round 17.**
+
+Three debts were put to me and all three close with figures. Two of them close by finding something
+wrong with an instrument rather than with the renderer, and one of the two instruments is mine.
+
+### 0. The bundle, stated once, because everything below is on it
+
+`dist-r38-main`, served at `http://127.0.0.1:4400/custom_robot/`, script `index-CosPVSZL.js`, bundle
+hash **`23dc643dceac`** by `tools/contour.mjs`'s helper against the served page. `npm test` **ALL
+PASS**. `npx vite build --outDir /tmp/vb-critic` **clean, 10.1 s**.
+
+**That is the same hash as `dist-r37-attrib` and as `shots/r37-p1195-base-meta.json`, and it is not a
+coincidence anybody has to take on trust:** `git diff --stat fea9d65..HEAD -- src/ index.html
+vite.config.* package.json` is **empty**, and `git log fea9d65..HEAD --name-only` has **zero** lines
+beginning `src/`. **Twenty-seven commits, every one of them an instrument.** So the round-36 builder's rows, the pin
+captures already on disk, and everything I take below are on identical code. Where I read an existing
+capture instead of spending a new one, that is why, and it is checked rather than assumed.
+
+A second root is up for section 1: **`dist-r20t` on :4365**, from `git archive a544dae`, emitting
+`index-B-Pp4STY.js`, bundle **`0904a9f1ee52`** — the tree round 20's figures were taken on, rebuilt
+and re-hashed.
+
+---
+
+### 1. Clause E — **the debt I was handed does not exist, and neither does the one I was about to file in its place**
+
+The item as put to me is that clause E *"was never re-measured after the bloom radius cut."* **That is
+false, and I will not close a debt on a premise one grep falsifies.** The round-30 first addendum
+measured it on the radius-cut bundle `766a1ae2d08b` at `25dfee6`, section 2, three arenas; the second
+addendum restated it in section 14 because it kept being asked. RULING 21 is discharged for `25dfee6`
+and stays discharged.
+
+**And then I nearly filed the wrong correction, which is the more useful half of this section.** I had
+written that the real outstanding debt was the hit tell — `8b071d2` and `3a0f570`, `vec3(1.6, 0.9,
+0.85)` down to `vec3(0.62, 0.08, 0.05)`, sixty percent above full white written into the fragment
+colour of the machine, which is the most clause-E-relevant change anybody has made here — and that no
+round had read clause E across it. **`git merge-base --is-ancestor 3a0f570 25dfee6` says otherwise.
+`3a0f570` is `25dfee6`'s immediate PARENT.** The discharge at `25dfee6` already straddled the tell,
+and it read 66.5 on orbital, the same as round 20 did before the tell existed.
+
+**Both the claim and my correction were assertions about what a span of history contains, made from a
+log listing instead of from the graph.** That is the same error as fault 31 in a third costume, and
+the only reason it is not fault 34 is that I counted before I filed rather than after.
+
+**What is actually true about the span.** `25dfee6` is 32 commits back and **exactly two of those
+touch `src/`: `7a6299d` and `fea9d65`, both the composition rule in `vfx.js`** — a rule about a second
+detonation's light, which cannot reach a pinned still frame at tick 420 with no explosion in it. **So
+RULING 21 does not fire on this span at all, and there was no reason to expect clause E to move.**
+
+I measured it anyway, and on a **much wider span than anyone asked for**, because a null over 32
+commits is worth little and a null over 58 is worth something: `a544dae` -> head contains the bloom
+radius cut, **both** halves of the hit tell, and the composition rule. Same meter on both roots.
+`shots/_salience.mjs` — the authority meter, and `_sal.mjs` is not — tier 3, tick 420, seed 1234567:
+
+```
+    machines' share of the brightest 1%     round 20   at 25dfee6   a544dae tree   HEAD   HEAD
+    bundle                                0904a9f1ee52 766a1ae2d08b 0904a9f1ee52   23dc643dceac
+                                             as filed     as filed    mine, run 1  run 1  run 2
+    grid                                       58.9         58.9         58.9      58.9   58.9
+    foundry                                    33.3         33.3          --       33.3   33.3
+    orbital                                    66.5         66.5         66.5      66.6   66.7
+```
+
+**Round 20's filed figures reproduce exactly on round 20's own tree**, three rounds and two agents
+after they were filed — 58.9 and 66.5 to the decimal. That is an instrument-health result and it is
+the second time this document has got one by rebuilding the tree a figure was taken on rather than
+arguing about the meter.
+
+> #### RULING 39 — **clause E at head: MET on grid, MET on orbital, NOT MET on foundry. Nothing moved, including on orbital, and the reason nothing moves is now a measurement instead of a shrug.**
+>
+> `SPEC-CRV2` clause E's threshold is machines >= 50% of the brightest 1%. Grid **58.9** and orbital
+> **66.7** are MET; foundry **33.3** is NOT MET and has been on every reading ever taken. RULING 21 is
+> discharged a second time, on the shipped bundle, **across 58 commits containing every renderer
+> change this project has made since round 20** — the bloom radius cut, both halves of the hit tell,
+> and the composition rule — rather than across the 32 in which only `vfx.js` moved.
+>
+> **Orbital's 0.2 points are NOT a movement.** I ran head twice: **66.6 and 66.7**, same command, same
+> bundle, same base. The meter's own repeat spread is therefore at least **0.1 points**, and this
+> document has never had a noise floor for clause E because nobody ever ran it twice. **I am declaring
+> one at 0.2 points — provisional, n = 2, one arena — and orbital's 66.5 -> 66.7 sits inside it.** A
+> figure that has never been repeated is not a precise figure; it is an unrepeated one, and I have
+> spent two rounds telling builders exactly that.
+>
+> **And here is what the null is worth, which is more than the null.** `tools/contour.mjs`, same tool
+> before and after, my runs, on the same two roots — orbital, tier 3, tick 420, seed 1234567:
+>
+> ```
+>     orbital machine-body MEDIAN luminance      0904a9f1ee52   23dc643dceac   change
+>     overall                                        209.3          151.6      -57.7
+>     the flashed machine                            210.0          153.3      -56.7
+>     the other machine                               98.8           99.1       +0.3
+> ```
+>
+> RULING 37's 209.3 -> 151.7 reproduces on my roots to **0.1**, and it is one machine's number: the
+> other did not move. **So one machine lost 56.7 points of median luminance, and clause E's share
+> moved 0.2 points while its cut moved 0.2 of 255.** That is not a bug — a share of the top 1% is a
+> **rank statistic**, and a change that carries the machines and the cut together leaves the share
+> where it was. But it settles something this document has twice got wrong: **clause E's cell may
+> never be quoted as evidence that the machines got brighter or dimmer.** It answers *who owns the
+> top*, not *how bright the top is*. The cell is now quoted with its cut for exactly that reason.
+>
+> **And do not read those two tables as a contradiction, which is the trap I nearly filed as one.**
+> `contour`'s `body` is a **median**; `_salience.mjs`'s `MACHINES lum` is a **mean**, and it reads
+> **122.2** at `0904a9f1ee52` against **122.7** at head — up 0.5 while the median fell 57.7. Both can
+> be true of one distribution, because `mix(rgb, C, uHitFlash)` is **not a lift, it is a compression
+> toward `C`**: toward `vec3(1.6, 0.9, 0.85)` it pushes bright pixels to the ceiling; toward
+> `vec3(0.62, 0.08, 0.05)` it pulls mid pixels down and dark pixels *up*. A median can fall while a
+> mean holds. **That is an inference, not a measurement — neither meter prints a histogram of the
+> machine's own pixels, and until one does, "the machines got darker" is a sentence no figure in this
+> document supports.** RULING 5 forbids crossing the two tools inside a comparison and I have not: the
+> body table and the salience table are each one tool run before and after on its own numbers.
+
+---
+
+### 2. INSTRUMENT FAULT 32 — **the clause E authority meter has never printed either of the two columns this document's own rule says the figure must be quoted with. Every clause E figure ever filed is in breach, including the three I just filed.**
+
+`SPEC-CRV2` clause E requires the figure be quoted **"with the saturation and clipped fraction of the
+pixels that won it (round 16's standing rule)"**. `shots/_salience.mjs` prints
+`families.MACHINES.sat`, which is the saturation of **every** machine pixel in the frame — a different
+population from the machine pixels above the cut — and it has **never computed a clipped fraction at
+all.** Every clause E filing in this document is therefore in breach of the rule the clause is
+written with, and it was invisible because the instrument silently did not compute what the rule
+demands. A rule
+whose evidence no tool produces is not a rule, it is a sentence.
+
+**Fixed this round, report-only.** `hot.machine` is untouched, so no filed figure moves; `58.9` and
+`33.3` reproduce to the decimal with the new columns in place, which is the check that the edit is
+inert.
+
+```
+    CLAUSE E, QUOTED AS THE RULE ACTUALLY REQUIRES
+                            cut     top 1%    machine winners   their sat   CLIPPED (any ch >= 250)
+    grid     23dc643dceac  151.7   14401 px      8484 px          0.219              0%
+    foundry  23dc643dceac  113.8   14415 px      4805 px          0.210              0%
+    orbital  23dc643dceac  140.0   14402 px      9609 px          0.234              0%
+    orbital  0904a9f1ee52  139.8   14400 px      9570 px          0.234              0%
+    grid     0904a9f1ee52  151.7   14400 px      8482 px          0.219              0%
+```
+
+**Nothing on this card was ever won by a clip — including on the tree where a constant 1.6 was being
+mixed into the machine.** 0% on both bundles, on both arenas. That is consistent with RULING 37's
+inference that `uHitFlash` at orbital's pinned frame is of order 0.1-0.2, and it is the first time
+that inference has been checked against anything other than the difference it was inferred from. The
+column round 16 demanded specifically to catch a win-by-clipping says there has never been one, which
+is a good answer to have and one nobody in this project could give until today.
+
+The register stands at **30 faults on file and 31 issued** — fault 31 was struck by the round-30 third
+addendum and its number is not recycled — so this is **32**.
+
+---
+
+### 3. RULING 36's dilated-ring column, built as `shots/_r39-ring.mjs`, and it fails on the first frame
+
+RULING 36 held **every** L>25 cell in clause F sub-2 at UPPER BOUND until this column existed, and it
+has sat at rank 3 for three rounds. It costs no capture: `_r17-blast.mjs` has been writing
+`-a<NN>-vfxonly.png` and `-a<NN>-mach.png` since round 34 and this reads them off disk.
+
+`IN` is the opponent's own connected component, not its bounding box. `RING` is everything within `w`
+px of that component, minus the component, minus **every** machine-stencil pixel — so the ring is the
+background the opponent's outline is drawn against and can contain no machine. `w` is swept 4/6/8 px
+and **the spread across the three widths is printed beside the figure**, because a column whose value
+depends on an arbitrary parameter is a knob and this document has four instrument faults of that
+shape. The widest spread over the eight ages is **3.94 points**: this column's noise floor, derived
+rather than declared.
+
+Beside it, `shots/_r17-edge.mjs`'s outline columns, **re-run by me on the same PNGs and the same
+bundle**, because the 58.0 this document has quoted through two verdicts was taken three rounds ago
+and a figure no round has re-run is a memory:
+
+```
+    pin 1195, grid, seed 1234567, bundle 23dc643dceac, cut L>25, opponent = the smaller stencil box
+
+     ms    IN%   RING%   IN-RING |  opponent's INVISIBLE CONTOUR  |  opponent's CONTOUR STEP
+                                 |  blast ON  blast OFF   change  |  blast ON   blast OFF
+     17    0.0     4.1     -4.1  |     5.8       3.8      + 2.0   |    54.3        67.7
+    117   60.2    59.0     +1.2  |    58.0       3.8      +54.2   |     5.4        68.5
+    133   55.1    56.7     -1.6  |    48.6       5.3      +43.3   |    12.3        71.5
+    233   10.6    26.1    -15.5  |    10.2       0.9      + 9.3   |    77.5        72.9
+    333    5.9    16.6    -10.8  |     9.9       3.2      + 6.7   |    65.7        56.2
+    433   12.6    22.2     -9.6  |    14.4       2.5      +11.9   |    63.9        67.4
+    533    0.2     4.8     -4.6  |     7.4       5.2      + 2.2   |    40.6        43.9
+    800    5.1    11.2     -6.1  |     3.2       2.0      + 1.2   |    48.2        48.9
+```
+
+**58.0 reproduces to the decimal**, on a root rebuilt by a different agent than the one who filed it.
+So does the coverage column: the ring meter's `IN` and `_r25-cover.mjs`'s box column agree to within
+0.05 points at seven of the eight ages, which is the check that the two are reading the same subject
+by the same rule. The eighth is 433 ms, where they differ by **0.07** — see the caution at the end of
+this section.
+
+> #### RULING 40 — **the dilated-ring test is STRUCK as a false-positive detector, on the first frame it was ever pointed at. It was my column, it was rank 3 for three rounds, and it is wrong on its physics.**
+>
+> RULING 36 wrote the discriminator down: *"Equal coverage inside and outside means the outline
+> survived and the cell is a false positive; coverage that stops at the silhouette means the cell is
+> real."* Apply it to the 117 ms row. `IN` **60.2** against `RING` **59.0** — a difference of **1.2
+> points against this column's own 3.94-point floor.** By RULING 36 the worst cell on the card is a
+> false positive and the outline survived.
+>
+> **On that same frame, 58.0% of that opponent's outline is invisible and its contour step has gone
+> from 68.5 to 5.4 — a 92% collapse, and the largest legibility loss recorded anywhere in this
+> document.** Both cannot be true. The one that is wrong is mine.
+>
+> **Why, in one line: symmetry preserves a step only for a TRANSPARENT veil.** Composite a layer of
+> opacity `a` over both sides of a boundary and the step survives as `(1-a)` of itself; as `a` goes to
+> 1 the step goes to zero however symmetric the covering is. At 117 ms the covering pixels sit at
+> **median luminance 157 of 255** over the machine and **225** in the ring. That is not a veil, it is
+> fire, and it obliterates the boundary from both sides at once. I wrote *"covers the target and its
+> background equally preserves the step"* and never asked at what opacity.
+>
+> **And it is confounded a second, independent way.** The ring is an annulus, so it straddles the
+> blast-ward and the away-from-blast side of the machine and averages two exposures of a radially
+> graded effect. `IN - RING` is **negative at six of the eight ages** — the effect covers the
+> background MORE than the target — which RULING 36's rule has no reading for at all.
+>
+> **What replaces it: nothing needs to be built.** The axis RULING 36 was reaching for is *the
+> surviving outline step*, and `shots/_r17-edge.mjs` has printed it — `contour step blast ON` against
+> `blast OFF`, and `invisible contour` — on every machine line of every blast capture since round 17.
+> **I specified a new instrument for a question that was already answered three lines above the one I
+> was reading.** That is fault 31's error exactly: reaching for a new instrument instead of for the
+> output already in my terminal. Twice in three rounds, both mine.
+>
+> **CONSEQUENCE: RULING 36's UPPER BOUND IS LIFTED, for any cell quoted with its outline pair — and
+> that pair is free on every capture already taken.** The two columns track each other across all
+> eight ages. The six cells below the 25% threshold cost the opponent between **1.2 and 11.9** points
+> of outline; the two above it cost **43.3 and 54.2**. **No overlap, and the gap is a factor of
+> four.** So the L>25 cells are readings, not upper bounds, and `SPEC-CRV2`'s 25% threshold — a
+> `JUDGEMENT` I have never had a reason to defend — separates the two populations exactly. That is
+> eight cells of one pin and it is quoted that way.
+>
+> **The standing requirement that replaces the ring column:** a clause F sub-2 cell is quoted with the
+> opponent's `invisible contour ON vs OFF` from the same capture. Coverage alone is a statistic; the
+> pair is the clause.
+
+**CAUTION, attached here because it sits in the same block of output I have just told everyone to
+read.** `_r17-edge.mjs`'s per-machine line reports *"effect moved X% of its pixels >25"*, and **that
+is a DIFFERENCE column — instrument fault 28's shape, the one `_r25-cover.mjs` exists to replace.** At
+117 ms it reads **65.3%** against the render meter's 60.2; at **233 ms it reads 60.0% against 10.6.**
+A factor of six. **Read that block for its contour columns and never for its coverage**, and if a
+later round quotes a coverage number out of `_r17-edge.mjs` it has filed fault 28 for the fifth time.
+
+**And a smaller one, which is a defect of kind rather than of size.** `_r25-cover.mjs` walks the
+opponent's bounding **box** and counts any on-stencil pixel inside it, so pixels of the *other*
+machine that intrude into that box are scored as the opponent. `_r39-ring.mjs` uses the component
+itself and the two agree at seven ages; at 433 ms the box rule is **0.07 points** high. That is far
+under every floor in this document and it changes nothing today — but the subject rule is wrong in a
+direction nobody has bounded on another arena, and it should be the component, not the box.
+
+---
+
+### 4. The 800 ms row — **void at the pin it was asked about, and answered at the pin that counts**
+
+The row is `L>25 100.0` with `L>60 0.0`, and I was asked to rule whether that is a real reading of
+clause F sub-2 or thin smoke the 25% cut over-counts.
+
+> #### RULING 41 — **the 800 ms row is WITHDRAWN, not re-cut. It is a pin-956 figure, 956 is not in the set, and the capture it was taken on is no longer in the tree — so it is a memory twice over. And on the pin that IS in the set, L>25 over-counts nothing.**
+>
+> **First, it is void as a clause figure.** `_r37-screen.mjs` at `64307f3` rejects pin 956 at gate 1
+> on **`d3 = 2.37`**: the opponent is two and a third mass radii **outside** the fire, and the
+> round-36 builder measured the bomb going off on the **near** machine, 2.65 m away and inside its
+> own mass. The cell was never a measurement of an effect swallowing the aiming target; it was a
+> measurement of a detonation standing between the camera and a machine it never touched. Every
+> clause F sub-2 figure at 956 goes with it, including the four 100.0 cells that displaced 1195 as
+> "the worst on the card" two rounds ago.
+>
+> **Second, it cannot be re-run.** `shots/r34c-pf956-*` is down to a log and a `-meta.json`; the PNGs
+> are gone. By this document's own rule a figure no round has re-run is a memory — and that applies
+> to `Lmed 39, Lp90 42`, *"a veil four levels wide sitting just above the L>25 line"*, which is the
+> **only** evidence that has ever existed for the over-counting hypothesis. **The hypothesis is not
+> refuted; it is unsupported, and its sole support is a frame nobody can produce.**
+>
+> **Third, and this is a finding rather than a withdrawal:** at pin 1195, which IS in the set, **there
+> is no thin-smoke cell at all.** 800 ms reads `IN` **5.1%** with the covering pixels at **median
+> luminance 1 of 255**, and it costs the opponent **1.2 points** of outline — the smallest loss of the
+> eight ages. And across all eight ages the coverage column and the outline-loss column agree in rank
+> and separate cleanly at 25 (section 3). **On the only admissible captured pin, the 25% cut is not
+> over-counting anything; it is sitting exactly on the gap between the two populations.**
+>
+> **So the answer is neither, and the threshold does not move.** RULING 36 refused to re-cut L>25
+> after seeing which rows a re-cut would flatter, and that refusal is now free: the row that tempted
+> it is gone. **A threshold argument built on a pin the screen rejects is void with the pin.** That is
+> general, and it is the standing rule this section leaves behind.
+
+**Clause F sub-2's cell, restated under the screen as it now stands.** The set is
+**`{896, 1248, 1195}`**; 1195 is the only member ever captured; 896 and 1248 are in flight with the
+builder as I write. The cell is **60.2 (worst of 8 ages, 0 absent, 1 pin of a 3-pin set, 2 in
+flight)** against a 25% threshold — **NOT MET**, and now a reading rather than an upper bound.
+**It is not 100.0 and 100.0 must not reappear on the card.** Whatever comes back from 896 and 1248
+can only raise it, never lower it, because the cell is a maximum over the set.
+
+---
+
+### 5. Gate 2 — **relax it, and the reason is not judgement: `_r37-screen.mjs` has never implemented the ruling it cites**
+
+> #### INSTRUMENT FAULT 33 — **the pin screen's gate 2 is stricter than RULING 38, which is the ruling its own header says it implements**
+>
+> RULING 38 clause 2: *"`_r25-cover.mjs` segments the frame to exactly two machine boxes **at the age
+> being scored**. An age that does not is **ABSENT**, never a number, and a pin whose **majority** of
+> ages are absent is not a member of the set."* Per-age absence; majority test on the pin.
+>
+> What the file did: `boxes.length === ages.length && boxes.every((b) => b === 2)`. **One absent age
+> of seven threw the whole pin away.**
+>
+> **Re-counted rather than quoted**, off the `-mach.png` files the round-38 screen already left in
+> `shots/`, so it costs no capture and it is a re-run and not a memory (`shots/r39-gate2-recount.txt`):
+>
+> ```
+>     grid  838   boxes 2 2 2 2 2 2 2   7/7   strict ACCEPT   RULING 38 majority ACCEPT
+>     grid  896   boxes 2 2 2 2 2 2 2   7/7   strict ACCEPT   RULING 38 majority ACCEPT
+>     grid  956   boxes 2 2 2 2 2 3 2   6/7   strict REJECT   RULING 38 majority ACCEPT
+>     grid 1195   boxes 2 2 2 2 2 2 2   7/7   strict ACCEPT   RULING 38 majority ACCEPT
+>     grid 1248   boxes 2 2 2 2 2 2 2   7/7   strict ACCEPT   RULING 38 majority ACCEPT
+> ```
+>
+> **The two rules diverge on exactly one pin out of five, and it is 956.** So the bug changed an
+> outcome exactly once, and it got the right answer for the wrong reason — which is the hardest way
+> for a bug to hide. Before the `d3` term existed, pin 956 passed gate 1 and the round-36 note records
+> it *"rejected only by gate 2, on the 533 ms age"*: six admissible ages of seven, a **member** under
+> RULING 38 as written. It was in fact correctly rejected, but for `d3 = 2.37`, a quantity gate 2
+> knows nothing about.
+
+> #### RULING 42 — **relax to RULING 38's majority. What stops it becoming "the ages where it happened to work" is an ASYMMETRY, not a promise.**
+>
+> The worry is right and it is the sample-of-one fault one level down: if ages may be dropped, the
+> cell — which RULING 35 clause 3 defines as the **worst age over the set** — becomes a maximum over a
+> censored sample, and censoring a maximum is not neutral. **It can only ever flatter the build.** So
+> the guard is built out of that asymmetry rather than out of good intentions:
+>
+> 1. **`--ages` is a constant of the protocol**, fixed before any pin is screened and never chosen per
+>    pin. A round that wants different ages re-screens the whole set on them and republishes it.
+> 2. **The absent ages are published** — in the screen's accept line, in the SET listing, and in the
+>    cell itself: `60.2 (worst of 8 ages, 0 absent, 1 pin of 3)`.
+> 3. **A set carrying any absent age may not be used to move a clause from NOT MET to MET.** Absence
+>    can cost the build a verdict; it can never buy one. That is the only one of the three that
+>    actually bites, and it is checkable by anyone reading a cell without re-running anything.
+>
+> **And the strict gate is not defensible on its own terms either.** It makes membership depend on
+> stage occlusion, which is a property of the **arena** and not of the effect, so it quietly selects
+> for arenas whose near machine stands clear. Grid's does; foundry's does not — that is the whole
+> content of `a811335`. **A clause scored only where the stencil is tidy is the sample-of-one fault
+> wearing a fifth hat, and this time it would have been at the arena level.**
+>
+> **It costs nothing today, which is exactly why it gets fixed today.** The current grid set — 896,
+> 1248, 1195 — reads `boxes 2 2 2 2 2 2 2` on all three, so the majority rule and the strict rule
+> accept the same set. A latent divergence with no live consequence is the cheapest one there will
+> ever be to close.
+
+Implemented in `shots/_r37-screen.mjs` this round, with the absence count carried into the accept
+line, into the SET listing, and into a printed refusal when any member has an absent age.
+
+---
+
+### 6. Instruments left behind
+
+- **`shots/_r39-ring.mjs`** — RULING 36's dilated-ring column, built, run, and **retired in the same
+  round with its result on the record.** It stays in the tree precisely so nobody specifies it again.
+  It reproduces `_r25-cover.mjs`'s subject rule to within 0.05 points at seven of eight ages, prints
+  its own parameter spread as a noise floor, reads captures off disk and spends nothing.
+- **`shots/_salience.mjs`** — two report-only columns and the cut: the saturation and clipped fraction
+  of *the machine pixels that won the top 1%*. Fault 32. `hot.machine` untouched and verified unmoved
+  to the decimal on two arenas.
+- **`shots/_r37-screen.mjs`** — gate 2 now implements RULING 38. Fault 33.
+
+**Every figure above is in the tree, not just in this paragraph**, so the next round re-runs rather
+than re-argues: `shots/r39-clauseE.txt` (all five salience runs on both bundles, with the cut, the
+winners, their saturation and the clipped fraction), `shots/r39-contour-orbital.txt` (the body
+medians, same tool on both roots), `shots/r39-ring-1195.txt` (the ring column, re-run twice and
+identical), `shots/r37-p1195-base-edge.txt` (the outline columns, `_r17-edge.mjs` re-run on the
+existing capture), `shots/r39-gate2-recount.txt` (the box counts, re-counted off disk).
+
+### 7. What I did not measure, stated so nobody quotes a gap as a result
+
+- **No second arena and no second seed for the ring column or the outline pairing.** Both are pin
+  1195, grid, seed 1234567. The *falsification* in RULING 40 needs one counterexample and has one, so
+  the strike does not depend on breadth; the *positive* claim — coverage tracks legibility, and 25
+  lands on the gap — rests on **eight cells of one pin** and is quoted that way.
+- **Clause E during a detonation is still unscored by anybody.** Everything in section 1 is the pinned
+  still frame at tier 3, tick 420. `_r17-edge.mjs` prints a `BRIGHTEST 1%` block per age — at pin
+  1195, 17 ms it reads **machines 0%, effect 100%** — and no round has ever scored it. That is a
+  clause E cell nobody has claimed, in either direction.
+- **The distribution of the machine's own pixels has never been printed by any meter here.** Section
+  1's median-falls-while-mean-holds explanation is an inference from the shape of `mix()`, not a
+  measurement, and one histogram of the machine mask at both bundles would settle it. Nobody should
+  quote "the machines got darker" until somebody takes it.
+- **The `--ages` grid has never been audited.** Seven ages spanning 17-800 ms is a sampling of a
+  continuous event, chosen in round 34 and never revisited. RULING 42 fixes them as a protocol
+  constant; it does not claim they are the right seven.
+- **And RULING 42's clause 1 is already being broken by the capture this round's cell comes from,
+  which I found while writing it.** The screen runs `--ages 1,7,14,20,26,32,48` and certified pin
+  1195 on **seven** ages; `shots/r37-p1195-base` was captured on **eight** — those seven plus tick 8,
+  the 133 ms row. **So 133 ms has never been through gate 2 at all**, and it is the second-worst cell
+  in the table at `IN` 55.1. It changes nothing today because 60.2 is larger, but had the extra age
+  been the maximum the cell would have been quoted off a frame the admissibility screen never saw.
+  Two lists that are supposed to be one list, and nobody noticed because the screen and the capture
+  are run by different commands. **Either the screen screens the ages the capture takes, or the
+  capture takes the ages the screen screens; it may not be neither.**
+- **896 and 1248 are the builder's.** I took none of the remaining set and duplicated none of his
+  captures.
+
+**Thirty-two faults on file, 33 issued.** Two of this round's three findings are faults in instruments
+that were built to enforce rulings — one of them mine, specified in a ruling, held at rank 3 for three
+rounds, and wrong on its physics. **The characteristic failure of this document has moved on: it is no
+longer a good measurement quoted as its own population, it is a RULE written faster than the meter
+that would have tested it.**

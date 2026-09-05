@@ -191,13 +191,44 @@ for (const r of g1.slice(0, MAX)) {
       machUri: `data:image/png;base64,${readFileSync(f).toString('base64')}`,
     })})`));
   }
-  const ok = boxes.length === ages.length && boxes.every((b) => b === 2);
+  /**
+   * GATE 2, ROUND 39 — THIS NOW IMPLEMENTS RULING 38. It did not before.
+   *
+   * RULING 38 clause 2 reads: "`_r25-cover.mjs` segments the frame to exactly two
+   * machine boxes AT THE AGE BEING SCORED. An age that does not is ABSENT, never
+   * a number, and a pin whose MAJORITY of ages are absent is not a member of the
+   * set." That is per-age absence with a majority test on the pin. What stood
+   * here was `boxes.every(b => b === 2)` — one absent age of seven threw the
+   * whole pin away — which is a different and stricter rule than the ruling it
+   * cites, and nobody caught it because on grid it rejected nothing.
+   *
+   * It did change one outcome. Before the `d3` term existed, pin 956 passed gate
+   * 1 and was rejected here on ONE age of eight (533 ms, three boxes). Under the
+   * ruling as written it was a member with one absent age. The strict gate got
+   * the right verdict on that pin for a reason that turned out to be the wrong
+   * one — `d3 = 2.37`, the opponent outside the fire — and a bug that agrees with
+   * the answer once is the hardest kind to see.
+   *
+   * WHAT STOPS THIS BECOMING "THE AGES WHERE IT HAPPENED TO WORK" — RULING 42.
+   * Three things, and the third is the only one that actually bites:
+   *   1. `--ages` is a constant of the protocol, fixed before any pin is
+   *      screened, never chosen per pin.
+   *   2. The absent ages are PUBLISHED, in the accept line and in the cell.
+   *   3. The cell is a MAXIMUM over the ages (RULING 35 clause 3), so every
+   *      absent age is a chance for the build to look better than it is. So a
+   *      set carrying ANY absent age may not be used to move a clause from NOT
+   *      MET to MET. Absence can cost the build a verdict; it can never buy one.
+   */
+  const scored = boxes.filter((b) => b === 2).length;
+  const absent = boxes.length - scored;
+  const ok = boxes.length === ages.length && scored * 2 > boxes.length;
   const shown = boxes.map((b) => (b === null ? '-' : b)).join(' ');
   if (ok) {
-    accepted.push({ ...r, boxes });
-    console.log(`  tick ${String(r.tick).padStart(5)}  ACCEPT  in ${r.in.toFixed(2)}  d3 ${r.d3.toFixed(2)}  d ${r.d.toFixed(1)}m < fd ${r.fd.toFixed(1)}m  boxes ${shown}`);
+    accepted.push({ ...r, boxes, absent });
+    console.log(`  tick ${String(r.tick).padStart(5)}  ACCEPT  in ${r.in.toFixed(2)}  d3 ${r.d3.toFixed(2)}  d ${r.d.toFixed(1)}m  fd ${r.fd.toFixed(1)}m  boxes ${shown}${
+      absent ? `   ${absent} AGE(S) ABSENT` : ''}`);
   } else {
-    rejAdm.push({ ...r, why: 'stencil', boxes });
+    rejAdm.push({ ...r, why: `stencil, ${scored}/${boxes.length} ages admissible`, boxes });
     console.log(`  tick ${String(r.tick).padStart(5)}  REJECT  gate 2, boxes ${shown}`);
   }
 }
@@ -205,7 +236,13 @@ for (const r of g1.slice(0, MAX)) {
 await browser.close();
 
 console.log(`\nTHE SET — ${accepted.length} pin(s), in decreasing \`in\``);
-for (const a of accepted) console.log(`  ${ARENA} ${a.tick}   in ${a.in.toFixed(2)}   d3 ${a.d3.toFixed(2)}   d ${a.d.toFixed(1)}m   fd ${a.fd.toFixed(1)}m`);
+for (const a of accepted) console.log(`  ${ARENA} ${a.tick}   in ${a.in.toFixed(2)}   d3 ${a.d3.toFixed(2)}   d ${a.d.toFixed(1)}m   fd ${a.fd.toFixed(1)}m   ${a.absent} absent`);
+const anyAbsent = accepted.reduce((s, a) => s + a.absent, 0);
+if (anyAbsent) {
+  console.log(`\n  ! ${anyAbsent} absent age(s) across the set. The cell is a MAXIMUM over the ages, so an`);
+  console.log('    absent age can only make the build look better. RULING 42: this set may NOT be');
+  console.log('    used to move a clause from NOT MET to MET, and the cell is quoted with the count.');
+}
 
 console.log(`\nREJECTED AT GATE 2 — ${rejAdm.length}, published because a set without them is a selection`);
 for (const r of rejAdm) console.log(`  ${ARENA} ${r.tick}   ${r.why}   boxes ${r.boxes.map((b) => (b === null ? '-' : b)).join(' ')}`);
