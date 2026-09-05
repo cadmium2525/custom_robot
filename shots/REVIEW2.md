@@ -13783,3 +13783,58 @@ and it is labelled one in the code; **the camera writer is still unfound.**
 > 10.4-point error.
 
 Nothing about the renderer changed. Both lift uniforms remain 0.0.
+
+---
+
+## ROUND 42 — BUILDER, PART 3: **the relocation re-measured on the repeatable meter, and it survives the re-base**
+
+Bundle `d9cef324894e` on port 4403, hashed off the server. `contour.mjs` at `5a30c18` — integrators
+zeroed, LOD resolved against the settled camera then frozen. Grid three draws, foundry six, per the
+operating rule. `uPaintLift = 0, uPaintLiftFar = 0.157, uPaintWhite = 1`.
+
+```
+                            BASELINE                 FAR-ONLY +40             delta   threshold
+  grid    near  (n=1025)     86.0  x3 exact           86.0  x3 exact           0.0       90
+  grid    FAR   (n=300)      70.9  x3 exact           83.7  x3 exact         +12.8       90
+  foundry near  (n=559)      74.5  mode of 6          74.5  x6 exact           0.0       90
+  foundry FAR   (n=132)      54.5  mode of 6          83.3  x6 exact         +28.8       90
+
+  minority pose: 1 of 6 at baseline (8037 px, far 44.1); 0 of 6 with the lift on
+```
+
+### 1. The headline survives, and the grid figure was understated
+
+**Foundry's far cell goes 54.5 to 83.3, +28.8**, which is what ROUND 40 filed — but that was one draw
+on an unpinned subject and this is six identical draws on a pinned one. **The claim is the same and
+the evidence is no longer the same kind.**
+
+**Grid's far cell is +12.8, not the +5.7 filed in ROUND 40.** The re-base moved the baseline from 80.3
+to 70.9, so the gain the relocation buys there is more than twice what was reported. A figure taken
+on the majority pose of an unpinned meter understated it.
+
+### 2. The isolation claim is now solid rather than lucky
+
+ROUND 40 said both near cells reproduce baseline to the decimal, and the round-42 critic was right
+that this only held as a within-pose null. On the pinned meter it holds properly: **86.0 against 86.0
+on grid, three draws each; 74.5 against 74.5 on foundry, six draws each.** The size gate does isolate.
+
+### 3. And a loose thread, recorded and not concluded
+
+**The minority pose appeared in 1 of 6 baseline draws and 0 of 6 with the lift on.** At a one-in-six
+rate, six draws produce none about a third of the time, so this is entirely consistent with chance and
+is not evidence the lift suppresses it. It is recorded because if a later round sees the same
+asymmetry it should be tested rather than re-noticed.
+
+### 4. Where the acceptance test stands, on measurements that repeat
+
+```
+   B   86.0 / 83.7 / 74.5 / 83.3   vs >= 90 on all four   NOT MET — short by 4.0, 6.3, 15.5, 6.7
+   A   every cell MET, near unmoved, far top-4 86.2 -> 86.4
+   C   near 1.708 unmoved, far 1.288 -> 1.089
+   D   REFUSED on RULING 55's cell — the far machine, inverted on both arenas
+```
+
+**Still refused, on clause B and clause D.** The worst cell is no longer foundry's far machine at 54.5;
+it is **foundry's NEAR machine at 74.5**, which the relocation does not touch by construction. That is
+a different problem from the one the last four rounds have been solving, and it is the one the next
+round inherits.
