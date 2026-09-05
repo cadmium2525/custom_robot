@@ -11004,3 +11004,120 @@ that were built to enforce rulings — one of them mine, specified in a ruling, 
 rounds, and wrong on its physics. **The characteristic failure of this document has moved on: it is no
 longer a good measurement quoted as its own population, it is a RULE written faster than the meter
 that would have tested it.**
+
+---
+---
+
+## ROUND 38 — BUILDER: **the pin set is captured, and clause F sub-2's cell is 100.0 after all**
+
+Bundle `23dc643dceac` (`dist-r38-main`, built from `64307f3`), arena grid, seed 1234567, tier HIGH,
+ages `1,7,14,20,26,32,48`. Meter: `shots/_r25-cover.mjs` for the coverage column — a RENDER of the
+VFX layer alone on black against the machine stencil, never a difference — and `shots/_r17-edge.mjs`
+for the opponent's `invisible contour ON vs OFF`, the pair RULING 40 made standing. **Both columns
+come from the same capture of the same frame**, which is the only reason they may be printed on one
+line.
+
+All three pins of the set are now captured on ONE bundle. Every age of every pin segmented to
+exactly two machine boxes, so "the opponent" is a machine on all 21 rows and none of them is a
+fragment.
+
+```
+                     coverage (L>25, %)      opponent outline: invisible contour
+  pin    d3     ms      of the opponent        ON      OFF     loss
+  ---------------------------------------------------------------------
+   896  0.93     17        30.5                6.0     6.6     -0.6
+   896  0.93    117        22.3               10.3     7.1      3.2
+   896  0.93    233        70.1               51.8     1.4     50.4
+   896  0.93    333        55.0               34.8     1.0     33.8
+   896  0.93    433         0.0                2.4     2.4      0.0
+   896  0.93    533         4.8                1.0     0.0      1.0
+   896  0.93    800         0.2                4.1     3.2      0.9
+  ---------------------------------------------------------------------
+  1248  0.85     17        11.2                9.6     6.6      3.0
+  1248  0.85    117         2.0                0.0     0.0      0.0
+  1248  0.85    233        99.1               52.1    13.5     38.6
+  1248  0.85    333       100.0               62.4    12.0     50.4
+  1248  0.85    433       100.0               98.6    29.4     69.2
+  1248  0.85    533        90.4               50.0     1.5     48.5
+  1248  0.85    800         3.6               10.1     6.2      3.9
+  ---------------------------------------------------------------------
+  1195  0.72     17         0.0                5.8     3.8      2.0
+  1195  0.72    117        60.2               58.0     3.8     54.2
+  1195  0.72    233        10.6               10.2     0.9      9.3
+  1195  0.72    333         5.9                9.9     3.2      6.7
+  1195  0.72    433        12.7               14.4     2.5     11.9
+  1195  0.72    533         0.2                7.4     5.2      2.2
+  1195  0.72    800         5.1                3.2     2.0      1.2
+```
+
+**PIN 1195 REPRODUCES THE CRITIC'S FIGURES TO THE DIGIT ON A DIFFERENT BUNDLE.** 117 ms reads `60.2`
+coverage with `58.0 / 3.8` outline, and RULING 40 quotes `IN 60.2`, `58.0% of that opponent's outline
+is invisible`, and a loss of `54.2`. Two independent captures, two bundles, same three numbers. That
+is the first time any clause F sub-2 figure in this document has been reproduced at all, and it is
+worth more than the figure it confirms.
+
+### 1. The cell is **100.0**, and it is a reading
+
+The card's cell is a maximum over the set. It is **100.0, at pin 1248, at 333 ms and again at
+433 ms**, against a 25% threshold. **Clause F sub-2 is NOT MET, by four times the threshold.**
+
+RULING 41 closed with *"It is not 100.0 and 100.0 must not reappear on the card."* **That is now
+falsified, and by the screen's own procedure.** The sentence was right about pin 956 — 956 is out at
+`d3 = 2.37` and every figure taken on it is void — but it generalised from "this 100.0 was an
+artefact" to "100.0 is an artefact", and pin 1248 passes gate 1 at `in 1.00, d3 0.85` and gate 2 at
+two boxes on all seven ages. It is the most admissible pin in the set on the one term that decides
+whether the clause's premise holds.
+
+**And unlike 956's, this 100.0 arrives with the pair RULING 40 requires.** At 433 ms the covering
+costs the opponent **69.2 points of outline** — `98.6%` of its contour invisible against `29.4%` with
+the blast off. That is the largest legibility loss recorded anywhere in this document, larger than
+the 54.2 that RULING 40 called *"the largest legibility loss recorded anywhere"* three sections
+earlier. 956's 100.0 cells never had an outline column at all, which is precisely why they could
+survive four rounds as "the worst on the card" while measuring a blast that never touched the
+machine it was scored against.
+
+### 2. RULING 40's separation survives 21 cells with **exactly one** exception, and the exception is predicted by RULING 40's own physics
+
+RULING 40 lifted the upper bound on the strength of eight cells of one pin: cells under the 25%
+threshold cost 1.2 to 11.9 outline points, cells over it cost 43.3 and 54.2, *"no overlap, and the
+gap is a factor of four."* On the full 21-cell set:
+
+```
+  13 cells below 25% coverage    outline loss  0.0 .. 11.9
+   7 cells above 25% coverage    outline loss 33.8 .. 69.2
+   1 cell  above 25% coverage    outline loss -0.6     <- pin 896, 17 ms, coverage 30.5
+```
+
+Twenty of twenty-one hold the separation, and the gap between the populations is now a factor of
+**2.8** rather than four. The single exception is **age 1 — the first frame after detonation** — and
+RULING 40 already explains it: *"symmetry preserves a step only for a TRANSPARENT veil ... composite
+a layer of opacity `a` over both sides of a boundary and the step survives as `(1-a)` of itself."*
+At 17 ms the covering is the flash card, which is bright and thin; at 233 ms it is fire, which is
+bright and opaque. **The counterexample is a confirmation of the mechanism, not a refutation of the
+rule** — but the rule as written does not carry its own exception, so it is restated here:
+
+> **Coverage above 25% predicts a large outline loss at every age EXCEPT the first frame after
+> detonation, where a bright, thin flash can cover the opponent without costing it its contour.**
+> A clause F sub-2 cell taken at age 1 must be quoted with its outline pair or not quoted at all.
+
+### 3. What the set proves that a sample of one could not
+
+The same age reads **60.2 / 22.3 / 2.0** at 117 ms across the three pins, and **12.7 / 0.0 / 100.0**
+at 433 ms. **The clause's answer varies by a factor of fifty with the pin, at a fixed age, on a
+fixed bundle.** RULING 34 withdrew four rounds of findings for being a sample of one; this is the
+measurement that shows how much that mattered. Any single-pin figure in this document's history — in
+either direction — was reporting the pin as much as the renderer.
+
+**The worst frame is not where six rounds of work assumed it was.** Every fix since round 29 was
+aimed at 117 ms, because 1195's 117 ms was the only cell anybody had. The set's worst cells are at
+**333-533 ms on pin 1248**, a window in which 1195 reads 5.9, 12.7 and 0.2 and where nothing has
+ever been tuned.
+
+### Debts this leaves
+
+- The covering stage at 1248's 333-533 ms is unattributed. `--kill firelobes` is running as this is
+  written; `firecore`, `flashcore` and `smokeshell` are not.
+- RULING 42's clause 1 — the screen must screen the ages the capture takes — is satisfied by
+  construction for all three pins here: the screen and all three captures ran `1,7,14,20,26,32,48`
+  and nothing else. This is the first round for which that is true.
+- Pin 838 and pin 956 remain out. No figure taken on either may be quoted.
