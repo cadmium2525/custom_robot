@@ -247,23 +247,62 @@ const VFX_OFF_FN = `() => {
   const transient = await page.evaluate(`(${VFX_OFF_FN})()`);
   if (transient && transient.length) console.log('  suppressed transients:', transient.join(', '));
   if (UNIFORMS.length) {
-    const missed = await page.evaluate((list) => {
-      const gone = [];
+    /**
+     * INSTRUMENT FAULT 43 — THIS APPLIER RESOLVED ONE SPELLING AND WARNED
+     * INSTEAD OF REFUSING, AND IT VOIDED A CLAUSE D READING BECAUSE OF IT.
+     *
+     * The old body did `'u' + k[0].toUpperCase() + k.slice(1)` unconditionally,
+     * so an already-prefixed name — `uPaintLiftFar`, the spelling `contour.mjs`
+     * and `mass.mjs` both accept — became `UuPaintLiftFar`, matched nothing, and
+     * was dropped. `--u uPaintLift=0,uPaintLiftFar=0.157,uPaintWhite=1` set
+     * NOTHING, and both the treatment dump and its control rendered the shipped
+     * tree. They came back identical to the decimal, which is exactly what a
+     * knob with no effect looks like, and the reading was one edit away from
+     * being filed as "the far-only lift costs no chroma" on the clause that had
+     * refused the previous configuration.
+     *
+     * It did print `NOT ON THE BAG (ignored)`. A warning on stdout is not a
+     * guard: the caller redirected stdout, as callers do, and the run still
+     * exited 0 with four dumps on disk.
+     *
+     * INSTRUMENT FAULT 29 wrote the contract for this and named the two files
+     * that keep it: resolve BOTH spellings, verify by READ-BACK, ABORT on miss.
+     * This is the third meter and it now keeps it too.
+     */
+    const report = await page.evaluate((list) => {
+      const missed = [];
+      const wrong = [];
+      let bags = 0;
       for (const m of window.__game.view.models) {
         const u = m.matShell?.userData?.u;
         if (!u) continue;
+        bags++;
         for (const [k, v] of list) {
-          const name = 'u' + k[0].toUpperCase() + k.slice(1);
-          if (u[name]) u[name].value = v;
-          else if (!gone.includes(name)) gone.push(name);
+          const bare = k.startsWith('u') && k.length > 1 && k[1] === k[1].toUpperCase()
+            ? k : 'u' + k[0].toUpperCase() + k.slice(1);
+          const slot = u[k] || u[bare];
+          if (!slot) { if (!missed.includes(k)) missed.push(k); continue; }
+          slot.value = v;
+          // Read back rather than trusting the write: a slot can exist and hold
+          // a vector, in which case assigning a number leaves the shader reading
+          // whatever it read before.
+          if (slot.value !== v && !wrong.includes(k)) wrong.push(k);
         }
       }
-      return gone;
+      return { missed, wrong, bags };
     }, UNIFORMS);
     console.log('  uniforms:', UNIFORMS.map(([k, v]) => `${k}=${v}`).join(' '));
-    // A knob that is not on the bag is silently ignored by mass.mjs, which is
-    // how a sweep of a misspelled uniform reads as "no effect". Say so.
-    if (missed.length) console.log('  NOT ON THE BAG (ignored):', missed.join(', '));
+    if (!report.bags) {
+      console.error('dump: no shell uniform bag found — --u could not have applied to anything.');
+      process.exit(2);
+    }
+    if (report.missed.length || report.wrong.length) {
+      if (report.missed.length) console.error('dump: --u names not on the bag: ' + report.missed.join(', '));
+      if (report.wrong.length) console.error('dump: --u did not read back: ' + report.wrong.join(', '));
+      console.error('dump: REFUSING rather than writing a capture of the unmodified tree.');
+      process.exit(2);
+    }
+    console.log(`  uniforms applied and read back on ${report.bags} shell bag(s)`);
   }
   if (MATS.length) {
     const report = await page.evaluate((list) => {
