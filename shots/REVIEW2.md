@@ -13838,3 +13838,412 @@ asymmetry it should be tested rather than re-noticed.
 it is **foundry's NEAR machine at 74.5**, which the relocation does not touch by construction. That is
 a different problem from the one the last four rounds have been solving, and it is the one the next
 round inherits.
+
+---
+
+## ROUND 43 — CRITIC: **the clamp freezes the one camera the settle exists to discard, the "repeatable" meter has a two-state process on BOTH arenas, three arenas re-base in three different directions, and the cell the acceptance test protects from a machine lift is the wrong cell**
+
+Everything below is mine, this session, on bundle **`d9cef324894e`** served from port 4403
+(`dist-r40-far`), hashed off the running server by the meter itself and printed at the head of every
+capture. Tier 3, tick 420, seed 1234567. **`uPaintLift = uPaintLiftFar = 0` in every run in this
+section** — nothing here is a candidate, it is all baseline. Raw output: **`shots/r43-lodaudit.txt`**
+(1845 lines: 8 probe draws, 72 contour draws, three arenas).
+
+Four instruments, all new, all tracked, and all of them read `tools/contour.mjs` at run time rather
+than copying it — `shots/_settlesrc.mjs`, `shots/_r45lodprobe.mjs`, `shots/_r45lodmode.mjs`,
+`shots/_r45sign.mjs`. The reason they are built that way is section 1.
+
+---
+
+### 1. INSTRUMENT FAULT 45 — **the probe the round-42 record cites as evidence ABOUT the meter stopped being the meter one commit after it was written, and the commit that broke it is the commit it was cited to justify**
+
+`shots/_r44probe.mjs` carries its own copy of `SETTLE_FN` and is described in the round-42 record as
+running *"contour.mjs's exact pin and settle"*. It did, for exactly one commit. `5a30c18` added the
+LOD clamp to `tools/contour.mjs`, `tools/mass.mjs` and `shots/_r15dump.mjs`, and its only edit to the
+probe was an extra `env` dump — `git show 5a30c18 -- shots/_r44probe.mjs` is eight added lines and
+none of them is the clamp.
+
+**So the tree contains a fourth copy of the settle, it is the copy that gets pointed at the meter when
+the meter is in doubt, and it has been out of step since the moment it was quoted.** That is fault
+38's shape — one procedure, two copies, one of them edited — and a probe has no excuse for it,
+because a probe can read the meter's own text. `_settlesrc.mjs` now does: it extracts the template by
+anchor, aborts if the anchor is not unique, and aborts again if the body has lost either of the two
+lines the last two faults were about. Every instrument in this section is built on it.
+
+**No round-42 figure is withdrawn on this.** The probe's findings were taken at `294f5e0`, when the
+copy was faithful. What is withdrawn is the standing licence to re-run it: **`_r44probe.mjs` must not
+be quoted again until it is rebuilt on `_settlesrc.mjs`**, and nobody should read its output as a
+statement about the current meter.
+
+---
+
+### 2. INSTRUMENT FAULT 46 — **`_applyLod` reads matrices that only `renderer.render()` writes, the settle loop is synchronous, and therefore the clamp resolves the plate budget against the LAST PRE-SETTLE FRAME. The number it pins is the ONLY number in the chain that is load-dependent.**
+
+`_applyLod` computes `lodPx` from `camera.matrixWorldInverse` and `this.group.matrixWorld`
+(`robot.js:2561-2563`). Nothing but `renderer.render()` writes either of those. The settle's 240
+iterations are a synchronous JavaScript loop, so **no frame renders inside it**, so when the clamp
+calls `_applyLod` on the line after the loop, both matrices still hold **the last frame drawn before
+the settle began** — the unconverged, load-dependent camera the settle exists to throw away.
+
+The clamp's comment says it *"resolved once against the settled camera"* and that without the resolve
+*"the ranges frozen are whatever the last RENDERED frame chose"*. **It resolves against the last
+rendered frame either way.** Measured, `shots/_r45lodprobe.mjs`, 4 draws per arena, one bundle, one
+command:
+
+```
+   quantity                       four draws                              spread
+   ---------------------------------------------------------------------------------
+   foundry near  FROZEN lodPx     337.310  340.101  343.662  340.123       6.352
+   foundry near  LIVE   lodPx     331.719  331.718  331.718  331.719       0.001
+   grid    near  FROZEN lodPx     327.748  327.431  330.893  319.566      11.327
+   grid    near  LIVE   lodPx     335.694  335.694  335.694  335.694       0.000
+
+   camera position at the settle == camera position at the shutter, to five
+   decimals, in 8 runs of 8, on both arenas.   grid: -5.06832, 5.96149, 10.69726
+   identical in all four draws.  foundry moves 2e-5 m in x and nothing else.
+```
+
+**Two things follow and both of them overturn a round-42 conclusion.**
+
+**a. The camera is not drifting.** Round 42 concluded *"the CAMERA is still drifting after `onRender`
+is nulled"* by about a tenth of a percent, from four `lodPx` readings taken at the shutter across four
+runs. The camera's position is the same three numbers at the settle and at the shutter in every run I
+took. What round 42 saw was not a drift within a run; it was one run in four landing in the minority
+state, which section 3 shows is present with the clamp, without it, and with the repair.
+
+**b. The clamp swapped a stable number for an unstable one.** The quantity it pins spreads **6.4 and
+11.3 pixels** across four draws of one command. The quantity it replaced spreads **0.001 and 0.000**.
+The clamp is not a variance reducer on its own input; it is the largest source of run-to-run variance
+anywhere in the LOD chain, and it survives only because the LOD table is too coarse for a 3.5% budget
+error to cross a plate boundary most of the time.
+
+**Most of the time is not all of the time.** In grid draw 4 the frozen ranges and the shipped ranges
+are not the same vector:
+
+```
+   grid, near machine, draw 4     shell 0   shell 1   shell 2   OUTLINE HULL
+     frozen by the clamp           21648     14760      8634        16968
+     what the game draws           21648     14760      8634        17436
+   full detail (lodMinPx2 = 0)     21648     14760      8634        21648
+```
+
+**468 indices of the near machine's contour hull, 2.7% of it, drawn short of what the shipped renderer
+draws** — on the one geometry clause B is a measurement of. One draw in four. Three draws cannot see
+a one-in-four event more than half the time, and grid was declared repeatable on three.
+
+**The repair is one line and it is measured, not asserted.** Forcing the matrices current before the
+resolve (`scene.updateMatrixWorld(true)`, `camera.updateMatrixWorld(true)`,
+`matrixWorldInverse.copy(matrixWorld).invert()`) reproduces the live value **exactly, in 8 runs of 8,
+on both machines of both arenas**. It is available as `--mode fresh` in `shots/_r45lodmode.mjs` and it
+is not in `tools/`; putting it there is the next round's, because a critic who re-bases the meter
+mid-round hands nobody a comparison.
+
+---
+
+### 3. RULING 57 — **THE CLAMP IS INERT AT THE CLAUSE, WRONG AT THE MECHANISM, AND WAS ADOPTED ON A DIFFERENCE THAT IS NOT A DIFFERENCE. It biases no clause — measured, 72 draws — and it is not what made anything repeatable, because nothing is.**
+
+The question put to me was whether freezing at the settled camera measures the same machine the player
+sees or a slightly more detailed one. **It measures neither, and the answer is not a bias, it is a
+lottery**: the frozen budget is 1.5% HIGH on foundry's near machine, 2.5% LOW on grid's near machine,
+0.4% low on foundry's far machine and 1.4% high on grid's far machine, and it moves by up to 3.5%
+between draws of one command. So I did what the instruction asked and read the clause instead of the
+budget. **Four LOD modes, six draws each, both card arenas, one bundle.**
+
+```
+                            FROZEN            LIVE              FRESH             FULL
+                            (= HEAD)          (= shipped)       (matrices first)  (lodMinPx2 = 0)
+  ---------------------------------------------------------------------------------------------
+  grid    near  n=1025      86.0  x5          86.0  x5          86.0  x6          85.0/84.9/85.0
+  grid    FAR   n=326       70.9  x5          70.9  x5          70.9  x6          64.1  x3
+  foundry near  n=560       74.5-74.6 x5      74.5-74.6 x5      74.3-74.6 x4      73.7/73.6/73.7
+  foundry FAR   n=132       54.5  x5          54.5  x5          54.5  x4          47.7  x3
+  ---------------------------------------------------------------------------------------------
+  minority draws            3 of 12           2 of 12           2 of 12           0 of 6
+```
+
+Boxes and stencils, majority pose: grid **24401 px**, `157x284` and `55x81`; foundry **8220 px**,
+`78x217` and `41x39`. Minority pose: grid **24193/24195 px**, `156x283` `n=1032/1033` near **84.4**,
+`56x81` `n=333` FAR **67.3**; foundry **8037 px**, `75x217` `n=556` near **71.0-71.2**, `41x39`
+`n=136` FAR **44.1**.
+
+#### 1. On the clause, the clamp is a null, and so is removing it
+
+**Every cell is the same number in all three clamp modes, in both poses.** The only movement anywhere
+in the table is foundry's near cell wobbling between 74.3 and 74.6 — a spread of 0.3 against that
+cell's floor of `max(0.2, 100/560) = 0.2`, present in every mode including the one with no clamp at
+all, and therefore not a property of the clamp.
+
+> **RULED: the clamp is LEGITIMATE as a matter of the figures it has produced, and it may stay while
+> it is replaced.** No clause B, C or D figure taken since `5a30c18` is withdrawn on account of it: it
+> photographs the same plates the shipped renderer draws in 7 of the 8 probe draws and in all 72
+> contour draws, and where it does not (grid, one draw in four, 468 hull indices) the cell does not
+> move. **A meter that measures a machine the game does not draw is nonetheless a meter whose readings
+> agree with the machine the game does draw, and that is an empirical result, not a licence.**
+>
+> **And it is REFUSED as a mechanism, and must be replaced by the corrected resolve.** A clamp whose
+> pinned input spreads 11.3 pixels between draws is one coarse-table boundary away from silently
+> re-basing the whole card, and the fix is one line that has been measured to reproduce the shipped
+> value in 8 of 8. **`--mode fresh` is the only mode in the table that never produced a plate the game
+> does not draw and never produced grid's minority pose in six draws.** That last is one arena and six
+> draws and I am NOT claiming it fixes the pose; see below.
+
+#### 2. The clamp did not make anything repeatable, because nothing is repeatable
+
+Round 42 filed *"grid is repeatable — stencil, both boxes and all three cells reproduce exactly"* on
+**three draws**, and adopted the clamp on foundry's minority rate falling from *"2 of 3"* to *"1 of
+6"*.
+
+**Grid has a two-state process, it is RULING 55's two-state process, it survived the integrator fix,
+and it is worth 1.6 points of grid's near cell and 3.6 of its far cell.** RULING 55 measured the
+minority pose at `156x283`, `n=1032`, near 84.3, far `53x79` `n=317`; mine is `156x283`,
+`n=1032/1033`, near **84.4**, far `56x81` `n=333`. **The NEAR machine's box and denominator are
+identical across the re-base in both states — `157x284`/`n=1025` in the majority, `156x283`/`n=1032`
+in the minority — and only the FAR machine's moved.** Which is exactly what `294f5e0` should do: the
+four terms it zeroed are a spin, a tumble, a get-up and a toe, and the far machine is the one that was
+using them. `294f5e0` re-based one machine and eliminated neither state. Rate this session: **3 of 12
+with the clamp, 1 of 6 without it.** Grid's exact-three-draws was three draws that missed it.
+
+**And the adoption evidence does not survive being counted.** 2-of-3 against 1-of-6 is Fisher-exact
+**p = 0.23**; my own direct comparison on one bundle is **3 of 12 clamped against 2 of 12 unclamped**.
+There is no detectable difference between the meter with the clamp and the meter without it, on either
+arena, on either statistic.
+
+> **RULED, and it is a rule about DECISIONS, not about this clamp.** RULING 51's six-draw floor binds
+> the adoption of an instrument change exactly as it binds a figure. **A change to a meter that is
+> justified by a change in a RATE must be justified on at least six draws per arm, and the rate must
+> be stated with its denominators on both sides.** `5a30c18` was adopted on 3 draws against 6, of a
+> quantity whose observed rate is about one in five, and the round-42 record's own table shows
+> freezing-alone and freezing-plus-resolve both at *"1 of 6"* — the two arms it was choosing between
+> were already equal and the sentence that chose between them quoted the far cell's spread instead.
+
+#### 3. What the clamp DOES bias, bounded
+
+The frozen budget also freezes `uOutPixH`, which sets the outline's pixel floor
+(`robot.js:1844, 2560`). At tier 3 `renderScale` is **1.0** (`quality.js:89`) and the canvas is
+1600x900, so the frozen value is the value a render would set and no figure on this card is affected.
+**At any tier that renders below the canvas — 0.72 and 0.88 on the two lower tiers — the clamp would
+freeze `uOutPixH` at the canvas height while the scene renders into a smaller target, and the
+outline's pixel floor would be wrong by the renderScale.** I have not measured a lower-tier capture
+and I am not filing a number. **Nobody may take a contour figure at a tier below 3 with this clamp in
+place**, and the corrected resolve does not fix this — only removing the clamp, or re-reading the
+bound target, does.
+
+---
+
+### 4. RULING 58 — **THE RE-BASE IS NOT ONE EVENT. Three arenas moved in three directions, two of them by more than any candidate this document has ever credited, and the historical figures are WITHDRAWN rather than re-based — with one exception, proved rather than assumed.**
+
+Round 42 wrote that foundry's *"majority far cell ... is the historical value, so figures taken before
+this remain comparable to it"*. I measured all six cells against round 38's, on the pinned meter,
+mode of six draws, with the denominators beside them, which is what RULING 47 has required since it
+was written:
+
+```
+                       ROUND 38 (23dc643dceac)     ROUND 43 (d9cef324894e, pinned)     move    floor
+  -------------------------------------------------------------------------------------------------
+  grid    near         86.2   n=1025               86.0   n=1025  157x284              -0.2     0.20
+  grid    FAR          80.3   n=300   52x71        70.9   n=326   55x81                -9.4     0.33
+  foundry near         75.1   n=559                74.5   n=560   78x217               -0.6     0.20
+  foundry FAR          54.5   n=132   41x39        54.5   n=132   41x39                 0.0     0.76
+  orbital near         87.2   n=859                89.4   n=976   178x259              +2.2     0.20
+  orbital FAR          60.9   n=202                67.7   n=189   49x63                +6.8     0.53
+```
+
+**Six cells, three signs, and the two largest moves point opposite ways.** Grid's far cell loses 9.4
+and orbital's gains 6.8. There is no correction that can be applied to the record, because there is no
+single event to correct for: the integrator zero changed the machines' pose, and how a pose change
+lands on a contour percentage is a fact about that arena's background, not a constant.
+
+**The denominator is the tell and it is what makes this provable rather than arguable.** Grid's far
+machine went from `52x71` at `n=300` to `55x81` at `n=326`; orbital's far machine from `n=202` to
+`n=189`; foundry's near machine from `n=559` to `n=560`. **A cell whose `n` moved is a photograph of a
+different object**, and **the four cells that moved by more than their own floor are exactly the four
+cells whose `n` moved.** The correspondence is one-to-one and it is the whole argument.
+
+**Two cells kept the denominator, the box and the value, and both are carried forward.** Foundry's far
+machine: `n=132`, `41x39`, **54.5 then and 54.5 now**, and its diagnosis reproduces digit for digit
+against round 38 — machine 69.4 behind 51.4 on the weak rows, 123.8 behind 56.7 on the clean ones.
+Grid's near machine: `n=1025`, `157x284`, **86.2 then and 86.0 now**, a move of exactly its own
+0.20-point floor. Round 38 never printed a near-machine diagnosis pair on grid, so that third check
+cannot be run and the carry is on two of three.
+
+> **RULED.**
+>
+> 1. **Every clause B figure taken before `294f5e0` is WITHDRAWN, not re-based and not annotated.**
+>    Annotation implies a correction the reader could apply and there is none — the six cells moved
+>    -9.4, -0.6, -0.2, 0.0, +2.2 and +6.8. They may be quoted as history and may not be differenced
+>    against anything measured after it.
+> 2. **A figure may be carried forward across the re-base ONLY on evidence that the pose is the same
+>    one: identical `n`, identical component box, and identical weak/clean diagnosis rows.** Two cells
+>    clear it, on the evidence above. **A value that agrees while its denominator moved is a
+>    coincidence, and this document has now been caught treating one as continuity** — round 42 carried
+>    foundry forward on the value alone and got the right answer on the far machine and the wrong one
+>    on the near, where 75.1 became 74.5 while `n` went 559 to 560.
+> 3. **Round 42's own headline table mislabels two of its four denominators.** It prints *"grid FAR
+>    (300)"* and *"foundry near (559)"*; the pinned meter returns **326** and **560** in every one of
+>    my 36 draws. Both labels are round 38's, carried over a re-base that changed the very thing they
+>    label. **Corrected here rather than in place, because RULING 47's requirement is that a figure
+>    carries its own `n` — not a plausible one.**
+> 4. **The shipped card does not move, and I checked before writing this.** Clause B is scored on the
+>    worst cell of the enumerated set. On the shipped tree at zero the worst cell was foundry's far
+>    machine at **54.5** and it still is, at the same `n`, in the same box — and the set is now six
+>    cells wide rather than four, with orbital's 67.7 nowhere near it. **Clause B: NOT MET, cell 54.5,
+>    unchanged.** The re-base costs the record every comparison it ever made and costs the card
+>    nothing, which is exactly the shape RULING 55 found and is becoming this document's most common
+>    result.
+> 5. **One consequence outside clause B, because it feeds an argument already on the record.** Grid's
+>    far machine is **9.0% of frame height** on the pinned meter (`55x81`), not the **7.9%** RULING 56
+>    §4b used when it priced the size gate's shoulder — that figure came from the `52x71` box. The
+>    conclusion there may well survive; the arithmetic under it is a withdrawn figure and has to be
+>    redone before it is quoted again.
+
+#### And orbital is back, for the first time in five rounds, with the best cell this clause has ever had
+
+Six draws, `_r45sign.mjs`, same bundle: **near 89.4 exact ×6** at `n=976`, `178x259`; **far 67.7 ×3 /
+67.4 ×3** at `n=189/190`, `49x63` — a 0.3 split inside that cell's 0.53-point floor, so one figure by
+the document's own rule and a two-state stencil (24276 / 24274) underneath it.
+
+**89.4 against 90.0 is 0.6 points.** The best cell this document has ever recorded is 86.2, which is
+3.8 short; **this is six times closer to MET than that, and closer than any candidate has moved any
+near-machine cell.** Nothing was done to earn it — it is what the arena reads once the machines are
+pinned, and it was invisible for five rounds because nobody pointed the meter at it.
+Two consequences, both of which the next round inherits:
+
+- **The enumerated set is six cells, not four.** Every acceptance test since RULING 49 has been
+  written over grid and foundry. Orbital's far machine at **67.7** sits between grid's 70.9 and
+  foundry's 54.5, and **it has never been measured under any candidate** — including the relocation,
+  whose worst-cell claim is therefore evaluated on two thirds of its own set.
+- **RULING 56 §4's route now has a target that can be checked.** If lowering the stage is worth
+  anything at all, orbital's near machine is where a 0.6-point gain turns a twenty-round FAIL into
+  the card's first clause B MET on one cell, and it is measurable at six draws in five minutes.
+
+---
+
+### 5. RULING 59 — **THE WORST CELL, AND THE STANDING CLAUSE THAT PROTECTS THE WRONG ONE. Foundry's near machine is 82% machine-brighter, grid's near machine is 68% machine-DARKER, and the acceptance test has had the label on the wrong cell since round 38.**
+
+The instruction to this round was to rule on what foundry's near machine at 74.5 needs, noting round 38
+PART 6's finding that it is *"the one cell in the set whose contour fails against a BRIGHT
+BACKGROUND"* — weak rows machine 83.8, behind 83.6 — and that RULING 49 wrote that into the acceptance
+test as a standing clause: *"foundry's near machine is a bright-background failure"*.
+
+**That finding rests on comparing two independently-computed medians, and the meter has been throwing
+away the number that actually answers it for twenty-three rounds.** `ANALYSE_FN` computes
+`Math.abs(inM - outM)` and discards the sign one line later. The median of the machine side and the
+median of the background side, taken over the weak population separately, are not the median of their
+difference and cannot tell you which way round any individual pixel is. **`shots/_r45sign.mjs` keeps
+the sign and changes nothing else.** Six draws foundry, six orbital, three grid:
+
+```
+                    weak n    machine DARKER than what is behind it   weak rows m / b     clean rows m / b
+  ------------------------------------------------------------------------------------------------------
+  grid    NEAR        100                  68.0%                       66.7 / 72.7        156.9 / 53.1
+  foundry near         81-83               18.1 - 18.5%                81.9-83.7 / 83.4   153.0 / 49.5
+  foundry FAR          33                   9.1%                       69.4 / 51.4        123.8 / 56.7
+  orbital near         88                   6.8%                       41.4 / 37.6        149.5 / 44.5
+  orbital FAR          34-38                2.6 - 2.9%                 64.0-64.7 / 50.1   110.9 / 48.4
+  grid    FAR          53                   0.0%                       69.3 / 50.6        130.4 / 52.9
+```
+
+**Foundry's near machine is the brighter of the two on 82% of its own weak contour.** It is not the
+exception; it is the second-most-ordinary cell on the board. The two medians that made it look
+exceptional are 83.7 and 83.4 because the machine is brighter than the background by a SMALL amount
+almost everywhere along that stretch — which is the definition of the ordinary failure, not of the
+opposite one — and round 38 compared that near-machine pair against the FAR machines of three arenas,
+which is not a comparison.
+
+**The cell that is genuinely a bright-background failure is GRID's near machine, at 68.0%, and no rule
+protects it.** Grid near is 86.0, the second-best cell on the card, and it is the exemplar round 38
+used for the other mechanism.
+
+> **RULED.**
+>
+> 1. **RULING 49's standing clause 5 is STRUCK in the form it carries.** *"Foundry's near machine is a
+>    bright-background failure"* is refuted on the meter that produced it, at six draws, with the sign
+>    the meter was already computing. It has been in the acceptance test since round 38 and it is the
+>    reason four rounds have treated the cell that binds after the relocation as unreachable by
+>    machine-side work.
+> 2. **It is REPLACED, and the replacement is stricter, not looser** — which is the test RULING 55 set
+>    for re-reading anything while a candidate is on the table, and this one refuses more than it
+>    permits: **every clause B claim about a cell is quoted with that cell's DARKER fraction and its
+>    weak `n`.** A machine-side lift may be argued to help a cell only in proportion to
+>    `1 - darker`, and it must be scored as a COST on the `darker` fraction, on every cell, including
+>    the ones it is not aimed at. Under that rule the cell most exposed to a uniform machine lift is
+>    grid's near machine at 68.0% — a MET-adjacent 86.0 — and the cell least exposed is grid's far
+>    machine at 0.0%.
+> 3. **What foundry's near machine at 74.5 needs is therefore NOT a different mechanism from the rest
+>    of the board.** It needs the same thing the far cells need, applied to a machine that is 24.1% of
+>    frame height instead of 4.3%, and the reason no candidate has reached it is not lever arm — the
+>    machine falls **69.3 points** between its clean rows (153.0) and its weak rows (83.7), a larger
+>    fall than either far machine's (54.4 and 61.1). **The reason is the gate.** Every candidate since
+>    RULING 54 has been multiplied by a size gate that is identically zero on it, and every candidate
+>    before that was refused for what it did to near-machine clause A and clause D. That is a
+>    constraint problem, and it is the honest statement of one.
+>
+>    **For completeness, because the same table refutes a superlative in either direction: the machine
+>    falls on the weak rows of every cell** — orbital near -108.1, grid near -90.2, foundry near -69.3,
+>    grid far -61.1, foundry far -54.4, orbital far -46.9 — **and the background rises on only two,
+>    foundry near (+33.9) and grid near (+19.6).** Both mechanisms are present on both near machines.
+>    What separates them is the sign, and the sign says the machine still wins on foundry's and loses
+>    on grid's.
+> 4. **And the near-machine constraint is not the one the document thinks either.** RULING 55 put
+>    clause D's cell at foundry's NEAR machine, 0.153 against 0.145, margin 0.008. That is the same
+>    machine as clause B's new worst cell. **Any candidate aimed at 74.5 must be quoted with foundry's
+>    near-machine chroma beside it on the same photograph, at a margin of 0.008** — not with the pool,
+>    and not from `_r15dump.mjs`, whose pose is a third pose and which RULING 56 §9 already ruled is
+>    not frame-comparable to a clause B figure.
+
+---
+
+### 6. A NUMBER NOBODY ON THIS CARD HAS: **the geometry LOD is worth +6.8 points of the far cell on BOTH arenas, and clause B has only ever been read at the one tier where it is worth that.**
+
+`robot.js`'s own comment names `lodMinPx2 = 0` as *"the control every claim made about it has to be run
+against"*, and **no clause B figure in this document has ever been run against it.** Round 13 ran a
+`--lodoff` / `--lod16` A/B and it was on the MASS meter, on foundry only, and it predates `87d5cfa`,
+which is the commit that gave the contour hull its own separate and much larger cut — so it says
+nothing about the quantity below. Three draws per arena, everything else identical:
+
+```
+                        LOD as shipped        lodMinPx2 = outLodMinPx2 = 0        full detail costs
+  ---------------------------------------------------------------------------------------------
+  grid    near  n=1025      86.0                  85.0 / 84.9 / 85.0                   -1.0
+  grid    FAR   n=326       70.9                  64.1  x3                             -6.8
+  foundry near  n=560       74.5 - 74.6           73.7 / 73.6 / 73.7                   -0.8 to -0.9
+  foundry FAR   n=132       54.5                  47.7  x3                             -6.8
+```
+
+**Turning the LOD off costs 6.8 points of the far cell on both arenas, to the tenth, and the far
+machine's contour hull is where it lives**: at the pinned frame the far machine draws **1296 of 22176
+hull indices — 5.8%** — and full detail restores all of it. That is round 38 PART 5's mechanism
+running backwards and confirming it: the hull darkens the outside of a boundary whose inside is
+already dark, so more hull is less step.
+
+Three things follow, and none of them is a candidate:
+
+- **Clause B is a function of the LOD thresholds, at 6.8 points on the cell it is scored on.**
+  `LOD_MIN_PX2` and `OUTLINE_LOD_MIN_PX2` are performance constants. Nothing on this card records that
+  moving them moves clause B by more than any paint candidate ever measured except the relocation.
+- **Every clause B figure in this document is a tier-3 figure**, and `lodPx` scales with the render
+  target, so a lower tier cuts more and — on this evidence — reads *better*. **The clause is not
+  arena-blind and it is not tier-blind, and only the first of those has ever been said.**
+- **It closes off a direction before anyone spends a round on it.** "Give the far machine its hull
+  back" is the obvious reading of a 94% hull cut on the failing machine. It is worth **-6.8**.
+
+---
+
+### 7. WHAT I DID NOT MEASURE, AND WHAT IS STILL OPEN
+
+- **I did not diagnose the two-state pose, and it is now confirmed on all three arenas** — grid
+  24401/24193, foundry 8220/8037, orbital 24276/24274. It is not the LOD (identical rates in all three
+  clamp modes) and it is not camera drift (position identical at settle and shutter, 8 of 8). It
+  clusters in time across arenas and modes in my batch, which points at the frame count before the pin
+  rather than at anything inside the settle. **`introT` and the intro's integrated yaw
+  (`camera.js:290, 295`) are an untested candidate of exactly round 42's shape — a Riemann sum whose
+  value depends on the partition, i.e. on how many frames rendered — and I did not test it.**
+- **I did not put the corrected resolve into `tools/`.** It is `--mode fresh` and it is measured; a
+  critic who re-bases the meter mid-round leaves nobody a comparison.
+- **I did not re-take clause A, C, D or E on anything**, and RULING 56 §9's finding that
+  `_massdrive.mjs` prints one box for a six-draw block is still unfixed, so every clause A and C range
+  in this document may still be a mixture of two poses. **That is now a three-arena problem.**
+- **Orbital has never been measured under any candidate**, including the relocation that is the
+  subject of the last four rounds.
+- **Nothing in `src/` changed this round. Both lift uniforms remain 0.0. `npm test` passes and
+  `npx vite build` is clean.**
