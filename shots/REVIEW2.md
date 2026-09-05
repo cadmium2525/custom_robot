@@ -13000,7 +13000,9 @@ uniform. So:
   one round ago on a bundle I have now hashed and confirmed is the one that was serving. By this
   document's own standing rule they are unrepeated, and the 25.0-point gain the whole veto question
   turns on rests on a single draw of a cell whose `n` is 132 and whose floor is 0.76 points per pixel.
-  **Somebody has to run foundry's far cell three times before it is quoted again.**
+  **Somebody has to run foundry's far cell three times before it is quoted again.** — *Done before the
+  round closed; see PART 2. Both foundry rows reproduce exactly at three draws each end. **Grid's two
+  rows are still PART 9's and still unrepeated.***
 - **Clause B at the paint direction, +13, was not measured by anyone.** It cannot change the verdict —
   paint at +13 already loses three guard cells — but the direction comparison in PART 8 is missing it
   and should not be described as complete.
@@ -13017,3 +13019,72 @@ uniform. So:
 - **Fault 38 is still undiagnosed** and clause A and clause B still photograph the far machine in
   different poses, so every table above that puts a contour cell beside a mass cell is two
   photographs, quoted side by side and not as one frame.
+
+---
+
+## ROUND 41 — CRITIC, PART 2: **the 25-point gain is real. Foundry's far cell reproduces three times at each end with ZERO spread, my round-40 guess about its noise was wrong, and the refusal does not move.**
+
+The section above closed by saying no clause B figure in it was mine and that somebody had to run
+foundry's far cell three times before it was quoted again. Done, here, before the round closed. Same
+meter, same tier, same tick, same seed, both bundles printed by the meter on every one of the six
+runs. Full output in `shots/r41-contour-foundry.txt`.
+
+```
+  tools/contour.mjs --arena foundry --tier 3 --ticks 420,  three draws at each end
+
+                              draw 1   draw 2   draw 3   spread    RULING 49's cell = the min
+  BASELINE  23dc643dceac
+    overall        (n=692)     71.1     71.1     71.1      0.0
+    near   78x217  (n=559)     75.1     75.1     75.1      0.0
+    FAR    41x39   (n=132)     54.5     54.5     54.5      0.0            54.5
+  WHITE +13  966ebe2a39e9,  uPaintLift=0.05  uPaintWhite=1
+    overall        (n=692)     82.8     82.8     82.7      0.1
+    near   78x217  (n=559)     83.5     83.5     83.4      0.1            83.4
+    FAR    41x39   (n=132)     79.5     79.5     79.5      0.0            79.5
+```
+
+**PART 9's two foundry rows reproduce exactly** — 54.5 -> 79.5 on the far machine, **+25.0 points**,
+and 75.0 -> 83.4 on the near — on a bundle pair I hashed myself, at the draw count RULING 49 asks for.
+The number the whole veto argument is about is not a single draw any more.
+
+### 1. My own round-40 speculation about this cell was wrong, and in the build's favour
+
+RULING 47's closing list said foundry's cell *"is a single capture and its `n` is 132, so its own
+spread is very likely **worse** than grid's 1.0"*. Measured: **0.0 over three draws at each end, and
+0.0 over the two independent captures on file from rounds 38 and 40 as well.** Five readings of
+`54.5`, from three sessions and two authors.
+
+**So the per-population floor is not a function of `n` alone**, which is what PART 7's `100/n` assumed
+and what I inherited when I replaced it with the observed spread. Foundry's far cell has the *coarsest*
+quantum in the document — 0.76 points per boundary pixel — and the *smallest* observed spread. Grid's
+far cell, at n=300, moves 1.0 points across seven runs. **Whatever makes grid's far machine wander is
+not its sample count**, and fault 38 — the pose that differs between two meters on one pinned frame —
+is the only mechanism on file that could do it. That is a reason to want fault 38 diagnosed, not a
+finding.
+
+> **AMENDED, my own floor rule from RULING 47's neighbourhood:** the floor for a contour cell is the
+> **observed spread of that cell, measured at that setting**, or one boundary pixel, whichever is
+> coarser. It may not be carried across arenas, and it may not be inferred from `n` in either
+> direction. Foundry's far cell: **0.76 points** (one pixel; the observed spread is smaller). Grid's
+> far cell: **1.0 point** (the observed spread; one pixel is 0.33).
+
+### 2. What it does to the verdict, which is: nothing, and that is the point
+
++25.0 on the worst cell of the worst clause, confirmed. **It is still refused**, and now for three
+independent reasons rather than one:
+
+```
+   clause B   four cells, best 87.4, worst 79.5, threshold 90.0     NOT MET on all four
+   clause A   near top-4  83.8  against 85.0                        a MET, taken off
+   clause D   grid 0.122 / foundry 0.137 against 0.129 / 0.145      a MET, taken off, BOTH arenas
+```
+
+**A change that buys no clause and sells two is refused whatever it gains**, and the gain is large and
+real. The 0.2-point margin argued over in PART 9 turns out not to be load-bearing at all: strike
+clause A's near top-4 from the ledger entirely and clause D still refuses the change on both arenas,
+by 0.007 and 0.008 of chroma against margins of 0.020 and 0.008.
+
+**The knob stays at 0.0, both uniforms stay at 0.0, and nothing in `src/` changed this round.** What
+is on offer to the next round is not this setting — it is RULING 54's gate, where the +25.0 lands on
+the machine that needs it and none of the three refusals above is triggered, because every one of them
+is a near-machine cell.
