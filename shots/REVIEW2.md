@@ -13147,3 +13147,50 @@ D off on both arenas when it is applied to both machines — grid 0.149 to 0.122
 0.129. Whether that survives the relocation depends on whether clause D's reading is per-machine or
 whole-frame, and RULING 52 put clause D's cell on foundry at a margin of 0.008. **Nothing ships until
 that is measured**, and both uniforms remain at 0.0 in the tree.
+
+### 4. Clause D under the relocation — **MET on both arenas as the clause is written, and the reason is not a good one**
+
+Re-taken on `d9cef324894e` after fault 43, with the applier's read-back printed on every dump.
+`shots/_r15dump.mjs` then `shots/_r16chroma.mjs`. Clause D's written statistic is the MEDIAN chroma of
+the machine pixels against the median chroma of the stage.
+
+```
+                      machines   stage     verdict      far machine alone: chroma / luminance
+  grid    baseline      0.149    0.129       MET             0.200  /  108.5
+  grid    far +40       0.141    0.129       MET             0.106  /  149.5
+  foundry baseline      0.153    0.145       MET             0.173  /  103.6
+  foundry far +40       0.153    0.145       MET             0.141  /  138.4
+```
+
+**The clause holds on both arenas.** Grid's margin narrows from 0.020 to 0.012 and foundry's 0.008
+does not move at all. Set against RULING 52, where the same +40 of white applied to BOTH machines
+took clause D off on both arenas — grid 0.122 against 0.129 — **the relocation is what saves it.**
+
+> **AND THE MECHANISM IS ARITHMETIC, NOT MERIT, WHICH IS A RULING SOMEBODY OWES.** The far machine's
+> own chroma nearly halves: **0.200 to 0.106 on grid**, 0.173 to 0.141 on foundry. Clause D reads MET
+> because that machine is **2000 px of 24457** on grid and **894 of 8138** on foundry — 8% and 11% of
+> the pooled sample — so the near machine's untouched chroma carries the median past the stage.
+>
+> `shots/_r16chroma.mjs` already prints the per-machine rows, and on a per-machine reading **grid's far
+> machine is 0.106 against a stage at 0.129: NOT MET, and inverted.** That is the exact condition
+> SPEC-CRV2 clause D names — *"the machines are MORE saturated than the stage, not less"* — occurring
+> on the machine clause G, blind point 3 and clause B's worst cell are all about, and the pooled
+> statistic cannot see it because the subject is 8% of its own sample.
+>
+> **This is the same defect as clause B's, one clause over.** PART 6 found clause B had been scored on
+> grid because grid was where the meter was pointed; this finds clause D scored on a pool the failing
+> machine is a twelfth of. **Whether clause D's cell is the pool or the worse machine is a ruling, and
+> until it is made the far-only lift may not be described as passing clause D.**
+
+### 5. Where the acceptance test stands on the relocation
+
+```
+   B   86.2 / 86.0 / 75.0 / 83.3   vs >= 90 on all four        NOT MET, short by 4.0 and 6.7 on the far cells
+   A   every cell MET, near unmoved, far top-4 86.2 -> 86.4    MET
+   C   near 1.708 unmoved, far 1.288 -> 1.089                  inside both ceilings
+   D   pooled MET on both arenas; far machine inverted on grid  SEE ABOVE
+```
+
+**REFUSED on clause B**, which is short on both far cells and is the clause the whole exercise is for.
+**But it takes nothing off MET**, which is the first time any clause B candidate in this document has
+been able to say that. Both uniforms remain 0.0 in the tree.
