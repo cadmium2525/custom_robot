@@ -1,0 +1,145 @@
+frame 1600x900
+
+ROBOT 1  157x284px at 734,610  stencil 22468  boundary n=1025
+  weak 9.8%  clean 86.2%
+  weak  machine   68.5  behind   73.5   behind p10/p90   45.5/  80.3
+  clean machine  156.3  behind   53.1   behind p10/p90   42.2/  63.0
+  weak pixels where MACHINE IS BRIGHTER than what is behind it: 37%
+  local thickness (mask px in the 7x7, of 49): weak median 28  clean median 28
+    on THIN geometry (<=14 of 49): weak 11%  clean 0%
+    clause B restricted to boundary on thick geometry (n=1014): clean 87.2%
+  weak boundary comes in 11 connected stretch(es); largest:
+      25 px   11x9 at 817,668
+      24 px   15x10 at 846,700
+      23 px   10x23 at 790,622
+      16 px   7x16 at 807,630
+       5 px   4x3 at 832,697
+       2 px   1x2 at 785,821
+  vertical fifths (top->bottom), share of that population:
+    all boundary   12.9  25.6    20  15.2  26.3
+    weak only        39    55     3     3     0
+  LIFT MODEL — add X to the machine half only, clean% becomes:
+    X          0    10    20    30    40    50    60    70    80    90   100   110   120
+    clean   86.2  88.1  90.6  91.5  92.9  96.3  97.9  99.0  99.5 100.0 100.0 100.0 100.0
+  PIVOT MODEL — machine half pulled toward P by fraction f (the FILL_FRAG shape):
+    P \ f      0  0.25   0.5  0.75     1
+       40   86.2  77.5  55.7   1.5   2.0
+       60   86.2  81.5  68.2  12.7   1.0
+       80   86.2  84.3  80.1  63.6   5.1
+      100   86.2  86.6  87.1  86.5  78.1
+      120   86.2  87.1  90.0  92.8  98.0
+      140   86.2  89.5  92.2  98.3  99.0
+      160   86.2  90.7  94.8  99.0  99.3
+      180   86.2  91.0  98.1  99.2  99.8
+      200   86.2  91.6  98.9  99.5 100.0
+      220   86.2  92.4  99.2 100.0 100.0
+      240   86.2  94.2  99.3 100.0 100.0
+  CEILING over all (P,f) on a 5-level / 0.05 grid: clean 100%  at P=185 f=1
+
+ROBOT 2  52x71px at 767,163  stencil 1944  boundary n=301
+  weak 12%  clean 80.7%
+  weak  machine   73.1  behind   54.3   behind p10/p90   44.5/  60.3
+  clean machine  117.5  behind   50.1   behind p10/p90   44.0/  70.9
+  weak pixels where MACHINE IS BRIGHTER than what is behind it: 100%
+  local thickness (mask px in the 7x7, of 49): weak median 24  clean median 28
+    on THIN geometry (<=14 of 49): weak 11.1%  clean 0.4%
+    clause B restricted to boundary on thick geometry (n=296): clean 81.8%
+  weak boundary comes in 2 connected stretch(es); largest:
+      18 px   9x6 at 782,163
+      18 px   10x8 at 809,167
+  vertical fifths (top->bottom), share of that population:
+    all boundary   27.6  22.9  17.9  12.3  19.3
+    weak only       100     0     0     0     0
+  LIFT MODEL — add X to the machine half only, clean% becomes:
+    X          0    10    20    30    40    50    60    70    80    90   100   110   120
+    clean   80.7  87.0  91.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0
+  PIVOT MODEL — machine half pulled toward P by fraction f (the FILL_FRAG shape):
+    P \ f      0  0.25   0.5  0.75     1
+       40   80.7  51.5   4.3   0.0   4.7
+       60   80.7  62.5  25.2   0.0   0.0
+       80   80.7  73.8  57.1  25.2   1.3
+      100   80.7  81.7  81.7  83.1  79.7
+      120   80.7  86.0  97.3  97.7  95.3
+      140   80.7  87.7 100.0 100.0 100.0
+      160   80.7  93.0 100.0 100.0 100.0
+      180   80.7  99.7 100.0 100.0 100.0
+      200   80.7 100.0 100.0 100.0 100.0
+      220   80.7 100.0 100.0 100.0 100.0
+      240   80.7 100.0 100.0 100.0 100.0
+  CEILING over all (P,f) on a 5-level / 0.05 grid: clean 100%  at P=135 f=0.6
+wrote /home/user/custom_robot/shots/r40-where-r1.png
+wrote /home/user/custom_robot/shots/r40-where-r2.png
+frame 1600x900
+
+ROBOT 1  78x217px at 727,583  stencil 7336  boundary n=559
+  weak 14.8%  clean 74.8%
+  weak  machine   86.9  behind   83.4   behind p10/p90   38.7/  86.7
+  clean machine  153.0  behind   49.5   behind p10/p90   39.8/  90.1
+  weak pixels where MACHINE IS BRIGHTER than what is behind it: 84.3%
+  local thickness (mask px in the 7x7, of 49): weak median 27  clean median 28
+    on THIN geometry (<=14 of 49): weak 0%  clean 0.5%
+    clause B restricted to boundary on thick geometry (n=557): clean 74.7%
+  weak boundary comes in 14 connected stretch(es); largest:
+      20 px   4x20 at 782,718
+      17 px   12x10 at 761,611
+       9 px   2x9 at 797,625
+       6 px   1x6 at 794,651
+       5 px   2x5 at 802,587
+       5 px   2x5 at 790,674
+  vertical fifths (top->bottom), share of that population:
+    all boundary   28.1  21.6  15.9  15.4    19
+    weak only      31.3  24.1   9.6  27.7   7.2
+  LIFT MODEL — add X to the machine half only, clean% becomes:
+    X          0    10    20    30    40    50    60    70    80    90   100   110   120
+    clean   74.8  83.4  88.2  92.8  97.7  99.8 100.0 100.0 100.0 100.0 100.0 100.0 100.0
+  PIVOT MODEL — machine half pulled toward P by fraction f (the FILL_FRAG shape):
+    P \ f      0  0.25   0.5  0.75     1
+       40   74.8  57.8  28.3   0.0  33.5
+       60   74.8  64.6  37.6  17.0   0.0
+       80   74.8  70.7  55.6  42.2  15.6
+      100   74.8  76.0  73.7  60.1  56.4
+      120   74.8  80.5  85.5  84.8  66.5
+      140   74.8  83.2  91.6  98.6 100.0
+      160   74.8  86.9  96.2 100.0 100.0
+      180   74.8  90.3 100.0 100.0 100.0
+      200   74.8  94.1 100.0 100.0 100.0
+      220   74.8  95.7 100.0 100.0 100.0
+      240   74.8  97.5 100.0 100.0 100.0
+  CEILING over all (P,f) on a 5-level / 0.05 grid: clean 100%  at P=135 f=0.9
+
+ROBOT 2  41x39px at 775,353  stencil 880  boundary n=132
+  weak 25%  clean 54.5%
+  weak  machine   69.4  behind   51.4   behind p10/p90   45.6/  80.1
+  clean machine  123.8  behind   56.7   behind p10/p90   47.8/  80.6
+  weak pixels where MACHINE IS BRIGHTER than what is behind it: 90.9%
+  local thickness (mask px in the 7x7, of 49): weak median 29  clean median 27
+    on THIN geometry (<=14 of 49): weak 0%  clean 4.2%
+    clause B restricted to boundary on thick geometry (n=127): clean 54.3%
+  weak boundary comes in 5 connected stretch(es); largest:
+      11 px   8x8 at 800,357
+       8 px   6x6 at 783,360
+       7 px   7x3 at 796,387
+       5 px   5x1 at 778,375
+       2 px   2x2 at 784,376
+  vertical fifths (top->bottom), share of that population:
+    all boundary   23.5  27.3  16.7  13.6  18.9
+    weak only      27.3  30.3  18.2     3  21.2
+  LIFT MODEL — add X to the machine half only, clean% becomes:
+    X          0    10    20    30    40    50    60    70    80    90   100   110   120
+    clean   54.5  68.2  82.6  88.6  97.7 100.0 100.0 100.0 100.0 100.0 100.0 100.0 100.0
+  PIVOT MODEL — machine half pulled toward P by fraction f (the FILL_FRAG shape):
+    P \ f      0  0.25   0.5  0.75     1
+       40   54.5  26.5   0.0   0.0  11.4
+       60   54.5  36.4   7.6   0.0   0.0
+       80   54.5  43.2  28.0   5.3   0.0
+      100   54.5  53.0  53.0  61.4  62.9
+      120   54.5  64.4  86.4  90.2  88.6
+      140   54.5  72.7  95.5 100.0 100.0
+      160   54.5  84.8  99.2 100.0 100.0
+      180   54.5  89.4 100.0 100.0 100.0
+      200   54.5  93.9 100.0 100.0 100.0
+      220   54.5  97.7 100.0 100.0 100.0
+      240   54.5  99.2 100.0 100.0 100.0
+  CEILING over all (P,f) on a 5-level / 0.05 grid: clean 100%  at P=0 f=1
+wrote /home/user/custom_robot/shots/r40-where-foundry-r1.png
+wrote /home/user/custom_robot/shots/r40-where-foundry-r2.png

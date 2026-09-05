@@ -11963,3 +11963,379 @@ What does not survive is any of this round's sub-point far-machine deltas being 
 contour, which is a stronger statement of the same conclusion. `beb000a`'s three controls all read
 72.8 / 52.0 on the far machine's weak rows to the decimal, so they are unaffected: the invariance was
 never a small delta, it was no delta.
+
+---
+
+## ROUND 40 — CRITIC: **clause B, ruled. The cell is 54.5, the failure has a MAP for the first time, and the meter that produces it has a seven-run spread three times the floor PART 7 has just proposed for it**
+
+Everything below is `23dc643dceac`, served from `dist-r38-main`, grid and foundry, tier 3, tick 420,
+seed 1234567. Three instruments: `tools/contour.mjs` (clause B), `shots/_massdrive.mjs --onbody`
+(clauses A and C), and `shots/_r40-where.mjs`, which is new, reads the two PNGs `contour.mjs --keep`
+already writes, re-walks the identical 7x7 boundary and reports **where on the machine the failing
+pixels are**. It renders no frame and spends nothing.
+
+### 1. INSTRUMENT FAULT 37 — **PART 7's floor is a RESOLUTION and it has been filed as a REPEATABILITY. They are different numbers and the second is three times the first. Seven runs of the identical command on one bundle put the grid far cell anywhere in 79.7..80.7, and the denominator PART 7 divides by is not constant either.**
+
+PART 7 lands between my captures and its denominator work is accepted in full — the `n` column is the
+thing this meter should have printed for twenty rounds and it is right that no far-machine delta under
+one pixel is a finding. **But `100/n` is the size of the smallest step the number CAN take. It is not
+the size of the steps it DOES take, and nobody had run this meter twice until this round.** I ran it
+five times, changing nothing:
+
+```
+  tools/contour.mjs --arena grid --tier 3 --ticks 420,  bundle 23dc643dceac,  five identical runs
+
+    run     stencil px | overall  near   FAR | far machine, weak rows: machine  behind
+     1  (--keep) 24413 |   85.0   86.2   80.7 |                          73.1    54.3
+     2           24415 |   84.8   86.2   79.7 |                          72.8    52.0
+     3           24415 |   84.8   86.2   80.0 |                          72.8    52.0
+     4           24415 |   84.8   86.2   80.0 |                          72.8    52.0
+     5           24415 |   84.8   86.2   80.0 |                          72.8    52.0
+    ------------------------------------------------------------------------------
+    spread               0.2    0.0    1.0 |                           0.3     2.3
+```
+
+**Put PART 7's two runs beside these five and the grid far cell has been observed seven times on one
+bundle at 79.7, 79.7, 80.0, 80.0, 80.0, 80.3 and 80.7 — a range of 1.0 points, THREE pixels.** PART 7
+proposes a floor of `max(0.2, 100/n)` = **0.33** for that cell. The observed spread is **1.0**. A floor
+set at one third of the scatter is a floor that will admit noise as a finding, which is the failure the
+floor exists to prevent, so:
+
+> **THE FLOOR IS THE OBSERVED REPEAT SPREAD OR ONE PIXEL, WHICHEVER IS COARSER — and for a
+> far-machine contour figure neither is known until somebody runs it three times.** `100/n` is a lower
+> bound on the floor and may never be used as the floor itself. On grid's far machine the measured
+> number is **1.0**; on foundry's, at n=132, it is unmeasured and cannot be smaller than 0.76.
+
+**And the denominator is not a constant, which `100/n` assumes it is.** PART 7 reads grid's far
+machine at **n = 300**; my five runs read **n = 301**, and my stencil came back **24413** on one run
+and **24415** on four. The subject itself changes between captures — see fault 38 — so `n` is a
+measurement with its own scatter and a floor derived from it inherits that.
+
+**Three consequences, and the third is the expensive one.**
+
+1. **The card's grid far cell is `80.0 [79.7, 80.7]`, not 79.7 and not 80.3.** Both of those are single
+   draws quoted as if they were the reading. RULING 30's disposition already governs this everywhere
+   else in the document; clause B has never been held to it because clause B has never been repeated.
+
+2. **PART 4's *"52.0 against 50.1, a difference inside the noise"* is not established.** The
+   difference is 1.9 and that column's own five-run spread is **2.3**. The direction survives easily —
+   the machine falls 44.7 against the background's 1.9, a factor of 23 — but *"inside the noise"* was
+   asserted against a floor that had never been measured for that column, and it happens to be a
+   sentence about a quantity smaller than the instrument's own scatter. The claim is right; the
+   warrant given for it was not there. **PART 7's floor does not cover this column at all** — it is a
+   luminance median, not a percentage, and `100/n` says nothing about it. Measured here for the first
+   time: the far machine's weak-row **machine** column has a five-run spread of **0.3** and its
+   **behind** column **2.3**.
+
+3. **PART 5's flatten sweep is a null that cannot distinguish itself from the meter.** The three rows
+   are `uFlatFar 0.35 -> 80.0`, `0.70 -> 79.3`, `uFlat/uFlatFar 1.0 -> 79.7` against a shipped 79.7.
+   Every one of those deltas — `+0.3`, `-0.4`, `0.0` — is inside a five-run spread of **1.0**. They
+   are not evidence that the flatten does nothing and they were not evidence that 0.35 helped. **The
+   control beside them survives and it is the one that carries the conclusion**: at `uFlat =
+   uFlatFar = 1.0` the far machine's weak-row machine median goes 72.8 -> 72.5 while the clean-row
+   median goes 117.5 -> 124.4. The weak column's five-run spread is **0.3** and the clean column moved
+   **6.9**, so that null is real and that step is real. PART 5's argument stands on its control and
+   not on its sweep, and the sweep rows should come off the table.
+
+### 2. INSTRUMENT FAULT 38 — **`tools/mass.mjs` and `tools/contour.mjs` photograph the far machine in DIFFERENT POSES. Clause A and clause B have never been scored on the same frame, and `mass.mjs`'s own header says they are.**
+
+`tools/mass.mjs:26-30`: *"The frame is pinned exactly as the silhouette meter pins it — same seed,
+same tick, same hand-driven camera settle, same VFX suppression — ... so a mass count and a contour
+reading taken at one commit describe the same photograph."*
+
+```
+  same bundle, arena, tier, tick, seed
+                        tools/contour.mjs              tools/mass.mjs --onbody
+    ROBOT 1     157x284 at 734,610   22468 px     156x283 at 735,610   22266 px
+    ROBOT 2      52x71  at 767,163    1944 px      53x79  at 765,158    1943 px
+```
+
+**The far machine is the same 1944 / 1943 pixels of machine arranged into a box 5 px higher and 8 px
+taller.** Equal area, different bounding box, is a **pose** difference and not an antialiasing
+difference, and 8 px is **11% of a 71-px machine**. Clause G's cell (`71 rendered px`, from contour)
+and clause A's cells (from mass, which sees 79) are readings of two different photographs.
+
+**I did not determine the cause and I am not filing one.** What I will put on the record is that the
+mechanism is already written down in this repository, in `tools/contour.mjs`'s own `--bloom` comment:
+*"the engine's frame loop calls onRender whether or not the sim is paused, so the pinned frame is
+re-composited during the wait."* `fastForward(n)` pins the **sim**; it does not pin the **render
+clock**. Anything on the machine driven by the render clock rather than the sim tick is therefore a
+function of how long the browser took to get to the shutter — which is also the simplest account of
+fault 37, and of RULING 46's unexplained `h/rpx` collapse, which closed with *"no meter here prints a
+machine's pose"*. **A meter that prints a machine's pose is the instrument this document now needs
+most**, and it is one number: the stencil's box for a fixed pixel count.
+
+Until it exists: **clause A and clause B figures may be quoted side by side and may not be quoted as
+properties of one frame.**
+
+### 3. RULING 47 — **PART 6 asks whether clause B's cell is 54.5 or 84.8. It is 54.5, it is a FAR-MACHINE cell, and 84.8 is withdrawn as a cell entirely — not because foundry is worse, but because an OVERALL contour percentage is 77% one machine by construction and can pass while the other machine is invisible.**
+
+PART 6 hands me the question and declines to answer it. The answer is yes, and it follows from
+RULING 43 without needing a new principle: *a cell is the worst member of an enumerated screened set,
+not the member that happened to be available.* Three arenas were enumerated this round on one bundle
+by one author. The worst is foundry's far machine at **54.5**.
+
+But the more important half is one PART 6 does not raise, and it disqualifies 84.8 on grid too.
+
+> **AN OVERALL CONTOUR PERCENTAGE IS NOT A CELL, ON ANY ARENA.** `contour.mjs`'s OVERALL row pools
+> both machines' boundary pixels into one denominator. On grid that denominator is **1326 samples, of
+> which 1025 — 77.3% — belong to the near machine.** The far machine contributes 301. So the overall
+> figure is, to within a quarter of its own value, a measurement of the near machine, and arithmetic
+> confirms it: `(86.2 x 1025 + 80.7 x 301) / 1326 = 85.0`, the number the meter printed. On foundry it
+> is worse — **559 near against 132 far, 80.9% near.**
+>
+> **Blind point 4 is about BOTH machines** — clause G and blind point 3 exist because the opponent has
+> to be resolvable — and a pooled percentage lets a 260-px hero carry a 39-px opponent that has lost
+> nearly half its outline. **84.8 was never a clause B cell. It was the near machine with the far
+> machine as a rounding term.**
+>
+> **CLAUSE B, AS IT NOW STANDS.** Four cells, both machines x two arenas that reproduce, each with its
+> boundary sample count, against a 90% threshold:
+>
+> ```
+>              near machine            FAR machine
+>   grid     86.2  (n=1025)      80.0 [79.7, 80.7]  (n=301 mine, 300 PART 7's)
+>   foundry  74.8  (n=559)       54.5               (n=132)
+> ```
+>
+> **The cell is 54.5 (foundry, far machine, n=132), NOT MET by 35.5 points**, and no cell of the four
+> passes. Orbital's 60.4 is published (PART 6) and **excluded from the gating set**: the standing rule
+> from round 30 bars orbital contour comparisons across sessions, and a figure that cannot be compared
+> cannot gate. It is the worst-but-one and it does not change the verdict.
+>
+> **STANDING, from here: a clause B figure is quoted per machine, per arena, with `n`.** The far
+> machine's `n` is 132 on foundry — **0.76 points per pixel** — and a cell whose quantum is three
+> quarters of a point cannot be reported to one decimal without saying so.
+
+### 4. RULING 48 — **the diagnosis column earns its place and its FIRST reading did not. PART 5 withdrew the mechanism; the location was never checked at all, and the map says the grid failure is TWO PARTS, 36 pixels, at the top of the machine.**
+
+Two questions were put to me about commit `5c60b81`'s column. Both are answered, and they land on
+opposite sides.
+
+> **(a) Does the column say anything the step's own definition did not guarantee? YES — and only one
+> thing.** The objection is real: `weak` is selected on `|machine - behind| < 25`, so the two medians
+> are forced together, and since `|i_k - o_k| < 25` holds pointwise, monotonicity of the median forces
+> `|med(i) - med(o)| < 25` as well. **"weak rows: machine 69.2, behind 65.0" is very nearly a
+> tautology as a PAIR.** What is not forced is where the pair sits.
+>
+> Write it as a decomposition against the clean rows. Overall: clean sits at `M = 148.3`, `B = 52.4`,
+> a step of **95.9**. For a weak pixel, `95.9 + (Δm - Δb)` must lie in `(-25, 25)`, so
+> **`Δm - Δb` is forced into `[-121, -71]`** — the step's definition guarantees that ~96 points of
+> separation disappeared, and guarantees nothing about which side gave them up. **The SPLIT is free
+> and the split is the column's entire content:**
+>
+> ```
+>                     Δ machine   Δ behind   sum   machine's share of the collapse
+>    overall            -79.1      +12.6     91.7            86%
+>    near machine       -87.8      +20.4    108.2            81%
+>    FAR machine        -44.7       +1.9     46.6            96%
+> ```
+>
+> So the column is not redundant, and the one sentence it licenses is *"the machine side gave up N% of
+> a collapse that had to happen"*. It does **not** license *"the background does not move"* — see
+> fault 37 — and it does not license anything about a fix, because a fix acts on a **level**, not on a
+> between-population difference: the far machine's weak background sits at **52 of 255**, with 52
+> points of headroom underneath it that no comparison of two populations can see.
+
+> **(b) Is it "the machine's own unlit side"? No, and PART 5 has already withdrawn the mechanism on a
+> control. Nobody checked the LOCATION, and it is the sharper finding.** `shots/_r40-where.mjs` maps
+> every boundary sample, 8-connects the weak ones and reports the stretches. Grid:
+>
+> ```
+>   FAR machine (52x71, boundary n=301):  36 weak pixels, TWO connected stretches
+>       18 px   9x6  at 782,163          the left head fin
+>       18 px  10x8  at 809,167          the right head fin
+>     100% of the weak boundary is in the TOP FIFTH of the box.  0% below it.
+>     100% of it has the MACHINE BRIGHTER than what is behind it (72.8 against 52.0).
+>
+>   NEAR machine (157x284, boundary n=1025): 100 weak pixels, 11 stretches, 4 carry 88 of them
+>       23 px  10x23 at 790,622  }  the two sides of ONE raised gun arm
+>       16 px   7x16 at 807,630  }
+>       25 px  11x9  at 817,668  }  the top of the torso and the right shoulder joint
+>       24 px  15x10 at 846,700  }
+>     94% in the top TWO fifths.  0% in the bottom fifth.
+>     only 37% has the machine brighter — this population is genuinely MIXED.
+> ```
+>
+> **The grid failure is two head fins and one raised arm.** It is not a side, it is not a flank, it is
+> not at the feet, it is not in the other machine's shadow — the near machine's box begins 377 px below it —
+> and it is not behind a stage element: the background half on those pixels runs 44.5 to 60.3 at
+> p10/p90, a narrow dark band, which is the deck.
+>
+> **And the two machines do not fail for the same reason.** 100% machine-brighter on the far, 37% on
+> the near. The column's OVERALL row averages a pure machine-value failure and a mixed one into
+> `69.2 / 65.0`, a pair that describes neither machine. **The `overall` row of the diagnosis column
+> should not be quoted.** The per-machine rows should, and they were right there.
+
+> **REJECTED HYPOTHESIS, published because a screened reading without its rejections is a selection.**
+> I expected the answer to be the 7x7 window on thin appendages: a 2-px fin cannot fill a window's
+> machine half, so its mean would be dragged toward the background and the meter would be inventing
+> the failure. **It is not.** Local mask occupancy in the window (of 49) reads:
+>
+> ```
+>                       weak median   clean median   weak on <=14/49   clause B with thin boundary DROPPED
+>    grid    near            28            28             11.0%              86.2 -> 87.2
+>    grid    FAR             24            28             11.1%              80.7 -> 81.8
+>    foundry FAR             29            27              0.0%              54.5 -> 54.3
+> ```
+>
+> On foundry's far machine the weak pixels sit on **thicker** geometry than the clean ones and
+> excluding thin boundary makes the cell **worse**. The window is not making these numbers. **The
+> failure is a real value failure on named parts, which is what makes PART 5's albedo reading the
+> right one** — and the map is what turns *"the machine's own dark material regions"* into two fins,
+> an arm and a shoulder that somebody can go and look at.
+
+> **AND FOUNDRY IS NOT GRID, which is the thing the map exists to catch.** On foundry the far
+> machine's 33 weak pixels come in **five** stretches distributed across the whole silhouette — top-to-
+> bottom fifths **27.3 / 30.3 / 18.2 / 3.0 / 21.2** against an all-boundary **23.5 / 27.3 / 16.7 /
+> 13.6 / 18.9**, which is no concentration at all. Grid's far machine is a **localised** failure of two
+> named parts; foundry's is the **whole machine** — a dark red chassis at 69 against a dark deck at 51.
+> A fix aimed at grid's two fins would move foundry by nothing. **`shots/r40-where-*.png` are the four
+> crops; they are the first pictures in this project of WHERE clause B fails.**
+
+### 5. RULING 49 — **the flatten is REFUSED as a route to clause B, on the builder's own control and not on principle. Here is the acceptance test, and the number it has to beat is not a clause B number.**
+
+The flatten was put to me as *"the direct answer to a contour that fails because the machine goes
+dark"*. It is not, and the reason is now measured twice over.
+
+> **1. It is refused on the mechanism.** `FILL_FRAG` divides the albedo out, compresses the
+> illumination alone and multiplies the paint back in — *"what the machine is made of survives
+> untouched"*. PART 5's `uFlat = uFlatFar = 1.0` control shows the weak rows are invisible to it
+> (72.8 -> 72.5, against a five-run spread of 0.3, while the clean rows move 6.9). **A pixel that is
+> dark because of paint has no lever arm on an illumination knob at all.** That is the whole ruling
+> and it does not need a sweep.
+>
+> **2. And its SHAPE is wrong for this clause even where it does have a lever arm.** Clause B's meter
+> reads `|m - b|` at the silhouette. The flatten is `mix(lightX, uLightPivot, flatX)` — a
+> **contraction of `m` toward a constant**. Its derivative on the step is `sign(m - b) x (P - m)`, so
+> it helps only where the pivot lies on the far side of the machine from the background and **hurts
+> wherever the pivot lies between them**. On grid's far machine **100%** of weak pixels have `m > b`
+> (73 against 52); on the near machine **63%** have `m < b`. **One pivot moves the two machines'
+> weak sets in opposite directions**, and that is a property of the knob, not of its tuning. Clause B
+> wants a **translation**; the flatten is a **compression**. This is arithmetic on the measured
+> boundary samples and it is a MODEL, not a render — I state it as a reason not to sweep, never as a
+> figure.
+>
+> **3. So: the flatten ships at 0.0 and stays there.** It is not deleted — it is the only knob in the
+> file that can make the machine arena-independent and that claim has its own use — but **no setting
+> of it may be filed against clause B**, and PART 5's three sweep rows come off the table under fault
+> 37 rather than being read as a null.
+
+> #### THE ACCEPTANCE TEST, for the flatten or for anything else aimed at clause B
+>
+> **Meters, fixed, no new instrument.** Clause B: `tools/contour.mjs --tier 3 --ticks 420`, arenas
+> `grid` **and** `foundry`, **three runs**, cell = the minimum. Clauses A and C:
+> `shots/_massdrive.mjs --onbody --repeat 3 --tier 3 --ticks 420`, RULING 30's disposition — the
+> **whole observed range** on the passing side, never the median. Every figure names its bundle. Every
+> clause B figure names its `n`.
+>
+> **Baselines, re-measured by me this round on `23dc643dceac`, not remembered:**
+>
+> ```
+>    clause B  grid  near 86.2 (n=1025)   FAR 80.0 [79.7, 80.7] (n=300-301)
+>              found near 74.8 (n=559)    FAR 54.5              (n=132)
+>    clause A  near count 4.3 [4.3,4.3]  top-4 85.2 [85.2,85.2]
+>              FAR  count 5.5 [5.5,5.5]  top-4 86.2 [86.2,86.2]
+>    clause C  near ratio 1.707 [1.706, 1.709]   FAR ratio 1.288 [1.288, 1.288]
+> ```
+>
+> **ACCEPTED as a default — the change ships — iff ALL of:**
+>
+> - **B.** `clean >= 90.0` on **all four cells** (near and far, grid and foundry), each the minimum of
+>   three runs.
+> - **Y, clause A.** Whole observed range: **count in `[4.0, 6.0]` on both machines** and **top-4
+>   `>= 85.0` on both**. **The binding number is the NEAR MASS COUNT.** It stands at **4.3** against a
+>   floor of **4.0** with a repeat spread of 0.0, and the flatten's own mechanism is mass merging.
+>   **Clause A's entire margin under a value change is 0.3 of a mass**, and clause A is one of only
+>   four clauses on this card with a MET.
+> - **Z, clause C.** Max of range **not worse than baseline max + 0.05** (round 24's round-trip floor)
+>   on both machines: **near `<= 1.759`, far `<= 1.338`.** Clause C is already NOT MET at 1.707 /
+>   1.288; a failing clause moving further from its threshold is a pure loss and buys nothing.
+>
+> **ACCEPTED as progress — kept, published, card unchanged — iff:** clause B improves on **all four**
+> cells by more than that cell's own spread, **and** every clause A and C cell stays inside its own
+> repeat spread. This is the only tier that pays for a partial.
+>
+> **REFUSED otherwise, and specifically refused if it improves grid and costs foundry.** PART 6 is
+> right that the one-arena version of this measurement would have called a foundry regression a
+> success, and the reason to say it as a rule is fault 38's sibling: **the near machine on foundry is
+> the one cell in the set where the failure is a BRIGHT BACKGROUND** — PART 6 measures its weak rows at
+> machine 83.8 against behind 83.6 — so a change that raises the machine everywhere fixes three cells
+> and can only worsen the fourth. **A clause B change that has not been read on foundry's near machine
+> has not been read.**
+>
+> **What the flatten is allowed to cost, in one sentence:** nothing at all, because on the only cell
+> it was proposed for it has no lever arm, and a knob that cannot be shown to buy a clause may not be
+> allowed to risk two that are MET.
+
+### 6. RULING 50 — **clause B is REACHABLE and blind point 4 is not a permanent FAIL. It costs about 40 levels of machine luminance, that is a large change, and it is not an unreachable one.**
+
+I was invited to rule clause B unreachable. I decline, and the reason is an existence result rather
+than an opinion.
+
+> **The LIFT MODEL.** On the measured boundary samples, add a constant `X` to the machine half of every
+> window and recompute what `contour.mjs` would print. This is the complement of the flatten — a
+> **translation**, the transform a paint change makes — and it is arithmetic on captured pixels, **a
+> MODEL and not a render**. It says what the meter would read; it does not say any knob produces it,
+> and it prices nothing.
+>
+> ```
+>    levels added to the machine half     0    +10    +20    +30    +40    threshold 90
+>    grid    near  (n=1025)             86.2   88.1   90.6   91.5   92.9
+>    grid    FAR   (n=301)              80.7   87.0   91.0  100.0  100.0
+>    foundry near  (n=559)              74.8   83.4   88.2   92.8    97.7
+>    foundry FAR   (n=132)              54.5   68.2   82.6   88.6    97.7
+> ```
+>
+> **A uniform +40 clears the 90% threshold on all four cells.** +20 clears grid and neither foundry
+> cell. So the answer to *"what can pay"* is: **a translation of about 40 levels, and nothing smaller
+> reaches the worst cell.**
+>
+> **And a translation is the right shape twice over.** It adds a constant to every mass, so the
+> per-mass sd and the between-mass step are both unchanged and **clause C's ratio is invariant under it
+> by construction** — the one guard in the acceptance test that a value change would otherwise be
+> expected to trip. It leaves the segmentation's absolute bands unchanged up to phase, which
+> `regionsAt` already averages over four phases, so **clause A's 0.3-mass margin is not what a
+> translation spends.** The flatten spends exactly that margin and buys nothing; a translation spends
+> neither and buys the clause. That contrast is the useful output of this round.
+>
+> **What it will actually cost is clause D and clause E, and I am not pricing them here.** 40 levels on
+> a far machine whose median is 106 is a 38% brightening; clause E (machines >= 50% of the brightest
+> 1%) can only improve, and clause D (machine chroma > stage, currently **0.149 against 0.129**, a
+> margin of 0.020) is the one at risk, because the cheapest way to add 40 levels is to add white.
+> `shots/_r16chroma.mjs` exists and is one capture. **Any clause B attempt is quoted with clause D
+> beside it or it is not quoted.**
+>
+> **Two things this does NOT say, and they are the boundary of the ruling.** It does not say the far
+> machine's fins on grid and its whole chassis on foundry take the same +40 — they are different
+> failures and the map says so. And it is one pin, one tier, one tick, two arenas, one bundle.
+>
+> **BLIND POINT 4 STAYS FAIL and it is NOT a permanent FAIL.** The margin is 35.5 points on the worst
+> cell, the route is a value translation of ordinary size, and the reason four rounds of work bought
+> nothing is that all four went at the outline — the hull, whose response curve `66ab2d9` swept to
+> exhaustion and whose mechanism PART 5 then explained (it darkens the OUTSIDE, and a weak stretch is
+> weak because the inside is dark too). **The outline was never the thing. The paint is, the map names
+> which paint, and no round before this one had looked.**
+
+### 7. Instruments and figures left in the tree
+
+- **`shots/_r40-where.mjs`** — the map. Reads `contour.mjs --keep`'s two PNGs, re-walks the identical
+  boundary, and prints: the weak set's connected stretches with boxes, its vertical distribution
+  against the whole boundary's, the sign of `machine - behind` on it, the local mask occupancy that
+  tests the thin-geometry hypothesis, and the lift and pivot models. One browser launch, no render.
+- **`shots/r40-where-grid-r1.png` / `-grid-r2.png`** and **`-foundry-r1.png` / `-foundry-r2.png`** — the crops,
+  boundary coloured by its own step: red invisible, orange weak, yellow marginal, green clean.
+- **`shots/r40-contour-repeat.txt`**, **`shots/r40-where.txt`** — the five repeat runs and both maps.
+
+### 8. What I did not measure
+
+- **Orbital was not re-captured by me.** PART 6's 60.4 is quoted and excluded from the gating set on
+  the standing rule, not on any doubt about the capture.
+- **The lift model is not a render and I did not build one.** No knob in `materials.js` was swept by
+  me this round; the sweep of `uFlat`/`uFlatFar` is the builder's and I stayed off it.
+- **Clause D was not re-measured**, and I have made it a condition on a change I cannot price.
+- **Fault 38's cause is undetermined.** I have a mechanism and the repository's own comment supporting
+  it; I did not test it, and it is not filed as a finding.
+- **The repeat spread is five runs on one arena.** Foundry's cell is a single capture and its `n` is
+  132, so its own spread is very likely **worse** than grid's 1.0 — which is an argument for the
+  three-run rule in the acceptance test and not a figure.
