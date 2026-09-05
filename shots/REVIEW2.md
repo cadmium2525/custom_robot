@@ -13670,3 +13670,71 @@ is a direction and not a quantity: RULING 53 forbids me a number and I have not 
   comparable frame-for-frame to any clause B figure in this document.**
 - **Nothing in `src/` changed this round and nothing ships.** `npm test` and a clean `vite build` were
   run before committing anyway.
+
+---
+
+## ROUND 42 — BUILDER: **fault 44's cause is found and half-fixed, and the other half's obvious repair is REFUSED by its own test**
+
+### 1. The cause: a settle converges dampers and cannot converge integrators
+
+`SETTLE_FN` exists because `damp(a, b, lambda, dt)` forgets its starting value — 240 iterations and
+every damped pose term lands in the same place whatever the load-dependent frames before it did. Four
+terms in `RoboModel.update` are **integrated, not damped**: `spinAngle += spinRate * dt`, `tumble +=
+rate * dt`, `getupT += dt`, and the toe bones' `rotation.y += dt * (5 + heat * 26)`. An integrator
+keeps its initial value forever and the settle adds a constant four seconds on top.
+
+Zeroed inside the settle in all three copies at once — `contour.mjs`, `mass.mjs`, `_r15dump.mjs`, the
+meters behind clauses A, B, C and D — at `294f5e0`.
+
+**On grid it works.** Five draws of the identical command: stencil **24401 px** every time, far box
+**55x81** every time, far cell **70.9** every time, spread **0.0**, where the same command previously
+returned two stencils and a 10.3-point swing.
+
+**And it re-bases the clause.** The pose it settles on is a THIRD one: grid's far cell is **70.9**,
+not the 80.3 that fourteen of seventeen draws gave nor the 69.7 the other three gave. Every clause B
+figure in this document predates a repeatable pose.
+
+### 2. On foundry it is not enough, and the probe says what is left
+
+`shots/_r44probe.mjs` (new, tracked) runs `contour.mjs`'s exact pin and settle and dumps every model
+field. Four runs, foundry, bundle `d9cef324894e`:
+
+- **Immediately after the settle, every field is identical** — root positions, `lean`, `bank`, `heat`,
+  `chargeAmt`, all four integrators, and the **LOD draw ranges element by element**
+  (`[22176, 12636, 8286, 1296]` on the far machine). Only `lodPx` moves, in the sixth decimal.
+- **Read again where the shutter is** — after the same 700 ms waits — the model fields are STILL
+  identical and `lodPx` is not: **331.72 / 331.717 / 331.718 / 332.209**.
+
+`lodPx` is a pure function of the camera and the model's position. The positions do not move. **So
+what drifts between the settle and the shutter is the CAMERA, and `g.engine.onRender = null` does not
+stop all of it.** That is the residual, it is not the machines, and it was worth knowing before
+guessing again.
+
+### 3. THE OBVIOUS REPAIR IS REFUSED, and by its own test
+
+If the settle is deterministic from any state, running it again immediately before the capture should
+pin whatever the waits moved. Implemented in all three meters, six foundry draws:
+
+```
+   draws        stencil     near cell    FAR cell      before this change
+   5 of 6         7863        42.5..41.8    2.3        near 70.7 / 74.5, far 44.1 / 54.5
+   1 of 6         7689        39.1          2.3        stencils 8037 (x2), 8220 (x1)
+```
+
+**It does not fix the two poses — 7863 against 7689 — and it destroys the frame.** The near cell falls
+from ~72 to ~42 and the far cell reads **2.3%**, which is not a plausible silhouette; it is the meter
+breaking. Running the settle a second time after the UI has been hidden and the post chain touched
+does something this round has not diagnosed, and a repair that halves the number it is meant to
+stabilise is not a repair.
+
+**REVERTED in full.** `294f5e0`'s integrator fix stands; the re-settle is not in the tree. Filed
+because a refuted repair that nobody records is a repair the next round will try again.
+
+### 4. What this costs, stated plainly
+
+- **Grid is repeatable and re-based.** Its four clause B cells must be re-taken; 86.2 / 80.3 and the
+  whole far-only comparison in ROUND 40 were measured on an unpinned subject.
+- **Foundry is NOT repeatable**, and its far cell — clause B's cell, `n = 132` — is the least
+  repeatable number on the card. Until the camera writer is found, **every foundry figure is a
+  distribution over draws and RULING 51's six-draw floor is mandatory there, not advisory.**
+- **Nothing about the renderer changed.** Both lift uniforms remain 0.0.
