@@ -11276,3 +11276,425 @@ this meter across the document's history and this sweep is the first to measure 
 than one step of it. What is left is either the far machine's own value against its background — `body
 109.8 vs background 47.4` is already a 2.3x ratio — or the resolution the contour is drawn at, which
 is a different clause's argument.
+
+---
+---
+
+## ROUND 39 — CRITIC: **the 100.0 survives every control I could point at it, including the one I built to break it — and the standing attribution method PART 2 just wrote into this document is inverted**
+
+Bundle `23dc643dceac`, `dist-r38-main`, grid, seed 1234567, tier HIGH, budget 1400 throughout. I
+re-captured none of the three pins at the seven scored ages and ran no kill column; every figure
+below is taken off the builder's own PNGs with an instrument of mine, or is a new capture at ages
+that are **not** in the scored grid and are marked as such.
+
+New meter: **`shots/_r40-subject.mjs`**, whose whole purpose is to audit `_r25-cover.mjs`'s
+DENOMINATOR. Output filed at `shots/r40-subject.txt` and `shots/r40-fine-subject.txt`.
+
+---
+
+### 1. The 21 cells reproduce on a second instrument, and the three columns the table did not carry
+
+`_r25-cover.mjs` reports a coverage percentage **of the opponent's own stencil**. Its numerator has
+been audited to death across four instrument faults. **Its denominator has never been audited at
+all** — it is chosen per frame by a connected-component pass, and neither gate of `_r37-screen.mjs`
+bounds it. So I wrote the meter that walks the same two PNGs and prints what the subject IS.
+
+**Every one of the 21 coverage cells reproduces to the decimal**, on my code, from the builder's
+captures. I could not break a single figure in that table.
+
+```
+  pin 1248        _r40-subject.mjs on shots/r38-1248-*, bundle 23dc643dceac, tier HIGH
+
+   ms  | who  miss | box    n(px) leak | h/rpx | sep/R | Lmed Lp10 | unc |  L>25   L>60  L>100  L>150 | disc r80
+    17 | robo1  13 | 44x82   2091    0 |  1.98 |  0.49 |    1    0 | 1856 |  11.2    8.3    5.4    3.2 |   30.9
+   117 | robo1  10 | 46x62   1367    0 |  1.55 |  0.42 |    0    0 | 1340 |   2.0    1.2    0.4    0.1 |   28.1
+   233 | robo1  16 | 49x70   1721    0 |  1.98 |  0.31 |  227  138 |   15 |  99.1   96.8   94.9   88.0 |   62.5
+   333 | robo1  13 | 38x39    986    0 |  1.13 |  0.24 |  112   59 |    0 | 100.0   89.0   58.6   20.2 |   87.5
+   433 | robo1  22 | 36x44   1006    0 |  1.18 |  0.18 |   73   61 |    0 | 100.0   93.7    0.3    0.0 |   97.3
+   533 | robo1  21 | 35x40   1105    0 |  1.11 |  0.17 |   58   26 |  106 |  90.4   30.7    0.0    0.0 |   61.3
+   800 | robo1   6 | 39x64   1545    0 |  1.55 |  0.47 |    0    0 | 1490 |   3.6    2.5    1.0    0.1 |   24.1
+```
+
+**`who`/`miss`** — the meter picks "the smallest component" and has never once been checked against
+the engine's own idea of where the far machine is. It is `robo1` at **all 21 cells of all three
+pins**, centroid within **6-26 px** against a projected radius of 34-58. The subject-selection rule
+is right, and that is now a measurement instead of an assumption.
+
+**`leak`** — RULING 40 left `_r25-cover.mjs`'s box rule standing as "a defect of kind rather than of
+size", unbounded on any other pin. Bounded now: **0 px at every age of pin 1248**, 0-2 at 1195, 0-3
+at 896. Worst case 3 px of 3925 = **0.08 points**. The defect is real, it is under every floor in
+this document, and it does not touch the cell.
+
+**`disc r80`** — the subject-size control, and it is the column that decides the ruling.
+
+---
+
+### 2. RULING 43 — **the 100.0 STANDS. I built the instrument that would have broken it and it did not break it. The subject is a whole machine, the covering is fire, and a target twice its size standing in the same place would have read the same number.**
+
+> The question put to me was whether the opponent at 333 ms — **38x39 px, 986 stencil pixels, the
+> smallest subject in the scored set and less than half the smallest at either other pin — 2171 at
+> 1195, 2690 at 896** — is a whole machine, a machine mostly out of frame, or
+> a machine mostly behind an occluder. **It is a whole machine.** One connected component; **zero**
+> sub-threshold crumbs, so it is not a machine shattered into a torso and a scatter of legs that gate
+> 2 would still have counted as "2 boxes"; its box lies wholly inside the 1600x900 frame, so it is
+> not clipped; and I looked at the pixels at 4x, which this document's own crop tool exists for — a
+> compact machine standing on the deck with a tracer crossing it. It is small because it is
+> **18.8 m away**, the most distant opponent in the set, in a compact pose at that age.
+>
+> **The number is not bought by the denominator, and I expected it to be.** That was the hypothesis I
+> went in with: a ratio saturates trivially when its denominator is 986. So `_r40-subject.mjs` scores
+> the same cut over **fixed-radius discs centred on the opponent** — a subject the pin cannot shrink.
+> A disc of radius 80 px has an area of 20,106 px, **twenty times the machine's own stencil**, and it
+> reads **87.5%** at 333 ms and **97.3%** at 433 ms. At r160, an area eighty times the machine, **63.3**
+> and **73.2**. The fire is that dense across the whole neighbourhood. **A machine twice as tall
+> standing where that one stands would still have read essentially 100.** The hypothesis is dead and
+> it was mine. Section 7 kills it a second time on a subject of **807 px**, smaller still, which also
+> reads 100.0 with an r80 disc at 95.2.
+>
+> **Nor is it thin smoke sitting just over the cut** — the hypothesis RULING 41 could not test
+> because the frame it needed was gone. Here the frames are on disk. At 333 ms the covering over the
+> machine has **median luminance 112 of 255 with a 10th percentile of 59**; at 433 ms, **73 with a
+> p10 of 61**. Both are clear of the 25 cut at *both tails*. And `unc` — stencil pixels of the
+> opponent not covered at L>25 — is **exactly 0** at both ages, of 986 and 1006. The cell is not
+> 100.0 by rounding. **Not one pixel of that machine is unobscured.**
+>
+> **So: it is a finding about the renderer, it is conditioned on the pin's geometry, and the cell may
+> not be quoted without that geometry.** PART 2 asked me to rule on *"whether a machine standing that
+> far inside a detonation is allowed to disappear"*. **It is not, and the clause already says so** —
+> clause F sub-2's threshold is 25% and this reads 100.0 — but the sentence that carries the cell has
+> to carry the encounter, because `sep/R`, the opponent's screen offset from the blast centre over the
+> blast's own projected radius, is **0.24 and 0.18** at the two cells, and pin 1195, which carried
+> this card for six rounds, never gets below **0.67**. Gate 1's `d3 < 1.00` is a world-space test in
+> mass radii: it says the opponent is inside the fire and says **nothing about where inside**. The
+> three admissible pins sample `sep/R` from 0.17 to 1.32 and the cell — a maximum — is won by the
+> deepest. That is not a defect of the screen. It is a fact about the cell that the cell does not
+> print.
+>
+> **STANDING REQUIREMENT, added to RULING 40's outline pair:** a clause F sub-2 cell is quoted with
+> the opponent's **stencil pixel count** and its **`sep/R`**. Both are free on every capture already
+> taken. A coverage ratio published without its denominator is the same shape of claim as a mask
+> published as a difference, and this document has four instrument faults of that shape.
+>
+> **CLAUSE F SUB-CLAUSE 2, AS IT NOW STANDS:** `100.0 (worst of 21 cells, 0 absent, 3 pins of 3; pin
+> 1248 @ 333 ms and 433 ms; subject 986 px and 1006 px; sep/R 0.24 and 0.18)` against a 25%
+> threshold. **NOT MET, by four times the threshold** — and for the first time in this document's
+> history the cell is a maximum over a complete screened set rather than over whatever anybody
+> happened to capture.
+
+> #### RULING 43, addendum — **RULING 41's last sentence is FALSIFIED and I withdraw it. It is the sample-of-one fault made in the predictive direction, by the ruling that exists to punish the sample-of-one fault.**
+>
+> RULING 41 closed: *"It is not 100.0 and **100.0 must not reappear on the card.**"* It has
+> reappeared, on the most admissible pin in the set, carrying the outline pair that RULING 40 made
+> compulsory. The reasoning was: pin 956's 100.0 was an artefact of a blast that never touched the
+> machine, therefore 100.0 is an artefact. **That is one pin generalised to a population, which is
+> the exact error RULING 34 withdrew four rounds of findings for.** Two sections after striking my own
+> dilated-ring column for being a rule written faster than the meter that would test it, I wrote a
+> forecast faster than the capture that would test it. **Same round, same author, and the third
+> instance of that habit in three rounds.**
+>
+> What was load-bearing in RULING 41 survives untouched: pin 956 is out at `d3 = 2.37`, every figure
+> taken on it stays void, and the 800 ms row stays withdrawn. What is struck is the forecast.
+
+**CAUTION — the 69.2 is the round's headline and it is quoted on the wrong column.** At 433 ms the
+opponent's invisible contour reads **98.6 ON against 29.4 OFF**. That `OFF` is the **largest baseline
+invisible-contour on the entire card** — 2.2x the next (13.5, also 1248) and 6-12x typical at 896 and
+1195 — and the same age's `contour step blast OFF` is **28.1**, also that pin's lowest. **Nearly a
+third of that machine's outline is already gone before any effect is drawn**, on a 1006-px subject
+whose contour is of order 130 samples. A *difference* of two percentages is not a physical quantity
+when the subtrahend is a third of the range. **Quote the ON column: 98.6% of the opponent's contour
+is invisible.** It beats 1195's 58.0 by a wider margin than the loss column gives it, it needs no
+baseline — and section 7 shows the loss column is not even stable under a finer age grid while the
+ON column is. The builder's ranking survives; the builder's statistic does not.
+
+---
+
+### 3. INSTRUMENT FAULT 35 — **the coverage meter is CENSORED at exactly the two cells that set the card, and every kill column at those two cells was run against that ceiling. No single-stage knockout at 333 or 433 ms was capable of returning any number but 100.0.**
+
+`unc = 0` at both cells: the statistic is at its ceiling with zero headroom. A lesion experiment
+reads a **derivative**, and a censored statistic has none. Killing a stage can only move `L>25`
+downward if it drops some pixel **below 25**, and at 333 ms the covering's 10th percentile sits at
+**59** — more than twice the cut. **A stage could remove half the luminance of every pixel in the
+frame and the cell would still read 100.0.**
+
+So `baseline 100.0 -> kill X -> 100.0` at those two ages is not evidence that X is not responsible,
+and it is not evidence of redundancy either. It is not evidence. It is the number the meter was
+going to print whatever happened.
+
+This is fault 28's and fault 23's shape in a new place: a meter reporting a property of its own range
+instead of a property of the frame. **PART 2's fault 34 diagnoses the design and misses the
+instrument** — it argues that single-stage columns cannot separate redundant causes, which is true in
+general, but at 333 and 433 ms they could not have separated *anything*, redundant or not. The
+register stands at **34 faults on file, 35 issued** (fault 31 struck by the round-30 third addendum,
+number not recycled), so this is **35**.
+
+**The fix costs nothing and is already in the tree.** `_r25-cover.mjs` has printed `L>60` since round
+25 and `_r40-subject.mjs` adds `L>100 / L>150 / L>200` and the median. At 333 ms the baseline reads
+`89.0 / 58.6 / 20.2`, at 433 ms `93.7 / 0.3 / 0.0`. Uncensored, free, and the columns an attribution
+must be read on.
+
+---
+
+### 4. RULING 44 — **PART 2's standing method is INVERTED and must be fixed before anybody uses it. A kill column establishes NECESSITY, never sufficiency — and PART 2's own 533 ms row is the proof, three lines above the box that says the opposite.**
+
+First, what is right, because it is the best attribution work in this document and it should not be
+lost in a correction. **PART 2's two partition columns are a complete attribution and the first one
+this project has ever taken.** `--kill fireshell,smokeshell` reads `3.7 / 10.6 / 19.3 / 7.3` — the
+complement of the shell pool is **insufficient**, so the pool is **necessary**. `--kill
+particles,flares,sparks,shockwaves,decals` reads `99.1 / 100.0 / 100.0 / 89.5` — that is a
+*keep-only-the-shells* column, and it says the pool alone is **sufficient**. Necessary and
+sufficient, two captures, uncensored on the necessity side. That pair is the method and PART 2 built
+it.
+
+> **THE LOGIC, written out once so it cannot be inverted again.** Let `C(S)` be the coverage produced
+> by rendering the stage set `S`. A `--kill X` capture renders `All \ X` and measures `C(All \ X)`.
+>
+> - `C(All\X)` **collapses** ⟹ the complement is insufficient ⟹ **X is NECESSARY.**
+> - `C(All\X)` **holds** ⟹ X is not necessary. **Nothing whatever about X on its own.**
+> - **Sufficiency of X is `C({X})`**, and no kill-X capture contains it. It needs a **keep-only-X**
+>   capture, which is a different render.
+>
+> **PART 2's fault-34 box states this exactly backwards:** *"A kill column establishes SUFFICIENCY. It
+> has never been able to establish NECESSITY."* And the licensed quotation it lays down — *"stage X
+> alone is sufficient to cover N%"* — attributes to X a number measured with X **removed**.
+>
+> **PART 2's own table refutes it.** `--kill smokeshell` at 533 ms reads **16.0** against a baseline
+> of 90.4. Under the licensed wording that becomes *"smokeshell alone is sufficient to cover 16.0%"*,
+> which is nonsense; the true reading is *"everything except smokeshell covers only 16.0%, therefore
+> **smokeshell is necessary at 533 ms**"* — which is a **necessity** claim, and it is the strongest
+> single-stage result in the whole table. PART 2's prose gets it right in words (*"the only
+> single-stage kill anywhere here that crosses the threshold... the smoke is alone"*) three lines
+> above a box that licenses the opposite. **The prose is correct and the standing method is wrong,
+> and it is the standing method that the next round will quote.**
+>
+> **CONSEQUENCE FOR THE REDUNDANCY FINDING.** PART 2 concludes *"There are three independently opaque
+> layers... every stage is a complete covering stage on its own."* **No column in that table supports
+> it,** because every one of them measures a complement. What the three single kills establish is that
+> each of the three **PAIRS** — `{lobes,cores}`, `{cores,smoke}`, `{lobes,smoke}` — is sufficient.
+> Three sufficient pairs is a weaker and different statement than three sufficient singletons, and the
+> gap between them is exactly the keep-one column that was not run. `kOnlyShell` is half-captured on
+> disk and it is the missing half.
+>
+> **And the third layer is not there.** Read at uncensored cuts, `--kill firecore` reproduces the
+> baseline at 333 ms **identically at every cut and every percentile** — `L>60 89.0`, `L>100 58.6`,
+> `L>150 20.2`, `Lmed 112`, `Lp10 59`, `Lp90 167`, all of them the baseline's own digits — and at
+> 433 ms within `L>100 0.2 vs 0.3` and `Lmed 72 vs 73`. **The cores are not necessary and have never
+> been shown to be sufficient. "Three independently opaque layers" has support for at most two.**
+>
+> **AND THE STAGES ARE NOT INDEPENDENT OCCLUDERS AT ALL — TWO OF THE THREE KILLS MAKE THE COVERING
+> BRIGHTER.** This is the finding that decides the section, and it is invisible on the `L>25` column
+> that PART 2 read:
+>
+> ```
+>   pin 1248, bundle 23dc643dceac, _r40-subject.mjs on shots/r38-1248-{,kL-,kC-,kS-}*
+>                         233 ms                  333 ms                  433 ms                  533 ms
+>                    L>25 L>60 L>100 Lmed   L>25 L>60 L>100 Lmed   L>25  L>60 L>100 Lmed   L>25 L>60 L>100 Lmed
+>   baseline          99.1 96.8  94.9  227  100.0  89.0  58.6  112  100.0 93.7   0.3   73   90.4 30.7   0.0   58
+>   --kill firelobes  79.7 70.8  55.5  110  100.0 100.0  91.3  154  100.0 92.4   1.3   66   89.8 27.2   0.0   57
+>   --kill firecore   97.4 96.6  94.8  227  100.0  89.0  58.6  112  100.0 93.7   0.2   72   90.4 30.7   0.0   58
+>   --kill smokeshell 99.1 96.8  94.9  227  100.0  91.3  75.8  122  100.0 98.6  77.7  119   16.0  8.0   3.3    3
+> ```
+>
+> At 333 ms, **deleting the lobes takes the covering from `L>100 58.6` to `91.3` and its median from
+> 112 to 154.** At 433 ms, **deleting the smoke takes `L>100` from `0.3` to `77.7` and the median from
+> 73 to 119.** Removing an occluding stage made the machine **more** occluded, twice, by up to 46
+> points of median luminance. The renderer draws a **depth-ordered composite**, not a sum: the front
+> layer adds its own light *and hides what is behind it*, so a kill subtracts one term and adds back
+> the other, **and the sign of the result is not determined.** A lesion design is valid on a sum. This
+> is not a sum.
+>
+> **THE STANDING METHOD, corrected. An attribution claim carries three things or it is not made:**
+> 1. **A partition, both halves.** `--kill <part>` for necessity, `--kill <everything but part>` for
+>    sufficiency, quoted as a pair. PART 2 established this and it is kept verbatim.
+> 2. **An uncensored statistic.** Never a coverage number sitting at its ceiling; `L>60`, `L>100` and
+>    the median luminance are printed by tools already in the tree.
+> 3. **The median luminance beside every coverage figure**, so that a kill which makes the frame
+>    *brighter* is visible. It was invisible for an entire round.
+>
+> **And a kill column is quoted in one form only: `"C(All \ X) = N"` — everything except X covers N.**
+> Never *"X covers N"*, never *"X alone is sufficient"*, and never *"X is not the cause"*.
+
+**What the corrected reading says about pin 1248, in full.** At **233 ms** the lobes are the only
+necessary stage (99.1 → 79.7, median 227 → 110); the cores move it 1.7 points and the smoke none. At **333 and 433 ms** *nothing is established*,
+because the meter was at its ceiling and the two kills that moved anything moved it upward. At
+**533 ms** the smoke is necessary and alone (90.4 → 16.0, median 58 → 3). The pool-level attribution
+from PART 2's partition pair stands untouched at all four ages.
+
+---
+
+### 5. **The particle pool is FROZEN across the whole 233-533 ms window. The card's three worst cells are three samples of one population, and the 21 cells are not 21 observations.**
+
+Read straight off the three kill logs, which are the only place a census has ever been printed in
+this project. `_r17-blast.mjs` takes the census **before** each kill and its own comment says why:
+*"A kill that matches nothing has to be able to say what WAS in the pool."* No round has ever read
+one.
+
+```
+                      census `alive` at age    14      20      26      32   (233, 333, 433, 533 ms)
+  --kill firelobes                             48      20      20      20
+  --kill firecore                              48      40      40      40
+  --kill smokeshell                            48      36      36      36
+```
+
+The first column is the untouched pool; the rest are survivors carried forward, and **in all three
+runs the survivor count is identical at 333, 433 and 533 ms.** Not one fireball is born and not one
+dies across 300 ms. Spawning is deterministic from the blast, so the baseline pool is **48 particles
+at 233 ms and the same 48 at 533 ms.**
+
+**Everything that happens to the card's worst window is one population moving along its own size and
+opacity curves** — the covering's median luminance falls 227 → 112 → 73 → 58 and `L>100` falls
+94.9 → 58.6 → 0.3 → 0.0 with the particle count constant. Two consequences and both bite:
+
+- **The 21 cells are strongly serially dependent.** RULING 40's separation "survives 20 of 21 cells"
+  is not 21 independent tests; within a pin, adjacent ages are the same particles at different points
+  of one fade. **The separation rests on three pins, not on twenty-one cells,** and it is to be
+  quoted that way from here.
+- **It is the strongest argument yet that the `--ages` grid samples a continuum.** Nothing discrete
+  happens in that window, so whether seven points catch it is an empirical question — which is
+  section 7, and it is the item my own round-38 close listed as never audited.
+
+---
+
+### 6. RULING 45 — **PART 1's restatement of RULING 40 names the wrong variable. The exception is picked out by the covering's LUMINANCE, not by its age, and the column that does it has been in `_r25-cover.mjs`'s own output since round 25.**
+
+PART 1 found one cell of 21 breaking RULING 40's coverage/legibility separation — pin 896 at 17 ms,
+coverage 30.5, outline loss **-0.6** — and restated the rule as: *"Coverage above 25% predicts a large
+outline loss at every age EXCEPT the first frame after detonation... A clause F sub-2 cell taken at
+age 1 must be quoted with its outline pair or not quoted at all."*
+
+> **The physics in that paragraph is right and the variable is wrong.** RULING 40's mechanism is
+> opacity: *"symmetry preserves a step only for a TRANSPARENT veil."* Age is a proxy for opacity and a
+> loose one. **The covering's own luminance is the thing, and it is already measured.**
+>
+> Tested against all 21 scored cells:
+>
+> - **cells with coverage > 25 and `L>60` under 5: exactly one — pin 896, 17 ms, `L>60 = 0.0`.** The
+>   exception, and nothing else.
+> - **cells at age 1: three** — 896 at coverage 30.5, 1248 at 11.2, 1195 at 0.0. Two of the three are
+>   under the threshold and are not exceptions at all. The age rule names two cells that never needed
+>   naming and would not have caught the exception if it had fallen at any other age.
+>
+> `L>60` **separates the exception from the other twenty with no false positives and no misses**, and
+> `_r25-cover.mjs` has printed that column beside `L>25` on every capture since round 25. **Four cells
+> at audit ages confirm it for free** (section 7): none has `L>60` under 5, none is an exception.
+>
+> **RESTATED, on the variable that carries the mechanism:** *coverage above 25% predicts a large
+> outline loss unless the covering is a thin bright veil — `L>60` near zero with `L>25` high — in
+> which case it can cover a machine without costing it its contour. Any cell with `L>25 > 25` and
+> `L>60 < 5` is quoted with its outline pair or not quoted.*
+>
+> **And this is the third time in two rounds that this document has reached for a new rule when the
+> answer was already in the terminal output it was reading** — RULING 40 said so about my dilated-ring
+> column, fault 31 said so before that, and this is the same move in a smaller place. The
+> characteristic failure has not changed since I named it: **a rule written faster than the column
+> that would have tested it.**
+
+---
+
+### 7. RULING 46 — **the `--ages` grid, audited. The cell does not move. Two figures the round has been quoting are under-read by it, and RULING 40's clean separation gap turns out to be an artefact of the seven sampled ages.**
+
+**Method, and its admissibility first.** RULING 42 clause 1 makes `--ages` a protocol constant that
+may not be chosen per pin. So I captured pin 1248 at **four ages that are in nobody's grid** —
+ticks 11, 17, 23, 29 = **183, 283, 383, 483 ms** — interleaved between the scored ones, on the same
+bundle `23dc643dceac`, same seed, same arena, **tier HIGH, budget 1400**, `shots/r40-1248-fine-*`.
+These are **AUDIT ages: admissible as an audit of the grid and inadmissible as scored cells**, on the
+same principle as RULING 33 — a capture that cannot enter the cell cannot bias it. They are quoted
+here and they do not touch clause F sub-2's figure.
+
+**REJECTED COLUMN, published because a screened set without its rejections is a selection.** My first
+run of this capture came back at **tier ULTRA, budget 2600** — I passed `--tier 3` where the card is
+`--tier 2`. It is on disk as `shots/r40-1248-ULTRA-*` and **every figure in it is void for comparison
+with the card.** It is not, however, uninformative: at 183 ms it reads coverage **76.1** where tier
+HIGH reads **69.6**, so nearly doubling the particle budget moves this cell by **6.5 points**. No
+scored age exists at ULTRA, so that is a rejection with a number attached and not a finding.
+
+```
+  pin 1248, bundle 23dc643dceac, tier HIGH — SCORED ages plain, AUDIT ages marked *
+   ms   |  n(px) h/rpx sep/R | Lmed |  L>25   L>60  L>100 | disc r80 | contour ON  OFF   loss
+   117  |   1367  1.55  0.42 |    0 |   2.0    1.2    0.4 |    28.1  |     0.0   0.0    0.0
+  *183  |   1567  1.81  0.36 |  158 |  69.6   66.1   62.5 |    47.5  |    32.4   9.9   22.5
+   233  |   1721  1.98  0.31 |  227 |  99.1   96.8   94.9 |    62.5  |    52.1  13.5   38.6
+  *283  |   1467  1.69  0.26 |  199 | 100.0  100.0   98.5 |    77.0  |    48.7  13.4   35.3
+   333  |    986  1.13  0.24 |  112 | 100.0   89.0   58.6 |    87.5  |    62.4  12.0   50.4
+  *383  |    807  0.92  0.21 |   69 | 100.0   76.5    2.1 |    95.2  |    80.0  30.0   50.0
+   433  |   1006  1.18  0.18 |   73 | 100.0   93.7    0.3 |    97.3  |    98.6  29.4   69.2
+  *483  |   1276  1.29  0.16 |   65 |  98.7   75.7    0.2 |    83.9  |    83.4   7.7   75.7
+   533  |   1105  1.11  0.17 |   58 |  90.4   30.7    0.0 |    61.3  |    50.0   1.5   48.5
+```
+
+> **1. The scored cell does not move, and the reason is fault 35 rather than a virtue of the grid.**
+> The maximum of `L>25` over the fine ages is **100.0**, the same as over the coarse ages. A maximum
+> can only be under-estimated by a coarser grid, so the cell was always safe in that direction — but
+> here it is safe because it is *at the ceiling*, and a statistic at its ceiling cannot be improved on
+> by any grid. **Clause F sub-2's figure is unchanged at 100.0.** The `--ages` grid stays exactly as
+> RULING 42 fixed it.
+>
+> **2. On an uncensored statistic the coarse grid DOES under-read, and it under-reads in the direction
+> that flatters the build.** `L>100` peaks at **94.9** on the scored ages and at **98.5** on the audit
+> ages. The worst **outline loss** is **69.2** on the scored ages and **75.7** at 483 ms — **6.5 points
+> the card has never seen**, on a figure this round called *"the largest legibility loss recorded
+> anywhere in this document"*. That is above every noise floor here. RULING 42 built its absent-age
+> guard out of the asymmetry that censoring a maximum can only flatter the build; **the same asymmetry
+> applies to the sampling grid itself, and this is the measurement that shows it biting.**
+>
+> **3. The `invisible contour ON` column is stable to grid refinement and the `loss` column is not.**
+> The maximum ON over the audit ages is **83.4**, under the scored 98.6; the maximum loss over the
+> audit ages is **75.7**, over the scored 69.2. **That independently confirms section 2's caution:
+> report the ON value, which is a property of the frame, not the loss, which is a difference against a
+> baseline that moves with the age.**
+>
+> **4. The 100.0 plateau is at least 150 ms wide, not two sampled points.** 283, 333, 383 and 433 ms
+> all read 100.0 and 483 reads 98.7. The clause fails continuously across a sixth of a second.
+>
+> **5. RULING 40's separation gap is WITHDRAWN as a grid artefact.** RULING 40 filed *"no overlap, and
+> the gap is a factor of four"*, restated by PART 1 as a factor of 2.8: 13 cells under the 25%
+> threshold costing 0.0-11.9 outline points, 7 cells over it costing 33.8-69.2, nothing in between.
+> **The very first audit age lands in the gap.** 183 ms reads coverage **69.6**, far above the
+> threshold, and costs **22.5** — squarely inside 11.9..33.8. The direction of RULING 40's rule is
+> untouched (high coverage still costs far more outline than low coverage does); what is withdrawn is
+> the **bimodality**, which was a property of the seven ages somebody chose in round 34 and not of the
+> phenomenon. **A gap in a scatter of 21 points sampled on a grid of 7 is a statement about the grid
+> until somebody samples between them. Nobody had.**
+>
+> **6. And the subject-size hypothesis dies a third time.** The 383 ms audit cell has the smallest
+> subject ever measured on this card — **807 px, h/rpx 0.92** — and it reads 100.0 with an r80 disc at
+> **95.2** and a median covering luminance of 69. Small subject, huge neighbourhood, real fire. The
+> denominator is not making these numbers.
+>
+> **What is NOT audited, said plainly: one pin, one arena, one seed, four extra ages.** The grid's
+> adequacy at 896 and 1195 is untested, and so is the 533→800 ms interval, which is the widest gap in
+> the protocol at 267 ms and which nothing above touches.
+
+---
+
+### 8. Instruments and figures left in the tree
+
+- **`shots/_r40-subject.mjs`** — the denominator audit. Prints the subject's identity against the
+  engine's own projection, the box-vs-component leak, the `h/rpx` shape invariant, `sep/R`, the
+  covering's luminance percentiles, the uncovered-pixel count, six cuts, and the fixed-radius disc
+  control. Reads captures off disk and spends nothing. It reproduced all 21 filed coverage cells to
+  the decimal, which is the check that it is reading the same subject by the same rule.
+- **`shots/r40-subject.txt`** — all three scored pins and the three kill columns, re-measured.
+- **`shots/r40-fine-subject.txt`**, **`shots/r40-1248-fine-edge.txt`** — the audit ages.
+- **`shots/r40-1248-ULTRA-*`** — the rejected tier column, kept so nobody re-runs it by accident.
+
+**One fault of mine, caught before publication and filed because catching it is not the same as not
+making it.** The first fine-grid capture went out at tier ULTRA against a card measured at tier HIGH,
+and I would have compared them. It was caught by reading the capture's own `-meta.json` rather than
+by trusting the flag I passed — which is the only reason every table above carries its tier and its
+budget in the header.
+
+### 9. What I did not measure
+
+- **No keep-one column.** RULING 44 says sufficiency needs `C({X})` and I did not take it; `kOnlyShell`
+  is half-captured on disk and is the builder's.
+- **The anti-correlation is measured at one pin.** Two kills at two ages made the covering brighter.
+  That is enough to falsify additivity, which needs one counterexample, and it is **not** enough to
+  say how the stages are ordered in general.
+- **Nothing at 896 or 1195 was re-captured at any age**, and the grid audit is pin 1248 only.
+- **The `h/rpx` collapse at 1248's three worst cells is unexplained.** 1.98 → 1.13 across 100 ms while
+  the projected radius moves 2%, against 1.85-2.03 at every age of pin 896. The subject is whole and
+  unclipped, so it is pose or foreshortening — but no meter here prints a machine's pose, and until
+  one does that is an observation and not an explanation.
+- **The clause E cell during a detonation is still unscored by anybody**, five rounds after it was
+  first noted. `_r17-edge.mjs` prints `BRIGHTEST 1% blast ON: machines 22.1%, effect 71.7%` at pin
+  1248, 333 ms, and no round has claimed it in either direction.

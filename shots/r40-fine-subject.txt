@@ -1,0 +1,16 @@
+SUBJECT AUDIT — shots/r40-1248-fine   bundle 23dc643dceac
+  grid @ HIGH, seed 1234567, blast tick 1248, viewport 1600x900
+  subject rule reproduced from _r25-cover.mjs: the SMALLEST component > 200 px.
+
+   ms | nbox crumbs |  who miss | box    n(comp) leak | h/rpx | sep/R | Lmed Lp10 | unc |  L>8   L>25   L>60  L>100  L>150  L>200 | DISC L>25 r20   r40   r80  r160
+   183 |   2   0(  0) | robo1  14 | 49x67   1567    0 |  1.81 |  0.36 |  158    0 | 476 |  74.5   69.6   66.1   62.5   53.0   28.1 |  71.8   54.9   47.5   47.9
+   283 |   2   0(  0) | robo1   9 | 42x58   1467    0 |  1.69 |  0.26 |  199  134 |   0 | 100.0  100.0  100.0   98.5   83.1   49.5 | 100.0   94.4   77.0   58.1
+   383 |   2   0(  0) | robo1  18 | 36x33    807    0 |  0.92 |  0.21 |   69   56 |   0 | 100.0  100.0   76.5    2.1    0.0    0.0 | 100.0  100.0   95.2   70.7
+   483 |   2   0(  0) | robo1  24 | 38x47   1276    1 |  1.29 |  0.16 |   65   53 |  17 | 100.0   98.7   75.7    0.2    0.0    0.0 |  98.9   97.4   83.9   58.3
+
+  h/rpx is the shape invariant. `who`/`miss` is the meter's subject checked against the engine's.
+  leak = denom(box) - denom(component): RULING 40's box-rule defect, in pixels.
+  unc = stencil pixels of the opponent NOT covered at L>25. A cell of 100.0 has unc 0.
+  sep/R = the opponent's screen offset from the blast centre over the blast's projected radius:
+          how deep inside the fireball's own disc the subject sits. Neither gate bounds it.
+  DISC = the same L>25 cut over fixed-radius discs at the opponent's centroid — the subject-size control.
