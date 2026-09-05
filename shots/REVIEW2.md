@@ -12339,3 +12339,74 @@ than an opinion.
 - **The repeat spread is five runs on one arena.** Foundry's cell is a single capture and its `n` is
   132, so its own spread is very likely **worse** than grid's 1.0 — which is an argument for the
   three-run rule in the acceptance test and not a figure.
+
+---
+
+## ROUND 39 — BUILDER: **RULING 50's translation is built, and the render does not do what the model said it would**
+
+`uPaintLift` is committed at `8d7c37b`, shipping at 0.0. It adds a constant along the machine's own
+hull colour, normalised by luminance so the knob is in display levels, injected before the
+colour-space stage's dither and ahead of the hit tell. Bundle `5ce832710181`, `dist-r39-lift`, tier 3,
+tick 420, seed 1234567. `tools/contour.mjs --u uPaintLift=0.157` is the modelled +40 levels.
+
+```
+                              baseline    RULING 50      RENDER      gap      machine
+  cell                    n    clean%     model @+40     @+40      model-render  height
+  -----------------------------------------------------------------------------------
+  grid    near         1025     86.2         92.9         88.2       -4.7        284px
+  foundry near          559     75.0         97.7         88.6       -9.1        217px
+  grid    FAR           300     80.3        100.0         85.0      -15.0         71px
+  foundry FAR           132     54.5         97.7         76.5      -21.2         39px
+```
+
+### 1. Not one of the four cells reaches 90, and the model said all four would
+
+**The acceptance test is NOT MET at the value RULING 50 priced.** The best cell is 88.6 and the worst
+is 76.5, against a threshold of 90.0 on all four. At `uPaintLift = 0.25` — **+64 levels**, sixty
+percent more than the ruling asked for — foundry reads near **91.1** and far **79.5**, so the near
+cell crosses and the far cell is still 10.5 points short.
+
+**The ruling stated its own limit and it was right to.** *"It is arithmetic on captured pixels, a
+MODEL and not a render. It says what the meter would read; it does not say any knob produces it."*
+This is that caveat coming due. The transform is the one the ruling specified, its unit is now the
+ruling's unit, and the renderer returns between a half and a third of the modelled gain.
+
+### 2. The over-prediction is monotone in machine size, and that is the whole shape of it
+
+**-4.7, -9.1, -15.0, -21.2 against machine heights 284, 217, 71 and 39 px.** The model is nearly
+right on the biggest machine and wrong by twenty-one points on the smallest — which is the cell the
+clause fails on, so **the error is worst exactly where the ruling's existence result was doing its
+work.**
+
+The mechanism follows from what the model does: it adds the full lift to every pixel the stencil calls
+machine. In the render, a 7x7 window on the boundary of a 39-px machine is mostly *edge* pixels, whose
+rendered colour is an antialiased blend of machine and background and which therefore take only a
+fraction of the lift. On a 284-px machine those pixels are a small share of the same window. **A model
+that treats the mask as opaque over-credits a small machine and very nearly does not over-credit a
+large one**, which is the ordering measured.
+
+### 3. Two hypotheses of mine, both tested, both refused
+
+**Bloom spill: refuted.** A brighter machine seeds more bloom, and bloom crossing the silhouette would
+raise the background where the step is measured. With `--bloom 0` at the same lift, foundry reads
+near **88.0** and far **76.7** against **88.6** and **76.5** with bloom on. Inside the repeat spread
+in both directions. **Bloom is not eating the lift.**
+
+**The outline hull: real, and worth about a tenth of the gap.** The hull is a separate material the
+lift does not touch, so a lifted machine keeps a dark band at its own silhouette. Collapsing it at the
+same lift moves foundry near **88.6 -> 91.2** and far **76.5 -> 78.0**. That is a genuine effect and
+it is 1.5 points of a 21.2-point gap.
+
+It also **reverses the hull's sign**, which is worth recording on its own: at baseline `66ab2d9`
+measured the hull earning four points on the near machine, and at +40 levels it costs **2.6**. A dark
+contour helps a dark machine and hurts a bright one, so the hull's shipped width is optimal for the
+machine as it stands today and would not be optimal for a lifted one.
+
+### 4. What is actually on offer
+
+Every cell improves, and by a lot more than its own spread: **+2.0, +13.6, +4.7, +22.0.** The worst
+cell gains twenty-two points. That is the acceptance test's *"ACCEPTED as progress"* tier on clause B's
+side, and whether it can be taken depends entirely on the guards — clause A's near mass count at 4.3
+against a floor of 4.0, clause C's two ratios, and clause D's 0.020 chroma margin, which RULING 50
+required beside any clause B figure and which is not in this section because it has not been measured
+yet. **No part of this proposes shipping the knob on.**
