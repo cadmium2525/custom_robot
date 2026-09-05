@@ -288,6 +288,44 @@ const SETTLE_FN = `(n) => {
     t += 1 / 60;
   }
   g.engine.onRender = null;
+  // INSTRUMENT FAULT 44, SECOND HALF — FREEZE THE LOD, BECAUSE THE CAMERA WILL
+  // NOT HOLD STILL AND THE LOD IS WHAT TURNS THAT INTO A DIFFERENT STENCIL.
+  //
+  // Zeroing the pose integrators above pinned grid at five draws of five and
+  // left foundry returning two stencils, 8037 px and 8220. A probe that dumps
+  // every model field found them identical across four runs both immediately
+  // after this loop and again at the shutter — positions, dampers, integrators,
+  // heat, and the LOD draw ranges element by element. One quantity was not
+  // identical at the shutter: lodPx, at 331.72 / 331.717 / 331.718 / 332.209.
+  //
+  // lodPx is BODY_H * projection[1][1] / depth * 0.5 * targetHeight. The target
+  // is 1600x900 in every run, the tier is 3 and dynamicScale is 1 in every run
+  // (all four measured, not assumed), the projection is fixed and the model
+  // positions do not move. So the only free term is depth, and the CAMERA is
+  // still drifting after onRender is nulled. Running this settle a second time
+  // at the shutter was tried as the repair and is refused: six draws, two
+  // stencils still, and the near cell collapsed from about 72 to about 42.
+  //
+  // What that drift COSTS is the LOD: _applyLod recomputes a budget from lodPx
+  // every frame and calls setDrawRange when it changes, so a camera creeping by
+  // a tenth of a percent flips plates in and out and the stencil moves by 2.3%.
+  // Freezing the draw ranges cuts the chain at the link that does the damage,
+  // and it freezes them at whatever the settled camera chose — the pose being
+  // measured — rather than at full detail, which would measure a machine the
+  // game never draws.
+  //
+  // The camera writer is still unfound. This is a clamp, and it is labelled one.
+  // Resolve the LOD ONCE against the settled camera before freezing it. Without
+  // this the ranges frozen are whatever the last RENDERED frame chose, and that
+  // frame happened before the settle finished, so the freeze preserved a
+  // load-dependent choice instead of removing one. Measured: freezing alone took
+  // foundry's minority pose from two draws in three to one in six; it did not
+  // reach zero, and this is the term that was left.
+  {
+    const cam = g.engine.activeCamera || g.engine.camera;
+    for (const m of g.view.models) if (m._applyLod) m._applyLod(g.engine.renderer, cam);
+  }
+  for (const m of g.view.models) if (m._applyLod) m._applyLod = () => {};
   if (g.engine.quality) g.engine.quality.auto = false;
   return true;
 }`;

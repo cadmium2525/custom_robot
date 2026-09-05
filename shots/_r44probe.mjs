@@ -96,6 +96,12 @@ await page.evaluate(`(${SETTLE_FN})(240)`);
 // Contour waits 700+700ms and takes a multi-second software-GL screenshot
 // between the settle and the shutter. Read the state where the SHUTTER is.
 if (process.argv.includes('--late')) await page.waitForTimeout(1400);
+const env = await page.evaluate(() => {
+  const g = window.__game, q = g.engine.quality, r = g.engine.renderer;
+  
+  return { tier: q.tier, auto: q.auto, dyn: q.dynamicScale, rscale: q.settings && q.settings.renderScale,
+           dpr: r.getPixelRatio(), buf: [r.domElement.width, r.domElement.height] };
+});
 const out = await page.evaluate(() => {
   const r3 = (v) => Math.round(v * 1000) / 1000;
   const g = window.__game;
@@ -113,5 +119,5 @@ const out = await page.evaluate(() => {
     };
   });
 });
-console.log(JSON.stringify(out));
+console.log(JSON.stringify({ env, models: out }));
 await browser.close();

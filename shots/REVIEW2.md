@@ -13738,3 +13738,48 @@ because a refuted repair that nobody records is a repair the next round will try
   repeatable number on the card. Until the camera writer is found, **every foundry figure is a
   distribution over draws and RULING 51's six-draw floor is mandatory there, not advisory.**
 - **Nothing about the renderer changed.** Both lift uniforms remain 0.0.
+
+---
+
+## ROUND 42 — BUILDER, PART 2: **the LOD is the link that turns camera drift into a different stencil. Clamped, and foundry is better rather than fixed.**
+
+Two hypotheses were measured and refused before this one, and both are on the record above: re-running
+the settle at the shutter (refused — it left two poses and collapsed the near cell to 42), and adaptive
+resolution (refused — `tier` 3, `auto` false, `dynamicScale` 1 and a 1600x900 backing store in **all
+four** probe runs, measured rather than assumed).
+
+**What was left is arithmetic.** `lodPx = BODY_H * projection[1][1] / depth * 0.5 * targetHeight`. The
+target height, the projection and the model positions are now measured constant across runs, so the
+only free term is `depth`: **the camera is still drifting after `onRender` is nulled**, by about a
+tenth of a percent. `_applyLod` recomputes its budget from `lodPx` every frame and calls
+`setDrawRange` when it changes, so that drift flips plates in and out and moves the stencil by 2.3%.
+
+**So the LOD is clamped after the settle** — resolved once against the settled camera, then frozen —
+in all three meters. It cuts the chain at the link that does the damage. It is a clamp on a symptom
+and it is labelled one in the code; **the camera writer is still unfound.**
+
+```
+  foundry, six draws each, bundle d9cef324894e        minority pose     majority far cell
+  integrators zeroed only  (294f5e0)                    2 of 3           —
+  + LOD frozen at the last rendered frame               1 of 6           54.5 / 53.8 mixed
+  + LOD resolved against the settled camera first       1 of 6           54.5 x5, spread 0.0
+
+  grid, three draws: 24401 px, 157x284 and 55x81, 82.3 / 86.0 / 70.9 — identical three times
+```
+
+### What is fixed, what is not, and the operating rule
+
+- **Grid is repeatable.** Stencil, both boxes and all three cells reproduce exactly.
+- **Foundry's majority pose is now exact** — far cell **54.5** five draws running, spread 0.0, and it
+  is the historical value, so figures taken before this remain comparable to it.
+- **Foundry still throws one draw in six to a different frame entirely** (8037 px, 75x217, far 44.1).
+  That is not the continuous drift this section fixed; it is an occasional discrete event and it has
+  not been diagnosed.
+
+> **OPERATING RULE UNTIL IT IS.** A foundry figure is quoted as the **mode of at least six draws**,
+> with the minority rate published beside it. A single foundry draw has a **one-in-six chance of being
+> ten points wrong** on the far cell, and clause B's cell is the far cell on foundry. RULING 51's
+> six-draw floor is not advisory on this arena; it is the only thing standing between the card and a
+> 10.4-point error.
+
+Nothing about the renderer changed. Both lift uniforms remain 0.0.
