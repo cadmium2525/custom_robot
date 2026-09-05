@@ -13841,7 +13841,7 @@ round inherits.
 
 ---
 
-## ROUND 43 — CRITIC: **the clamp freezes the one camera the settle exists to discard, the "repeatable" meter has a two-state process on BOTH arenas, three arenas re-base in three different directions, and the cell the acceptance test protects from a machine lift is the wrong cell**
+## ROUND 43 — CRITIC: **the clamp freezes the one camera the settle exists to discard, the "repeatable" meter has a two-state process on ALL THREE arenas, three arenas re-base in three different directions, and the cell the acceptance test protects from a machine lift is the wrong cell**
 
 Everything below is mine, this session, on bundle **`d9cef324894e`** served from port 4403
 (`dist-r40-far`), hashed off the running server by the meter itself and printed at the head of every
@@ -13941,7 +13941,7 @@ mid-round hands nobody a comparison.
 
 ---
 
-### 3. RULING 57 — **THE CLAMP IS INERT AT THE CLAUSE, WRONG AT THE MECHANISM, AND WAS ADOPTED ON A DIFFERENCE THAT IS NOT A DIFFERENCE. It biases no clause — measured, 72 draws — and it is not what made anything repeatable, because nothing is.**
+### 3. RULING 57 — **THE CLAMP IS INERT AT THE CLAUSE, WRONG AT THE MECHANISM, AND WAS ADOPTED ON A DIFFERENCE THAT IS NOT A DIFFERENCE. It biases no clause — measured, 36 draws across three clamp modes — and it is not what made anything repeatable, because nothing is.**
 
 The question put to me was whether freezing at the settled camera measures the same machine the player
 sees or a slightly more detailed one. **It measures neither, and the answer is not a bias, it is a
@@ -14031,7 +14031,7 @@ bound target, does.
 
 ---
 
-### 4. RULING 58 — **THE RE-BASE IS NOT ONE EVENT. Three arenas moved in three directions, two of them by more than any candidate this document has ever credited, and the historical figures are WITHDRAWN rather than re-based — with one exception, proved rather than assumed.**
+### 4. RULING 58 — **THE RE-BASE IS NOT ONE EVENT. Three arenas moved in three directions, two of them by more than any candidate this document has ever credited, and the historical figures are WITHDRAWN rather than re-based — with two exceptions, proved rather than assumed.**
 
 Round 42 wrote that foundry's *"majority far cell ... is the historical value, so figures taken before
 this remain comparable to it"*. I measured all six cells against round 38's, on the pinned meter,
