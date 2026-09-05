@@ -80,6 +80,7 @@ uniform float uRimFar;
 uniform float uRimEdgeFar;
 uniform float uRimSoftFar;
 uniform float uPaintLift;
+uniform float uPaintLiftFar;
 uniform vec3  uPaintTint;
 uniform float uPaintWhite;
 varying vec3 vWorldNormalX;
@@ -544,7 +545,21 @@ const RIM_FRAG = /* glsl */`
   // levels at every setting of this. What white costs is chroma, which is
   // clause D's margin of 0.020 — the trade RULING 50 named, with the evidence
   // now pointing the other way down it.
-  gl_FragColor.rgb += uPaintLift * mix(uPaintTint, vec3(1.0), uPaintWhite);
+  // RULING 54'S RELOCATION, AS A SECOND KNOB ON THE SAME SIZE GATE THE FLATTEN
+  // AND THE RIM ALREADY USE.
+  //
+  // Every guard the lift breaks is a NEAR-machine cell — clause A's near top-4
+  // goes 85.2 to 83.8, and clause D's chroma is a near-machine reading too.
+  // Every clause B cell that needs the lift is a FAR-machine cell: 80.3 on grid
+  // and 54.5 on foundry against near cells at 86.2 and 75.0. The two sets do not
+  // intersect, so a lift that reaches only the far machine is the experiment the
+  // ruling names, and sizeGateX() is already the mechanism this file uses to say
+  // "the small one, not the big one".
+  //
+  // uPaintLift is the NEAR value and uPaintLiftFar the FAR one, in that order to
+  // match uFlat/uFlatFar and uRimSize*/uRim*Far above. Both ship at 0.0.
+  float liftX = mix(uPaintLiftFar, uPaintLift, sizeGateX());
+  gl_FragColor.rgb += liftX * mix(uPaintTint, vec3(1.0), uPaintWhite);
   gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.62, 0.08, 0.05), uHitFlash);
 `;
 
@@ -582,23 +597,32 @@ export function roboShell(maps, look, teamColor, opts = {}) {
    * marker on a few plates, and the pixels that fail are hull and `dark`, both
    * of which are `primary` at different lightnesses.
    */
-  const paintTint = new THREE.Color(look.primary ?? 0xffffff);
+  const paintTint = new THREE.Vector3();
   {
-    // NORMALISED BY LUMINANCE, NOT BY THE MAX CHANNEL, AND THE FIRST VERSION OF
-    // THIS GOT IT WRONG IN A WAY THE METER CAUGHT IMMEDIATELY.
+    // NORMALISED BY LUMINANCE IN THE SPACE THE ADDITION HAPPENS IN, WHICH IS
+    // THE THIRD TIME THIS ONE NUMBER HAS BEEN WRONG.
     //
-    // Dividing by the max channel makes `lift` mean "levels added to the
-    // brightest channel", which for a saturated blue hull — 0x2e6bd6, whose
-    // normalised luminance is 0.476 — delivers 19 levels of LUMINANCE for a
-    // requested 40. Measured on foundry at lift 0.157: the far machine went
-    // 54.5 to 65.9 where RULING 50's model, which is stated in luminance,
-    // predicts 97.7. The transform was right and its unit was not.
+    // Take one: divide by the max channel. That makes `lift` mean "levels added
+    // to the brightest channel", so a saturated blue hull — 0x2e6bd6 — got 19
+    // levels of luminance for a requested 40. Caught on the first capture.
     //
-    // Dividing by luminance instead leaves the DIRECTION untouched — both
-    // normalisations are the same ray — so the pure-scale property that keeps
-    // chroma intact is unaffected, and `lift` now means what the ruling means.
-    const l = Math.max(0.2126 * paintTint.r + 0.7152 * paintTint.g + 0.0722 * paintTint.b, 1e-3);
-    paintTint.setRGB(paintTint.r / l, paintTint.g / l, paintTint.b / l);
+    // Take two: divide by luminance, computed off a THREE.Color. INSTRUMENT
+    // FAULT 42: a THREE.Color built from a hex holds LINEAR working-space
+    // components, and the lift is added after <colorspace_fragment>, in display
+    // sRGB. Normalising a linear triple and adding it to an encoded one is a
+    // unit error of the same kind as take one and it over-delivers — measured,
+    // +16 to +23 display levels for a nominal +12.75 — which is also why the
+    // render behaved as an expansion rather than a translation and why RULING
+    // 50's over-prediction was understated.
+    //
+    // Take three: encode the tint to display sRGB FIRST, then normalise its
+    // luminance there. A plain Vector3 rather than a THREE.Color, because a
+    // Color is exactly the object that will silently convert this back.
+    const c = new THREE.Color(look.primary ?? 0xffffff);
+    const enc = (v) => (v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(Math.max(v, 0), 1 / 2.4) - 0.055);
+    const dr = enc(c.r), dg = enc(c.g), db = enc(c.b);
+    const l = Math.max(0.2126 * dr + 0.7152 * dg + 0.0722 * db, 1e-3);
+    paintTint.set(dr / l, dg / l, db / l);
   }
 
   const u = {
@@ -607,6 +631,8 @@ export function roboShell(maps, look, teamColor, opts = {}) {
     // test has not been run, and a knob that has not passed its test does not
     // get to be on by default. In display levels over 255: 40 levels is 0.157.
     uPaintLift: { value: opts.paintLift ?? 0.0 },
+    // The far machine's own lift — RULING 54's relocation. Ships at 0.0.
+    uPaintLiftFar: { value: opts.paintLiftFar ?? 0.0 },
     uPaintTint: { value: paintTint },
     // 0 = add along the paint (keeps chroma, clips, breaks clause A),
     // 1 = add along white (clips far less, costs chroma). Numeric so the
