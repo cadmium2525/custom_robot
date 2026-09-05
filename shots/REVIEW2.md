@@ -13398,3 +13398,101 @@ of settle iterations converges them because they have no target to converge to. 
 hypothesis with line numbers, not a render**, and under RULING 53 that is all I may call it — but it
 is the same defect, in the same file, that this file's own comment says was the sixth instrument fault
 in the project.
+
+### 6. RULING 55 — **CLAUSE D'S CELL IS THE WORSE MACHINE, NOT THE POOL. The relocation is REFUSED on clause D on BOTH arenas, and — checked before the ruling was written — the SHIPPED CARD DOES NOT MOVE BY A SINGLE CELL.**
+
+Mine, this session, on `d9cef324894e`. `shots/_r15dump.mjs` (fault 43's applier, read-back printed on
+both dumps) into `shots/_r16chroma.mjs`. **The control and the treatment are pose-matched**: identical
+stencils — 24457 px on grid, 8138 on foundry — and identical component boxes, so unlike section 3 this
+pair is one photograph in two settings. Raw: `shots/r42-clauseD.txt`.
+
+```
+                    stencil   POOLED   robot 1 (near)   robot 2 (FAR)    stage    clause E
+  grid    zero       24457     0.149    0.145 22457px   0.200  2000px    0.129     58.9%
+  grid    FAR +40    24457     0.141    0.145           0.106            0.129     64.6%
+  foundry zero        8138     0.153    0.153  7244px   0.173   894px    0.145     33.4%
+  foundry FAR +40     8138     0.153    0.153           0.141            0.145     35.1%
+```
+
+**The round-40 builder's clause D table reproduces on my capture to the third decimal on all eight
+figures.** I am not disputing a number. I am ruling on which number is the clause.
+
+#### 1. The builder's own table crosses the threshold twice and says so once
+
+Round 40 flagged grid — *"grid's far machine is 0.106 against a stage at 0.129: NOT MET, and
+inverted"* — and wrote foundry as *"and foundry 0.173 -> 0.141"* with no verdict attached.
+**0.141 is below 0.145.** Foundry's far machine is inverted too. The comparison was one subtraction
+from being made and the sentence stopped short of it, on the arena that carries clause D's tightest
+margin. **Under a per-machine reading the relocation takes clause D off on BOTH arenas** — which is
+exactly what RULING 52 found for the uniform lift, moved onto the one machine that clause G, blind
+point 3 and clause B's worst cell are all about.
+
+#### 2. Why the pool is not the cell, demonstrated rather than argued
+
+`robot 2` is **2000 px of 24457 on grid (8.2%)** and **894 of 8138 on foundry (11.0%)**. Its chroma
+falls **47%** on grid, 0.200 to 0.106. The pooled median moves **0.008**. **The statistic registered
+one twelfth of what happened to its subject**, and on foundry it registered nothing at all — 0.153
+before, 0.153 after, while the far machine crossed the stage.
+
+RULING 47 has already decided this shape of question, one clause over, and its reason transfers with
+more force here than it had there:
+
+> *"An OVERALL contour percentage is not a cell, on any arena ... the overall figure is, to within a
+> quarter of its own value, a measurement of the near machine ... a pooled percentage lets a 260-px
+> hero carry a 39-px opponent that has lost nearly half its outline."*
+
+There the pool was 77-81% one machine. **Here it is 89-92% one machine.** And clause D's own sentence
+is *"**The machines** are the colour in the frame"* — plural — derived from blind point 1, which this
+document pairs with blind point 3 (*both machines legible at once*) and with clause G, whose entire
+subject is the far machine. **A statistic that cannot see the far machine cannot score a clause about
+both machines**, and the condition it cannot see — *machines LESS saturated than the stage* — is the
+literal text of the clause's threshold.
+
+#### 3. The objection this has to answer, and the line that answers it
+
+RULING 43 and RULING 51 both hold that **a threshold rewritten by the change that fails it is not a
+threshold**, and re-reading clause D's statistic while a candidate is on the table looks like exactly
+that move.
+
+> **THE TEST THAT SEPARATES THEM, and it is one line: a re-reading of a clause's statistic is
+> admissible only if it makes the card STRICTER, and only if it is settled on figures that predate the
+> candidate.** RULING 43's ban is on loosening — on a change buying its own pass by moving the number
+> it fails. A re-reading that can only ever refuse cannot be reverse-engineered from the candidate it
+> refuses: there is no candidate it would have let through. RULING 47 is the precedent and it is the
+> same move — it tightened clause B, it replaced a passing-looking 84.8 with a 54.5, and it was made
+> by a round holding nothing.
+>
+> **And the check that this one is not motivated is arithmetic, taken before the ruling was written.**
+
+#### 4. STATED BOTH WAYS, so the shipped card cannot move by accident
+
+```
+  THE SHIPPED TREE (23dc643dceac / d9cef324894e at zero), clause D
+
+    POOLED reading, as clause D is written
+      grid     0.149 vs 0.129   MET      foundry  0.153 vs 0.145   MET
+      cell = foundry, margin 0.008                            CLAUSE D: MET
+
+    WORSE-MACHINE reading, this ruling
+      grid     near 0.145 vs 0.129 MET   far 0.200 vs 0.129 MET
+      foundry  near 0.153 vs 0.145 MET   far 0.173 vs 0.145 MET
+      cell = foundry NEAR, margin 0.008                       CLAUSE D: MET
+```
+
+**Identical cell. Identical margin. Identical verdict.** RULING 52 put clause D's cell at *"foundry, at
+0.153 against 0.145, a margin of 0.008"* and this ruling puts it at the same 0.153 against the same
+0.145 — it merely names which machine that 0.153 belongs to, and on the shipped tree the answer is the
+near one. **Clause D remains one of the four METs on this card and nothing on the card moves.**
+
+```
+  THE CANDIDATE (uPaintLift 0, uPaintLiftFar 0.157, uPaintWhite 1), clause D
+
+    POOLED reading         grid 0.141 vs 0.129 MET    foundry 0.153 vs 0.145 MET
+    WORSE-MACHINE reading  grid  FAR 0.106 vs 0.129   NOT MET, inverted 0.82x
+                           found FAR 0.141 vs 0.145   NOT MET, inverted 0.97x
+                                                            CLAUSE D: OFF, both arenas
+```
+
+**Clause E is not a cost either way and is quoted here because RULING 50 requires it beside clause B:**
+grid **58.9% -> 64.6%**, MET at both; foundry **33.4% -> 35.1%**, NOT MET at both and improving. The
+white lift buys clause E on both arenas. It is the only clause it buys outright.
