@@ -81,6 +81,7 @@ uniform float uRimEdgeFar;
 uniform float uRimSoftFar;
 uniform float uPaintLift;
 uniform vec3  uPaintTint;
+uniform float uPaintWhite;
 varying vec3 vWorldNormalX;
 varying vec3 vWorldPosX;
 /**
@@ -526,7 +527,24 @@ const RIM_FRAG = /* glsl */`
   // levels over 255 and 40 levels is 0.157. It is a live numeric uniform, which
   // means the acceptance test can be swept with contour.mjs --u and mass.mjs --u
   // without a build per point, and it SHIPS AT 0.0 until that test is passed.
-  gl_FragColor.rgb += uPaintLift * uPaintTint;
+  // THE DIRECTION IS A KNOB BECAUSE THE MEASUREMENT SAID IT HAD TO BE.
+  //
+  // At uPaintWhite 0 this adds along the machine's own hull hue, which keeps
+  // chroma by construction and was the whole design. Measured, it also takes
+  // clause A off both machines — near mass count 4.3 -> 6.3, top-4 85.2 -> 79.1
+  // — and the reason is clipping. The tint is normalised to luminance 1, so a
+  // saturated blue hull carries a blue channel of 2.103 and a lift of 0.157
+  // adds 0.33 to blue; every plate already above 0.67 there clips, gains less
+  // than the requested forty levels, and separates from the plates that gain
+  // all of them. A translation that clips is not a translation.
+  //
+  // vec3(1.0) has a max channel of 1.0 against that 2.103, so it clips a far
+  // smaller share of the machine. Both endpoints have luminance 1 by
+  // construction, so the mix does too and uPaintLift keeps meaning display
+  // levels at every setting of this. What white costs is chroma, which is
+  // clause D's margin of 0.020 — the trade RULING 50 named, with the evidence
+  // now pointing the other way down it.
+  gl_FragColor.rgb += uPaintLift * mix(uPaintTint, vec3(1.0), uPaintWhite);
   gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.62, 0.08, 0.05), uHitFlash);
 `;
 
@@ -590,6 +608,10 @@ export function roboShell(maps, look, teamColor, opts = {}) {
     // get to be on by default. In display levels over 255: 40 levels is 0.157.
     uPaintLift: { value: opts.paintLift ?? 0.0 },
     uPaintTint: { value: paintTint },
+    // 0 = add along the paint (keeps chroma, clips, breaks clause A),
+    // 1 = add along white (clips far less, costs chroma). Numeric so the
+    // direction can be swept on both meters without a build per point.
+    uPaintWhite: { value: opts.paintWhite ?? 0.0 },
     // uRimEdge/uRimSoft/uRimWash are READ by RIM_FRAG. They were declared in the
     // shader but never supplied here, so WebGL left all three at 0 and the band
     // evaluated as smoothstep(0.0, 0.0, fres) — edge0 == edge1, a divide by zero
