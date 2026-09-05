@@ -160,6 +160,30 @@ const STENCIL_FN = `(on) => {
       if (m.shadow && m.shadow.visible) { v.__hidden.push(m.shadow); m.shadow.visible = false; }
     }
 
+    // INSTRUMENT FAULT 35, FIXED IN ALL EIGHT COPIES AT ONCE.
+    //
+    // The outline hull is a mesh under the model's group, so it lands in
+    // \`shells\` and is painted white along with the machine — a mask dilated by
+    // OUTLINE_WIDTH rather than the machine's own silhouette. That does not
+    // happen today, and the reason is an accident: the override material below
+    // is a fresh MeshBasicMaterial at its default FrontSide, and the hull is
+    // BackSide, so its faces are culled. Give that material a \`side\` for any
+    // reason and every mask-derived figure in this project changes at once,
+    // with nothing in the output to say so.
+    //
+    // Measured before writing this: the grid stencil is 24415 px across a
+    // nine-fold sweep of the hull's width, and clause B reads 84.8% with the
+    // hull at full width and 80.8% with it collapsed to nothing. A hull inside
+    // the mask would have dilated the first number and improved the second.
+    //
+    // So this asserts what culling was already doing, by NAME — \`m.outline\` is
+    // the hull, set in robot.js where it is built — rather than by a property of
+    // a material somebody else owns. Hidden rather than blackened, to reproduce
+    // the culled behaviour exactly rather than a behaviour that merely agrees
+    // with it on this arena.
+    for (const m of v.models) {
+      if (m.outline && m.outline.visible) { v.__hidden.push(m.outline); m.outline.visible = false; }
+    }
     const shells = new Set();
     for (const m of v.models) m.group.traverse((o) => { if (o.isMesh) shells.add(o); });
 
