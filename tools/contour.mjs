@@ -345,6 +345,23 @@ const ANALYSE_FN = async ({ nUri, hUri }) => {
   const R = 3;                       // 7x7 window
   const measure = (only) => {
     const steps = [];
+    /**
+     * WHERE THE CONTOUR FAILS, WHICH THE SPLIT ALONE CANNOT SAY.
+     *
+     * `under25` says how much of the outline is weak. It does not say whether
+     * those pixels are weak because the MACHINE is dark there or because the
+     * BACKGROUND is bright there, and those two have opposite fixes: the first
+     * is a machine-value problem an edge treatment can reach, the second is a
+     * stage-value problem that no amount of rim or hull will touch. Four
+     * rounds of outline-width work were spent without that distinction on the
+     * table, and the round-38 sweep showed the hull is already at its optimum,
+     * so the next attempt has to start from this column instead.
+     *
+     * Kept as a parallel array rather than a second walk: it is the same two
+     * means the step is computed from, already in hand, and re-deriving them
+     * would be a second instrument to keep in agreement with the first.
+     */
+    const det = [];
     for (let y = R; y < HT - R; y++) {
       for (let x = R; x < W - R; x++) {
         const p = y * W + x;
@@ -361,18 +378,29 @@ const ANALYSE_FN = async ({ nUri, hUri }) => {
           }
         }
         if (inN < 5 || outN < 5) continue;
-        steps.push(Math.abs(inSum / inN - outSum / outN));
+        const inM = inSum / inN, outM = outSum / outN;
+        steps.push(Math.abs(inM - outM));
+        det.push({ s: Math.abs(inM - outM), i: inM, o: outM });
       }
     }
     if (!steps.length) return null;
     steps.sort((a, b) => a - b);
     const q = (f) => Math.round(steps[Math.min(steps.length - 1, Math.floor(f * steps.length))] * 10) / 10;
     const frac = (t) => Math.round(steps.filter((s) => s < t).length / steps.length * 1000) / 10;
+    // Medians, not means: one stretch of contour against a light fitting would
+    // drag a mean and say nothing about the rest of the outline.
+    const med1 = (a) => (a.length
+      ? Math.round(a.slice().sort((x, y) => x - y)[a.length >> 1] * 10) / 10
+      : null);
+    const weak = det.filter((d) => d.s < 25);
+    const good = det.filter((d) => d.s >= 40);
     return {
       n: steps.length,
       p10: q(0.10), median: q(0.50), p90: q(0.90),
       mean: Math.round(steps.reduce((a, b) => a + b, 0) / steps.length * 10) / 10,
       under12: frac(12), under25: frac(25), over40: Math.round((100 - frac(40)) * 10) / 10,
+      weakIn: med1(weak.map((d) => d.i)), weakOut: med1(weak.map((d) => d.o)),
+      goodIn: med1(good.map((d) => d.i)), goodOut: med1(good.map((d) => d.o)),
     };
   };
 
@@ -608,6 +636,16 @@ const bar = (pct, width = 28) => {
     console.log(`     invisible (<12) ${String(c.under12).padStart(5)}%  ${bar(c.under12)}`);
     console.log(`     weak      (<25) ${String(c.under25).padStart(5)}%  ${bar(c.under25)}`);
     console.log(`     clean    (>=40) ${String(c.over40).padStart(5)}%  ${bar(c.over40)}`);
+    // The diagnosis: what the two sides of the window actually read where the
+    // contour fails, against what they read where it works. If `machine` is
+    // much lower on the weak rows than on the clean ones, the outline is
+    // failing because the machine goes dark there; if `behind` is much higher,
+    // it is failing against a bright background and no edge treatment on the
+    // machine can fix it.
+    if (c.weakIn != null && c.goodIn != null) {
+      console.log(`     where it fails   weak rows: machine ${String(c.weakIn).padStart(5)}  behind ${String(c.weakOut).padStart(5)}`);
+      console.log(`                      clean rows: machine ${String(c.goodIn).padStart(5)}  behind ${String(c.goodOut).padStart(5)}`);
+    }
   };
   const vals = (v) => v && v.body != null
     ? `     body ${v.body} vs background ${v.background}  (separation ${Math.round(Math.abs(v.body - v.background) * 10) / 10})`
