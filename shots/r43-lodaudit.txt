@@ -1,0 +1,1845 @@
+ROUND 43 CRITIC — RAW OUTPUT BEHIND EVERY FIGURE IN THE ROUND 43 SECTIONS OF shots/REVIEW2.md
+
+Bundle d9cef324894e on http://127.0.0.1:4403/custom_robot/ (dist-r40-far), hashed off the
+running server by the meter itself and printed at the top of every capture below. Tier 3,
+tick 420, seed 1234567, uPaintLift = uPaintLiftFar = 0 throughout — no uniform was set in
+any run in this file. HEAD at capture: 231ee80, plus the four audit instruments.
+
+INSTRUMENTS
+  shots/_r45lodmode.mjs   tools/contour.mjs with the LOD clamp in one of four modes
+  shots/_r45sign.mjs      tools/contour.mjs with the SIGN of the value step printed
+  shots/_r45lodprobe.mjs  draw ranges: frozen vs shipped-at-the-shutter vs full detail
+  shots/_settlesrc.mjs    the settle, read out of the meter at run time
+
+===================================================================================
+PART 1 — THE LOD PROBE. 4 draws per arena.
+===================================================================================
+--- probe foundry draw 1
+{"arena":"foundry","camAtSettle":[-10.0354,7.05209,1.63289],"models":[{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":337.31,"live":331.719,"fresh":331.719},"budget":{"frozen":10754.069,"live":10400.504},"outBudget":{"frozen":113.201,"live":109.479},"frozen":[21648,14760,8634,17436],"live":[21648,14760,8634,17436],"fresh":[21648,14760,8634,17436],"full":[21648,14760,8634,21648],"totals":[21648,14760,8634,21648],"outline":[false,false,false,true],"camPos":[-10.0354,7.05209,1.63289],"grpPos":[-5.825,2.521,1.286]},{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":102.288,"live":102.538,"fresh":102.538},"budget":{"frozen":988.923,"live":993.772},"outBudget":{"frozen":10.41,"live":10.461},"frozen":[22176,12636,8286,1296],"live":[22176,12636,8286,1296],"fresh":[22176,12636,8286,1296],"full":[22176,12636,9906,22176],"totals":[22176,12636,9906,22176],"outline":[false,false,false,true],"camPos":[-10.0354,7.05209,1.63289],"grpPos":[7.013,0.073,0.227]}]}
+
+--- probe foundry draw 2
+{"arena":"foundry","camAtSettle":[-10.03541,7.05209,1.63289],"models":[{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":340.101,"live":331.718,"fresh":331.718},"budget":{"frozen":10932.787,"live":10400.479},"outBudget":{"frozen":115.082,"live":109.479},"frozen":[21648,14760,8634,17436],"live":[21648,14760,8634,17436],"fresh":[21648,14760,8634,17436],"full":[21648,14760,8634,21648],"totals":[21648,14760,8634,21648],"outline":[false,false,false,true],"camPos":[-10.03541,7.05209,1.63289],"grpPos":[-5.825,2.521,1.286]},{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":102.166,"live":102.538,"fresh":102.538},"budget":{"frozen":986.574,"live":993.771},"outBudget":{"frozen":10.385,"live":10.461},"frozen":[22176,12636,8286,1296],"live":[22176,12636,8286,1296],"fresh":[22176,12636,8286,1296],"full":[22176,12636,9906,22176],"totals":[22176,12636,9906,22176],"outline":[false,false,false,true],"camPos":[-10.03541,7.05209,1.63289],"grpPos":[7.013,0.073,0.227]}]}
+
+--- probe foundry draw 3
+{"arena":"foundry","camAtSettle":[-10.03542,7.05209,1.63289],"models":[{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":343.662,"live":331.718,"fresh":331.718},"budget":{"frozen":11162.877,"live":10400.448},"outBudget":{"frozen":117.504,"live":109.478},"frozen":[21648,14760,8634,17436],"live":[21648,14760,8634,17436],"fresh":[21648,14760,8634,17436],"full":[21648,14760,8634,21648],"totals":[21648,14760,8634,21648],"outline":[false,false,false,true],"camPos":[-10.03542,7.05209,1.63289],"grpPos":[-5.825,2.521,1.286]},{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":102.014,"live":102.538,"fresh":102.538},"budget":{"frozen":983.644,"live":993.77},"outBudget":{"frozen":10.354,"live":10.461},"frozen":[22176,12636,8286,1296],"live":[22176,12636,8286,1296],"fresh":[22176,12636,8286,1296],"full":[22176,12636,9906,22176],"totals":[22176,12636,9906,22176],"outline":[false,false,false,true],"camPos":[-10.03542,7.05209,1.63289],"grpPos":[7.013,0.073,0.227]}]}
+
+--- probe foundry draw 4
+{"arena":"foundry","camAtSettle":[-10.03541,7.05209,1.63289],"models":[{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":340.123,"live":331.719,"fresh":331.719},"budget":{"frozen":10934.183,"live":10400.492},"outBudget":{"frozen":115.097,"live":109.479},"frozen":[21648,14760,8634,17436],"live":[21648,14760,8634,17436],"fresh":[21648,14760,8634,17436],"full":[21648,14760,8634,21648],"totals":[21648,14760,8634,21648],"outline":[false,false,false,true],"camPos":[-10.03541,7.05209,1.63289],"grpPos":[-5.825,2.521,1.286]},{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":102.165,"live":102.538,"fresh":102.538},"budget":{"frozen":986.556,"live":993.772},"outBudget":{"frozen":10.385,"live":10.461},"frozen":[22176,12636,8286,1296],"live":[22176,12636,8286,1296],"fresh":[22176,12636,8286,1296],"full":[22176,12636,9906,22176],"totals":[22176,12636,9906,22176],"outline":[false,false,false,true],"camPos":[-10.03541,7.05209,1.63289],"grpPos":[7.013,0.073,0.227]}]}
+
+--- probe grid draw 1
+{"arena":"grid","camAtSettle":[-5.06832,5.96149,10.69726],"models":[{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":327.748,"live":335.694,"fresh":335.694},"budget":{"frozen":10153.023,"live":10651.25},"outBudget":{"frozen":106.874,"live":112.118},"frozen":[21648,14760,8634,17436],"live":[21648,14760,8634,17436],"fresh":[21648,14760,8634,17436],"full":[21648,14760,8634,21648],"totals":[21648,14760,8634,21648],"outline":[false,false,false,true],"camPos":[-5.06832,5.96149,10.69726],"grpPos":[-1.935,1.121,8.019]},{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":101.534,"live":100.177,"fresh":100.177},"budget":{"frozen":974.393,"live":948.533},"outBudget":{"frozen":10.257,"live":9.985},"frozen":[22176,12636,8286,1296],"live":[22176,12636,8286,1296],"fresh":[22176,12636,8286,1296],"full":[22176,12636,9906,22176],"totals":[22176,12636,9906,22176],"outline":[false,false,false,true],"camPos":[-5.06832,5.96149,10.69726],"grpPos":[9.523,3.109,-1.772]}]}
+
+--- probe grid draw 2
+{"arena":"grid","camAtSettle":[-5.06832,5.96149,10.69726],"models":[{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":327.431,"live":335.694,"fresh":335.694},"budget":{"frozen":10133.397,"live":10651.248},"outBudget":{"frozen":106.667,"live":112.118},"frozen":[21648,14760,8634,17436],"live":[21648,14760,8634,17436],"fresh":[21648,14760,8634,17436],"full":[21648,14760,8634,21648],"totals":[21648,14760,8634,21648],"outline":[false,false,false,true],"camPos":[-5.06832,5.96149,10.69726],"grpPos":[-1.935,1.121,8.019]},{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":101.59,"live":100.177,"fresh":100.177},"budget":{"frozen":975.473,"live":948.533},"outBudget":{"frozen":10.268,"live":9.985},"frozen":[22176,12636,8286,1296],"live":[22176,12636,8286,1296],"fresh":[22176,12636,8286,1296],"full":[22176,12636,9906,22176],"totals":[22176,12636,9906,22176],"outline":[false,false,false,true],"camPos":[-5.06832,5.96149,10.69726],"grpPos":[9.523,3.109,-1.772]}]}
+
+--- probe grid draw 3
+{"arena":"grid","camAtSettle":[-5.06832,5.96149,10.69726],"models":[{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":330.893,"live":335.694,"fresh":335.694},"budget":{"frozen":10348.773,"live":10651.256},"outBudget":{"frozen":108.934,"live":112.118},"frozen":[21648,14760,8634,17436],"live":[21648,14760,8634,17436],"fresh":[21648,14760,8634,17436],"full":[21648,14760,8634,21648],"totals":[21648,14760,8634,21648],"outline":[false,false,false,true],"camPos":[-5.06832,5.96149,10.69726],"grpPos":[-1.935,1.121,8.019]},{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":100.985,"live":100.177,"fresh":100.177},"budget":{"frozen":963.885,"live":948.533},"outBudget":{"frozen":10.146,"live":9.985},"frozen":[22176,12636,8286,1296],"live":[22176,12636,8286,1296],"fresh":[22176,12636,8286,1296],"full":[22176,12636,9906,22176],"totals":[22176,12636,9906,22176],"outline":[false,false,false,true],"camPos":[-5.06832,5.96149,10.69726],"grpPos":[9.523,3.109,-1.772]}]}
+
+--- probe grid draw 4
+{"arena":"grid","camAtSettle":[-5.06832,5.96149,10.69726],"models":[{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":319.566,"live":335.694,"fresh":335.694},"budget":{"frozen":9652.413,"live":10651.248},"outBudget":{"frozen":101.604,"live":112.118},"frozen":[21648,14760,8634,16968],"live":[21648,14760,8634,17436],"fresh":[21648,14760,8634,17436],"full":[21648,14760,8634,21648],"totals":[21648,14760,8634,21648],"outline":[false,false,false,true],"camPos":[-5.06832,5.96149,10.69726],"grpPos":[-1.935,1.121,8.019]},{"own":true,"ok":true,"minPx2":2,"outMinPx2":190,"px":{"frozen":103.043,"live":100.177,"fresh":100.177},"budget":{"frozen":1003.577,"live":948.533},"outBudget":{"frozen":10.564,"live":9.985},"frozen":[22176,12636,8286,1296],"live":[22176,12636,8286,1296],"fresh":[22176,12636,8286,1296],"full":[22176,12636,9906,22176],"totals":[22176,12636,9906,22176],"outline":[false,false,false,true],"camPos":[-5.06832,5.96149,10.69726],"grpPos":[9.523,3.109,-1.772]}]}
+
+
+===================================================================================
+PART 2 — THE FOUR LOD MODES ON THE METER.
+===================================================================================
+=== b2-foundry-fresh-1.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.3  median=63.6  p90=122.1  mean=65.4  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.5%  #####.......................
+     clean    (>=40)  70.7%  ####################........
+     where it fails   weak rows: machine  77.1  behind  78.6
+                      clean rows: machine 148.2  behind  51.2
+     body 134.8 vs background 50.7  (separation 84.1)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.5  median=72.1  p90=125.3  mean=70.7  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.5%  ####........................
+     clean    (>=40)  74.6%  #####################.......
+     where it fails   weak rows: machine  81.9  behind  83.5
+                      clean rows: machine 153.1  behind  49.5
+     body 141.3 vs background 48.8  (separation 92.5)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.8  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.2  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.1 vs background 54.3  (separation 50.8)
+
+=== b2-foundry-fresh-2.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.4  median=63.6  p90=122.1  mean=65.4  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.6%  #####.......................
+     clean    (>=40)  70.7%  ####################........
+     where it fails   weak rows: machine    78  behind  78.6
+                      clean rows: machine 148.4  behind  51.2
+     body 135.2 vs background 50.8  (separation 84.4)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.8  median=72.1  p90=125.2  mean=70.7  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.6%  ####........................
+     clean    (>=40)  74.6%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.8
+                      clean rows: machine 153.1  behind  49.5
+     body 141.9 vs background 48.9  (separation 93)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.2 vs background 54.3  (separation 50.9)
+
+=== b2-foundry-fresh-3.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.3  median=63.6  p90=122.1  mean=65.3  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.6%  #####.......................
+     clean    (>=40)  70.7%  ####################........
+     where it fails   weak rows: machine  76.9  behind  78.6
+                      clean rows: machine 148.2  behind  51.2
+     body 134.6 vs background 50.7  (separation 83.9)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.5  median=72.1  p90=125.2  mean=70.7  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.6%  ####........................
+     clean    (>=40)  74.6%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.5
+                      clean rows: machine 153.1  behind  49.5
+     body 141.3 vs background 48.8  (separation 92.5)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.8  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.2  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.1 vs background 54.3  (separation 50.8)
+
+=== b2-foundry-fresh-4.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8037
+  OVERALL
+     step  p10=14.6  median=60.2  p90=109.7  mean=60.4  (n=692)
+     invisible (<12)   9.4%  ###.........................
+     weak      (<25)  17.1%  #####.......................
+     clean    (>=40)  65.8%  ##################..........
+     where it fails   weak rows: machine  83.5  behind  76.5
+                      clean rows: machine 151.5  behind  60.7
+     body 135.4 vs background 60.3  (separation 75.1)
+  ROBOT 1  75x217px (24.1% of frame height) at 730,583
+     step  p10=15.7  median=67.4  p90=112.4  mean=66  (n=556)
+     invisible (<12)   8.5%  ##..........................
+     weak      (<25)    14%  ####........................
+     clean    (>=40)    71%  ####################........
+     where it fails   weak rows: machine  92.1  behind  88.3
+                      clean rows: machine 154.7  behind  59.2
+     body 142.5 vs background 59.1  (separation 83.4)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=7.2  median=36.7  p90=65.5  mean=37.4  (n=136)
+     invisible (<12)  13.2%  ####........................
+     weak      (<25)  29.4%  ########....................
+     clean    (>=40)  44.1%  ############................
+     where it fails   weak rows: machine  76.5  behind    60
+                      clean rows: machine 125.8  behind  65.2
+     body 104.2 vs background 63.2  (separation 41)
+
+=== b2-foundry-fresh-5.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8037
+  OVERALL
+     step  p10=14.6  median=60.2  p90=109.7  mean=60.2  (n=692)
+     invisible (<12)   9.4%  ###.........................
+     weak      (<25)  17.1%  #####.......................
+     clean    (>=40)  65.8%  ##################..........
+     where it fails   weak rows: machine  83.5  behind  76.5
+                      clean rows: machine 151.3  behind  60.7
+     body 135.7 vs background 60.3  (separation 75.4)
+  ROBOT 1  75x217px (24.1% of frame height) at 730,583
+     step  p10=15.8  median=67.4  p90=112.4  mean=65.8  (n=556)
+     invisible (<12)   8.5%  ##..........................
+     weak      (<25)    14%  ####........................
+     clean    (>=40)    71%  ####################........
+     where it fails   weak rows: machine  92.2  behind  88.3
+                      clean rows: machine 154.7  behind  59.2
+     body 142.6 vs background 59.1  (separation 83.5)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=7.2  median=36.7  p90=65.5  mean=37.5  (n=136)
+     invisible (<12)  13.2%  ####........................
+     weak      (<25)  29.4%  ########....................
+     clean    (>=40)  44.1%  ############................
+     where it fails   weak rows: machine  76.5  behind    60
+                      clean rows: machine 125.8  behind  65.2
+     body 104.4 vs background 63.2  (separation 41.2)
+
+=== b2-foundry-fresh-6.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.3  median=63.6  p90=122.1  mean=65.1  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.7%  #####.......................
+     clean    (>=40)  70.4%  ####################........
+     where it fails   weak rows: machine    77  behind    79
+                      clean rows: machine 148.3  behind  51.2
+     body 134.5 vs background 50.7  (separation 83.8)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.3  median=71.1  p90=125.2  mean=70.4  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.8%  ####........................
+     clean    (>=40)  74.3%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.1
+                      clean rows: machine   153  behind  49.5
+     body 141.3 vs background 48.8  (separation 92.5)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.7  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.1 vs background 54.3  (separation 50.8)
+
+=== b2-foundry-frozen-1.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.3  median=63.6  p90=122.1  mean=65.3  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.6%  #####.......................
+     clean    (>=40)  70.7%  ####################........
+     where it fails   weak rows: machine    78  behind  78.6
+                      clean rows: machine 148.2  behind  51.2
+     body 134.8 vs background 50.8  (separation 84)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.9  median=72.1  p90=125.2  mean=70.6  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.6%  ####........................
+     clean    (>=40)  74.6%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.5
+                      clean rows: machine   153  behind  49.5
+     body 141.3 vs background 48.9  (separation 92.4)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.8  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.3  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.1 vs background 54.3  (separation 50.8)
+
+=== b2-foundry-frozen-2.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.3  median=63.6  p90=122.1  mean=65.2  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.7%  #####.......................
+     clean    (>=40)  70.6%  ####################........
+     where it fails   weak rows: machine  77.8  behind    79
+                      clean rows: machine 148.2  behind  51.2
+     body 134.8 vs background 50.7  (separation 84.1)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.4  median=71.6  p90=125.3  mean=70.6  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.8%  ####........................
+     clean    (>=40)  74.5%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.5
+                      clean rows: machine   153  behind  49.5
+     body 141.5 vs background 48.8  (separation 92.7)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.8  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.1 vs background 54.3  (separation 50.8)
+
+=== b2-foundry-frozen-3.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.4  median=63.7  p90=122.1  mean=65.3  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.6%  #####.......................
+     clean    (>=40)  70.7%  ####################........
+     where it fails   weak rows: machine    78  behind  78.6
+                      clean rows: machine 148.4  behind  51.2
+     body 134.8 vs background 50.7  (separation 84.1)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.9  median=72.1  p90=125.2  mean=70.6  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.6%  ####........................
+     clean    (>=40)  74.6%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.5
+                      clean rows: machine 153.1  behind  49.5
+     body 141.5 vs background 48.9  (separation 92.6)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.3 vs background 54.3  (separation 51)
+
+=== b2-foundry-frozen-4.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8037
+  OVERALL
+     step  p10=14.6  median=60.2  p90=109.7  mean=60.2  (n=692)
+     invisible (<12)   9.4%  ###.........................
+     weak      (<25)  17.1%  #####.......................
+     clean    (>=40)  65.8%  ##################..........
+     where it fails   weak rows: machine  83.5  behind  76.5
+                      clean rows: machine 151.3  behind  60.7
+     body 135.3 vs background 60.3  (separation 75)
+  ROBOT 1  75x217px (24.1% of frame height) at 730,583
+     step  p10=15.7  median=67.4  p90=112.4  mean=65.7  (n=556)
+     invisible (<12)   8.5%  ##..........................
+     weak      (<25)    14%  ####........................
+     clean    (>=40)    71%  ####################........
+     where it fails   weak rows: machine  92.1  behind  88.3
+                      clean rows: machine 154.7  behind  59.2
+     body 142.5 vs background 59.1  (separation 83.4)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=7.2  median=36.7  p90=65.5  mean=37.5  (n=136)
+     invisible (<12)  13.2%  ####........................
+     weak      (<25)  29.4%  ########....................
+     clean    (>=40)  44.1%  ############................
+     where it fails   weak rows: machine  76.5  behind    60
+                      clean rows: machine 125.8  behind  65.2
+     body 104.4 vs background 63.2  (separation 41.2)
+
+=== b2-foundry-frozen-5.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.4  median=63.6  p90=122.1  mean=65.3  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.7%  #####.......................
+     clean    (>=40)  70.6%  ####################........
+     where it fails   weak rows: machine  78.6  behind    79
+                      clean rows: machine 148.2  behind  51.2
+     body 134.6 vs background 50.8  (separation 83.8)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.9  median=71.6  p90=125.3  mean=70.6  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.8%  ####........................
+     clean    (>=40)  74.5%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.5
+                      clean rows: machine   153  behind  49.5
+     body 141.2 vs background 48.9  (separation 92.3)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.7  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.2 vs background 54.3  (separation 50.9)
+
+=== b2-foundry-frozen-6.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.3  median=63.6  p90=122.1  mean=65.4  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.6%  #####.......................
+     clean    (>=40)  70.7%  ####################........
+     where it fails   weak rows: machine  77.9  behind  78.6
+                      clean rows: machine 148.2  behind  51.2
+     body 134.7 vs background 50.7  (separation 84)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.7  median=72.1  p90=125.2  mean=70.8  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.6%  ####........................
+     clean    (>=40)  74.6%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.5
+                      clean rows: machine 153.1  behind  49.5
+     body 141.4 vs background 48.8  (separation 92.6)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.7  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.2 vs background 54.3  (separation 50.9)
+
+=== b2-foundry-full-1.txt
+  LOD MODE: full
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=11  median=60.2  p90=122.1  mean=63.7  (n=693)
+     invisible (<12)  10.4%  ###.........................
+     weak      (<25)  18.3%  #####.......................
+     clean    (>=40)  68.7%  ###################.........
+     where it fails   weak rows: machine  75.7  behind    75
+                      clean rows: machine 147.6  behind  49.8
+     body 127.6 vs background 50  (separation 77.6)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=14.7  median=70.6  p90=125.2  mean=69.8  (n=560)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  15.7%  ####........................
+     clean    (>=40)  73.7%  #####################.......
+     where it fails   weak rows: machine  80.1  behind  83.3
+                      clean rows: machine 152.9  behind  49.3
+     body 137.5 vs background 48.8  (separation 88.7)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=7.2  median=39  p90=67.6  mean=38  (n=132)
+     invisible (<12)  15.9%  ####........................
+     weak      (<25)  28.8%  ########....................
+     clean    (>=40)  47.7%  #############...............
+     where it fails   weak rows: machine  64.2  behind  47.9
+                      clean rows: machine 115.6  behind  50.6
+     body 84.8 vs background 52.5  (separation 32.3)
+
+=== b2-foundry-full-2.txt
+  LOD MODE: full
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=10.9  median=60.2  p90=122.1  mean=63.7  (n=693)
+     invisible (<12)  10.4%  ###.........................
+     weak      (<25)  18.3%  #####.......................
+     clean    (>=40)  68.5%  ###################.........
+     where it fails   weak rows: machine  75.8  behind  78.6
+                      clean rows: machine 148.2  behind  49.8
+     body 127.6 vs background 50.1  (separation 77.5)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=14.7  median=70.6  p90=125.2  mean=69.8  (n=560)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  15.7%  ####........................
+     clean    (>=40)  73.6%  #####################.......
+     where it fails   weak rows: machine    81  behind  83.4
+                      clean rows: machine   153  behind  49.3
+     body 138 vs background 48.9  (separation 89.1)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=7.2  median=39  p90=67.6  mean=38  (n=132)
+     invisible (<12)  15.9%  ####........................
+     weak      (<25)  28.8%  ########....................
+     clean    (>=40)  47.7%  #############...............
+     where it fails   weak rows: machine  64.2  behind  47.9
+                      clean rows: machine 115.6  behind  50.6
+     body 84.8 vs background 52.4  (separation 32.4)
+
+=== b2-foundry-full-3.txt
+  LOD MODE: full
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=10.9  median=60.3  p90=122.1  mean=63.8  (n=693)
+     invisible (<12)  10.4%  ###.........................
+     weak      (<25)  18.2%  #####.......................
+     clean    (>=40)  68.7%  ###################.........
+     where it fails   weak rows: machine  75.8  behind  78.6
+                      clean rows: machine 148.2  behind  49.8
+     body 127.7 vs background 50  (separation 77.7)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=14.7  median=70.6  p90=125.3  mean=69.9  (n=560)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  15.5%  ####........................
+     clean    (>=40)  73.7%  #####################.......
+     where it fails   weak rows: machine  80.2  behind  83.4
+                      clean rows: machine 152.9  behind  49.3
+     body 138 vs background 48.9  (separation 89.1)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=7.2  median=39  p90=67.6  mean=38  (n=132)
+     invisible (<12)  15.9%  ####........................
+     weak      (<25)  28.8%  ########....................
+     clean    (>=40)  47.7%  #############...............
+     where it fails   weak rows: machine  64.3  behind  47.9
+                      clean rows: machine 115.6  behind  50.6
+     body 84.8 vs background 52.4  (separation 32.4)
+
+=== b2-foundry-live-1.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.3  median=63.6  p90=122.1  mean=65.3  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.5%  #####.......................
+     clean    (>=40)  70.6%  ####################........
+     where it fails   weak rows: machine  76.8  behind  78.6
+                      clean rows: machine 148.2  behind  51.2
+     body 134.7 vs background 50.7  (separation 84)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.3  median=71.5  p90=125.2  mean=70.7  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.5%  ####........................
+     clean    (>=40)  74.5%  #####################.......
+     where it fails   weak rows: machine  81.9  behind  83.6
+                      clean rows: machine 153.1  behind  49.5
+     body 141.3 vs background 48.8  (separation 92.5)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.7  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.1 vs background 54.3  (separation 50.8)
+
+=== b2-foundry-live-2.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.4  median=63.6  p90=122.1  mean=65.2  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.7%  #####.......................
+     clean    (>=40)  70.6%  ####################........
+     where it fails   weak rows: machine    78  behind    79
+                      clean rows: machine 148.3  behind  51.2
+     body 134.6 vs background 50.7  (separation 83.9)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.7  median=71.7  p90=125.2  mean=70.5  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.8%  ####........................
+     clean    (>=40)  74.5%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.4
+                      clean rows: machine   153  behind  49.5
+     body 141.1 vs background 48.9  (separation 92.2)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.2 vs background 54.3  (separation 50.9)
+
+=== b2-foundry-live-3.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.4  median=63.6  p90=122.1  mean=65.2  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.5%  #####.......................
+     clean    (>=40)  70.7%  ####################........
+     where it fails   weak rows: machine  77.8  behind  78.6
+                      clean rows: machine 148.2  behind  51.2
+     body 135.1 vs background 50.7  (separation 84.4)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.8  median=72.1  p90=125.3  mean=70.6  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.5%  ####........................
+     clean    (>=40)  74.6%  #####################.......
+     where it fails   weak rows: machine  81.9  behind  83.6
+                      clean rows: machine 153.1  behind  49.5
+     body 141.8 vs background 48.9  (separation 92.9)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.7  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.2 vs background 54.3  (separation 50.9)
+
+=== b2-foundry-live-4.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8037
+  OVERALL
+     step  p10=14.6  median=60.2  p90=109.7  mean=60.5  (n=692)
+     invisible (<12)   9.4%  ###.........................
+     weak      (<25)  17.1%  #####.......................
+     clean    (>=40)  65.9%  ##################..........
+     where it fails   weak rows: machine  83.5  behind  76.5
+                      clean rows: machine 151.5  behind  60.7
+     body 135.4 vs background 60.3  (separation 75.1)
+  ROBOT 1  75x217px (24.1% of frame height) at 730,583
+     step  p10=15.7  median=67.5  p90=112.4  mean=66.1  (n=556)
+     invisible (<12)   8.5%  ##..........................
+     weak      (<25)    14%  ####........................
+     clean    (>=40)  71.2%  ####################........
+     where it fails   weak rows: machine  92.1  behind  88.3
+                      clean rows: machine 154.7  behind  59.2
+     body 142.5 vs background 59.1  (separation 83.4)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=7.2  median=36.7  p90=65.5  mean=37.5  (n=136)
+     invisible (<12)  13.2%  ####........................
+     weak      (<25)  29.4%  ########....................
+     clean    (>=40)  44.1%  ############................
+     where it fails   weak rows: machine  76.5  behind    60
+                      clean rows: machine 125.8  behind  65.2
+     body 104.4 vs background 63.2  (separation 41.2)
+
+=== b2-foundry-live-5.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.3  median=63.1  p90=122.1  mean=65  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.5%  #####.......................
+     clean    (>=40)  70.6%  ####################........
+     where it fails   weak rows: machine  77.2  behind  78.6
+                      clean rows: machine 147.3  behind  51.1
+     body 134.7 vs background 50.7  (separation 84)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.7  median=71.3  p90=125.2  mean=70.4  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.6%  ####........................
+     clean    (>=40)  74.5%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.6
+                      clean rows: machine 152.9  behind  49.5
+     body 141.4 vs background 48.8  (separation 92.6)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.3  mean=42.3  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)  24.2%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.3  behind  51.4
+                      clean rows: machine 123.5  behind  56.6
+     body 105.1 vs background 54.3  (separation 50.8)
+
+=== b2-foundry-live-6.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.3  median=63.7  p90=122.1  mean=65.3  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.7%  #####.......................
+     clean    (>=40)  70.6%  ####################........
+     where it fails   weak rows: machine  78.6  behind    79
+                      clean rows: machine 148.2  behind  51.2
+     body 134.8 vs background 50.8  (separation 84)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.9  median=71.6  p90=125.2  mean=70.7  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.8%  ####........................
+     clean    (>=40)  74.5%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.5
+                      clean rows: machine 153.1  behind  49.5
+     body 141.5 vs background 48.9  (separation 92.6)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.7  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+                      clean rows: machine 123.8  behind  56.7
+     body 105.2 vs background 54.3  (separation 50.9)
+
+=== b2-grid-fresh-1.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+                      clean rows: machine 149.6  behind    53
+     body 148.8 vs background 77  (separation 71.8)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.5  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+                      clean rows: machine 156.9  behind  53.1
+     body 152.1 vs background 80.2  (separation 71.9)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-fresh-2.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.5%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.9  behind  57.8
+                      clean rows: machine 149.6  behind    53
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.9%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.6
+                      clean rows: machine 156.9  behind    53
+     body 152.1 vs background 80.2  (separation 71.9)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-fresh-3.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.5  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.6%  ###.........................
+     clean    (>=40)  82.2%  #######################.....
+     where it fails   weak rows: machine  67.9  behind  57.6
+                      clean rows: machine 149.6  behind    53
+     body 148.7 vs background 76.9  (separation 71.8)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=25.2  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)    10%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.6
+                      clean rows: machine 156.8  behind    53
+     body 152.1 vs background 80.2  (separation 71.9)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-fresh-4.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.7  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.5%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.9  behind  57.8
+                      clean rows: machine 149.4  behind    53
+     body 148.5 vs background 77  (separation 71.5)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.9%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.6
+                      clean rows: machine 156.6  behind    53
+     body 151.9 vs background 80.2  (separation 71.7)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-fresh-5.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+                      clean rows: machine 149.6  behind  53.1
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+                      clean rows: machine 156.9  behind  53.1
+     body 152.1 vs background 80.2  (separation 71.9)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-fresh-6.txt
+  LOD MODE: fresh
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.5%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.9  behind  57.8
+                      clean rows: machine 149.6  behind    53
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.9%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.6
+                      clean rows: machine 156.9  behind    53
+     body 152.1 vs background 80.2  (separation 71.9)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-frozen-1.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24403
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.7  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+                      clean rows: machine 149.6  behind    53
+     body 148.6 vs background 77  (separation 71.6)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+                      clean rows: machine 156.6  behind    53
+     body 152 vs background 80.2  (separation 71.8)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.8  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.5 vs background 47.4  (separation 67.1)
+
+=== b2-grid-frozen-2.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+                      clean rows: machine 149.6  behind    53
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.5  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+                      clean rows: machine 156.9  behind    53
+     body 152 vs background 80.2  (separation 71.8)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-frozen-3.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24193
+  OVERALL
+     step  p10=20.7  median=80.3  p90=118.2  mean=76.1  (n=1366)
+     invisible (<12)   3.1%  #...........................
+     weak      (<25)  12.6%  ####........................
+     clean    (>=40)  80.2%  ######################......
+     where it fails   weak rows: machine    74  behind  65.1
+                      clean rows: machine 154.5  behind  60.3
+     body 150.1 vs background 81.7  (separation 68.4)
+  ROBOT 1  156x283px (31.4% of frame height) at 735,610
+     step  p10=22.4  median=93.6  p90=120.1  mean=82.8  (n=1032)
+     invisible (<12)     4%  #...........................
+     weak      (<25)  10.9%  ###.........................
+     clean    (>=40)  84.4%  ########################....
+     where it fails   weak rows: machine    70  behind  77.6
+                      clean rows: machine 161.4  behind  60.1
+     body 153.2 vs background 84.6  (separation 68.6)
+  ROBOT 2  56x81px (9% of frame height) at 762,157
+     step  p10=19.9  median=60.3  p90=84.5  mean=55.2  (n=333)
+     invisible (<12)   0.3%  ............................
+     weak      (<25)  17.7%  #####.......................
+     clean    (>=40)  67.3%  ###################.........
+     where it fails   weak rows: machine  77.9  behind  59.1
+                      clean rows: machine 132.2  behind  61.3
+     body 116.8 vs background 56.4  (separation 60.4)
+
+=== b2-grid-frozen-4.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+                      clean rows: machine 149.6  behind  53.1
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.5  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+                      clean rows: machine 156.9  behind  53.1
+     body 152 vs background 80.2  (separation 71.8)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-frozen-5.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.7  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+                      clean rows: machine 149.4  behind    53
+     body 148.8 vs background 77  (separation 71.8)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+                      clean rows: machine 156.6  behind    53
+     body 152.1 vs background 80.2  (separation 71.9)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-frozen-6.txt
+  LOD MODE: frozen
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24195
+  OVERALL
+     step  p10=20.7  median=80.4  p90=118.3  mean=76.1  (n=1367)
+     invisible (<12)   3.1%  #...........................
+     weak      (<25)  12.5%  ####........................
+     clean    (>=40)  80.2%  ######################......
+     where it fails   weak rows: machine    74  behind  65.1
+                      clean rows: machine 154.5  behind  60.4
+     body 150.3 vs background 81.7  (separation 68.6)
+  ROBOT 1  156x283px (31.4% of frame height) at 735,610
+     step  p10=22.4  median=93.4  p90=120.1  mean=82.8  (n=1033)
+     invisible (<12)     4%  #...........................
+     weak      (<25)  10.8%  ###.........................
+     clean    (>=40)  84.4%  ########################....
+     where it fails   weak rows: machine    70  behind  77.6
+                      clean rows: machine 161.6  behind  60.2
+     body 153.4 vs background 84.7  (separation 68.7)
+  ROBOT 2  56x81px (9% of frame height) at 762,157
+     step  p10=19.9  median=60.3  p90=84.9  mean=55.4  (n=333)
+     invisible (<12)   0.3%  ............................
+     weak      (<25)  17.4%  #####.......................
+     clean    (>=40)  67.3%  ###################.........
+     where it fails   weak rows: machine  77.9  behind  59.1
+                      clean rows: machine 132.6  behind  61.3
+     body 117.3 vs background 56.4  (separation 60.9)
+
+=== b2-grid-full-1.txt
+  LOD MODE: full
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=21.4  median=84.3  p90=125.8  mean=78.9  (n=1355)
+     invisible (<12)     4%  #...........................
+     weak      (<25)  13.3%  ####........................
+     clean    (>=40)  79.9%  ######################......
+     where it fails   weak rows: machine  67.7  behind  56.1
+                      clean rows: machine   149  behind  52.3
+     body 145.4 vs background 76.9  (separation 68.5)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=24.5  median=97  p90=128.6  mean=86.2  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)    10%  ###.........................
+     clean    (>=40)    85%  ########################....
+     where it fails   weak rows: machine  66.7  behind  71.6
+                      clean rows: machine 156.6  behind    53
+     body 148.8 vs background 80.2  (separation 68.6)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=19.4  median=63.3  p90=90.1  mean=56.6  (n=326)
+     invisible (<12)   0.3%  ............................
+     weak      (<25)    23%  ######......................
+     clean    (>=40)  64.1%  ##################..........
+     where it fails   weak rows: machine  68.2  behind  48.7
+                      clean rows: machine 127.6  behind  50.3
+     body 105.1 vs background 46.9  (separation 58.2)
+
+=== b2-grid-full-2.txt
+  LOD MODE: full
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=21.4  median=84.3  p90=125.8  mean=78.9  (n=1355)
+     invisible (<12)     4%  #...........................
+     weak      (<25)  13.3%  ####........................
+     clean    (>=40)  79.8%  ######################......
+     where it fails   weak rows: machine  67.7  behind  56.1
+                      clean rows: machine   149  behind  52.3
+     body 145.3 vs background 76.9  (separation 68.4)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=24.5  median=97  p90=128.6  mean=86.1  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)    10%  ###.........................
+     clean    (>=40)  84.9%  ########################....
+     where it fails   weak rows: machine  66.7  behind  71.6
+                      clean rows: machine 156.7  behind  53.1
+     body 148.8 vs background 80.2  (separation 68.6)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=19.4  median=63.3  p90=90.1  mean=56.6  (n=326)
+     invisible (<12)   0.3%  ............................
+     weak      (<25)    23%  ######......................
+     clean    (>=40)  64.1%  ##################..........
+     where it fails   weak rows: machine  68.1  behind  48.7
+                      clean rows: machine 127.6  behind  50.3
+     body 105 vs background 46.9  (separation 58.1)
+
+=== b2-grid-full-3.txt
+  LOD MODE: full
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=21.4  median=84.3  p90=125.8  mean=78.9  (n=1355)
+     invisible (<12)     4%  #...........................
+     weak      (<25)  13.3%  ####........................
+     clean    (>=40)  79.9%  ######################......
+     where it fails   weak rows: machine  67.7  behind  56.1
+                      clean rows: machine   149  behind  52.3
+     body 145.4 vs background 76.9  (separation 68.5)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=24.5  median=97  p90=128.6  mean=86.2  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)    10%  ###.........................
+     clean    (>=40)    85%  ########################....
+     where it fails   weak rows: machine  66.7  behind  71.6
+                      clean rows: machine 156.6  behind    53
+     body 148.8 vs background 80.2  (separation 68.6)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=19.4  median=63.3  p90=90.1  mean=56.6  (n=326)
+     invisible (<12)   0.3%  ............................
+     weak      (<25)    23%  ######......................
+     clean    (>=40)  64.1%  ##################..........
+     where it fails   weak rows: machine  68.2  behind  48.7
+                      clean rows: machine 127.6  behind  50.3
+     body 105.1 vs background 46.9  (separation 58.2)
+
+=== b2-grid-live-1.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+                      clean rows: machine 149.6  behind  53.1
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.5  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+                      clean rows: machine 156.9  behind  53.1
+     body 152 vs background 80.2  (separation 71.8)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-live-2.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.5%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.9  behind  57.8
+                      clean rows: machine 149.6  behind    53
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.9%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.6
+                      clean rows: machine 156.9  behind    53
+     body 152.1 vs background 80.2  (separation 71.9)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-live-3.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24193
+  OVERALL
+     step  p10=20.7  median=80.4  p90=118.2  mean=76  (n=1366)
+     invisible (<12)   3.1%  #...........................
+     weak      (<25)  12.6%  ####........................
+     clean    (>=40)  80.2%  ######################......
+     where it fails   weak rows: machine    74  behind  65.1
+                      clean rows: machine 154.5  behind  60.4
+     body 150.4 vs background 81.8  (separation 68.6)
+  ROBOT 1  156x283px (31.4% of frame height) at 735,610
+     step  p10=22.4  median=93.6  p90=120.1  mean=82.8  (n=1032)
+     invisible (<12)     4%  #...........................
+     weak      (<25)  10.9%  ###.........................
+     clean    (>=40)  84.4%  ########################....
+     where it fails   weak rows: machine    70  behind  77.6
+                      clean rows: machine 161.6  behind  60.2
+     body 153.5 vs background 84.7  (separation 68.8)
+  ROBOT 2  56x81px (9% of frame height) at 762,157
+     step  p10=19.9  median=60.4  p90=84.5  mean=55.2  (n=333)
+     invisible (<12)   0.3%  ............................
+     weak      (<25)  17.7%  #####.......................
+     clean    (>=40)  67.3%  ###################.........
+     where it fails   weak rows: machine  77.9  behind  59.1
+                      clean rows: machine 132.2  behind  61.3
+     body 116.6 vs background 56.4  (separation 60.2)
+
+=== b2-grid-live-4.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+                      clean rows: machine 149.6  behind  53.1
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+                      clean rows: machine 156.9  behind  53.1
+     body 152.1 vs background 80.2  (separation 71.9)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-live-5.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+                      clean rows: machine 149.6  behind  53.1
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+                      clean rows: machine 156.9  behind  53.1
+     body 152 vs background 80.2  (separation 71.8)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-grid-live-6.txt
+  LOD MODE: live
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.5%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.9  behind  57.8
+                      clean rows: machine 149.6  behind    53
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.9%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.6
+                      clean rows: machine 156.9  behind    53
+     body 152.1 vs background 80.2  (separation 71.9)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+
+===================================================================================
+PART 3 — THE SIGN COLUMN, AND ORBITAL'S FIRST CAPTURE ON THE PINNED METER.
+===================================================================================
+=== b2-sign-foundry-1.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.4  median=63.6  p90=122.1  mean=65.1  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.7%  #####.......................
+     clean    (>=40)  70.6%  ####################........
+     where it fails   weak rows: machine  77.1  behind    79
+     SIGN             weak rows machine DARKER than behind: 15.5% of 116   whole contour: 2.6%
+                      clean rows: machine 148.3  behind  51.2
+     body 134.5 vs background 50.7  (separation 83.8)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.3  median=71.7  p90=125.2  mean=70.3  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.8%  ####........................
+     clean    (>=40)  74.5%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.4
+     SIGN             weak rows machine DARKER than behind: 18.1% of 83   whole contour: 2.7%
+                      clean rows: machine 153.1  behind  49.5
+     body 141.2 vs background 48.8  (separation 92.4)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+     SIGN             weak rows machine DARKER than behind: 9.1% of 33   whole contour: 2.3%
+                      clean rows: machine 123.8  behind  56.7
+     body 105.3 vs background 54.3  (separation 51)
+
+=== b2-sign-foundry-2.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.4  median=63.7  p90=122.1  mean=65.3  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.5%  #####.......................
+     clean    (>=40)  70.7%  ####################........
+     where it fails   weak rows: machine    78  behind    79
+     SIGN             weak rows machine DARKER than behind: 15.8% of 114   whole contour: 2.6%
+                      clean rows: machine 148.4  behind  51.2
+     body 134.7 vs background 50.8  (separation 83.9)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.9  median=72.1  p90=125.2  mean=70.7  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.5%  ####........................
+     clean    (>=40)  74.6%  #####################.......
+     where it fails   weak rows: machine  81.9  behind  83.5
+     SIGN             weak rows machine DARKER than behind: 18.5% of 81   whole contour: 2.7%
+                      clean rows: machine 153.1  behind  49.5
+     body 141.4 vs background 48.9  (separation 92.5)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+     SIGN             weak rows machine DARKER than behind: 9.1% of 33   whole contour: 2.3%
+                      clean rows: machine 123.8  behind  56.7
+     body 105.3 vs background 54.3  (separation 51)
+
+=== b2-sign-foundry-3.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.4  median=63.6  p90=122.1  mean=65.3  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.5%  #####.......................
+     clean    (>=40)  70.7%  ####################........
+     where it fails   weak rows: machine  77.9  behind  78.6
+     SIGN             weak rows machine DARKER than behind: 15.8% of 114   whole contour: 2.6%
+                      clean rows: machine 148.3  behind  51.2
+     body 135 vs background 50.7  (separation 84.3)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.8  median=72.1  p90=125.3  mean=70.7  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.5%  ####........................
+     clean    (>=40)  74.6%  #####################.......
+     where it fails   weak rows: machine  81.9  behind  83.5
+     SIGN             weak rows machine DARKER than behind: 18.5% of 81   whole contour: 2.7%
+                      clean rows: machine 153.1  behind  49.5
+     body 141.8 vs background 48.9  (separation 92.9)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+     SIGN             weak rows machine DARKER than behind: 9.1% of 33   whole contour: 2.3%
+                      clean rows: machine 123.8  behind  56.7
+     body 105.3 vs background 54.3  (separation 51)
+
+=== b2-sign-foundry-4.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.4  median=63.6  p90=122.1  mean=65.3  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.7%  #####.......................
+     clean    (>=40)  70.6%  ####################........
+     where it fails   weak rows: machine    78  behind    79
+     SIGN             weak rows machine DARKER than behind: 15.5% of 116   whole contour: 2.6%
+                      clean rows: machine 148.3  behind  51.2
+     body 134.9 vs background 50.7  (separation 84.2)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.4  median=72.1  p90=125.2  mean=70.6  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.8%  ####........................
+     clean    (>=40)  74.5%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.5
+     SIGN             weak rows machine DARKER than behind: 18.1% of 83   whole contour: 2.7%
+                      clean rows: machine 153.1  behind  49.5
+     body 141.6 vs background 48.9  (separation 92.7)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+     SIGN             weak rows machine DARKER than behind: 9.1% of 33   whole contour: 2.3%
+                      clean rows: machine 123.8  behind  56.7
+     body 105.2 vs background 54.3  (separation 50.9)
+
+=== b2-sign-foundry-5.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.4  median=63.6  p90=122.1  mean=65  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.7%  #####.......................
+     clean    (>=40)  70.6%  ####################........
+     where it fails   weak rows: machine  77.1  behind    79
+     SIGN             weak rows machine DARKER than behind: 15.5% of 116   whole contour: 2.6%
+                      clean rows: machine 148.3  behind  51.2
+     body 134.5 vs background 50.7  (separation 83.8)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.3  median=71.7  p90=125.2  mean=70.3  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.8%  ####........................
+     clean    (>=40)  74.5%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.4
+     SIGN             weak rows machine DARKER than behind: 18.1% of 83   whole contour: 2.7%
+                      clean rows: machine   153  behind  49.5
+     body 141.2 vs background 48.8  (separation 92.4)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.9  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.4  behind  51.4
+     SIGN             weak rows machine DARKER than behind: 9.1% of 33   whole contour: 2.3%
+                      clean rows: machine 123.8  behind  56.7
+     body 105.3 vs background 54.3  (separation 51)
+
+=== b2-sign-foundry-6.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-5.83,1.29 p2=7.01,0.23
+
+SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+  OVERALL
+     step  p10=15.3  median=63.6  p90=122.1  mean=65.2  (n=693)
+     invisible (<12)   9.1%  ###.........................
+     weak      (<25)  16.7%  #####.......................
+     clean    (>=40)  70.6%  ####################........
+     where it fails   weak rows: machine  78.5  behind    79
+     SIGN             weak rows machine DARKER than behind: 15.5% of 116   whole contour: 2.6%
+                      clean rows: machine 148.2  behind  51.2
+     body 134.7 vs background 50.8  (separation 83.9)
+  ROBOT 1  78x217px (24.1% of frame height) at 727,583
+     step  p10=16.9  median=71.5  p90=125.3  mean=70.5  (n=560)
+     invisible (<12)   8.4%  ##..........................
+     weak      (<25)  14.8%  ####........................
+     clean    (>=40)  74.5%  #####################.......
+     where it fails   weak rows: machine  83.7  behind  83.4
+     SIGN             weak rows machine DARKER than behind: 18.1% of 83   whole contour: 2.7%
+                      clean rows: machine 152.9  behind  49.5
+     body 141.3 vs background 48.9  (separation 92.4)
+  ROBOT 2  41x39px (4.3% of frame height) at 775,353
+     step  p10=9.4  median=42.8  p90=72.8  mean=42.9  (n=132)
+     invisible (<12)  12.1%  ###.........................
+     weak      (<25)    25%  #######.....................
+     clean    (>=40)  54.5%  ###############.............
+     where it fails   weak rows: machine  69.3  behind  51.4
+     SIGN             weak rows machine DARKER than behind: 9.1% of 33   whole contour: 2.3%
+                      clean rows: machine 123.8  behind  56.7
+     body 105.1 vs background 54.3  (separation 50.8)
+
+=== b2-sign-grid-1.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+     SIGN             weak rows machine DARKER than behind: 43.9% of 155   whole contour: 5.8%
+                      clean rows: machine 149.6  behind  53.1
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+     SIGN             weak rows machine DARKER than behind: 68% of 100   whole contour: 7.6%
+                      clean rows: machine 156.9  behind  53.1
+     body 152.1 vs background 80.2  (separation 71.9)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+     SIGN             weak rows machine DARKER than behind: 0% of 53   whole contour: 0%
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-sign-grid-2.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+     SIGN             weak rows machine DARKER than behind: 43.9% of 155   whole contour: 5.8%
+                      clean rows: machine 149.6  behind  53.1
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.4  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+     SIGN             weak rows machine DARKER than behind: 68% of 100   whole contour: 7.6%
+                      clean rows: machine 156.9  behind  53.1
+     body 152.1 vs background 80.2  (separation 71.9)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.1  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+     SIGN             weak rows machine DARKER than behind: 0% of 53   whole contour: 0%
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-sign-grid-3.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.93,8.02 p2=9.52,-1.77
+
+SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24401
+  OVERALL
+     step  p10=22.6  median=86.4  p90=125.8  mean=80.8  (n=1355)
+     invisible (<12)   3.9%  #...........................
+     weak      (<25)  11.4%  ###.........................
+     clean    (>=40)  82.3%  #######################.....
+     where it fails   weak rows: machine  67.8  behind  57.8
+     SIGN             weak rows machine DARKER than behind: 43.9% of 155   whole contour: 5.8%
+                      clean rows: machine 149.6  behind    53
+     body 148.7 vs background 77  (separation 71.7)
+  ROBOT 1  157x284px (31.6% of frame height) at 734,610
+     step  p10=26  median=97.8  p90=128.6  mean=87.5  (n=1025)
+     invisible (<12)   5.1%  #...........................
+     weak      (<25)   9.8%  ###.........................
+     clean    (>=40)    86%  ########################....
+     where it fails   weak rows: machine  66.7  behind  72.7
+     SIGN             weak rows machine DARKER than behind: 68% of 100   whole contour: 7.6%
+                      clean rows: machine 156.9  behind    53
+     body 152 vs background 80.2  (separation 71.8)
+  ROBOT 2  55x81px (9% of frame height) at 762,157
+     step  p10=20.5  median=67.2  p90=92.3  mean=60.3  (n=326)
+     invisible (<12)     0%  ............................
+     weak      (<25)  16.3%  #####.......................
+     clean    (>=40)  70.9%  ####################........
+     where it fails   weak rows: machine  69.3  behind  50.6
+     SIGN             weak rows machine DARKER than behind: 0% of 53   whole contour: 0%
+                      clean rows: machine 130.4  behind  52.9
+     body 114.4 vs background 47.4  (separation 67)
+
+=== b2-sign-orbital-1.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.97,-0.76 p2=12.91,-8.18
+
+SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24276
+  OVERALL
+     step  p10=22.4  median=96.5  p90=125.4  mean=85.3  (n=1166)
+     invisible (<12)   7.6%  ##..........................
+     weak      (<25)  10.5%  ###.........................
+     clean    (>=40)  85.9%  ########################....
+     where it fails   weak rows: machine  43.4  behind  38.6
+     SIGN             weak rows machine DARKER than behind: 5.7% of 122   whole contour: 0.6%
+                      clean rows: machine 146.3  behind  44.9
+     body 150.3 vs background 36.7  (separation 113.6)
+  ROBOT 1  178x259px (28.8% of frame height) at 746,641
+     step  p10=35.6  median=102.7  p90=127.1  mean=92  (n=976)
+     invisible (<12)   7.9%  ##..........................
+     weak      (<25)     9%  ###.........................
+     clean    (>=40)  89.4%  #########################...
+     where it fails   weak rows: machine  41.4  behind  37.6
+     SIGN             weak rows machine DARKER than behind: 6.8% of 88   whole contour: 0.6%
+                      clean rows: machine 149.5  behind  44.5
+     body 152.3 vs background 36.2  (separation 116.1)
+  ROBOT 2  49x63px (7% of frame height) at 779,255
+     step  p10=16.2  median=53.4  p90=78.9  mean=50.5  (n=189)
+     invisible (<12)   6.3%  ##..........................
+     weak      (<25)    18%  #####.......................
+     clean    (>=40)  67.7%  ###################.........
+     where it fails   weak rows: machine    64  behind  49.8
+     SIGN             weak rows machine DARKER than behind: 2.9% of 34   whole contour: 0.5%
+                      clean rows: machine 110.9  behind  48.4
+     body 95.2 vs background 39.3  (separation 55.9)
+
+=== b2-sign-orbital-2.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.97,-0.76 p2=12.91,-8.18
+
+SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24274
+  OVERALL
+     step  p10=22.5  median=96.4  p90=125.6  mean=85.2  (n=1167)
+     invisible (<12)   7.6%  ##..........................
+     weak      (<25)  10.8%  ###.........................
+     clean    (>=40)  85.9%  ########################....
+     where it fails   weak rows: machine  43.5  behind  38.8
+     SIGN             weak rows machine DARKER than behind: 5.6% of 126   whole contour: 0.6%
+                      clean rows: machine 146.2  behind  44.9
+     body 150.4 vs background 36.7  (separation 113.7)
+  ROBOT 1  178x259px (28.8% of frame height) at 746,641
+     step  p10=35.6  median=102.6  p90=127.1  mean=92.1  (n=976)
+     invisible (<12)   7.9%  ##..........................
+     weak      (<25)     9%  ###.........................
+     clean    (>=40)  89.4%  #########################...
+     where it fails   weak rows: machine  41.4  behind  37.6
+     SIGN             weak rows machine DARKER than behind: 6.8% of 88   whole contour: 0.6%
+                      clean rows: machine 149.5  behind  44.6
+     body 152.3 vs background 36.2  (separation 116.1)
+  ROBOT 2  49x63px (7% of frame height) at 779,255
+     step  p10=17  median=50.2  p90=79.6  mean=50.1  (n=190)
+     invisible (<12)   6.3%  ##..........................
+     weak      (<25)    20%  ######......................
+     clean    (>=40)  67.4%  ###################.........
+     where it fails   weak rows: machine  64.6  behind  50.3
+     SIGN             weak rows machine DARKER than behind: 2.6% of 38   whole contour: 0.5%
+                      clean rows: machine 110.9  behind  48.6
+     body 95.1 vs background 39.4  (separation 55.7)
+
+=== b2-sign-orbital-3.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.97,-0.76 p2=12.91,-8.18
+
+SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24276
+  OVERALL
+     step  p10=22.4  median=96.4  p90=125.4  mean=85.3  (n=1166)
+     invisible (<12)   7.6%  ##..........................
+     weak      (<25)  10.5%  ###.........................
+     clean    (>=40)  85.9%  ########################....
+     where it fails   weak rows: machine  43.4  behind  38.6
+     SIGN             weak rows machine DARKER than behind: 5.7% of 122   whole contour: 0.6%
+                      clean rows: machine 146.2  behind  44.9
+     body 150.4 vs background 36.7  (separation 113.7)
+  ROBOT 1  178x259px (28.8% of frame height) at 746,641
+     step  p10=35.6  median=102.7  p90=127.1  mean=92.1  (n=976)
+     invisible (<12)   7.9%  ##..........................
+     weak      (<25)     9%  ###.........................
+     clean    (>=40)  89.4%  #########################...
+     where it fails   weak rows: machine  41.4  behind  37.6
+     SIGN             weak rows machine DARKER than behind: 6.8% of 88   whole contour: 0.6%
+                      clean rows: machine 149.5  behind  44.6
+     body 152.3 vs background 36.2  (separation 116.1)
+  ROBOT 2  49x63px (7% of frame height) at 779,255
+     step  p10=16.2  median=52.9  p90=78.9  mean=50.2  (n=189)
+     invisible (<12)   6.3%  ##..........................
+     weak      (<25)    18%  #####.......................
+     clean    (>=40)  67.7%  ###################.........
+     where it fails   weak rows: machine    64  behind  49.8
+     SIGN             weak rows machine DARKER than behind: 2.9% of 34   whole contour: 0.5%
+                      clean rows: machine 110.9  behind  48.4
+     body 95.1 vs background 39.3  (separation 55.8)
+
+=== b2-sign-orbital-4.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.97,-0.76 p2=12.91,-8.18
+
+SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24276
+  OVERALL
+     step  p10=22.9  median=96.4  p90=125.4  mean=85.3  (n=1166)
+     invisible (<12)   7.6%  ##..........................
+     weak      (<25)  10.5%  ###.........................
+     clean    (>=40)  85.9%  ########################....
+     where it fails   weak rows: machine  43.4  behind  38.6
+     SIGN             weak rows machine DARKER than behind: 5.7% of 122   whole contour: 0.6%
+                      clean rows: machine 146.2  behind  44.9
+     body 150.3 vs background 36.7  (separation 113.6)
+  ROBOT 1  178x259px (28.8% of frame height) at 746,641
+     step  p10=35.6  median=102.7  p90=127.1  mean=92.1  (n=976)
+     invisible (<12)   7.9%  ##..........................
+     weak      (<25)     9%  ###.........................
+     clean    (>=40)  89.4%  #########################...
+     where it fails   weak rows: machine  41.4  behind  37.6
+     SIGN             weak rows machine DARKER than behind: 6.8% of 88   whole contour: 0.6%
+                      clean rows: machine 149.5  behind  44.5
+     body 152.2 vs background 36.2  (separation 116)
+  ROBOT 2  49x63px (7% of frame height) at 779,255
+     step  p10=16.2  median=53.4  p90=78.9  mean=50.5  (n=189)
+     invisible (<12)   6.3%  ##..........................
+     weak      (<25)    18%  #####.......................
+     clean    (>=40)  67.7%  ###################.........
+     where it fails   weak rows: machine    64  behind  49.8
+     SIGN             weak rows machine DARKER than behind: 2.9% of 34   whole contour: 0.5%
+                      clean rows: machine 110.9  behind  48.4
+     body 95.1 vs background 39.3  (separation 55.8)
+
+=== b2-sign-orbital-5.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.97,-0.76 p2=12.91,-8.18
+
+SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24274
+  OVERALL
+     step  p10=22.9  median=96.4  p90=125.4  mean=85.2  (n=1167)
+     invisible (<12)   7.6%  ##..........................
+     weak      (<25)  10.8%  ###.........................
+     clean    (>=40)  85.9%  ########################....
+     where it fails   weak rows: machine  43.5  behind  38.8
+     SIGN             weak rows machine DARKER than behind: 5.6% of 126   whole contour: 0.6%
+                      clean rows: machine 146.2  behind    45
+     body 150.6 vs background 36.7  (separation 113.9)
+  ROBOT 1  178x259px (28.8% of frame height) at 746,641
+     step  p10=35.6  median=102.6  p90=127.1  mean=92.1  (n=976)
+     invisible (<12)   7.9%  ##..........................
+     weak      (<25)     9%  ###.........................
+     clean    (>=40)  89.4%  #########################...
+     where it fails   weak rows: machine  41.4  behind  37.6
+     SIGN             weak rows machine DARKER than behind: 6.8% of 88   whole contour: 0.6%
+                      clean rows: machine 149.5  behind  44.6
+     body 152.4 vs background 36.2  (separation 116.2)
+  ROBOT 2  49x63px (7% of frame height) at 779,255
+     step  p10=17  median=50.2  p90=78.9  mean=50  (n=190)
+     invisible (<12)   6.3%  ##..........................
+     weak      (<25)    20%  ######......................
+     clean    (>=40)  67.4%  ###################.........
+     where it fails   weak rows: machine  64.7  behind  50.3
+     SIGN             weak rows machine DARKER than behind: 2.6% of 38   whole contour: 0.5%
+                      clean rows: machine 110.9  behind  48.4
+     body 95.1 vs background 39.4  (separation 55.7)
+
+=== b2-sign-orbital-6.txt
+  bundle: d9cef324894e   base: http://127.0.0.1:4403/custom_robot/
+  sim state: tick=420 p1=-1.97,-0.76 p2=12.91,-8.18
+
+SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24274
+  OVERALL
+     step  p10=22.8  median=96.4  p90=125.6  mean=85.2  (n=1167)
+     invisible (<12)   7.6%  ##..........................
+     weak      (<25)  10.8%  ###.........................
+     clean    (>=40)  85.9%  ########################....
+     where it fails   weak rows: machine  43.5  behind  38.8
+     SIGN             weak rows machine DARKER than behind: 5.6% of 126   whole contour: 0.6%
+                      clean rows: machine 146.2  behind    45
+     body 150.4 vs background 36.7  (separation 113.7)
+  ROBOT 1  178x259px (28.8% of frame height) at 746,641
+     step  p10=35.3  median=102.6  p90=127.1  mean=92.1  (n=976)
+     invisible (<12)   7.9%  ##..........................
+     weak      (<25)     9%  ###.........................
+     clean    (>=40)  89.4%  #########################...
+     where it fails   weak rows: machine  41.4  behind  37.5
+     SIGN             weak rows machine DARKER than behind: 6.8% of 88   whole contour: 0.6%
+                      clean rows: machine 149.5  behind  44.6
+     body 152.3 vs background 36.2  (separation 116.1)
+  ROBOT 2  49x63px (7% of frame height) at 779,255
+     step  p10=17  median=50.2  p90=79.6  mean=50.1  (n=190)
+     invisible (<12)   6.3%  ##..........................
+     weak      (<25)    20%  ######......................
+     clean    (>=40)  67.4%  ###################.........
+     where it fails   weak rows: machine  64.6  behind  50.3
+     SIGN             weak rows machine DARKER than behind: 2.6% of 38   whole contour: 0.5%
+                      clean rows: machine 110.9  behind  48.4
+     body 95.1 vs background 39.4  (separation 55.7)
+
