@@ -13847,7 +13847,8 @@ Everything below is mine, this session, on bundle **`d9cef324894e`** served from
 (`dist-r40-far`), hashed off the running server by the meter itself and printed at the head of every
 capture. Tier 3, tick 420, seed 1234567. **`uPaintLift = uPaintLiftFar = 0` in every run in this
 section** — nothing here is a candidate, it is all baseline. Raw output: **`shots/r43-lodaudit.txt`**
-(1845 lines: 8 probe draws, 72 contour draws, three arenas).
+(1845 lines: 8 probe draws, 57 contour draws — 42 across the four LOD modes and 15 on the sign
+meter — three arenas).
 
 Four instruments, all new, all tracked, and all of them read `tools/contour.mjs` at run time rather
 than copying it — `shots/_settlesrc.mjs`, `shots/_r45lodprobe.mjs`, `shots/_r45lodmode.mjs`,
@@ -13975,9 +13976,9 @@ all, and therefore not a property of the clamp.
 
 > **RULED: the clamp is LEGITIMATE as a matter of the figures it has produced, and it may stay while
 > it is replaced.** No clause B, C or D figure taken since `5a30c18` is withdrawn on account of it: it
-> photographs the same plates the shipped renderer draws in 7 of the 8 probe draws and in all 72
-> contour draws, and where it does not (grid, one draw in four, 468 hull indices) the cell does not
-> move. **A meter that measures a machine the game does not draw is nonetheless a meter whose readings
+> photographs the same plates the shipped renderer draws in **7 of the 8 probe draws**, and its cells
+> are the shipped renderer's cells in **all 36 mode draws** — every cell, both poses, both arenas —
+> and where it does not (grid, one probe draw in four, 468 hull indices) the cell does not move. **A meter that measures a machine the game does not draw is nonetheless a meter whose readings
 > agree with the machine the game does draw, and that is an empirical result, not a licence.**
 >
 > **And it is REFUSED as a mechanism, and must be replaced by the corrected resolve.** A clamp whose
