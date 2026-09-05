@@ -79,6 +79,8 @@ uniform float uRimSizeHi;
 uniform float uRimFar;
 uniform float uRimEdgeFar;
 uniform float uRimSoftFar;
+uniform float uPaintLift;
+uniform vec3  uPaintTint;
 varying vec3 vWorldNormalX;
 varying vec3 vWorldPosX;
 /**
@@ -488,6 +490,43 @@ const RIM_FRAG = /* glsl */`
   // (threshold minus knee) it still contributes exactly nothing to the bright
   // pass, so the machine remains a non-source; the 0.26 of headroom bought by
   // the saturation is spent on the luma the acceptance test asks for.
+  // ---------------------------------------------------------------------
+  // CLAUSE B — RULING 50's TRANSLATION, AS A SHADER TERM. SHIPS AT ZERO.
+  // ---------------------------------------------------------------------
+  //
+  // RULING 50 priced the only transform that reaches clause B's worst cell: add
+  // a constant to the machine and nothing else. On the captured boundary
+  // samples a uniform +40 display levels takes all four cells over the 90%
+  // threshold (grid near 86.2 -> 92.9, grid far 80.7 -> 100.0, foundry near
+  // 74.8 -> 97.7, foundry far 54.5 -> 97.7) and +20 clears neither foundry cell.
+  //
+  // WHY A TRANSLATION AND NOT THE FLATTEN. The flatten is a CONTRACTION toward a
+  // pivot: it moves illumination and explicitly preserves paint, and the failing
+  // pixels are paint, which is why sweeping it to 1.0 moved them 0.3 of a level.
+  // A translation adds the same constant to every mass, so the per-mass sd and
+  // the between-mass step are both unchanged and clause C's ratio is invariant
+  // under it by construction — the one guard a value change would be expected
+  // to trip.
+  //
+  // WHY IT IS ADDED ALONG THE PAINT AND NOT ALONG WHITE. RULING 50 named clause
+  // D as the risk and named the mechanism: the cheapest way to add 40 levels is
+  // to add white, and white costs saturation. Adding lift * tint, with the tint
+  // being the machine's own hull colour scaled so its max channel is 1, is
+  // exactly a scale of any pixel whose hue already matches it — so
+  // 1 - min/max is unchanged and the chroma the clause measures is preserved by
+  // construction rather than by hoping.
+  //
+  // This sits BEFORE the hit tell on purpose. The tell mixes to a fixed 0.62,
+  // which is under the bright pass's threshold minus knee so that a flashed
+  // machine contributes nothing to bloom; lifting after the mix would push it
+  // back over and undo RULING 22's work in a different file.
+  //
+  // gl_FragColor here is already tone-mapped and colour-space encoded — this
+  // block is injected before <dithering_fragment> — so uPaintLift is in display
+  // levels over 255 and 40 levels is 0.157. It is a live numeric uniform, which
+  // means the acceptance test can be swept with contour.mjs --u and mass.mjs --u
+  // without a build per point, and it SHIPS AT 0.0 until that test is passed.
+  gl_FragColor.rgb += uPaintLift * uPaintTint;
   gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.62, 0.08, 0.05), uHitFlash);
 `;
 
@@ -513,8 +552,31 @@ export function roboShell(maps, look, teamColor, opts = {}) {
   // still says "this robot is the blue one" and actually separates.
   const rimCol = new THREE.Color(look.emissive ?? 0x88ccff).lerp(new THREE.Color(0xffffff), 0.62);
 
+  /**
+   * The direction clause B's translation is added along — see the block at the
+   * end of RIM_FRAG. It is the machine's own hull colour normalised so its
+   * largest channel is 1, which makes `+= lift * tint` a pure SCALE of any
+   * pixel already painted that hue, so `1 - min/max` — the chroma clause D
+   * measures — comes through unchanged. Adding along white would not, and
+   * RULING 50 named that as the risk before any of this was written.
+   *
+   * `look.primary` rather than the team colour: the team colour is a livery
+   * marker on a few plates, and the pixels that fail are hull and `dark`, both
+   * of which are `primary` at different lightnesses.
+   */
+  const paintTint = new THREE.Color(look.primary ?? 0xffffff);
+  {
+    const m = Math.max(paintTint.r, paintTint.g, paintTint.b, 1e-3);
+    paintTint.setRGB(paintTint.r / m, paintTint.g / m, paintTint.b / m);
+  }
+
   const u = {
     uRimColor: { value: rimCol },
+    // Clause B's translation. SHIPS AT 0 — RULING 50 priced it, the acceptance
+    // test has not been run, and a knob that has not passed its test does not
+    // get to be on by default. In display levels over 255: 40 levels is 0.157.
+    uPaintLift: { value: opts.paintLift ?? 0.0 },
+    uPaintTint: { value: paintTint },
     // uRimEdge/uRimSoft/uRimWash are READ by RIM_FRAG. They were declared in the
     // shader but never supplied here, so WebGL left all three at 0 and the band
     // evaluated as smoothstep(0.0, 0.0, fres) — edge0 == edge1, a divide by zero
