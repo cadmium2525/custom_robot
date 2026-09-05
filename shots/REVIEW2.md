@@ -14248,3 +14248,58 @@ Three things follow, and none of them is a candidate:
   subject of the last four rounds.
 - **Nothing in `src/` changed this round. Both lift uniforms remain 0.0. `npm test` passes and
   `npx vite build` is clean.**
+
+---
+
+## ROUND 43 — BUILDER: **RULING 57's corrected resolve adopted, and my camera-drift diagnosis withdrawn**
+
+### 1. The withdrawal comes first, because three files carried the claim
+
+`5a30c18` froze the LOD and justified it with: *"the only free term is depth, and the CAMERA is still
+drifting after onRender is nulled."* **RULING 57 measured the camera and it does not move — identical
+at settle and at shutter in 8 of 8 draws.** The inference was sound arithmetic on a premise I never
+tested: I eliminated target height, projection and model position, and concluded the remaining term
+must be the one I could not see, rather than measuring it.
+
+What actually moves is stale matrices. `_applyLod` reads `camera.matrixWorldInverse` and
+`group.matrixWorld`; nothing but `renderer.render()` writes them; the settle is synchronous and
+renders no frame. **So my "resolve against the settled camera" line resolved against the last
+PRE-SETTLE frame — the unconverged, load-dependent camera the settle exists to discard.** The frozen
+`lodPx` spread 6.4 and 11.3 px across draws where the live value spread 0.001 and 0.000. The clamp
+was freezing the one camera in the process that nobody wants.
+
+The false comment is corrected in place in all three meters rather than left to be believed by the
+next reader.
+
+### 2. The corrected resolve, adopted on RULING 57's grounds and not on a rate
+
+Update the world matrices, invert the camera by hand, reset both budgets, then resolve. Six draws per
+arena, bundle `d9cef324894e`:
+
+```
+  grid     24401 px x5 and 24403 x1      near 86.0 x6 exact     FAR 70.9 x6 exact
+  foundry  8220 px x6                    near 74.5/74.6         FAR 54.5 x6 exact
+```
+
+**Every cell that matters is exact across six draws on both arenas.** Grid's stencil moves by 2 px in
+one draw of six and no cell moves with it.
+
+> **AND THE MINORITY POSE DID NOT APPEAR ON FOUNDRY IN SIX DRAWS — WHICH I AM NOT CLAIMING AS A FIX.**
+> At the 1-in-6 rate measured under the previous clamp, six draws come back clean about a third of the
+> time by chance alone. RULING 57's own standing rule is that a meter change justified by a change in
+> a rate needs at least six draws per arm and the rate stated with both denominators; this is **0 of 6
+> against 1 of 6**, which is not that. **The corrected resolve is adopted because the ruling refused
+> the old one on mechanism** — it reproduces the shipped budget in 8 of 8 and is the only mode in the
+> audit that never froze a plate the game does not draw — **and the pose rate is reported beside it,
+> not used to justify it.** That distinction is exactly the one `5a30c18` got wrong.
+
+### 3. What I got wrong this round, in one place
+
+- **The camera-drift mechanism** — withdrawn above, refuted by direct measurement.
+- **Two denominators in ROUND 42's tables** — grid's far `n` is 326, not 300; foundry's near is 560,
+  not 559. Corrected by RULING 58.
+- **ROUND 38's mechanism labels for clause B** — RULING 59 strikes them: foundry's near machine is 82%
+  machine-BRIGHTER and grid's near is 68% machine-DARKER, and I had described the pair the other way.
+
+Three corrections in one round, all found by re-measurement rather than by argument, and none of them
+changes a clause cell. **The card does not move: clause B's cell is still 54.5.**

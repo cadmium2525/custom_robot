@@ -301,8 +301,13 @@ const SETTLE_FN = `(n) => {
   // lodPx is BODY_H * projection[1][1] / depth * 0.5 * targetHeight. The target
   // is 1600x900 in every run, the tier is 3 and dynamicScale is 1 in every run
   // (all four measured, not assumed), the projection is fixed and the model
-  // positions do not move. So the only free term is depth, and the CAMERA is
-  // still drifting after onRender is nulled. Running this settle a second time
+  // positions do not move.
+  //
+  // FROM THAT I CONCLUDED THE CAMERA WAS DRIFTING, AND RULING 57 REFUTED IT BY
+  // MEASURING THE CAMERA: its position is identical at settle and at shutter in
+  // 8 of 8 draws. The moving term was never depth. It was that _applyLod reads
+  // matrices only renderer.render() writes, so the resolve below was reading the
+  // last PRE-SETTLE frame — see the corrected resolve, which is the actual fix. Running this settle a second time
   // at the shutter was tried as the repair and is refused: six draws, two
   // stencils still, and the near cell collapsed from about 72 to about 42.
   //
@@ -322,8 +327,31 @@ const SETTLE_FN = `(n) => {
   // foundry's minority pose from two draws in three to one in six; it did not
   // reach zero, and this is the term that was left.
   {
+    // RULING 57 — THE CORRECTED RESOLVE. The previous line called _applyLod and
+    // called it "against the settled camera", and it was not: _applyLod reads
+    // camera.matrixWorldInverse and group.matrixWorld, NOTHING but
+    // renderer.render() writes those, and this settle is synchronous — no frame
+    // renders inside it — so at the end of the loop both matrices still held the
+    // last PRE-SETTLE frame. The clamp was freezing the unconverged,
+    // load-dependent camera the settle exists to discard.
+    //
+    // Measured by the audit: the frozen lodPx spread 6.4 and 11.3 px across four
+    // draws while the LIVE value spread 0.001 and 0.000, and the camera's own
+    // position was identical at settle and shutter in 8 of 8 draws — which also
+    // REFUTES the camera-drift diagnosis this clamp was written on. The drift was
+    // never the camera; it was this resolve reading stale matrices.
+    //
+    // Updating the world matrices and inverting the camera by hand before
+    // resolving reproduces the shipped budget in 8 of 8. It is the only mode in
+    // the audit's table that never froze a plate the game does not draw.
     const cam = g.engine.activeCamera || g.engine.camera;
-    for (const m of g.view.models) if (m._applyLod) m._applyLod(g.engine.renderer, cam);
+    g.view.scene.updateMatrixWorld(true);
+    cam.updateMatrixWorld(true);
+    cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
+    for (const m of g.view.models) {
+      m._lodBudget = -1; m._outBudget = -1;
+      if (m._applyLod) m._applyLod(g.engine.renderer, cam);
+    }
   }
   for (const m of g.view.models) if (m._applyLod) m._applyLod = () => {};
   if (g.engine.quality) g.engine.quality.auto = false;
