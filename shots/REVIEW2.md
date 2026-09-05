@@ -12410,3 +12410,51 @@ side, and whether it can be taken depends entirely on the guards — clause A's 
 against a floor of 4.0, clause C's two ratios, and clause D's 0.020 chroma margin, which RULING 50
 required beside any clause B figure and which is not in this section because it has not been measured
 yet. **No part of this proposes shipping the knob on.**
+
+### 5. The guards, and they are the end of this value: **the lift breaks clause A, which was MET**
+
+`shots/_massdrive.mjs --onbody --repeat 3 --tier 3 --ticks 420`, grid, bundle `5ce832710181`,
+`--u uPaintLift=0.157`. RULING 30's disposition — the whole observed range on the passing side.
+
+```
+                        BASELINE (critic, 23dc643dceac)    AT +40 (5ce832710181)     test
+  clause A  near count      4.3  [4.3, 4.3]                 6.3  [6.0, 6.3]        in [4.0, 6.0]
+            near top-4     85.2  [85.2, 85.2]              79.1  [79.1, 80.8]      >= 85.0
+            FAR  count      5.5  [5.5, 5.5]                 6.5  [6.5, 6.5]        in [4.0, 6.0]
+            FAR  top-4     86.2  [86.2, 86.2]              84.3  [84.3, 84.3]      >= 85.0
+  clause C  near ratio     1.707 [1.706, 1.709]            1.342 [1.272, 1.342]     <= 1.759
+            FAR  ratio     1.288 [1.288, 1.288]            1.364 [1.364, 1.365]     <= 1.338
+```
+
+**REFUSED. Four of the six guard cells fail, and clause A fails on both machines on both of its
+sub-clauses.** The near machine's mass count goes **4.3 to 6.3** and the far machine's **5.5 to 6.5** —
+each out the top of the band — while top-4 falls **85.2 to 79.1** and **86.2 to 84.3**, both under the
+85.0 floor. Clause A is one of only four METs on this card and the lift takes it off, which the
+acceptance test forbids outright and which no clause B gain buys back.
+
+Clause C splits: the near ratio **improves substantially**, 1.707 to 1.342, and the far ratio
+**worsens** 1.288 to 1.364, over its 1.338 ceiling by 0.027.
+
+### 6. RULING 50's clause A prediction is falsified, and the reason names the next experiment
+
+> *"It leaves the segmentation's absolute bands unchanged up to phase ... so clause A's 0.3-mass margin
+> is not what a translation spends. The flatten spends exactly that margin and buys nothing; a
+> translation spends neither and buys the clause."*
+
+**The translation spends it too: two whole masses on the near machine.** The reasoning was that a
+constant added to every mass moves them all together. It does not, and the mechanism is in this
+round's own construction: the tint is normalised to luminance 1, so its **blue channel is 2.103** and
+`+0.157` of lift adds **0.33 to blue**. Any plate whose blue is already above 0.67 clips, gains less
+than the full 40 levels, and separates from the plates that gain all of it. **A translation that clips
+is not a translation**, and it is the near-white `light` plates — the ones the palette deliberately put
+at the top of the machine — that clip first.
+
+**So the direction is the variable, and RULING 50 named the alternative while warning against it.**
+Adding along **white** has a max channel of 1.0 against this tint's 2.103, so it clips a far smaller
+share of the machine and should hold the segmentation together. It costs chroma, which is clause D's
+0.020 margin — the exact trade the ruling described, now with evidence on the other side of it: the
+chroma-preserving direction is the one that breaks clause A.
+
+**Nothing ships. The knob stays at 0.0.** What this round establishes is that clause B's route is a
+value translation, that the modelled size of it is wrong by a factor of two to three in the render,
+and that its direction has to be chosen against clause A rather than against clause D.
