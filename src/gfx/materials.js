@@ -566,8 +566,21 @@ export function roboShell(maps, look, teamColor, opts = {}) {
    */
   const paintTint = new THREE.Color(look.primary ?? 0xffffff);
   {
-    const m = Math.max(paintTint.r, paintTint.g, paintTint.b, 1e-3);
-    paintTint.setRGB(paintTint.r / m, paintTint.g / m, paintTint.b / m);
+    // NORMALISED BY LUMINANCE, NOT BY THE MAX CHANNEL, AND THE FIRST VERSION OF
+    // THIS GOT IT WRONG IN A WAY THE METER CAUGHT IMMEDIATELY.
+    //
+    // Dividing by the max channel makes `lift` mean "levels added to the
+    // brightest channel", which for a saturated blue hull — 0x2e6bd6, whose
+    // normalised luminance is 0.476 — delivers 19 levels of LUMINANCE for a
+    // requested 40. Measured on foundry at lift 0.157: the far machine went
+    // 54.5 to 65.9 where RULING 50's model, which is stated in luminance,
+    // predicts 97.7. The transform was right and its unit was not.
+    //
+    // Dividing by luminance instead leaves the DIRECTION untouched — both
+    // normalisations are the same ray — so the pure-scale property that keeps
+    // chroma intact is unaffected, and `lift` now means what the ruling means.
+    const l = Math.max(0.2126 * paintTint.r + 0.7152 * paintTint.g + 0.0722 * paintTint.b, 1e-3);
+    paintTint.setRGB(paintTint.r / l, paintTint.g / l, paintTint.b / l);
   }
 
   const u = {
