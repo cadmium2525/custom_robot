@@ -240,6 +240,35 @@ const SETTLE_FN = `(n) => {
   const g = window.__game;
   if (!g.rig || !g.world || !g.view) return false;
   let t = (g.engine.clock && g.engine.clock.elapsed) || 0;
+  // INSTRUMENT FAULT 44 — A SETTLE CONVERGES DAMPERS AND CANNOT CONVERGE
+  // INTEGRATORS, AND FOUR OF THIS MODEL'S POSE TERMS ARE INTEGRATORS.
+  //
+  // The loop below exists because damp(a, b, lambda, dt) forgets its starting
+  // value: run it 240 times and every damped term lands on the same pose
+  // whatever the frames before it did. Four terms in RoboModel.update are not
+  // damped, they are integrated — spinAngle += spinRate * dt, tumble += rate *
+  // dt, getupT += dt, and the toe bones' rotation.y += dt * (5 + heat * 26).
+  // An integrator keeps its initial value forever and the settle merely adds a
+  // constant four seconds on top of it, so the pose stayed a function of how
+  // many load-dependent frames rendered before the pin.
+  //
+  // Measured, one bundle, one command, seventeen draws: the grid stencil came
+  // back 24457 px fourteen times and 24209 three times, and the far contour cell
+  // read 80.0 against 69.7 between the two poses — 10.3 points on the cell
+  // clause B is failing by 4.0. It also produced both of the boxes that fault 38
+  // blamed on two meters disagreeing; it was one meter disagreeing with itself.
+  //
+  // Zeroed so the settle starts from a known state and the pose becomes a
+  // function of the iteration count alone. This is the meter reaching into the
+  // model, which is justified precisely because these four values are the only
+  // ones running the loop longer cannot fix. FIXED IN ALL THREE COPIES AT ONCE —
+  // contour.mjs, mass.mjs and _r15dump.mjs are the meters behind clauses A, B, C
+  // and D, and a pose fix in one of them is fault 38 all over again.
+  for (const m of g.view.models) {
+    m.spinAngle = 0; m.tumble = 0; m.getupT = 0;
+    if (m.bToeR) m.bToeR.rotation.y = 0;
+    if (m.bToeL) m.bToeL.rotation.y = 0;
+  }
   for (let i = 0; i < n; i++) {
     const views = g.view.prepare(1);
     g.rig.update(g.world, views, g.localIndex, 1 / 60, t);
