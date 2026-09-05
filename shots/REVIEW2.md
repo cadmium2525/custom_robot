@@ -11915,3 +11915,51 @@ it without making foundry's near machine worse, where the machine is already the
 **Nobody should ship a clause B change until the acceptance test names all three arenas and both
 machines**, because the one-arena version of this measurement would have called a foundry regression a
 success.
+
+---
+
+## ROUND 38 — BUILDER, PART 7: **the contour meter now prints its denominator, and the document's 0.2-point floor is too tight for every far-machine figure it has ever been applied to**
+
+`tools/contour.mjs` computed the boundary-pixel count for twenty rounds and threw it away. It is now
+printed. Same bundle `23dc643dceac`, tier 3, tick 420, seed 1234567:
+
+```
+  arena     overall n    near n    FAR n      far clean%   one pixel is worth
+  ---------------------------------------------------------------------------
+  grid         1326        1025      300         80.3          0.33 points
+  foundry       692         559      132         54.5          0.76 points
+  orbital      1062         859      202         60.9          0.50 points
+```
+
+### 1. The 0.2-point contour floor cannot be reached on a far machine
+
+This document has carried **0.2 points** as the contour noise floor and applied it to every contour
+figure without distinction. On the overall grid contour, n = 1326, one boundary pixel is worth 0.075
+points and a 0.2-point floor is a sensible two-and-a-half pixels. **On the far machine it is below one
+pixel on all three arenas** — 0.33, 0.76 and 0.50 points per pixel — so the floor sits inside the
+quantisation of the measurement and can never be reached. Any far-machine comparison decided at
+0.2 points was decided on a number that cannot move by 0.2 points.
+
+**Observed repeat drift confirms it.** The same arena measured twice in this session, one bundle
+apart, on the far machine: grid **79.7 → 80.3**, orbital **60.4 → 60.9**, foundry **54.5 → 54.5** —
+two pixels, one pixel, zero pixels. The near machine and the overall figure reproduce to the decimal
+over the same pair of runs.
+
+> **The floor is per-population, not per-meter.** A contour figure is quoted with its `n`, and its
+> floor is `max(0.2, 100/n)` points — one boundary pixel, or the old floor, whichever is coarser.
+> That is 0.2 on any overall or near-machine figure, and **0.33 / 0.50 / 0.76** on grid, orbital and
+> foundry's far machine. No far-machine delta smaller than one pixel is a finding.
+
+### 2. What it does to the previous section, which is: nothing
+
+Part 6's headline is foundry's far machine at **54.5 against grid's 79.7**. At n = 132 and n = 300 the
+binomial standard errors are 4.3 and 2.3 points, so a 25-point gap is about five standard errors. **The
+finding survives its own error bars with room to spare, and it is the first clause B figure in this
+document ever quoted with them.**
+
+What does not survive is any of this round's sub-point far-machine deltas being read as anything.
+`66ab2d9`'s far-machine row — 80.0 with no hull against 79.7 as shipped — was called *"inside the
+0.2-point contour floor once, and not a win"*, and it is now under **one pixel** of a 300-pixel
+contour, which is a stronger statement of the same conclusion. `beb000a`'s three controls all read
+72.8 / 52.0 on the far machine's weak rows to the decimal, so they are unaffected: the invariance was
+never a small delta, it was no delta.

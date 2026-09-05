@@ -632,7 +632,14 @@ const bar = (pct, width = 28) => {
   const show = (label, c, extra = '') => {
     if (!c) { console.log(`  ${label}: no contour found`); return; }
     console.log(`  ${label}${extra}`);
-    console.log(`     step  p10=${c.p10}  median=${c.median}  p90=${c.p90}  mean=${c.mean}`);
+    // THE SAMPLE COUNT IS PRINTED BECAUSE THE PERCENTAGES ARE NOT SELF-DESCRIBING.
+    // A far machine can be 41x39 px, whose whole contour is a couple of hundred
+    // boundary pixels, and "54.5%" off that is a different kind of claim from
+    // the same figure off six thousand. It was computed and thrown away for
+    // twenty rounds while three-arena comparisons were made on the percentages
+    // alone. A percentage whose denominator is not on the page cannot be argued
+    // about, only quoted.
+    console.log(`     step  p10=${c.p10}  median=${c.median}  p90=${c.p90}  mean=${c.mean}  (n=${c.n})`);
     console.log(`     invisible (<12) ${String(c.under12).padStart(5)}%  ${bar(c.under12)}`);
     console.log(`     weak      (<25) ${String(c.under25).padStart(5)}%  ${bar(c.under25)}`);
     console.log(`     clean    (>=40) ${String(c.over40).padStart(5)}%  ${bar(c.over40)}`);
