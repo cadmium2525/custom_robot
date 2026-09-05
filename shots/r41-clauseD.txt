@@ -1,0 +1,130 @@
+ROUND 41 CRITIC — clause D and clause E, shots/_r15dump.mjs -> shots/_r16chroma.mjs, tier 3, tick 420, seed 1234567
+dumps on port 4402 = 966ebe2a39e9 unless marked base38 (port 4400 = 23dc643dceac); hashes taken by the critic in the same shell command as the capture
+_r15dump.mjs --u takes SHORT names: paintLift / paintWhite. It prints NOT ON THE BAG for a name it cannot set; nothing was reported missing on any run below.
+
+########## grid-base38
+CHROMA — /tmp/claude-0/-home-user-custom-robot/49586809-14a3-5835-9d13-c1282e96b2a2/scratchpad/d-grid-base38 / grid  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES        24457    1.70   0.206  0.149  0.676    31%  0.524  0.296  0.328   121.9    55   123   185
+    robot 1 157x283  22457    1.56   0.201  0.145  0.664    30%  0.527  0.294  0.322   123.1    55   125   186
+    robot 2 54x79   2000    0.14   0.262  0.200  0.803    33%  0.484  0.318  0.406   108.5    65   106   157
+  STAGE         1415543   98.30   0.132  0.129  0.609    22%  0.307  0.231  0.361    71.9    48    67    99
+
+  machine chroma / stage chroma = 1.558   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.149 vs stage 0.129  ->  MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.296 vs stage 0.231  — NOT clause D's statistic
+  headroom: the machines are at 31% of the chroma their own lightness allows
+  brightest 1% (>= 151.7): machines own 59.0%
+
+########## grid-w0
+CHROMA — /tmp/claude-0/-home-user-custom-robot/49586809-14a3-5835-9d13-c1282e96b2a2/scratchpad/d-grid-w0 / grid  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES        24457    1.70   0.206  0.149  0.676    31%  0.524  0.296  0.328   122.0    55   123   185
+    robot 1 157x283  22457    1.56   0.201  0.145  0.664    30%  0.527  0.294  0.321   123.2    55   125   187
+    robot 2 54x79   2000    0.14   0.262  0.200  0.803    33%  0.484  0.318  0.406   108.5    65   106   157
+  STAGE         1415543   98.30   0.132  0.129  0.609    22%  0.307  0.231  0.361    71.9    48    67    99
+
+  machine chroma / stage chroma = 1.557   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.149 vs stage 0.129  ->  MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.296 vs stage 0.231  — NOT clause D's statistic
+  headroom: the machines are at 31% of the chroma their own lightness allows
+  brightest 1% (>= 151.7): machines own 59.0%
+
+########## grid-w13
+CHROMA — /tmp/claude-0/-home-user-custom-robot/49586809-14a3-5835-9d13-c1282e96b2a2/scratchpad/d-grid-w13 / grid  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES        24457    1.70   0.166  0.122  0.651    26%  0.569  0.255  0.257   135.8    63   143   193
+    robot 1 157x283  22457    1.56   0.161  0.118  0.639    25%  0.571  0.253  0.251   136.6    62   145   194
+    robot 2 54x79   2000    0.14   0.225  0.161  0.795    28%  0.546  0.278  0.325   126.4    77   129   172
+  STAGE         1415543   98.30   0.132  0.129  0.609    22%  0.307  0.231  0.361    71.9    48    67    99
+
+  machine chroma / stage chroma = 1.258   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.122 vs stage 0.129  ->  NOT MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.255 vs stage 0.231  — NOT clause D's statistic
+  headroom: the machines are at 26% of the chroma their own lightness allows
+  brightest 1% (>= 153.6): machines own 73.2%
+
+########## grid-w40
+CHROMA — /tmp/claude-0/-home-user-custom-robot/49586809-14a3-5835-9d13-c1282e96b2a2/scratchpad/d-grid-w40 / grid  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES        24457    1.70   0.110  0.082  0.562    20%  0.641  0.198  0.172   156.7    64   174   205
+    robot 1 157x283  22457    1.56   0.104  0.078  0.553    19%  0.641  0.194  0.167   157.1    63   175   205
+    robot 2 54x79   2000    0.14   0.173  0.098  0.664    26%  0.639  0.244  0.234   152.3    82   166   193
+  STAGE         1415543   98.30   0.132  0.129  0.609    22%  0.307  0.231  0.361    71.9    48    67    99
+
+  machine chroma / stage chroma = 0.829   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.082 vs stage 0.129  ->  NOT MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.198 vs stage 0.231  — NOT clause D's statistic
+  headroom: the machines are at 20% of the chroma their own lightness allows
+  brightest 1% (>= 168.4): machines own 94.0%
+
+########## grid-p13
+CHROMA — /tmp/claude-0/-home-user-custom-robot/49586809-14a3-5835-9d13-c1282e96b2a2/scratchpad/d-grid-p13 / grid  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES        24457    1.70   0.280  0.247  0.675    41%  0.578  0.401  0.386   133.0    63   138   191
+    robot 1 157x283  22457    1.56   0.271  0.239  0.665    41%  0.579  0.396  0.376   134.2    63   140   192
+    robot 2 54x79   2000    0.14   0.371  0.325  0.782    47%  0.562  0.462  0.492   119.0    70   118   169
+  STAGE         1415543   98.30   0.132  0.129  0.609    22%  0.307  0.231  0.361    71.9    48    67    99
+
+  machine chroma / stage chroma = 2.113   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.247 vs stage 0.129  ->  MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.401 vs stage 0.231  — NOT clause D's statistic
+  headroom: the machines are at 41% of the chroma their own lightness allows
+  brightest 1% (>= 153.1): machines own 70.3%
+
+########## foundry-base38
+CHROMA — /tmp/claude-0/-home-user-custom-robot/49586809-14a3-5835-9d13-c1282e96b2a2/scratchpad/d-foundry-base38 / foundry  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES         8138    0.57   0.196  0.153  0.660    30%  0.555  0.297  0.323   129.2    59   134   195
+    robot 1 76x217   7244    0.50   0.192  0.153  0.650    30%  0.566  0.295  0.315   132.4    60   142   196
+    robot 2 41x39    894    0.06   0.225  0.173  0.741    30%  0.464  0.308  0.390   103.7    56   104   155
+  STAGE         1431862   99.43   0.170  0.145  0.563    30%  0.282  0.304  0.457    63.7    46    58    86
+
+  machine chroma / stage chroma = 1.153   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.153 vs stage 0.145  ->  MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.297 vs stage 0.304  — NOT clause D's statistic
+  headroom: the machines are at 30% of the chroma their own lightness allows
+  brightest 1% (>= 113.8): machines own 33.4%
+
+########## foundry-w0
+CHROMA — /tmp/claude-0/-home-user-custom-robot/49586809-14a3-5835-9d13-c1282e96b2a2/scratchpad/d-foundry-w0 / foundry  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES         8138    0.57   0.196  0.153  0.660    30%  0.555  0.297  0.323   129.3    59   134   195
+    robot 1 76x217   7244    0.50   0.192  0.153  0.649    30%  0.566  0.296  0.315   132.4    60   142   196
+    robot 2 41x39    894    0.06   0.225  0.173  0.741    30%  0.464  0.309  0.391   103.6    56   103   155
+  STAGE         1431862   99.43   0.170  0.145  0.563    30%  0.282  0.304  0.457    63.7    46    58    86
+
+  machine chroma / stage chroma = 1.154   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.153 vs stage 0.145  ->  MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.297 vs stage 0.304  — NOT clause D's statistic
+  headroom: the machines are at 30% of the chroma their own lightness allows
+  brightest 1% (>= 113.8): machines own 33.4%
+
+########## foundry-w13
+CHROMA — /tmp/claude-0/-home-user-custom-robot/49586809-14a3-5835-9d13-c1282e96b2a2/scratchpad/d-foundry-w13 / foundry  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES         8138    0.57   0.170  0.137  0.625    27%  0.593  0.274  0.275   140.8    64   151   202
+    robot 1 76x217   7244    0.50   0.167  0.133  0.615    27%  0.602  0.272  0.268   143.5    65   158   203
+    robot 2 41x39    894    0.06   0.193  0.161  0.710    27%  0.515  0.283  0.327   118.9    59   126   172
+  STAGE         1431862   99.43   0.170  0.145  0.563    30%  0.282  0.304  0.457    63.7    46    58    86
+
+  machine chroma / stage chroma = 0.998   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.137 vs stage 0.145  ->  NOT MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.274 vs stage 0.304  — NOT clause D's statistic
+  headroom: the machines are at 27% of the chroma their own lightness allows
+  brightest 1% (>= 114.4): machines own 38.6%
+
+########## foundry-w40
+CHROMA — /tmp/claude-0/-home-user-custom-robot/49586809-14a3-5835-9d13-c1282e96b2a2/scratchpad/d-foundry-w40 / foundry  (1600x900)
+                  px      %frame   chroma   cMED    ceil   used   HSL L   HSL S   HSV S    lum    p10   med   p90
+  MACHINES         8138    0.57   0.133  0.102  0.538    25%  0.651  0.249  0.217   158.1    64   179   213
+    robot 1 76x217   7244    0.50   0.131  0.094  0.530    25%  0.658  0.246  0.212   160.1    66   182   213
+    robot 2 41x39    894    0.06   0.149  0.141  0.603    25%  0.593  0.267  0.250   141.9    59   161   197
+  STAGE         1431862   99.43   0.170  0.145  0.563    30%  0.282  0.303  0.457    63.7    46    58    86
+
+  machine chroma / stage chroma = 0.784   (1.0 = the machines are as colourful as their backdrop)
+  CLAUSE D, on its written threshold (MEDIAN chroma): machines 0.102 vs stage 0.145  ->  NOT MET
+  the same pair in HSL S (scale-free, inflates on dark pixels): machines 0.249 vs stage 0.303  — NOT clause D's statistic
+  headroom: the machines are at 25% of the chroma their own lightness allows
+  brightest 1% (>= 115.0): machines own 42.6%
+

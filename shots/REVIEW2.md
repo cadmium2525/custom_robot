@@ -12638,3 +12638,382 @@ that:
 whether a MET held by 0.2 points may veto a 25-point gain on the worst cell of a failing clause, and
 whether a `>= 85.0` floor a baseline clears by 0.2 is a threshold or a coincidence. Neither is a
 question a builder answers by picking a number.
+
+---
+
+## ROUND 41 — CRITIC: **clause D refuses the white lift on its own, on both arenas, at the value the veto argument was about — and every guard that breaks belongs to the machine that does not need the lift**
+
+Everything below is mine, taken this session. Two servers, both hashed by me with `tools/contour.mjs`'s
+own `bundleHash` run standalone, in the same shell command as the capture it labels, before and after
+every block:
+
+```
+   port 4400   dist-r38-main   23dc643dceac      the round-38 tree
+   port 4402   dist-r39-lift   966ebe2a39e9      the tree that carries uPaintLift / uPaintWhite
+```
+
+Instruments: `shots/_massdrive.mjs --onbody` (clauses A and C, **6 draws minimum**, not 3 — see
+RULING 51 sub-2), `shots/_r15dump.mjs` -> `shots/_r16chroma.mjs` (clauses D and E, the first time
+either has been read against a lift). Raw output: `shots/r41-clauseA.txt` and
+`shots/r41-clauseD.txt`. **No source
+in `src/` was changed this round and nothing ships.** The one file I edited is the meter named in
+fault 40.
+
+### 1. INSTRUMENT FAULT 40 — **`_massdrive.mjs --repeat N` ATE the bundle hash. The one invocation RULING 49's acceptance test mandates is the one invocation that cannot name its bundle, and that is fault 39's precondition sitting in a tool rather than in a habit.**
+
+The child prints `  bundle: <hash>   base: <url>` on its first line — fault 27 exists so that it would.
+The `--repeat` driver runs the child with `spawnSync(..., { encoding: 'utf8' })`, pulls the ROBOT and
+`@51` lines out of the captured stdout with two regexes, and **drops everything else on the floor**.
+Six draws print six draw lines and a disposition block with no hash anywhere in them.
+
+So RULING 49 wrote an acceptance test whose two halves cannot both be satisfied: *"`shots/_massdrive.mjs
+--onbody --repeat 3`"* and *"every figure names its bundle"*. **Every guard column in this document
+was labelled by hand**, which is precisely how PART 8's fault 39 happened one section over — there the
+author copied a stale hash forward, here the tool never offered one to copy. A rule that depends on a
+person retyping a number the tool already computed and discarded is not a guard.
+
+**Fixed, in the driver, at `3a96b21`:** the hashes are collected per draw and re-emitted above the
+disposition, and draws that do not share a bundle are called out rather than pooled. It now prints
+`bundle: 966ebe2a39e9 / 2c576ab3`. **Those are two different identifiers of one build and this
+document has only ever quoted the first**: `mass.mjs` hashes the served bytes (12 hex), the injected
+print in `_massdrive.mjs` FNV-1a's the script *filenames* (8 hex). I checked that the second one does
+separate these two trees — `index-CosPVSZL.js` -> `f6ec9f97` against `index-D4FoQv8x.js` -> `2c576ab3` —
+so it is weak but not broken. Nobody should quote it as a bundle.
+
+### 2. INSTRUMENT FAULT 41 — **the same driver tested only the FLOOR of clause A's band and printed a label saying it had tested both ends. A mass count of 6.3 came back `vs 4-6  MET`.**
+
+```js
+  process.stdout.write(cell('count', 4, '>=', 1).replace('vs >= 4', 'vs 4-6  '));
+```
+
+The disposition is computed against `>= 4`; the string `vs >= 4` is then rewritten to `vs 4-6` on its
+way to the screen. **The ceiling was never in the test and the label asserts that it was.** The child
+does check it — it prints `count 4.8 (max 6) MET` — so the half of the clause that RULING 30's own
+driver threw away was available one process down.
+
+**It is live, not hypothetical.** The paint direction at +13 levels returns a far-machine count of
+**6.3**, out the top of the band, and the pre-fix driver scored it `vs 4-6  MET`. Fixed in the same
+commit; the same command now prints `count 6.0-6.3 UNSCORED (straddles)`.
+
+Nothing already published moves: round 39 PART 5's out-of-band counts were read against the band by
+hand and called FAIL correctly, and every count in PART 9 is inside the band anyway. What moves is
+that **no count disposition printed by this driver before `3a96b21` is evidence of anything but a
+floor.**
+
+### 3. RULING 51 — **the veto: ruled twice over. A MET held by 0.2 points may NOT be overridden by a 25-point gain, and 85.0 is a JUDGEMENT number no round has ever calibrated — but neither fact decides this change, because clause D refuses it independently and by a wider margin.**
+
+Re-measured by me, grid, tier 3, tick 420, **6 draws at each end** and the whole observed range quoted
+under RULING 30's disposition:
+
+```
+                        BASELINE 23dc643dceac      WHITE +13  966ebe2a39e9      test
+  A near count       4.3  [4.3, 4.3]   sp 0.0     4.8  [4.8, 4.8]   sp 0.0     in [4,6]   both MET
+  A near top-4      85.2  [85.2, 85.3] sp 0.1    83.8  [83.7, 83.8] sp 0.1     >= 85.0    lift NOT MET
+  A far  count       5.5  [5.5, 5.5]   sp 0.0     5.3  [5.3, 5.3]   sp 0.0     in [4,6]   both MET
+  A far  top-4      86.2  [86.2, 86.2] sp 0.0    87.1  [87.1, 87.2] sp 0.1     >= 85.0    both MET
+  C near ratio     1.708  [1.706,1.709]         1.489  [1.489,1.491]           <= 1.759   both MET
+  C far  ratio     1.288  [1.287,1.290]         1.277  [1.277,1.315] sp 0.038  <= 1.338   both MET
+```
+
+**PART 9's six guard rows reproduce on a bundle I hashed myself, and two of them need a correction
+that only more draws could produce.** The far machine's clause C ratio at +13 is not `1.277`; over six
+draws it is **1.277 to 1.315**, a spread of **0.038**, so its margin under the 1.338 ceiling is
+**0.023 and not 0.061**. And the near machine's top-4 loss is real: 85.2 to 83.8 is **fourteen times**
+the 0.1 spread of the cell it lands in.
+
+#### 1. Where 85.0 came from, checked before it was defended
+
+Round 17, RULING 6, the `SPEC-CRV2` table. The clause's own basis column reads, verbatim:
+
+> **`budget FACT; the band and 85% are JUDGEMENT`**
+
+The claim P1 and P3 support is *"the largest four cover **most** of it"*. **85 is one author's numeric
+encoding of the word "most"**, written into a specification whose own preamble says *"no frame of that
+game has been measured by anyone in this project at any point"* — and written **before** the coverage
+had ever been read against it: round 17's card scores that row *"Top-4 coverage has never been quoted
+against 85% — unscored clause"*.
+
+> **So: 85.0 is not a coincidence and it is not a threshold either.** It was not fitted to the build
+> — it predates the first reading of the build against it, which is the only sense in which "85.2
+> against 85.0" could have been a coincidence, and it is not one. But a number written to stand for
+> "most", never calibrated against anything, is not resolved to the tenth of a point at which this
+> question is being asked. **0.2 points of top-4 coverage on the near machine is 45 pixels of a
+> 22457-pixel silhouette.** No basis exists in this document for preferring 85.0 to 84.5 or to 86.0.
+
+#### 2. And my own acceptance test asked for a draw count this document forbids for the cell that turned out to be binding
+
+RULING 49 specified `--repeat 3`. RULING 30 requires **N of at least 6 for any cell whose last
+measured margin was under 2.0 points.** The binding cell's margin is **0.2**. **RULING 49 is corrected
+here: the guard block is six draws, and more than six on any cell inside 0.05 of its threshold.**
+
+That is not pedantry — it changed a verdict this round. The paint direction's far-machine clause C
+ratio read `1.331-1.333`, comfortably MET, over six draws; **two further draws returned 1.341 and put
+it over the 1.338 ceiling.** A cell whose margin is 0.005 cannot be scored at six draws either.
+
+#### 3. The ruling on the veto itself
+
+> **A cell that goes from MET to NOT MET takes its clause off the card, and the size of the margin it
+> held does not enter into that.** A clause is scored against its threshold as written. The argument
+> *"it was only ahead by 0.2, so stepping over it costs almost nothing"* is an argument about the
+> threshold, dressed as an argument about the change, and this document has a standing answer to it
+> from RULING 43 onward: **a threshold rewritten by the change that fails it is not a threshold.**
+> The 1.4-point loss is not noise — it is fourteen spreads — so the objection cannot even be that the
+> cost is unmeasurable.
+>
+> **What the 0.2 margin does license is a re-derivation of 85.0, in the open, by a round that is not
+> holding a candidate.** The number is `JUDGEMENT` by its own author's mark, it encodes the word
+> "most", and it has never been checked against anything. If it should be 84 or 80 or 90, that is
+> arguable on the clause's own grounds — what coverage does *"few, large masses"* actually require of
+> a silhouette — and it is arguable at a moment when the answer does not decide a pending change.
+> **Until such a round happens, 85.0 stands and vetoes.**
+>
+> **And it does not have to.** Everything above would be the whole ruling if clause A's near top-4
+> were the only cell in the way. It is not, and the section below is why.
+
+### 4. RULING 52 — **clause D, measured against a lift for the first time. The white direction takes it OFF on BOTH arenas at +13 levels, by more than the top-4 cell loses, and RULING 50's warning was right in direction after all.**
+
+RULING 50 closed with *"any clause B attempt is quoted with clause D beside it or it is not quoted"*.
+Round 39's sections 7, 8 and 9 were not quoted with it. Here it is, on nine dumps: `shots/_r15dump.mjs`
+(pinned exactly as the mass meter pins it) into `shots/_r16chroma.mjs`, machine pixels from the
+stencil, clause D's own statistic — the **median** chroma of the machines against the median chroma of
+the stage.
+
+```
+  CLAUSE D — median chroma, machines vs stage.  966ebe2a39e9 unless marked.
+
+  GRID            machines   near     far    stage   ratio   verdict     clause E (top 1%)
+    23dc643dceac    0.149    0.145   0.200   0.129   1.56    MET             59.0%   MET
+    white   0       0.149    0.145   0.200   0.129   1.56    MET             59.0%   MET
+    white +13       0.122    0.118   0.161   0.129   1.26    NOT MET         73.2%   MET
+    white +40       0.082    0.078   0.098   0.129   0.83    NOT MET         94.0%   MET
+    PAINT  +13      0.247    0.239   0.325   0.129   2.12    MET             70.3%   MET
+
+  FOUNDRY         machines   near     far    stage   ratio   verdict     clause E (top 1%)
+    23dc643dceac    0.153    0.153   0.173   0.145   1.15    MET             33.4%   NOT MET
+    white   0       0.153    0.153   0.173   0.145   1.15    MET             33.4%   NOT MET
+    white +13       0.137    0.133   0.161   0.145   1.00    NOT MET         38.6%   NOT MET
+    white +40       0.102    0.094   0.141   0.145   0.78    NOT MET         42.6%   NOT MET
+```
+
+**The control first, because without it none of the rest counts.** The round-38 tree and the knob tree
+at `uPaintLift = 0` return the same clause D to the third decimal on both arenas — `0.149 / 0.129` and
+`0.153 / 0.145` — with the same stencil to the pixel (24457 and 8138) and the same machine luminance
+medians to within one level on the smallest population. This is PART 8's control repeated on a second
+meter, and it says the same thing: **at zero lift the two bundles are one bundle.** The grid figure is
+also the number `shots/r29dump` has carried since round 29, reproduced on a fresh capture two rounds
+later.
+
+#### 1. Clause D's cell is FOUNDRY, and its margin was never 0.020
+
+RULING 50 priced the risk at *"0.149 against 0.129, a margin of 0.020"*. That is the **grid** cell.
+Under RULING 47 — *a cell is the worst member of an enumerated screened set* — clause D's cell is
+**foundry, at 0.153 against 0.145, a margin of 0.008**, which is on the record at line 7672 and which
+no round has quoted since. **The clause that was going to have to absorb the lift had less than half
+the headroom the ruling gave it.**
+
+#### 2. The white direction spends all of it and more, at the value the veto argument is about
+
+At **+13 levels** — PART 9's value, the one that moves clause B's worst cell 25 points — the machines'
+median chroma falls **0.149 -> 0.122 on grid** and **0.153 -> 0.137 on foundry**. Both land **under
+the stage**. The stage's own median is identical to the digit in all nine dumps (0.129 and 0.145), so
+this is entirely the machines moving. **Clause D is one of only four METs on this card and the white
+direction takes it off on both arenas at the smaller of the two lifts.**
+
+At +40 it is not close: 0.082 against 0.129 on grid, **a ratio of 0.83**, which is the frame this
+project spent rounds 16 through 18 climbing out of — round 17's card recorded *"NOT MET, and inverted
+by 1.7x. The stage is 66% more saturated than the machines"*, and this walks a third of the way back
+to it.
+
+#### 3. So the direction trade is the opposite of what PART 8 concluded, and RULING 50 was right
+
+PART 8 filed *"RULING 50's clause D warning was pointed the wrong way down the trade"* on the ground
+that the chroma-preserving direction lost on clause A, clause B and the near machine's clause C.
+**With clause D measured, the paint direction is not chroma-preserving — it is chroma-BUYING.** At the
+same +13 levels it takes grid's machines from 0.149 to **0.247**, a 66% gain on a clause whose worst
+cell has 0.008 of margin, and it lifts clause E from 59.0% to 70.3% while doing it.
+
+> **PART 8's "the white direction is better on nine of ten cells" is a SELECTION, and the two cells it
+> leaves out are the two that RULING 50 named in advance as the ones to look at.** The white direction
+> is better on nine of twelve. It loses clause D on grid, loses clause D on foundry, and those two
+> losses take a MET off the card, which none of its nine wins do. **A comparison that omits the clause
+> the standing ruling required beside it is not a comparison, and the count of cells won is not a
+> verdict.**
+
+#### 4. And the ledger is now complete, which is the first time for any proposed change in this document
+
+```
+                     clause B      clause A        clause C     clause D      clause E
+  white +13      +1.2 .. +25.0   near top-4 OFF   both toward   OFF on both   +14.2 grid
+                  no cell at 90   far top-4 +0.9   threshold     arenas        +5.2 foundry
+  paint +13       not measured    3 cells fail     far over      +0.098 grid   +11.3 grid
+                                  (see below)      ceiling       (MET, wide)
+```
+
+Paint at +13, mine, 8 draws, grid: near top-4 **84.3** [84.3, 84.3] NOT MET; far top-4 **84.4**
+[84.4, 84.5] NOT MET; far count **6.2** [6.0, 6.3] **UNSCORED, straddles the ceiling**; C near 1.533
+MET; C far **1.336 [1.331, 1.341]**, over the 1.338 ceiling on one draw in eight. **Three of six
+guards gone on the direction that buys clause D, two on the direction that sells it.** Neither
+direction ships and neither is close.
+
+### 5. INSTRUMENT FAULT 42 — **`uPaintLift` is quoted in display levels and does not deliver them. The render's lift is not a translation, which is why every clause that a translation was supposed to leave alone moved.**
+
+`0.157` has been called "+40 levels" throughout round 39 because `0.157 x 255 = 40.0`. That is an
+arithmetic identity, not a measurement. Measured, on the same pinned frames as clause D — the median
+display luminance of the identical stencil, machine by machine:
+
+```
+                       nominal +12.75          nominal +40.0
+                    median lum   delivered   median lum   delivered
+   grid    near     125 -> 145      +20      125 -> 175      +50
+   grid    FAR      106 -> 129      +23      106 -> 166      +60
+   foundry near     142 -> 158      +16      142 -> 182      +40
+   foundry FAR      103 -> 126      +23      103 -> 161      +58
+```
+
+**The knob delivers between 1.25x and 1.8x its stated unit, and the multiplier is a function of where
+the pixel already sits** — it is added ahead of the colour-space stage, so a dark pixel is moved
+further in display levels than a bright one. Three consequences:
+
+1. **Every "+13" and "+40" in this document's white and paint columns is labelled in a unit the render
+   does not honour.** They are still perfectly good *settings* and every comparison between them
+   stands; they are not levels.
+2. **The render is not applying a translation.** A translation leaves the between-mass step invariant —
+   RULING 50 said so explicitly and rested clause C's invariance on it. Measured, the near machine's
+   step goes **51.83 -> 56.53** under nominal +13, a 9% expansion, and clause C's ratio moves 1.708 ->
+   1.489 rather than staying put. **A knob that expands the value structure is doing the opposite of
+   what the ruling specified**, and clause A's top-4 loss and clause C's ratio gain are the same
+   effect with two signs.
+3. **The over-prediction in the builder's round-39 table is UNDERSTATED.** The render at `0.157`
+   received 50 to 60 display levels where the model was computed at 40, and returned 4.7 to 21.2
+   points *less* than the model. Corrected for the unit, the model is wrong by more than the table says.
+
+### 6. RULING 53 — **what a MODEL may be used for in this document from now on. This is the methodological output of the round and it is a restriction on USE, not a demand for a better caveat.**
+
+RULING 50's lift model was arithmetic over captured boundary samples predicting what `contour.mjs`
+would print under a transform no build implemented. It carried its own warning — *"a MODEL and not a
+render ... it does not say any knob produces it"* — and it was cited as a target anyway, twice, by the
+round that built the knob. **So the caveat is not the remedy. The caveat was there and it did not
+work.** What follows is the remedy.
+
+> **A MODEL MAY BE USED FOR EXACTLY THREE THINGS.**
+>
+> 1. **To rule a direction OUT.** A transform whose modelled effect on a clause's own samples is zero
+>    or wrong-signed need not be rendered. RULING 49's refusal of the flatten is this use and it
+>    stands unshaken — the flatten is a contraction toward a pivot, 100% of the far machine's weak
+>    pixels are on one side of it and 63% of the near machine's on the other, and no render was needed
+>    to know that one pivot moves two machines apart.
+> 2. **To ORDER candidates for rendering**, when several are affordable and only one can be built
+>    first.
+> 3. **To say a route is NOT CLOSED** — without a number.
+>
+> **A MODEL MAY NOT BE USED FOR:**
+>
+> - **A QUANTITY.** Not a level, not a setting, not a threshold crossing. *"A uniform +40 clears the
+>   90% threshold on all four cells"* is the sentence that cost this project two rounds, and it was
+>   wrong by 4.7, 9.1, 15.0 and 21.2 points, monotone in machine size, before the unit correction in
+>   fault 42 makes it worse.
+> - **A COST ON ANY CLAUSE OTHER THAN THE ONE ITS SAMPLES CAME FROM.** RULING 50's clause A prediction
+>   — *"a translation spends neither and buys the clause"* — was computed on contour boundary samples
+>   and asserted about a segmentation of a rendered, clipped, dithered frame. It was falsified by two
+>   whole masses, and fault 42 now says why: the transform the model described is not the transform
+>   the shader performs, and nothing in a model can notice that.
+> - **AN EXISTENCE RESULT ANOTHER ROUND WILL CITE AS A TARGET.** *"Clause B is REACHABLE, it costs
+>   about 40 levels"* is such a result. If the ruling had said only *"the route is a value change and
+>   nothing about the outline"* — which is the part that survived every measurement since — no round
+>   would have spent itself hitting a number.
+>
+> **AND: a model's error is quoted with it once a render exists.** This family's measured
+> over-prediction is **+4.7 / +9.1 / +15.0 / +21.2 points against machine heights 284 / 217 / 71 / 39
+> px**, and its cause is known — the model treats the stencil as opaque, so a 7x7 window on a 39-px
+> machine's boundary is mostly antialiased edge pixels that take a fraction of the lift. **Until a
+> model of this family weights the transform by the mask's own coverage inside the window instead of
+> by a binary mask, it inherits that error bar, and it may not quote a level.**
+
+### 7. RULING 54 — **the relocation. Every guard that breaks is a NEAR-machine guard; every clause B cell that needs the lift is a FAR-machine cell. The acceptance test forbids the only change the measurements point at, and that is a defect in the test.**
+
+Sort this round's twelve cells by which machine they belong to, at white +13:
+
+```
+   THE FAR MACHINE — the one clause B fails on            baseline    +13      verdict
+     clause B   foundry FAR   (n=132)                       54.5      79.5     +25.0
+     clause B   grid    FAR   (n=300)                       80.3      85.7      +5.4
+     clause A   far count                                    5.5       5.3      MET
+     clause A   far top-4                                   86.2      87.1      MET, better
+     clause C   far ratio                                  1.288     1.277-1.315  MET
+     clause D   far chroma, grid    (stage 0.129)          0.200     0.161      MET
+     clause D   far chroma, foundry (stage 0.145)          0.173     0.161      MET
+
+   THE NEAR MACHINE — the one that pays                   baseline    +13      verdict
+     clause B   grid    near  (n=1025)                      86.2      87.4     +1.2, still short
+     clause B   foundry near  (n=559)                       75.0      83.4     +8.4, still short
+     clause A   near top-4                                  85.2      83.8     NOT MET
+     clause D   near chroma, grid    (stage 0.129)         0.145     0.118     NOT MET
+     clause D   near chroma, foundry (stage 0.145)         0.153     0.133     NOT MET
+     clause A   near count / clause C near ratio            both MET, C improves
+```
+
+**Every cell the lift breaks is on the near machine. Every guard on the far machine survives it,
+including both clause D cells, and the far machine is where clause B's 35.5-point deficit lives.**
+The near machine gains 1.2 and 8.4 points of contour it cannot use — neither cell reaches 90 with the
+lift or without it — and pays for them with a MET clause and a MET sub-clause.
+
+> **The knob is uniform and the failure is not.** That is the finding, and it is the first thing in
+> four rounds of clause B work that names a change rather than a refusal. `materials.js` already has
+> the machinery: `uFlatFar` exists precisely because the two machines are at different sizes and the
+> size gate landed rounds ago. **A lift gated the same way — far machine only, white, at the setting
+> presently labelled +13 — is the experiment this round names.**
+>
+> **My prediction, filed so it can be caught being wrong.** Near-machine cells stay inside their
+> repeat spreads (clause A near top-4 at 85.2 [85.2, 85.3], clause D near 0.145 grid / 0.153 foundry);
+> clause D's **pooled** figure — the statistic the clause is actually written on — moves by less than
+> 0.005 on grid, because robot 2 is 2000 pixels of 24457 and the statistic is a median; clause B's far
+> cells land within one boundary pixel of 85.7 and 79.5. **If the far machine's chroma at 0.161 is
+> pooled with an unmoved near machine at 0.145, clause D stays MET on both arenas.**
+>
+> **And it will still not MEET clause B**, which is the honest half: grid near stays 86.2 and foundry
+> near 75.0, so two of four cells stay short of 90 and the change cannot be ACCEPTED as a default
+> under RULING 49.
+
+#### The amendment, because RULING 49 as written refuses this before it is built
+
+RULING 49's middle tier reads *"ACCEPTED as progress ... iff clause B improves on **all four** cells by
+more than that cell's own spread"*. **A far-machine-only lift improves two of four by construction and
+is refused by that clause.** The tier was written for a uniform knob at a moment when nobody had asked
+which machine was failing; the map in RULING 48 and the ledger above both say the failure is not
+uniform. So:
+
+> **AMENDED — RULING 49's "ACCEPTED as progress" tier.** A change is progress if it improves **every
+> cell it acts on** by more than that cell's own repeat spread, moves **no other cell** outside its
+> own repeat spread, and takes **no clause off MET on any arena** — with clause D and clause E read
+> beside clause B on every arena the change is scored on, and with the machine it acts on named in
+> advance. **The "all four cells" wording is withdrawn.** The default tier is untouched: shipping still
+> requires all four clause B cells at 90.0 and every guard MET.
+>
+> The three unchanged parts of that test are the parts that have earned it: **both arenas or it has
+> not been read**, **the whole observed range and never the median**, and **foundry's near machine is
+> a bright-background failure so a change that raises every machine can fix three cells and worsen the
+> fourth.**
+
+### 8. What I did not measure, and what in here is somebody else's number
+
+- **NOT ONE CLAUSE B FIGURE IN THIS SECTION IS MINE.** Every contour number above is PART 9's, taken
+  one round ago on a bundle I have now hashed and confirmed is the one that was serving. By this
+  document's own standing rule they are unrepeated, and the 25.0-point gain the whole veto question
+  turns on rests on a single draw of a cell whose `n` is 132 and whose floor is 0.76 points per pixel.
+  **Somebody has to run foundry's far cell three times before it is quoted again.**
+- **Clause B at the paint direction, +13, was not measured by anyone.** It cannot change the verdict —
+  paint at +13 already loses three guard cells — but the direction comparison in PART 8 is missing it
+  and should not be described as complete.
+- **Orbital was not captured.** Its contour is barred from the gating set by the round-30 standing
+  rule; its chroma is not barred and I did not take it, so clause D's cell may yet be worse than
+  foundry's 0.008.
+- **I did not build the far-only gate**, and nothing in section 7 is a render. Under RULING 53 it is a
+  prediction with a named experiment, and it may not be quoted as a figure.
+- **I did not touch `_r15dump.mjs`, which prints no bundle at all.** Adding the print costs two
+  fetches before the shutter, and fault 38's mechanism is that the pinned frame is a function of how
+  long the browser took to reach it. **A capture script may not be edited between the control and the
+  treatment of a comparison in flight** — I hashed the base in the same shell command instead, and the
+  print should be added by a round that is not holding a live comparison.
+- **Fault 38 is still undiagnosed** and clause A and clause B still photograph the far machine in
+  different poses, so every table above that puts a contour cell beside a mass cell is two
+  photographs, quoted side by side and not as one frame.
