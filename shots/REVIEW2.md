@@ -12510,3 +12510,66 @@ guards can absorb.
 **The knob ships at 0.0 and both of its uniforms ship at 0.0.** What the round leaves is a measured
 transform, a measured direction, and a measured statement that this route does not reach the clause —
 which is worth more than the fourth consecutive outline change would have been.
+
+---
+
+## ROUND 39 — BUILDER, PART 8: **the white-direction column names the wrong bundle. The figures survive; the label did not.**
+
+The round-41 critic died on a session limit with one line written: *"Bundle identity is already wrong.
+Let me confirm before running anything else."* It was right, and this is the confirmation it did not
+live to run.
+
+### INSTRUMENT FAULT 39 — **`dist-r39-lift` was built THREE times and section 7 quotes one hash for all of it**
+
+Hashed directly off the running preview:
+
+```
+  port 4400   23dc643dceac    the round-38 tree
+  port 4402   966ebe2a39e9    NOT 5ce832710181
+```
+
+Three builds went into that one output directory, and a preview server serving it picks up each one
+silently:
+
+```
+  979a7afd9df6   tint normalised by max channel     -- the unit bug, first foundry probe
+  5ce832710181   tint normalised by luminance       -- the PAINT-direction sweeps and guards
+  966ebe2a39e9   uPaintWhite added                  -- the WHITE-direction runs and guards
+```
+
+**Section 7's table labels every column `5ce832710181`.** The paint-direction columns are correct. The
+white-direction columns — clause B 88.2 / 86.0 / 88.9 / 84.8 and every guard cell in the white column —
+were taken on **`966ebe2a39e9`**, and the comparison that carries the whole section is therefore a
+comparison ACROSS bundles that was published as one within a bundle.
+
+This is not the meter's fault. `contour.mjs` printed the hash on every one of those runs — fault 27
+exists precisely so it would — and I read it on the first probe, then stopped reading it after each
+rebuild and copied the old value forward. **The rule "every figure names its bundle" is not satisfied
+by naming *a* bundle.**
+
+### The control, and the figures hold
+
+If `mix(uPaintTint, vec3(1.0), 0.0)` is the identity it is written to be, then the paint direction
+re-run on `966ebe2a39e9` must reproduce what `5ce832710181` gave. Run:
+
+```
+  foundry, uPaintLift 0.157, uPaintWhite 0.0        5ce832710181     966ebe2a39e9
+    overall     (n=692)                                 86.1             86.3
+    near        (n=559)                                 88.6             88.7
+    FAR         (n=132)                                 76.5             76.5
+```
+
+**The far cell reproduces to the decimal and the near cell is inside one boundary pixel** (n=559, one
+pixel = 0.18 points). So the two bundles agree at `uPaintWhite = 0`, the mix is the identity, and
+**every conclusion in sections 7, 8 and 9 stands unchanged** — the white direction really does beat the
+paint direction by 8.3 points on the worst cell, and the route really is refused.
+
+**What changes is the attribution.** Section 7's white column reads `966ebe2a39e9`, and the paint
+column reads `5ce832710181`. Corrected here rather than by editing the section, on the precedent of
+`fdc3806`.
+
+> **THE RULE THIS LEAVES.** A build into an output directory a preview server is already serving
+> replaces what that server hands out, with nothing in the terminal to mark it. **Re-read the hash the
+> meter prints after every rebuild, and never carry a bundle hash forward across one.** Better, build
+> each variant into its own directory — the cost is disk, and the cost of not doing it is a table that
+> compares two trees while claiming to compare two settings.
