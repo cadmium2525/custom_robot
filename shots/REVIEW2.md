@@ -13278,3 +13278,123 @@ was applied to a sample that could not see the process it was measuring.
 > 6.7, and it is larger than every clause B effect this document has attributed to a knob except the
 > +25.0.** The meter this project needs most is still one number — the stencil box beside the count —
 > and the meter already prints it. What is missing is a run loop that refuses to score across it.
+
+### 3. THE WHOLE MATRIX, WITH THE STENCIL AND THE BOX BESIDE EVERY CELL — **and it resolves fault 38. The two meters never disagreed. `contour.mjs` alone produces BOTH of the boxes round 38 attributed to two different meters.**
+
+Twelve draws, `tools/contour.mjs --tier 3 --ticks 420`, plus the standalone foundry control I took
+before the batch. Bundles hashed off the running servers. Raw: `shots/r42-contour.txt`.
+
+```
+   bundle  arena    setting        stencil  ROBOT 1 box / origin   near   ROBOT 2 box / origin   FAR
+   d9ce..  foundry  FAR +40         8036    74x216  at 730,584     70.6   41x39  at 775,353     82.4
+   d9ce..  foundry  FAR +40         8217    78x217  at 727,583     75.0   41x39  at 775,353     83.3
+   d9ce..  foundry  FAR +40         8217    78x217  at 727,583     75.0   41x39  at 775,353     83.3
+   d9ce..  foundry  FAR +40         8217    78x217  at 727,583     75.0   41x39  at 775,353     83.3
+   d9ce..  foundry  zero            8217    78x217  at 727,583     74.8   41x39  at 775,353     54.5
+   d9ce..  foundry  zero            8217    78x217  at 727,583     75.1   41x39  at 775,353     54.5
+   d9ce..  foundry  zero            8217    78x217  at 727,583     75.0   41x39  at 775,353     54.5
+   23dc..  foundry  SHIPPED         8217    78x217  at 727,583     75.1   41x39  at 775,353     54.5
+   23dc..  foundry  SHIPPED         8217    78x217  at 727,583     75.1   41x39  at 775,353     54.5
+
+   d9ce..  grid     FAR +40        24415   157x284  at 734,610     86.2   52x71  at 767,163     86.3
+   d9ce..  grid     FAR +40        24415   157x284  at 734,610     86.2   52x71  at 767,163     86.0
+   d9ce..  grid     zero           24209   156x283  at 735,610     84.3   53x79  at 765,158     69.7
+   d9ce..  grid     zero           24415   157x284  at 734,610     86.2   52x71  at 767,163     80.0
+   23dc..  grid     SHIPPED        24415   157x284  at 734,610     86.2   52x71  at 767,163     79.7
+```
+
+#### FAULT 38 IS CLOSED, AND ITS DIAGNOSIS IS THAT IT WAS NEVER TWO METERS
+
+Round 38 filed fault 38 on this table:
+
+```
+                        tools/contour.mjs              tools/mass.mjs --onbody
+    ROBOT 2     52x71  at 767,163    1944 px      53x79  at 765,158    1943 px
+```
+
+**`contour.mjs` produced `53x79 at 765,158` this session, on its own, from a plain zero-uniform
+control.** Both of round 38's "two meters" boxes are states of ONE meter. There is no disagreement
+between `mass.mjs` and `contour.mjs` to explain: there is one machine with at least two poses, and
+round 38 drew a different one from each meter and read the difference as a property of the meters.
+
+**Fault 38's conclusion — *"clause A and clause B figures may be quoted side by side and may not be
+quoted as properties of one frame"* — survives, and is now much worse than it was written.** It is not
+that the two meters photograph different frames. It is that **neither meter photographs a repeatable
+frame**, so two draws of the SAME meter are not properties of one frame either.
+
+#### AND ON GRID THE POSE IS WORTH 10.3 POINTS OF THE CELL CLAUSE B IS FAILING
+
+```
+   grid FAR machine, d9cef324894e, uPaintLift = uPaintLiftFar = 0, two draws of one command
+     52x71 at 767,163   n≈300   clean 80.0
+     53x79 at 765,158           clean 69.7      <-- 10.3 points, same command, same bundle
+```
+
+RULING 47 published this cell as **`80.0 [79.7, 80.7]`** and RULING 47's own floor rule set its floor
+at **1.0, the observed spread**. The observed spread was 1.0 because five draws happened to land in one
+pose. **The spread is 10.3**, it is not noise, and a floor of 1.0 on this cell is an order of magnitude
+under the thing it exists to exclude.
+
+> **CONSEQUENCE, and it is the largest single correction in this document.** Clause B's four cells
+> have never been measured. Every figure this project has published for them — 86.2, 80.0/80.3, 74.8,
+> 54.5, and every treatment quoted against them — is **one draw of a process with at least two states**,
+> and the state is worth up to **10.3 points on the far cell and 4.4 on the near**, against a threshold
+> those cells miss by **4.0 to 6.7**. **No conclusion in this document about whether a clause B
+> candidate helps or hurts survives that, in either direction.**
+
+### 4. WHAT SURVIVES, BECAUSE BEING HARSH IS NOT THE SAME AS BEING NEGATIVE
+
+Three things in round 40 hold up under this, and one of them holds up completely.
+
+**a. The +28.8 on foundry's far cell is REAL and it is the cleanest figure in this document.** The far
+machine's box is `41x39 at 775,353` in **every one of the nine foundry draws**, treatment and control
+alike — foundry's far machine has ONE pose. Against that fixed subject:
+
+```
+   foundry FAR, 41x39, n=132, all on d9cef324894e except the last two
+     zero      54.5   54.5   54.5        SHIPPED 23dc643dceac   54.5   54.5
+     FAR +40   83.3   83.3   83.3        and 82.4 in the draw where the NEAR machine changed pose
+```
+
+**Six control draws and three treatment draws, zero spread within pose, on a subject whose box does
+not move: 54.5 -> 83.3, +28.8 points.** That is round 40's headline and I confirm it.
+
+**b. The near-machine isolation is a null WITHIN POSE, which is a weaker claim than the one filed and
+is still the claim that matters.** Foundry near, pose `78x217`: control **74.8 / 75.0 / 75.1 / 75.1 /
+75.1**, treatment **75.0 / 75.0 / 75.0**. Grid near, pose `157x284`: control 86.2, treatment 86.2 /
+86.2. The treatment sits inside the control's own scatter on both arenas. **"Unmoved to the decimal"
+was never available** — the control's own decimal moves by 0.3 with the stencil bit-identical — but
+*"no detectable effect on the near machine"* is supported, and the size gate does what RULING 54 said
+it would.
+
+**c. The grid far cell's gain is smaller than filed and inside its own pose spread on one side.**
+Control `52x71` reads 80.0 and 79.7; treatment `52x71` reads 86.3 and 86.0. **+6.3, and the pose
+alternative reads 69.7**, so a treatment draw that lands in the 53x79 pose has never been taken and
+nobody knows what it says.
+
+### 5. AND THE MECHANISM IS IN `src/gfx/robot.js`, TWELVE LINES FROM THE COMMENT THAT FIXED IT ONCE
+
+`robot.js:2680` is a fifteen-line comment recording that this project already found an accumulator of
+exactly this kind and converted it:
+
+> *"The idle bob is a function of the CLOCK, not an accumulator fed by dt ... it is the sixth
+> instrument fault in this project and it lives in this file. A dt-accumulator advances once per
+> RENDERED FRAME, so its phase is a function of how many frames the browser managed between boot and
+> the shutter ... the near robot's bounding box came back 260, 261 and 264 px tall."*
+
+`this.breathe = time * 2.2` was the fix. **Three accumulators in the same file were not converted and
+are still fed by `dt`:**
+
+```
+   robot.js:2761   this.spinAngle += this.spinRate * dt        rotary gun barrels, never damped back
+   robot.js:2790   to.rotation.y  += dt * (5 + this.heat * 26)  hover toes, free-running, no target
+   robot.js:2671   this.tumble    += dt * rate                  tumble state only
+```
+
+`engine.js:182` shows `clock.elapsed` does **not** advance while paused, so the round-10 clock pin is
+sound and `breathe` is genuinely pinned. These three are not: they carry state accumulated **before**
+the pin, across however many frames the box rendered during boot and the 1200 ms wait, and no number
+of settle iterations converges them because they have no target to converge to. **That is a located
+hypothesis with line numbers, not a render**, and under RULING 53 that is all I may call it — but it
+is the same defect, in the same file, that this file's own comment says was the sixth instrument fault
+in the project.
