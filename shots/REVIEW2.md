@@ -12458,3 +12458,55 @@ chroma-preserving direction is the one that breaks clause A.
 **Nothing ships. The knob stays at 0.0.** What this round establishes is that clause B's route is a
 value translation, that the modelled size of it is wrong by a factor of two to three in the render,
 and that its direction has to be chosen against clause A rather than against clause D.
+
+### 7. The white direction, and it dominates the paint direction on nine of ten measured cells
+
+`690debc` makes the direction a numeric knob. Both endpoints carry luminance 1 by construction, so
+`uPaintLift` still means display levels at either. Same bundle, same lift of 0.157 — the modelled +40.
+
+```
+  CLAUSE B                  baseline   paint dir   WHITE dir   RULING 50 model   threshold
+  grid    near  (n=1025)      86.2       88.2        88.2           92.9            90
+  grid    FAR   (n=300)       80.3       85.0        86.0          100.0            90
+  foundry near  (n=559)       75.0       88.6        88.9           97.7            90
+  foundry FAR   (n=132)       54.5       76.5        84.8           97.7            90
+
+  GUARDS                    baseline   paint dir   WHITE dir   test
+  A near count                 4.3        6.3         5.3      in [4.0, 6.0]   white MET
+  A near top-4                85.2       79.1        82.4      >= 85.0         white NOT MET
+  A FAR  count                 5.5        6.5         4.5      in [4.0, 6.0]   white MET
+  A FAR  top-4                86.2       84.3        86.0      >= 85.0         white MET
+  C near ratio               1.707      1.342       1.265      <= 1.759        white MET
+  C FAR  ratio               1.288      1.364       1.456      <= 1.338        white NOT MET
+```
+
+**The white direction is better on nine of these ten cells**, the exception being the far machine's
+clause C ratio, where the paint direction's 1.364 beats white's 1.456 and both are over the ceiling.
+On the worst clause B cell it is worth **8.3 points** over the paint direction and **30.3 points** over
+baseline.
+
+### 8. RULING 50's clause D warning was pointed the wrong way down the trade
+
+The ruling's reasoning was that the cheapest way to add levels is to add white, that white costs
+chroma, and that clause D's 0.020 margin was therefore the thing to protect — so the design added
+along the paint. **Measured, the chroma-preserving direction is worse on clause A, worse on clause B
+and worse on the near machine's clause C.** It preserves the one clause the ruling was worried about
+and loses ground on three it was not, because a saturated direction clips and a neutral one does not.
+That is not a criticism of the ruling: it named a real cost and could not have known the clipping term,
+which only exists once the transform is a render.
+
+### 9. STILL REFUSED, and by how much
+
+**No clause B cell reaches 90.** Best 88.9, worst 84.8, short by **1.1 to 5.2 points**. Two of six
+guards fail: the near machine's clause A top-4 at **82.4** against 85.0, and the far machine's clause C
+ratio at **1.456** against 1.338.
+
+**And the two failures pull in opposite directions, which is the substance of the refusal rather than
+its arithmetic.** Clause B is short and wants more lift; both failing guards are already over and want
+less. There is no value of this knob that satisfies both, and the round-38 measurement says why: the
+render returns a third to a half of the modelled gain, so clause B needs roughly twice the lift the
+guards can absorb.
+
+**The knob ships at 0.0 and both of its uniforms ship at 0.0.** What the round leaves is a measured
+transform, a measured direction, and a measured statement that this route does not reach the clause —
+which is worth more than the fourth consecutive outline change would have been.
