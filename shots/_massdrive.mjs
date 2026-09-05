@@ -555,6 +555,19 @@ if (!REPEAT) {
 const A_RE = /^\s{2}ROBOT (\d+)\s+(\S+)\s+count ([0-9.]+) \(max (\d+)\) (MET|FAIL)\s+top4 ([0-9.]+)% (MET|FAIL)/;
 const C_RE = /^\s+@51: sd ([0-9.]+) \(worst mass [0-9.]+\)\s+step ([0-9.]+)\s+ratio ([0-9.]+)/;
 
+/*
+ * INSTRUMENT FAULT 40 (round 41). The child prints the bundle it measured —
+ * fault 27 exists so that it would — and this driver ATE it: spawnSync captures
+ * the child's stdout, two regexes take the ROBOT and @51 lines out of it, and
+ * everything else, the bundle line included, was dropped on the floor. So the
+ * one invocation RULING 49's acceptance test mandates (`--repeat 3`) was the one
+ * invocation that could not name its bundle, and every guard column in this
+ * document taken with it was labelled by hand. That is the exact precondition of
+ * fault 39. The hashes are collected here and re-emitted with the disposition;
+ * draws that disagree are a rebuild mid-run and are called out, not averaged.
+ */
+const BUNDLE_RE = /^\s{2}bundle:\s+(\S+)/;
+const bundles = new Set();
 const draws = [];
 let failed = 0;
 for (let n = 0; n < REPEAT; n++) {
@@ -566,8 +579,15 @@ for (let n = 0; n < REPEAT; n++) {
     continue;
   }
   const bots = [];
+  const seen = [];
   let ci = 0;
   for (const line of String(r.stdout).split('\n')) {
+    const b = BUNDLE_RE.exec(line);
+    /* The child prints two identifiers — mass.mjs' 12-hex hash OF THE SERVED
+     * BYTES and this file's 8-hex FNV OF THE SCRIPT FILENAMES. They are not the
+     * same number and this document quotes the first. Both are kept, in order,
+     * so a draw's identity is the pair and a mismatch across draws is visible. */
+    if (b) { seen.push(b[1]); continue; }
     const a = A_RE.exec(line);
     if (a) { bots.push({ box: a[2], count: Number(a[3]), top4: Number(a[6]), ratio: NaN, step: NaN }); continue; }
     const c = C_RE.exec(line);
@@ -579,6 +599,7 @@ for (let n = 0; n < REPEAT; n++) {
     process.stdout.write('DRAW ' + (n + 1) + ' PARSED NOTHING — the report format moved under the harness\n');
     continue;
   }
+  bundles.add(seen.length ? seen.join(' / ') : 'NOT PRINTED BY THE CHILD');
   draws.push(bots);
   process.stdout.write('draw ' + (n + 1) + '  ' +
     bots.map((b, i) => 'R' + (i + 1) + ' ' + b.box + ' count ' + b.count.toFixed(1) +
@@ -601,8 +622,8 @@ const fmt = (x, d) => x.toFixed(d);
  * threshold and '<' when passing means below it. A band is a straddle when the
  * two ends disagree, and a straddle is UNSCORED — never MET, never NOT MET.
  */
-const dispose = (lo, hi, thr, dir) => {
-  const pass = (v) => (dir === '>=' ? v >= thr : v < thr);
+const dispose = (lo, hi, thr, dir, thr2) => {
+  const pass = (v) => (dir === 'band' ? v >= thr && v <= thr2 : dir === '>=' ? v >= thr : v < thr);
   if (pass(lo) && pass(hi)) return 'MET';
   if (!pass(lo) && !pass(hi)) return 'NOT MET';
   return 'UNSCORED (straddles)';
@@ -612,12 +633,16 @@ const nBots = Math.max(...draws.map((d) => d.length));
 process.stdout.write('\nRULING 30 — ' + draws.length + ' draws' +
   (failed ? ' (' + failed + ' failed)' : '') + ', one binary, spread quoted with every cell\n');
 process.stdout.write('  MET needs the WHOLE range on the passing side; a straddle is UNSCORED.\n');
+process.stdout.write('  bundle: ' + [...bundles].join('   AND   ') +
+  (bundles.size > 1
+    ? '\n  *** THE DRAWS DO NOT SHARE A BUNDLE — a rebuild landed mid-run and these figures are NOT one measurement ***'
+    : '') + '\n');
 
 for (let i = 0; i < nBots; i++) {
   const col = draws.map((d) => d[i]).filter(Boolean);
   if (!col.length) continue;
   const box = col[0].box;
-  const cell = (key, thr, dir, dec) => {
+  const cell = (key, thr, dir, dec, thr2) => {
     const xs = col.map((b) => b[key]).filter((v) => Number.isFinite(v));
     if (!xs.length) return '    ' + key + ': no finite draw\n';
     const lo = Math.min(...xs), hi = Math.max(...xs);
@@ -626,10 +651,20 @@ for (let i = 0; i < nBots; i++) {
       '   min ' + fmt(lo, dec).padStart(7) +
       '   max ' + fmt(hi, dec).padStart(7) +
       '   spread ' + fmt(hi - lo, dec).padStart(7) +
-      '   vs ' + dir + ' ' + thr + '   ' + dispose(lo, hi, thr, dir) + '\n';
+      '   vs ' + (dir === 'band' ? thr + '-' + thr2 : dir + ' ' + thr).padEnd(6) +
+      '   ' + dispose(lo, hi, thr, dir, thr2) + '\n';
   };
   process.stdout.write('  ROBOT ' + (i + 1) + '  ' + box + '\n');
-  process.stdout.write(cell('count', 4, '>=', 1).replace('vs >= 4', 'vs 4-6  '));
+  /*
+   * INSTRUMENT FAULT 41 (round 41). This line read `cell('count', 4, '>=', 1)`
+   * and then STRING-REPLACED the label 'vs >= 4' with 'vs 4-6'. The clause is a
+   * BAND and only its floor was ever tested, so a count of 6.3 — out the top,
+   * which is what the paint direction returns on the far machine at +13 levels —
+   * printed as `vs 4-6  MET`. The child tests the ceiling (`count 4.8 (max 6)`);
+   * this driver, added by RULING 30 to make the meter honest about spread, threw
+   * that half of the clause away and lied in the label about having done it.
+   */
+  process.stdout.write(cell('count', 4, 'band', 1, 6));
   process.stdout.write(cell('top4', 85, '>=', 1));
   process.stdout.write(cell('ratio', 1, '<', 3));
 }
