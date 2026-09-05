@@ -11791,3 +11791,75 @@ the one at 79.7 that decides blind point 4 — the ground behind reads 52.0 wher
 
 **So the next attempt on clause B is a machine-value change and not an outline change**, and that is
 the first time this document has had a measurement that says which.
+
+---
+
+## ROUND 38 — BUILDER, PART 5: **three controls on clause B, and the "unlit side" reading is my own to withdraw**
+
+`tools/contour.mjs`, grid, tier 3, tick 420, seed 1234567, bundle `23dc643dceac`. Four captures: the
+tree as shipped, the fill-against-key flatten swept, the flatten fully on, and the outline hull
+collapsed to nothing. The diagnosis column reports the median luminance of the 7x7 window's machine
+half and background half, separately for the boundary pixels below the weak line and those at or
+above the clean line.
+
+```
+                                   FAR MACHINE (ROBOT 2, the bottleneck)
+                              weak rows            clean rows
+  control                 machine  behind      machine  behind     clean%
+  --------------------------------------------------------------------------
+  as shipped                 72.8    52.0        117.5    50.1       79.7
+  uFlatFar 0.35              (—)     (—)          (—)     (—)        80.0
+  uFlatFar 0.70              (—)     (—)          (—)     (—)        79.3
+  uFlat/uFlatFar 1.0         72.5    51.9        124.4    50.7       79.7
+  hull collapsed to 0        72.8    52.0        118.6    50.8       80.0
+
+                                   NEAR MACHINE (ROBOT 1)
+  as shipped                 68.2    73.5        156.3    53.1       86.2
+  uFlat 0.35                 67.9    73.4        154.2    52.9       86.3
+  uFlat/uFlatFar 1.0         67.6    73.4        149.3    52.4       85.3
+  hull collapsed to 0        75.6    77.9        162.0    76.5       81.1
+```
+
+### 1. I said the failing contour is the machine's unlit side. It is not, and my own control says so
+
+Commit `5c60b81` concluded that *"the failing contour is the machine's own unlit side"* because the
+machine's value collapses on the weak rows while the background does not. The inference does not
+follow, and the test that settles it is one capture: **`uFlat = uFlatFar = 1.0` pulls the machine's
+illumination entirely to an absolute pivot, so the arena stops lighting it at all.** If the weak rows
+were dark because they are unlit, that is the setting that would move them.
+
+**They do not move.** Far machine 72.8 → **72.5**; near machine 68.2 → **67.6**. Both inside the
+0.2-point contour floor, in the wrong direction, while the *clean* rows move by 7 points in both
+directions on the same capture — so the knob is working and the weak rows are simply not made of what
+it touches.
+
+`FILL_FRAG` says why in its own comment: it divides the albedo out, compresses the illumination alone,
+and multiplies the paint back in, *"what the machine is made of survives untouched"*. A pixel that is
+dark because of **paint** is invisible to every setting of it. **So the far machine's weak contour is
+albedo, not lighting**, and the withdrawal is mine rather than the meter's — the column is right about
+what it measures and I drew a mechanism out of it that a control refutes.
+
+### 2. The far machine's failing contour is invariant to everything reachable from here
+
+Three controls, and on the far machine's weak rows the pair reads **72.8 / 52.0** in every one of
+them, to the decimal, including the two that change the machine's whole lighting model and the one
+that deletes its contour treatment. The step there is **20.8**, under the 25 line, and neither term
+moves.
+
+That is worth stating as a positive result rather than a string of nulls: **clause B's bottleneck is
+not reachable by the illumination path or by the outline hull, whose entire response curve was swept
+in `66ab2d9`.** What is left is the machine's own dark material regions against a background that sits
+at 52 — a paint change, with a cost on clause D and clause C that is the review's to price.
+
+### 3. The hull is doing its work on the BACKGROUND, not on the machine
+
+The near machine's hull-collapsed row is the one that explains where its four points come from, and it
+is not where I assumed. Removing the hull lifts the **clean rows' background from 53.1 to 76.5** —
+23.4 points — while the machine moves 5.7. The hull's contribution to clause B is almost entirely that
+it puts a dark band *outside* the silhouette on the stretches that already read well. On the weak rows
+it lifts both sides by similar amounts (+7.4 machine, +4.4 behind) and the step barely changes.
+
+**So the hull cannot rescue a weak stretch by construction**: it darkens the outside, and a weak
+stretch is weak because the inside is dark too. That is the mechanism behind `66ab2d9`'s response
+curve, which showed widening it only ever costs, and it closes the outline-width line of attack for
+good rather than by exhaustion.
