@@ -11204,3 +11204,75 @@ the same blast kind at the same `R = 3.40` and reads 5.9 and 12.7 at the same tw
 pins differ in the geometry of the encounter, not in the effect**, so before any shell is touched
 somebody has to rule on whether a machine standing that far inside a detonation is allowed to
 disappear. That ruling is the critic's and it is not a builder's to assume in either direction.
+
+---
+
+## ROUND 38 — BUILDER, PART 3: **the outline hull's response surface, and a hypothesis of mine that the control refuted**
+
+`tools/contour.mjs`, grid, tier 3, tick 420, seed 1234567, bundle `23dc643dceac`, 1600x900, machine
+stencil 24415 px in every row. Five readings, each a separate capture, `--u` on the live shell
+uniform bag.
+
+```
+  uOutlineWidth  uOutlineFar    overall clean%    ROBOT 1    ROBOT 2    invisible
+  ------------------------------------------------------------------------------
+     0.00001       0.00001          80.8           81.1       80.0        4.4
+     0.0068        0.0030           84.8           86.2       79.7        4.5   <- as shipped
+     0.0068        0.0060           84.5           86.2       78.3        4.5
+     0.0068        0.0090           82.8           86.2       71.0        4.5
+     0.0110        0.0030           83.4           84.5       79.7        5.9
+```
+
+**The shipped row is `a544dae`'s filed figure to the digit** — 84.8 clean, 4.5 invisible, separation
+71.6 against the recorded 71.5. Clause B reproduces on a bundle nine commits later.
+
+### 1. My hypothesis was that the hull is inside the stencil. It is not, and the control says so
+
+Seeing clean% fall monotonically as the hull widened, I proposed that `contour.mjs`'s `STENCIL_FN`
+paints the outline hull white along with the shells — it takes every mesh under a model's group, and
+`robot.js` does `this.group.add(om)`, so the hull IS in that set — which would make the walked
+boundary the hull's outer edge and the meter a machine that punishes its own contour.
+
+**It is not that, and there are two measurements against it.** The stencil area is **24415 px in all
+five rows**, including the row where the hull is nine times wider; a hull inside the mask would
+dilate it. And collapsing the hull to nothing takes clean% **down** to 80.8, not up. If the meter
+were reading the hull's outer edge, deleting the hull would move the boundary back onto the machine
+and the number would improve.
+
+The reason the hull is not in the mask is a detail worth writing down before somebody else re-derives
+it: the override material is a fresh `MeshBasicMaterial` at its default `side: FrontSide`, and the
+hull is `side: THREE.BackSide`. Its faces are culled in the stencil pass. **The stencil is correct by
+accident rather than by intent**, and one line in `STENCIL_FN` asking for the hull by name would make
+it correct on purpose. That is not a fault today; it is a fault waiting for whoever changes that
+material.
+
+### 2. What the surface actually says
+
+**The hull earns 4.0 points of clause B and is at or near its optimum.** Deleting it costs 84.8 →
+80.8. Widening the near machine's from 0.0068 to 0.0110 costs 1.4 and adds 1.4 points of *invisible*
+contour. So the shipped value sits on a maximum, and it is not a value anybody can push through the
+90% threshold.
+
+**On the far machine the hull is worth nothing and cannot be made to be.** ROBOT 2 reads 80.0 with no
+hull at all and 79.7 as shipped — a 0.3-point difference, **inside this document's 0.2-point contour
+floor once, and not a win** — then 78.3 and 71.0 as `OUTLINE_WIDTH_FAR` doubles and triples. The
+curve is monotone downward from zero. `OUTLINE_WIDTH_FAR = 0.0030` is buying no clause B at all, and
+every increase from here is expensive.
+
+**A free internal check fell out of the sweep and it passes.** `uOutlineFar` moved ROBOT 2 in all
+three of its rows and left ROBOT 1 at **86.2 in every one**; `uOutlineWidth` moved ROBOT 1 and left
+ROBOT 2 at **79.7**. The size gate that switches between the two widths is doing exactly what it
+claims, measured rather than asserted, at no extra cost.
+
+### 3. Clause B cannot be closed from this knob, and the far machine is the reason
+
+Blind point 4 needs 84.8 → 90. The near machine is at 86.2 and its own optimum; the far machine is at
+79.7 and its knob only subtracts. The far machine is **52x71 px** with a **1.25 px** median hard-edge
+floor in this pipeline after FXAA — a boundary 2.4% of the form's own width — and 13.4% of its
+contour sits under the weak line at `p10 = 21.2`.
+
+**So the next attempt on clause B must not be an outline-width change.** Four have been tried against
+this meter across the document's history and this sweep is the first to measure the whole curve rather
+than one step of it. What is left is either the far machine's own value against its background — `body
+109.8 vs background 47.4` is already a 2.3x ratio — or the resolution the contour is drawn at, which
+is a different clause's argument.
