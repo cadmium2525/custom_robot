@@ -15227,24 +15227,40 @@ these six machines it is anti-correlated with the effect.
 
 `shots/_r46-gate.mjs` patches the one guard line back to the pre-fault-47 form and runs the REAL
 meter, so the old figure and the new figure come from one bundle in one session rather than from two
-rounds' memories. Three serial draws per gate per arena, HEAD vs old gate:
+rounds' memories. **Six draws per gate per arena under TWO load conditions** — three with one meter
+running and three with three meters running, which is fault 48's requirement and not a formality, as
+the orbital rows show:
 
 ```
-  arena    cell   gate    stencil   box           at        n      clean     delta
-  ---------------------------------------------------------------------------------
-  grid     near   old      24401    157x284    734,610    1025      86.0
-                  HEAD     24226    157x284    734,610    1025      86.0      0.0
-           FAR    old      24401     55x81     762,157     326      70.9
-                  HEAD     24226     55x69     762,169     275      84.4     +13.5
-  foundry  near   old       8220     78x217    727,583     560      74.5
-                  HEAD      8220     78x217    727,583     560      74.5      0.0
-           FAR    old       8220     41x39     775,353     132      54.5
-                  HEAD      8220     41x39     775,353     132      54.5      0.0
-  orbital  near   old      24276    178x259    746,641     976      89.4
-                  HEAD     24264    178x259    746,641     976      89.4      0.0
-           FAR    old      24276     49x63     779,255     189      67.7
-                  HEAD     24264     49x63     779,255     188      68.6      +0.9
+  arena    cell   gate    stencil   box           at        n      clean            delta
+  ----------------------------------------------------------------------------------------
+  grid     near   old      24401    157x284    734,610    1025      86.0   x6
+                  HEAD     24226    157x284    734,610    1025      86.0   x6         0.0
+           FAR    old      24401     55x81     762,157     326      70.9   x6
+                  HEAD     24226     55x69     762,169     275      84.4   x6       +13.5
+  foundry  near   old       8220     78x217    727,583     560   74.5/74.6 x6
+                  HEAD      8220     78x217    727,583     560   74.5/74.6 x4         0.0
+           FAR    old       8220     41x39     775,353     132      54.5   x6
+                  HEAD      8220     41x39     775,353     132      54.5   x4         0.0
+           MINORITY POSE, HEAD, 2 of 6:  8037  75x217  n=556 71.0  |  41x39 n=136 44.1
+  orbital  near   old      24276    178x259    746,641     976      89.4   x6
+                  HEAD    24264/2   178x259    746,641     976      89.4   x6         0.0
+           FAR    old      24276     49x63     779,255     189   67.7 x5 / 67.4 x1
+                  HEAD     24264     49x63     779,255     188      68.6   x3 serial +0.9
+                  HEAD     24262     49x63     779,255     189      68.3   x3 parallel +0.6
 ```
+
+**Read the two orbital HEAD rows before quoting either.** They are not noise around one value: the
+three SERIAL draws are 24264/188/68.6 to the digit and the three PARALLEL draws are 24262/189/68.3 to
+the digit. **Fault 48's lottery is visible as a clean split by load condition on this cell**, which is
+the first time this document has caught it sorting rather than scattering. Orbital's far re-base is
+therefore **+0.6 to +0.9**, and its cell under RULING 61's minimum-of-six rule is **68.3**.
+
+**Foundry's minority pose appeared 2 of 6 on HEAD and 0 of 6 on the old gate.** A gate cannot move a
+pose — it runs after the sim is pinned — and the minority numbers are the ones ROUND 44 recorded, so
+this is the load lottery and not a gate effect. It does mean **foundry's minority pose has never been
+compared across gates**, and I do not claim it is unchanged; what is measured is that the majority
+pose is identical to the digit, on ten draws.
 
 **Three findings the heat story does not contain.**
 
@@ -15277,10 +15293,12 @@ arena's re-base is a pose accident and fault 48's lottery can move it between dr
 >    asked to check and it is the answer.
 > 2. **Fault 47's EXPLANATION is WITHDRAWN.** `clamp01(0.18 + heat*0.55)` has no zero, and grid's far
 >    machine sits at the same 0.317 as the arena that did not move.
-> 3. **ORBITAL'S FAR CELL IS RE-BASED 67.7 -> 68.6**, `n` 189 -> 188. A re-base that measures two of
->    three arenas and deduces the third from a uniform is a re-base with a memory in it.
-> 4. **"Foundry is unchanged" is UPGRADED from a deduction to a measurement, and it survives** — every
->    mask quantity identical to the digit under both gates, on three serial draws.
+> 3. **ORBITAL'S FAR CELL IS RE-BASED 67.7 -> 68.6 / 68.3**, `n` 189 -> 188/189, and which of the two
+>    you get is decided by how loaded the machine is. A re-base that measures two of three arenas and
+>    deduces the third from a uniform is a re-base with a memory in it.
+> 4. **"Foundry is unchanged" is UPGRADED from a deduction to a measurement, and it survives on the
+>    majority pose** — every mask quantity identical to the digit under both gates across ten draws.
+>    Its minority pose has not been compared across gates and I do not claim it is unchanged.
 > 5. **No figure of a NEAR machine is affected by fault 47 on any arena.** That is measured, and it
 >    matters for what may and may not be re-opened below.
 
