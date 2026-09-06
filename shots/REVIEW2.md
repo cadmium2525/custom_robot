@@ -14618,9 +14618,9 @@ than assumed; one meter at a time. Bundle `d9cef324894e`, hashed by me.
 0.102 — and the question put to me was whether 0.369 against 0.373 survives its own error bar. It
 does, and by a margin nobody has yet stated: 0.004417 against a six-draw spread of 4.0e-7 and 2.6e-6,
 which is a separation of a thousand error bars.** The instrument the census used had an error bar
-three thousand times larger (fault 47); the instrument the meter actually runs has essentially none.
-So the answer to the audit's own question is: **the census reported a real difference using a
-measurement that could not have seen it.**
+**four orders of magnitude larger** — 11.327 px of `lodPx` is 0.0126 of `vSizeX`, against 4.0e-7 here
+(fault 47). So the answer to the audit's own question is: **the census reported a real difference
+using a measurement that could not have seen it.**
 
 #### 2. And the difference is real and USELESS, which the census could not have known because it read one point per machine
 
@@ -14634,6 +14634,10 @@ number.
 two of them.** Grid's near machine runs 0.34416 to 0.43409; foundry's runs 0.34361 to 0.43160. The
 two supports **overlap on 97.23% of grid's own span**. A gate placed anywhere between them does not
 select a machine. It selects a depth slice of both.
+
+**The per-fragment column is a MODEL and I label it one**: the vertices are read in bind pose, so
+skinning is not applied to them, and the number is quoted as an estimate of the SPREAD and never as a
+cell. It is not what the closure rests on. What the closure rests on is §4, which is a render.
 
 #### 3. The ceiling, which is a theorem and then a render
 
@@ -14702,8 +14706,8 @@ ROUND 43 PART 2 proposed the gate because *"the two near cells want opposite tre
 machine is machine-BRIGHTER on 82% of its failing rows, so a lift raises its step; grid's near is
 machine-DARKER on 68%, so a lift lowers it"* — which is RULING 59 §2, mine, last round.
 
-**Measured, a lift does not lower grid's step. Grid's near cell goes UP by 0.4** — four times its own
-0.098-point floor — under ten display levels. Both near cells improve. **There is nothing to
+**Measured, a lift does not lower grid's step. Grid's near cell goes UP by 0.4** — twice its own
+0.20-point floor — under ten display levels. Both near cells improve. **There is nothing to
 separate, and the gate was built to solve a problem that the render says does not exist.**
 
 > **RULING 59 §2 is CORRECTED, by me, on the half of it that was arithmetic dressed as a rule.** The
@@ -14754,7 +14758,7 @@ procedure and is the reason this ruling can be written on evidence instead of on
 #### 1. What the lever is, stated precisely enough to bound
 
 `buildPalette`'s `dark` role, `robot.js:331`, `tone(look.primary, 0.52, 0.86)`. It is not a crease
-colour: `pal.dark` appears at **seventeen call sites between `robot.js:872` and `1407`** — the pelvic
+colour: `pal.dark` appears at **sixteen call sites between `robot.js:872` and `1407`** — the pelvic
 block, the spine plate, the chest back plate and its crest recess, the pack cylinders, the head's
 jaw, fin and vents, both clavicle lips, both thigh blocks and the toe claws. The file's own comment
 says so, and says why it went 0.33 -> 0.52: at 0.33 *"the player photographed with a near-black slab
@@ -14883,10 +14887,12 @@ test. Every one of them is a clause this card currently holds or is closest on.
 > **Baselines, measured by me this round on `d9cef324894e`, six draws, not remembered:**
 >
 > ```
->    clause B   foundry near  74.5 x5 / 74.3 x1   n=560  78x217   stencil 8220   floor 0.18
+>    clause B   foundry near  74.5 x5 / 74.3 x1   n=560  78x217   stencil 8220   floor 0.20
 >               foundry FAR   54.5 x6             n=132  41x39                   floor 0.76
->               grid    near  86.0 x6             n=1025 157x284  24403/24401    floor 0.10
+>               grid    near  86.0 x6             n=1025 157x284  24403/24401    floor 0.20
 >               grid    FAR   70.9 x5 / 70.6 x1   n=326  55x81                   floor 0.31
+>               (floor = max(0.20, 100/n), the convention RULING 47 uses; grid FAR's has been
+>               quoted as 0.33 since round 38 and that is 100/300, a withdrawn denominator.)
 >               orbital       NOT RE-MEASURED BY ME. RULING 58's near 89.4 / far 67.7-67.4 stand
 >                             as the last reading, at six draws, on this bundle.
 >    clause A   NOT RE-MEASURED BY ME. RULING 49's baselines are on 23dc643dceac, which is
