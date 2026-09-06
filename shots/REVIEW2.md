@@ -15583,3 +15583,44 @@ which is not in the four-cell table ROUND 45 published and has never been read u
 >    orbital as an arena whose figures need six draws and a published minority rate.
 > 6. **Clause B is NOT MET, worst cell 54.5**, unchanged. Every figure in this section is a probe
 >    reading and none of them is a card reading.
+
+---
+
+### 5. THE CLAUSE B ROW AS IT NOW STANDS, and what is NOT in it
+
+```
+  cell            n      HEAD      threshold   gap      floor    draws / minority
+  ---------------------------------------------------------------------------------
+  orbital near   976     89.4        90         -0.6     0.20     6, none
+  grid    near  1025     86.0        90         -4.0     0.20     12, 1 at 84.3
+  grid    FAR    275     84.4        90         -5.6     0.36     12, 1 at 80.2
+  foundry near   560     74.5/74.6   90        -15.5     0.20     12, 4 at 71.0
+  orbital FAR    188   68.6 / 68.3   90        -21.4     0.53     6, split by LOAD
+  foundry FAR    132     54.5        90        -35.5     0.76     12, 4 at 44.1
+```
+
+Three of the six are re-based by fault 47 (grid FAR, orbital FAR) or re-denominated by RULING 64
+(grid FAR). **ROUND 45's table has four rows; the enumerated set has six, and the two it omits are the
+best cell on the card and the one that was contaminated without being measured.**
+
+### 6. WHAT I DID NOT MEASURE, AND WHAT IS NOW OWED
+
+- **Clause A, C, D and E under anything.** They read the same masks and `tools/mass.mjs` carries the
+  corrected guard, so the correction is available to them and unspent. Their baselines are stale twice
+  over: pre-`294f5e0` by RULING 61, and now pre-fault-47 on every FAR machine of grid and orbital.
+  **No clause A/C/D figure of a far machine on those two arenas may be quoted until re-taken.**
+- **The LOD test that would settle RULING 63 §1.3's mechanism.** I named it and did not run it: the
+  meter freezes draw ranges inside `SETTLE_FN` and `--u` is applied afterwards, so `--u lodMinPx2=0`
+  cannot restore full detail on this meter. It needs `shots/_r45lodmode.mjs`, the instrument
+  RULING 57 §6 used. One round, one command, and it decides whether each arena's re-base is structural
+  or a pose accident.
+- **`--mat` on a far cell.** RULING 62 §4 filed this correction and it is still not run.
+- **`--hidemat` on grid's near cell and on either orbital cell.** Three of the six cells still have no
+  owner, and RULING 66 §3 now forbids a candidate against them until they do.
+- **Six draws or any guard on `uFrameLift`.** It is one draw per point and it is the reason RULING 66
+  §4 refuses to call it a candidate.
+- **Foundry's MINORITY pose across the two gates.** It landed 2 of 6 on HEAD and 0 of 6 on the old
+  gate, so it has never been compared, and I do not claim it is unaffected.
+- **Nothing in `src/` changed this round.** Both lift uniforms and both frame-lift uniforms remain
+  0.0, nothing ships, and every improved number here is a measurement of a knob rather than of the
+  tree. `npm test` ALL PASS, `npx vite build` clean.
