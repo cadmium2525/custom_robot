@@ -15146,3 +15146,207 @@ the two near cells by construction, foundry's far because its failure is a diffe
 would do, not of what the tree does. What has changed is that clause B is no longer a clause with four
 failing cells and a ceiling under the threshold — it is a clause with three failing cells and a
 demonstrated route on the fourth.
+
+---
+
+## ROUND 46 — CRITIC: **fault 47's FIX is upheld and its EXPLANATION is refuted. The flare is drawn on every machine of every arena, it contaminates FAR machines only, ORBITAL's far cell was contaminated too and nobody looked — and the re-base was published beside the OLD DENOMINATOR, so grid's far cell is `n = 275`, not 326, and every pixel count derived from 326 is arithmetic on a withdrawn mask.**
+
+### 0. What I measured on, hashed by me twice and not read off a meter
+
+Fault 39 is a figure quoting a hash it did not compute, so I computed it two ways that cannot share a
+mistake: over HTTP from the running server, and over the FILES of a build I made myself out of HEAD.
+
+```
+  served   127.0.0.1:4407/custom_robot/                             586e670836d3
+  built    npx vite build --base /custom_robot/ from bd456ba        586e670836d3   IDENTICAL
+```
+
+**The bundle on 4407 is HEAD, and ROUND 45's figures are on HEAD.** That needs saying, because
+`586e670836d3` is the hash ROUND 44 §0 flagged as *"NOT HEAD, not mine, still served"* — a preview
+server nobody meant. It was not HEAD then. The frame lift shipped in `3530a85`, `src/` has not moved
+since, and the hash now reproduces from the tree. **A warning that has expired is not a finding, and
+the way to retire one is to rebuild it, not to stop quoting it.**
+
+Every figure below is `tools/contour.mjs --tier 3 --ticks 420`, seed 1234567, on that bundle, and
+every cell carries its own `n`. `npm test` ALL PASS and `npx vite build` is clean; nothing in `src/`
+changed this round.
+
+---
+
+### 1. RULING 63 — **the fix is RIGHT and I can now say what it removes, because I enumerated it instead of believing it. But "grid only, because only grid's pinned frame has a hot machine" is FALSE in the material's own arithmetic, and the true mechanism says every arena's FAR cell was exposed — as one more of them was.**
+
+#### 1.1 The casualty list, which nobody had
+
+`shots/_r46-guard.mjs` reproduces `STENCIL_FN`'s own pre-steps — blobs, contact shadows and outline
+hulls hidden BY NAME — and then enumerates every mesh the widened guard catches. It reads the meter's
+`SETTLE_FN` and `VFX_OFF_FN` out of `tools/contour.mjs` and evaluates them, so its pose is the meter's
+pose rather than a copy of it.
+
+```
+  meshes the WIDENED guard hides            grid       foundry     orbital
+    stage   sky         (order -1000)        yes         yes         yes
+    stage   practicals  (additive, order 4)  yes         yes         yes
+    stage   contact     (order 3)            yes         yes         yes
+    MACHINE matFlare    (additive, order 3)  x2          x2          x2
+  ---------------------------------------------------------------------------
+  meshes SURVIVING, painted white            6 machine   6 machine   6 machine
+  matShell / matFrame / matEmis  depthWrite  true        true        true
+```
+
+**On the machine side the casualty is the flare and nothing else, on all three arenas.** `matEmis`
+writes depth and survives — it is in the mask, as it must be. The outline hull is not touched by this
+guard at all: it has been hidden BY NAME since fault 36 and its material writes depth either way. The
+contact shadow and the blobs are likewise hidden by name three lines ABOVE the guard, and that is
+worth recording because **my own first draft of the probe listed the contact shadow as a new casualty
+of the fix, and it is not one — the probe was wrong before the fix was.** A probe that skips the
+meter's pre-steps enumerates meshes the guard never sees. The stage's three depth-write-off meshes
+were dropped by the OLD gate too, so fault 47's change is machine-side only.
+
+#### 1.2 The stated explanation is refuted by the material's own opacity
+
+> ROUND 45 §3: *"Grid only, because the flare's opacity tracks `heat` and only grid's pinned frame has
+> a hot machine."*
+
+`robot.js:2880` is `this.matFlare.opacity = clamp01(0.18 + heat * 0.55)`. **It has a FLOOR of 0.18.
+The flare is never off.** Read off the running bundle, with each machine's distance so that "near" and
+"far" are measured rather than labelled:
+
+```
+  arena     model 0 = NEAR                        model 1 = FAR
+  grid      heat 0.45  opacity 0.428  d = 6.36    heat 0.25  opacity 0.317  d = 19.40
+  foundry   heat 0.25  opacity 0.317  d = 6.19    heat 0.25  opacity 0.317  d = 18.48
+  orbital   heat 0.25  opacity 0.317  d = 6.19    heat 0.25  opacity 0.317  d = 18.50
+```
+
+**Grid's FAR machine — the one that moved 13.5 points — carries flare opacity 0.317, the identical
+value to both of foundry's machines, which moved 0.0.** The only machine on the card with a hot flare
+is grid's NEAR machine at 0.428, and its cell did not move at all. Heat is not the discriminator; on
+these six machines it is anti-correlated with the effect.
+
+#### 1.3 What the discriminator is, measured per arena instead of deduced from a uniform
+
+`shots/_r46-gate.mjs` patches the one guard line back to the pre-fault-47 form and runs the REAL
+meter, so the old figure and the new figure come from one bundle in one session rather than from two
+rounds' memories. Three serial draws per gate per arena, HEAD vs old gate:
+
+```
+  arena    cell   gate    stencil   box           at        n      clean     delta
+  ---------------------------------------------------------------------------------
+  grid     near   old      24401    157x284    734,610    1025      86.0
+                  HEAD     24226    157x284    734,610    1025      86.0      0.0
+           FAR    old      24401     55x81     762,157     326      70.9
+                  HEAD     24226     55x69     762,169     275      84.4     +13.5
+  foundry  near   old       8220     78x217    727,583     560      74.5
+                  HEAD      8220     78x217    727,583     560      74.5      0.0
+           FAR    old       8220     41x39     775,353     132      54.5
+                  HEAD      8220     41x39     775,353     132      54.5      0.0
+  orbital  near   old      24276    178x259    746,641     976      89.4
+                  HEAD     24264    178x259    746,641     976      89.4      0.0
+           FAR    old      24276     49x63     779,255     189      67.7
+                  HEAD     24264     49x63     779,255     188      68.6      +0.9
+```
+
+**Three findings the heat story does not contain.**
+
+1. **ORBITAL'S FAR CELL WAS CONTAMINATED TOO.** 12 px of mask, one boundary pixel, **+0.9 on the
+   cell** — small, real, and never looked at. ROUND 45 carried orbital forward as "unchanged" without
+   measuring it, and orbital is a third of the enumerated set.
+2. **NO NEAR MACHINE IS AFFECTED ON ANY ARENA** — every near quantity is identical to the digit under
+   both gates. All of the contamination is on far machines.
+3. **On grid the inflation is ENTIRELY AT THE TOP.** The old box is `55x81 at 762,157` and the new one
+   is `55x69 at 762,169`: same `x0`, same width, same bottom edge at y=237, twelve pixels removed from
+   the top and nowhere else. That is where ROUND 44's map put 95.8% of the weak population, and it is
+   the geometric statement of why four hypotheses aimed at the machine could not move them.
+
+**The mechanism that fits all three is the LOD, not heat.** `robot.js:2428` builds the flare with
+`{ noShadow: true, order: 3, noLod: true }` and the bucket's own comment says it is *"deliberately NOT
+sorted or cut"*. **The silhouette LOD cuts the shell's draw range and is forbidden from cutting the
+flare's**, and RULING 57 §6 measured a far machine drawing 1296 of 22176 hull indices — 5.8%. A shell
+cut to a twentieth of its indices behind an uncut flare is a flare that pokes out of the silhouette,
+and only a far machine is cut at all. **That is a hypothesis with a named test, not a finding**, and I
+label it one: sweep `lodMinPx2` toward 0 and re-read the far box under both gates. If the protrusion
+tracks the shell's drawn index fraction the mechanism is fixed; if it does not, then the size of every
+arena's re-base is a pose accident and fault 48's lottery can move it between draws.
+
+> **RULED.**
+>
+> 1. **Fault 47's FIX stands, and is upheld as a RULE**: a mesh that does not write depth is not
+>    silhouette, wherever it is parented. The rule now carries an enumerated casualty list on three
+>    arenas, and on the machine side it is the flare and nothing else. **`matEmis`, the outline hull,
+>    the contact shadow and the blobs are all verified NOT to be casualties**, which is what I was
+>    asked to check and it is the answer.
+> 2. **Fault 47's EXPLANATION is WITHDRAWN.** `clamp01(0.18 + heat*0.55)` has no zero, and grid's far
+>    machine sits at the same 0.317 as the arena that did not move.
+> 3. **ORBITAL'S FAR CELL IS RE-BASED 67.7 -> 68.6**, `n` 189 -> 188. A re-base that measures two of
+>    three arenas and deduces the third from a uniform is a re-base with a memory in it.
+> 4. **"Foundry is unchanged" is UPGRADED from a deduction to a measurement, and it survives** — every
+>    mask quantity identical to the digit under both gates, on three serial draws.
+> 5. **No figure of a NEAR machine is affected by fault 47 on any arena.** That is measured, and it
+>    matters for what may and may not be re-opened below.
+
+---
+
+### 2. RULING 64 — **the re-base was published beside the OLD DENOMINATOR. `n` on grid's far cell is 275, not 326, and three published quantities are arithmetic on a mask that has been withdrawn — including RULING 62's headline and clause G's cell.**
+
+ROUND 45 §6 prints its corrected clause B row as `grid FAR n=326  84.4`. The 84.4 is right; the 326 is
+the inflated mask's boundary count, and the two cannot both be true — the flare's edge WAS boundary.
+
+```
+                 stencil   far box   n     clean
+  old gate       24401     55x81     326   70.9
+  HEAD           24226     55x69     275   84.4
+```
+
+**The value moved, the denominator moved with it, and only the value was updated.** RULING 61's own
+acceptance test says *"a value that agrees while its denominator moved is a coincidence, and this
+document has been caught treating one as continuity"*. This is that fault with the sign flipped, and
+it corrupts three published quantities:
+
+```
+  quantity                                published      CORRECTED
+  grid FAR floor = max(0.20, 100/n)       0.31           0.36
+  grid FAR clean pixel count              273 of 326     232 of 275
+  grid FAR "short by", RULING 62 §1       21 pixels      16 pixels
+```
+
+**RULING 62's headline is restated: grid's far cell is short by SIXTEEN boundary pixels**, and the
+48-pixel population RULING 62 made binding does not exist on the corrected mask at all — those pixels
+were the flare's edge. What replaces them is 43 failing pixels out of 275, and they are a different
+population that no round has mapped.
+
+#### 2.1 Clause G — I re-read it, which the round that withdrew it did not
+
+Clause G is `>= 36 rendered px` and the card scores it on **grid's far machine, "71 px", off
+`contour.mjs`'s box** (rows at REVIEW2 lines 9002 and 9793). That is a box of the inflated mask.
+
+```
+  clause G cell             reading                        state
+  grid FAR, card            71 px       inflated mask      WITHDRAWN
+  grid FAR, old gate here   81 px       inflated mask      withdrawn, and it is not even 71
+  grid FAR, HEAD            69 px       corrected mask     MET by 33 px on a 36 px floor
+  foundry FAR, both gates   39 px       identical          MET by 3 px — and IT DID NOT MOVE
+```
+
+> **RULED.**
+>
+> 1. **The card's clause G figure is WITHDRAWN.** 71 px is a height of the machine plus its flare, and
+>    it is not even this pose's inflated height, which is 81 — so it is a third pose as well as a
+>    contaminated mask. **The cell is 69 px.**
+> 2. **Clause G does not change state. It stays MET**, by 33 px on a 36 px floor. Twelve pixels of
+>    inflation is 15% of that machine and 0.0% of this clause's answer, because the clause's margin is
+>    92% and the error is 15%.
+> 3. **And the cell that COULD have flipped did not.** Clause G's tightest reading ever taken is
+>    foundry's far machine at **39 px against 36** — three pixels — and its box is identical to the
+>    digit under both gates. Had the flare protruded there as it does on grid, that cell would have
+>    gone to 27 px and clause G would have FAILED. **It did not, and that is now measured rather than
+>    inferred from an arena that moved.**
+> 4. **Clause A, C and D are NOT re-read here and their staleness is now two deep.** RULING 61 filed
+>    their baselines as pre-`294f5e0`; they are also pre-fault-47 on the one machine whose mask
+>    changed. `tools/mass.mjs` carries the corrected guard — I checked all nine live copies and every
+>    one of them has the widened gate — so the correction is available to those clauses and no round
+>    has spent it.
+> 5. **Housekeeping, filed because it is the same class of trap ROUND 44 §0 named.** A stale generated
+>    meter, `shots/.massdrive-17212.mjs` from a crashed run on Sep 4, is on disk carrying the
+>    PRE-FAULT-47 gate. `_massdrive.mjs` regenerates its temp per pid and unlinks best-effort, so the
+>    file is dead — but a meter on disk with a withdrawn gate is exactly the "server nobody meant" that
+>    round warned about. Deleted.
