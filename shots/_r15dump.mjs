@@ -434,7 +434,15 @@ const VFX_OFF_FN = `() => {
       return { hit, gone };
     }, MATS);
     console.log('  materials:', report.hit.join('; ') || '(none applied)');
-    if (report.gone.length) console.log('  NO SUCH MESH OR PROPERTY (ignored):', report.gone.join(', '));
+    // INSTRUMENT FAULT 43, APPLIED TO --mat AS WELL AS TO --u. This warned and
+    // continued; a caller redirected stdout and a whole clause D reading came
+    // back with its treatment identical to its control. A warning a caller can
+    // redirect is not a guard.
+    if (report.gone.length) {
+      console.error('dump: --mat found no such mesh or property: ' + report.gone.join(', '));
+      console.error('dump: REFUSING rather than writing a capture of the unmodified stage.');
+      process.exit(2);
+    }
   }
   for (const id of ['ui-layer', 'hud-layer', 'splash']) {
     await page.evaluate((i) => { const el = document.getElementById(i); if (el) el.style.display = 'none'; }, id);

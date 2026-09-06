@@ -128,6 +128,33 @@ const UNIFORMS = String(flag('u', '') || '').split(',').filter(Boolean).map((kv)
   }
   return [key, num];
 });
+/**
+ * `--mat <mesh>.<prop>=<value>[,...]` — live STAGE overrides, the counterpart of
+ * `--u`, and here for the same reason `--u` is here.
+ *
+ * RULING 56 and RULING 59 both end at the stage: clause B's worst cell is
+ * foundry's NEAR machine, its weak contour fails against a BRIGHT BACKGROUND
+ * rather than a dark machine, and a far-gated machine lift cannot reach it by
+ * construction. `shots/_r15dump.mjs` could already sweep a stage knob and this
+ * meter — the one that scores the clause — could not, so every stage hypothesis
+ * cost a rebuild and none was ever tested against clause B.
+ *
+ * It ABORTS on a miss rather than warning. `_r15dump.mjs` warned, a caller
+ * redirected stdout, and INSTRUMENT FAULT 43 was a whole clause D reading whose
+ * treatment and control were the same render.
+ *
+ *   --mat floor.envMapIntensity=0
+ *   --mat floor.color=0x202024,deck.roughness=1
+ */
+const MATS = String(flag('mat', '') || '').split(',').filter(Boolean).map((kv) => {
+  const [lhs, v] = kv.split('=');
+  const dot = String(lhs).lastIndexOf('.');
+  if (dot < 0 || !Number.isFinite(Number(v))) {
+    console.error('contour: --mat "' + kv + '" is not mesh.prop=number.');
+    process.exit(2);
+  }
+  return [lhs.slice(0, dot).trim(), lhs.slice(dot + 1).trim(), Number(v)];
+});
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /**
@@ -663,6 +690,40 @@ const bar = (pct, width = 28) => {
       );
       await browser.close();
       process.exit(3);
+    }
+  }
+  if (MATS.length) {
+    const report = await page.evaluate((list) => {
+      const st = window.__game.view.stage;
+      const hit = [], gone = [];
+      for (const [name, prop, v] of list) {
+        let found = false;
+        st.group.traverse((o) => {
+          if (!o.isMesh || o.name !== name) return;
+          if (prop === 'visible') { found = true; hit.push(name + '.visible ' + o.visible + ' -> ' + !!v); o.visible = !!v; return; }
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          for (const m of mats) {
+            if (!(prop in m)) continue;
+            found = true;
+            if (m[prop] && m[prop].isColor) {
+              hit.push(name + '.' + prop + ' #' + m[prop].getHexString() + ' -> #' + (v >>> 0).toString(16).padStart(6, '0'));
+              m[prop].setHex(v >>> 0);
+            } else {
+              hit.push(name + '.' + prop + ' ' + m[prop] + ' -> ' + v);
+              m[prop] = v;
+            }
+            m.needsUpdate = true;
+          }
+        });
+        if (!found) gone.push(name + '.' + prop);
+      }
+      return { hit, gone };
+    }, MATS);
+    console.log('  materials:', report.hit.join('; ') || '(none applied)');
+    if (report.gone.length) {
+      console.error('contour: --mat found no such mesh or property: ' + report.gone.join(', '));
+      console.error('contour: REFUSING rather than scoring a clause on the unmodified stage.');
+      process.exit(2);
     }
   }
   for (const id of ['ui-layer', 'hud-layer', 'splash']) {
