@@ -260,7 +260,27 @@ const STENCIL_FN = `(on) => {
       // Hidden rather than blackened: whether such a mesh TINTS the machine is
       // a colour question, and this is a mask.
       const m0 = Array.isArray(o.material) ? o.material[0] : o.material;
-      if (!shells.has(o) && m0 && m0.depthWrite === false) {
+      // INSTRUMENT FAULT 47, FIXED IN ALL NINE COPIES AT ONCE. The test below is
+      // fault 19's and it was correct; the GATE on it was not. Restricting it to
+      // meshes outside the shell set exempted the machine's OWN depth-write-off
+      // overlay — matFlare, additive white, DoubleSide, renderOrder 3 — which is
+      // under the model group and therefore in that set, and so was painted
+      // WHITE into the machine stencil.
+      //
+      // Measured on grid, one bundle: hiding it drops the mask from 24401 px to
+      // 24226 and the FAR machine's box from 55x81 to 55x69. Twelve pixels of
+      // height, fifteen per cent, on the machine clause G scores by rendered
+      // height and clause B scores at n=326. The far contour cell reads 70.9
+      // with it in the mask and 85.1 without.
+      //
+      // That is also the answer to the 48 pixels four hypotheses were spent on:
+      // 95.8% of them sit in the top fifth of that machine, they never moved
+      // under any lift to the machine, and they never moved because they are not
+      // on the machine — they are the flare's edge.
+      //
+      // A mesh that does not write depth is not silhouette, wherever it is
+      // parented. One rule, no exemption for the machine's own decorations.
+      if (m0 && m0.depthWrite === false) {
         v.__hidden.push(o); o.visible = false; return;
       }
       v.__swap.push([o, o.material]);

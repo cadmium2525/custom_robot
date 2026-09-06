@@ -15029,3 +15029,72 @@ the right way is not an unreachable clause.
 - **Nothing in `src/` changed this round.** The palette probe was built into `dist-r44-dark66`, served
   on 4407, and the source tree was reverted before the first commit. Both lift uniforms remain 0.0.
   `npm test` passes and `npx vite build` is clean.
+
+---
+
+## ROUND 45 — BUILDER: **INSTRUMENT FAULT 47 — the machine's own additive flare is painted into the machine stencil, and it is worth 13.5 points of clause B on grid**
+
+### 1. The attribution, run instead of a fifth hypothesis
+
+Four hypotheses had been spent on the 48 pixels that survive a maximal paint lift on grid's far
+machine. `--hidemat` was added to `tools/contour.mjs` to end that by measurement: hide one of the
+machine's five materials at a time and re-read the failing population. Bundle on port 4407, grid, far
+cell, no lift:
+
+```
+  hidden      far cell    failing rows machine/behind      stencil    far box
+  none          70.9            70.2 / 51.3               24401       55x81
+  matEmis       71.2            69.3 / 50.6               24347       55x81
+  matFrame      77.7            69.3 / 50.8                  —           —
+  matFlare      85.1            61.0 / 38.1               24226       55x69
+```
+
+**Hiding `matFlare` moves the cell 14.2 points and takes twelve pixels off the machine's height.**
+
+### 2. The fault
+
+`matFlare` is `additive(0xffffff, { opacity: 0.5, side: DoubleSide })` — `blending: AdditiveBlending`,
+**`depthWrite: false`** — at `renderOrder` 3, and its opacity is driven per frame by the machine's
+`heat`. INSTRUMENT FAULT 19 established the rule for exactly this kind of mesh and wrote the test:
+*a mesh that does not write depth does not occlude, so it must not be in the mask.* **The test was
+right and its GATE was wrong**: `!shells.has(o) && m0.depthWrite === false` exempts anything under the
+model group, and the flare is parented there, so the machine's own overlay was painted **white** into
+its own silhouette.
+
+**The mask has been the machine PLUS its flare.** On grid's far machine that is 55x81 instead of
+55x69 — **twelve pixels of height, fifteen per cent** — and 175 px of area.
+
+> **AND IT IS THE ANSWER TO THE 48 PIXELS.** 95.8% of them sit in the top fifth of that machine; they
+> never moved under a lift of 83 display levels; they never moved because **they are not on the
+> machine**. They are the flare's edge. Clipping, the hull, the line art and the size gate were all
+> refused because all four were looking at the machine.
+
+### 3. The re-base, and it is grid-only
+
+Same bundle, fault 47 fixed, nothing in the renderer changed:
+
+```
+                    before      after
+  grid    near       86.0       86.0      unchanged
+  grid    FAR        70.9       84.4      +13.5, box 55x81 -> 55x69, stencil 24401 -> 24226
+  foundry near       74.5       74.6      unchanged
+  foundry FAR        54.5       54.5      unchanged, stencil 8220 unchanged
+```
+
+**Grid only, because the flare's opacity tracks `heat` and only grid's pinned frame has a hot
+machine.** That is also why nine rounds of arguing on grid never hit it and foundry never showed it —
+the mirror image of fault 19, which was foundry-only for the same kind of reason.
+
+### 4. What this withdraws
+
+- **Grid's far cell is 84.4, not 70.9**, and every figure ever taken of it is a figure of a mask
+  fifteen per cent too tall.
+- **ROUND 44's saturation finding is measured on that mask** — 83.7 at +40, +64 and +89 — so the
+  ceiling it reports has to be re-taken before it can be quoted. The saturation may survive; the
+  numbers cannot.
+- **Clause G is scored on RENDERED HEIGHT.** Twelve of eighty-one pixels on the machine it is scored
+  on is not a rounding difference, and no round has re-read clause G since.
+- Clause A, C and D all read the same mask on the same machine.
+
+Fixed in all nine copies at once, found by searching for the guard rather than listing the files.
+`npm test` ALL PASS.
