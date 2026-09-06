@@ -15594,9 +15594,9 @@ which is not in the four-cell table ROUND 45 published and has never been read u
   orbital near   976     89.4        90         -0.6     0.20     6, none
   grid    near  1025     86.0        90         -4.0     0.20     12, 1 at 84.3
   grid    FAR    275     84.4        90         -5.6     0.36     12, 1 at 80.2
-  foundry near   560     74.5/74.6   90        -15.5     0.20     12, 4 at 71.0
-  orbital FAR    188   68.6 / 68.3   90        -21.4     0.53     6, split by LOAD
-  foundry FAR    132     54.5        90        -35.5     0.76     12, 4 at 44.1
+  foundry near   560     74.5/74.6   90        -15.5     0.20     6, 2 at 71.0
+  orbital FAR    188   68.6 / 68.3   90    -21.4/-21.7   0.53     6, split 3/3 by LOAD
+  foundry FAR    132     54.5        90        -35.5     0.76     6, 2 at 44.1
 ```
 
 Three of the six are re-based by fault 47 (grid FAR, orbital FAR) or re-denominated by RULING 64
