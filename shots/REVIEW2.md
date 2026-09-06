@@ -15678,3 +15678,35 @@ has five.
 - **Orbital is not in this table.** RULING 63 measured its far cell moving under fault 47 and nobody
   has read orbital under any lift.
 - **Nothing ships.** Every lift uniform is 0.0 in the tree.
+
+### The guards on the combination — **REFUSED, on the far machine's mass count and clause C**
+
+`shots/_massdrive.mjs --onbody --repeat 6`, grid, bundle `586e670836d3 / 93b94641`, whole range:
+
+```
+                          baseline            COMBINATION          test              verdict
+  A near count       4.3 [4.3, 4.3]      4.8 [4.8, 4.8]       in [4.0, 6.0]         MET
+  A near top-4      85.2 [85.2, 85.3]   88.3 [88.2, 88.4]     >= 85.0               MET, +3.1
+  A FAR  count       5.5 [5.5, 5.5]      3.0 [3.0, 3.0]       in [4.0, 6.0]         NOT MET
+  A FAR  top-4      86.2 [86.1, 86.4]   95.9 [95.4, 95.9]     >= 85.0               MET, +9.7
+  C near ratio     1.707 [1.706,1.709] 1.736 [1.732,1.741]    <= 1.759              MET
+  C FAR  ratio     1.288 [1.288,1.288] 1.455 [1.452,1.460]    <= 1.338              NOT MET
+```
+
+**Two guard cells fail and they are the same story told twice.** The far machine's mass count falls
+**5.5 to 3.0**, out the BOTTOM of the band, and its clause C ratio worsens 1.288 to 1.455.
+
+**The mechanism is not a surprise once stated: the line art is what separates the masses.** `pal.dark`
+is the recesses and seams — the wash behind every hero plate — and lifting it toward the plates it
+divides merges them. Clause A counts masses and clause C measures the step between them against the
+variation inside them; a knob that erases the divider moves both, in the direction measured.
+
+**And the cell that vetoed the last candidate is now clear by three points.** Clause A's near top-4,
+which sat 0.2 above its floor and refused ROUND 39's lift, reads **88.3** here. Both near cells
+improve on every clause A measure. The trade has moved entirely onto the far machine.
+
+> **THE CANDIDATE IS REFUSED AND THE NEXT ONE IS NAMED BY THE SAME DATA.** RULING 66's own sweep has
+> `uFrameLift = 0.079` giving foundry's near cell **86.8** against 87.7 at 0.157 — **93% of the clause
+> B gain for half the lift.** Half the lift is half the merging, and the two failing guards are both
+> merging. That point has never been measured on the guards or on grid, and it is the obvious next
+> measurement rather than a new idea.
