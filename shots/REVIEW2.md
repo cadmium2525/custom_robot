@@ -14593,3 +14593,433 @@ my batch, which points at the frame count before the pin"*) and what this measur
 
 ---
 
+### 3. RULING 60 — **THE CLOSURE IS UPHELD AND ITS REASON IS WRONG. There ARE thresholds between 0.369 and 0.373; a `smoothstep` can use them; and the route is closed anyway, because the gate does not read a number per machine — it reads one per FRAGMENT, and the two near machines' fragments overlap on 97.2% of their support. The ceiling on what any gate can buy is 6.70%, and I measured it as a bound, as a render and as a cell.**
+
+#### 1. The census, re-derived on the corrected resolve, six draws per arena
+
+`shots/_r46size.mjs`. Built on `_settlesrc.mjs`, so its settle IS `tools/contour.mjs`'s and cannot
+drift from it; the corrected resolve run before every read; `uBodyH` read off the live material rather
+than assumed; one meter at a time. Bundle `d9cef324894e`, hashed by me.
+
+```
+              vSizeX AT THE ORIGIN      6-draw       vSizeX PER FRAGMENT
+              (what lodPx measures)     spread       (what the shader measures)
+  -----------------------------------------------------------------------------------
+  grid    NEAR      0.372993            4.0e-7       0.34416 .. 0.43409   p05-p95 0.36252-0.43058
+  foundry NEAR      0.368576            2.6e-6       0.34361 .. 0.43160   p05-p95 0.35859-0.42780
+  orbital NEAR      0.388190            4.1e-6       0.36775 .. 0.46490   p05-p95 0.37782-0.45988
+  grid    FAR       0.111308            1.6e-8       0.11054 .. 0.12065
+  foundry FAR       0.113931            3.3e-7       0.11331 .. 0.12397
+  orbital FAR       0.101883            2.4e-7       0.10154 .. 0.11005
+                                                     (uBodyH 2.300, target height 900, all 18 draws)
+```
+
+**The census's three-decimal numbers are exactly right — 0.373 / 0.369 / 0.388 and 0.111 / 0.114 /
+0.102 — and the question put to me was whether 0.369 against 0.373 survives its own error bar. It
+does, and by a margin nobody has yet stated: 0.004417 against a six-draw spread of 4.0e-7 and 2.6e-6,
+which is a separation of a thousand error bars.** The instrument the census used had an error bar
+three thousand times larger (fault 47); the instrument the meter actually runs has essentially none.
+So the answer to the audit's own question is: **the census reported a real difference using a
+measurement that could not have seen it.**
+
+#### 2. And the difference is real and USELESS, which the census could not have known because it read one point per machine
+
+`lodPx` is computed once, from the model group's ORIGIN (`robot.js:_applyLod`,
+`_lodPos.setFromMatrixPosition(this.group.matrixWorld)`). The shader's `vSizeX` is computed from
+`depthX`, the **per-vertex view-space depth** (`materials.js:172`). They are the same formula
+evaluated at different numbers of points, and the whole of the round-43 argument treats them as one
+number.
+
+**Each near machine spans 0.090 of `vSizeX` across its own body — twenty times the 0.004 between the
+two of them.** Grid's near machine runs 0.34416 to 0.43409; foundry's runs 0.34361 to 0.43160. The
+two supports **overlap on 97.23% of grid's own span**. A gate placed anywhere between them does not
+select a machine. It selects a depth slice of both.
+
+#### 3. The ceiling, which is a theorem and then a render
+
+`shots/_r46ks.mjs`. The lift a fragment receives is `mix(uPaintLiftFar, uPaintLift, g)` with
+`g = smoothstep(lo, hi, vSizeX)`, so the mean lift a MACHINE receives is
+`L_far + (L_near - L_far) * E[g]` and the only thing a gate can do is make `E[g]` differ. For any
+monotone `g` rising 0 to 1,
+
+```
+     E_A[g] - E_B[g]  =  INTEGRAL (F_B - F_A) dg      and      |E_A[g] - E_B[g]|  <=  sup |F_A - F_B|
+```
+
+because `dg` is a probability measure. **The supremum of `|F_A - F_B|` — the Kolmogorov-Smirnov
+distance between the two machines' fragment distributions — IS the maximally aggressive gate**, and it
+is attained in the limit by a step at the argmax. This is arithmetic on measured fragments; it is a
+MODEL and I label it one. Its number is not a modelling choice:
+
+```
+  grid NEAR vs foundry NEAR    max |dE[g]| =   6.70%   at vSizeX 0.38197   (F = 25.18% / 31.88%)
+  grid NEAR vs grid FAR        max |dE[g]| = 100.00%   at vSizeX 0.12065
+  foundry NEAR vs foundry FAR  max |dE[g]| = 100.00%   at vSizeX 0.12397
+```
+
+**100.00% is why the far-gated relocation works and reaches exactly the two far cells. 6.70% is the
+whole of what the same mechanism can ever do between the two near ones.** At the relocation's own lift
+magnitude — `uPaintLiftFar = 0.157`, forty display levels — 6.70% is **2.7 levels of differential**.
+To give foundry's near machine forty levels that grid's near machine does not get requires a lift-pair
+difference of `40 / 0.067 = 597 levels`, i.e. `2.34` in a uniform that saturates at `1.0` and whose
+paint clips well before that. **The gate is short by a factor of fifteen, and that is the answer to
+"even a 1% separation gives SOME differential": it gives 6.70% of one, and 6.70% is 2.7 levels.**
+
+#### 4. The render, because a bound is a model and this document has a rule about those
+
+The bound says the best gate is a step at `vSizeX = 0.38197`. I built one — `uRimSizeLo = 0.38147`,
+`uRimSizeHi = 0.38247`, a gate one thousandth wide astride the argmax — and carried the relocation's
+own lift through it: `uPaintLift = 0, uPaintLiftFar = 0.157, uPaintWhite = 1`. This is the treatment
+ROUND 43 PART 2 says cannot exist: foundry's near machine below the gate, taking the FAR value;
+grid's near machine above it, taking the NEAR value. Six draws per arena, live uniforms on
+`d9cef324894e`, two meters at once.
+
+```
+                             HEAD          MAX GATE       move     mean lift the gate delivers
+  ---------------------------------------------------------------------------------------------
+  foundry near  n=560        74.5 x5       78.2 x5        +3.7     31.88% of 0.157 = +12.8 levels
+                             74.3 x1       78.4 x1
+  grid    near  n=1025       86.0 x6       86.4 x4        +0.4     25.18% of 0.157 = +10.1 levels
+                                           86.3 x2
+  foundry FAR   n=132        54.5 x6       84.8 x6       +30.3     the full 0.157 = +40 levels
+  grid    FAR   n=326        70.9 x5       83.7 x6       +12.8     the full 0.157 = +40 levels
+  stencils                8220 x6 / 24403-24401, identical to the control in all twelve draws,
+                          and the boxes and denominators are identical too: 78x217 n=560,
+                          157x284 n=1025, 41x39 n=132, 55x81 n=326.
+```
+
+**Read the last column, not the third.** The gate that is theoretically the sharpest one available
+hands grid's near machine **79% of the lift it hands foundry's**. The 3.3-point split in the third
+column is not the gate separating two machines — **it is two machines responding differently to nearly
+the same treatment**, and the gate's own contribution is the 2.7-level difference between 12.8 and
+10.1. Priced on each cell's own measured derivative — 3.7 points per 12.8 levels on foundry, 0.4 per
+10.1 on grid — **the maximally aggressive size gate is worth 0.78 points of foundry's near cell and
+0.11 points of grid's.** Foundry's near cell is 15.5 points short of 90.
+
+#### 5. And the premise the gate was invented for is REFUTED, which is my own ruling being corrected
+
+ROUND 43 PART 2 proposed the gate because *"the two near cells want opposite treatment: foundry's near
+machine is machine-BRIGHTER on 82% of its failing rows, so a lift raises its step; grid's near is
+machine-DARKER on 68%, so a lift lowers it"* — which is RULING 59 §2, mine, last round.
+
+**Measured, a lift does not lower grid's step. Grid's near cell goes UP by 0.4** — four times its own
+0.098-point floor — under ten display levels. Both near cells improve. **There is nothing to
+separate, and the gate was built to solve a problem that the render says does not exist.**
+
+> **RULING 59 §2 is CORRECTED, by me, on the half of it that was arithmetic dressed as a rule.** The
+> SIGN half stands and is confirmed: foundry's near machine gains 7.2 times as much per display level
+> as grid's, and the darker fractions are why. **The COST half is refuted**: *"scored as a COST on the
+> `darker` fraction"* and *"the cell most exposed to a uniform machine lift is grid's near machine at
+> 68.0%"* predicted a loss on a cell that gained. A median-of-medians darker fraction is a good
+> ordering statistic and it is not a derivative, and I wrote it as though it were one.
+
+> ### RULED — RULING 60
+>
+> 1. **The machine-side route to clause B's near cells via the SIZE GATE is CLOSED, and the closure
+>    is now founded on a bound rather than on a census.** The ceiling is **6.70%**, it is the KS
+>    distance between the two near machines' fragment distributions, it is attained by a step at
+>    `vSizeX = 0.38197`, and the step was built and rendered: **0.78 points of foundry's near cell and
+>    0.11 of grid's.**
+> 2. **The reason ROUND 43 gave is WRONG and the correction matters more than the result.** *"There
+>    are no thresholds between 0.369 and 0.373 that a smoothstep can use"* is false —
+>    `smoothstep(0.369, 0.373, x)` is 0 at one and 1 at the other, and I built a gate a quarter that
+>    width and it applied. What closes the route is that **the gate does not read one number per
+>    machine.** `lodPx` is evaluated at the model's origin; `vSizeX` is evaluated per vertex; the two
+>    near machines each span 0.090 of it and **overlap on 97.23% of their support.** A closure argued
+>    from the wrong mechanism is a closure the next round reopens.
+> 3. **The near/far gate is UNTOUCHED and is the counter-example that proves the reading.** The same
+>    statistic between a near and a far machine is **100.00%** on both arenas, which is why the
+>    relocation reaches exactly the two far cells and nothing else. **The gate is a perfect
+>    discriminator of distance and a null discriminator of arena, and those are the same fact.**
+> 4. **The near-machine route is closed by something the gate could not have helped with anyway.**
+>    Clause B's worst cell is foundry's NEAR machine; clause A's binding cell — near mass count 4.3
+>    against 4.0, near top-4 85.2 against 85.0 — is GRID's near machine; clause D's cell is foundry's
+>    NEAR machine at a margin of 0.008. **To lift one near machine without paying the other's clause A
+>    you would have to tell them apart, and that is the 6.70%.** The obstacle was never the two near
+>    cells disagreeing with each other. It is that the clause B cell and the clause A cell are two
+>    machines the shader cannot distinguish, and one of them is the same machine as clause D's cell.
+> 5. **`uRimSizeLo` / `uRimSizeHi` may not be moved to separate two machines of the same class again.**
+>    They are a distance gate. They are an excellent one. Anybody proposing to retune them for a
+>    per-arena or per-machine effect must first publish the KS distance between the two fragment
+>    distributions they intend to separate, which is one command: `shots/_r46size.mjs --dump` into
+>    `shots/_r46ks.mjs`.
+
+---
+
+### 4. RULING 61 — **THE PALETTE IS ALLOWED, one role at a time, upward, and only against the test below — and the permission is worth having because I measured it: `dark` 0.52 -> 0.66 moves foundry's near cell 74.3 -> 78.0 on an IDENTICAL stencil. That is the first lever on this card whose gradient points at the near cells.**
+
+The builder named the untried lever and refused to touch it without a ruling, which is correct
+procedure and is the reason this ruling can be written on evidence instead of on principle.
+
+#### 1. What the lever is, stated precisely enough to bound
+
+`buildPalette`'s `dark` role, `robot.js:331`, `tone(look.primary, 0.52, 0.86)`. It is not a crease
+colour: `pal.dark` appears at **seventeen call sites between `robot.js:872` and `1407`** — the pelvic
+block, the spine plate, the chest back plate and its crest recess, the pack cylinders, the head's
+jaw, fin and vents, both clavicle lips, both thigh blocks and the toe claws. The file's own comment
+says so, and says why it went 0.33 -> 0.52: at 0.33 *"the player photographed with a near-black slab
+across the middle of its own torso"*.
+
+**Two facts about the direction, both already in this file and neither ever read as a clause B
+statement.** The palette comment records that translating the whole ladder DOWN by 0.26 was measured
+and cost **clean contour 81.5% -> 73.8% and body-to-background separation 67.2 -> 42.2**. That is the
+ladder's clause B gradient, measured, and it points UP. It was taken on the withdrawn pre-`294f5e0`
+pose, so it is a DIRECTION and not a figure — which is exactly how I am using it.
+
+#### 2. The probe, because a ruling that permits a lever without touching it is an opinion
+
+`dist-r44-dark66`, one line changed, `dark: tone(look.primary, 0.66, 0.86)`; built into its own
+directory, served on its own port, bundle **`7e8b8a7c8289`** hashed by me off the running server; the
+source tree reverted before anything was committed. `shots/_r46b.mjs`, six draws, two meters at once.
+0.66 keeps `dark` the darkest paint on the machine — `hullLo` is 0.72 — which is the art constraint
+the role exists under.
+
+```
+  bundle 7e8b8a7c8289 against d9cef324894e, six draws each, MAJORITY POSE
+
+                            NEAR                        FAR                     stencil
+  foundry   HEAD            74.5 x5, 74.3 x1            54.5 x6                 8220 x6
+            dark 0.66       78.0 / 78.2 / 78.4  x2 ea   56.1 x6                 8220 x6
+            move                 +3.5 to +3.7               +1.6
+            box / n              78x217  n=560             41x39  n=132   both, both paints
+
+  grid      HEAD            86.0 x6                     70.9 x5, 70.6 x1        24403 / 24401
+            dark 0.66       86.4 x4, 86.3 x1            73.0 x5                 24403 / 24401
+            move                 +0.4                       +2.1
+            box / n              157x284 n=1025            55x81  n=326   both, both paints
+
+  and in the MINORITY POSE, which turned up once in the palette batch (fault 48):
+  grid      HEAD            84.4  (RULING 57)           67.3  (RULING 57)       24193/24195
+            dark 0.66       84.8                        68.8                    24193
+            move                 +0.4                       +1.5     156x283 n=1032, 56x81 n=333
+```
+
+**Identical stencil, identical box, identical denominator, on both machines, on both arenas, in
+twenty-two of the twenty-four draws** — and the two that are not are the minority pose on both sides,
+so they are matched too. That is RULING 58 §2's carry test passed in full, which makes this one
+photograph in two paints rather than two photographs, and it is the only kind of comparison this
+document admits.
+
+**Every cell it was measured on moved the right way, and it moved the same way in BOTH POSES.** No
+candidate in this document's history has done the first of those, and nothing in it has ever done the
+second.
+
+**And the PROFILE is the finding, not the size.** The value translation buys the far cells +28.8 and
+the near cells nothing; the palette buys the near cell **+3.7** and the far cells +1.6 and +2.1. It is
+the first lever measured on this card whose gradient points at the cells clause B is now failing on.
+It also lands foundry's near cell at **78.2**, which is — to the tenth — where the maximally aggressive
+size gate carrying forty display levels lands it (RULING 60 §4). One is a paint change nobody has
+spent a round on; the other is the theoretical limit of a mechanism this round closed.
+
+#### 3. What it is allowed to cost, and none of these did I measure
+
+I am ruling on a permission, not on a candidate, so the costs are named by mechanism and left for the
+test. Every one of them is a clause this card currently holds or is closest on.
+
+- **Clause A's NEAR MASS COUNT, 4.3 against a floor of 4.0, margin 0.3.** A ladder compression is a
+  mass merge by construction, and `dark` at 0.66 against `hullLo` 0.72 is a compression of the widest
+  rung on the ladder. **This clause is the ART GUARD wearing a clause's clothes** — *"four or five big
+  masses in clearly different values"* and *"`dark` is still a clear stop under the hull"* are the same
+  sentence read twice — which is why no separate aesthetic veto is written below. If the count holds,
+  the ladder is still a ladder.
+- **Clause A's near TOP-4, 85.2 against 85.0, margin 0.2.** The cell RULING 51 refused the white lift
+  on. Merging masses should RAISE it; it must be quoted either way.
+- **Clause C, and this is the one nobody will expect.** Clause C is `sd / (step/2)` and this document
+  has carried *"a geometry problem by elimination"* since round 20 — but the elimination was over
+  **shading** levers (*"every shading lever closed both ways"*). **The palette ladder is not a shading
+  lever and has never been in that elimination.** A ladder compression moves the between-mass step,
+  which is clause C's denominator, directly and by construction. The cells are **1.708 near and 1.089
+  far** against `< 1.00`, and **1.089 is the closest this card has ever been to clause C**. A palette
+  change is the first candidate in twenty rounds that can move what clause C is MADE of, in either
+  direction, and it is therefore the first candidate that must be quoted on clause C as a headline
+  rather than as a guard.
+- **Clause D, foundry NEAR, 0.153 against 0.145, margin 0.008** (RULING 55's worse-machine reading).
+  Raising a role's HSL lightness lowers its achievable chroma — the palette's own comment states the
+  ceiling, *"at L 0.82 no colour can exceed an HSV chroma of 0.36"* — and `dark` paints big pieces of
+  exactly the machine clause D's cell is. This is a mechanical cost, not a hypothetical.
+- **Clause E**, quoted beside clause B because RULING 50 requires it.
+
+> **RULED.**
+>
+> 1. **The palette is OPEN to clause B work**, under the test below and under no other. The builder
+>    was right to stop and ask; the answer is yes, and the reason it is yes is that **every other
+>    machine-side lever is now closed by measurement** — the flatten by RULING 49, the illumination
+>    knobs by RULING 49 §1, the size gate by RULING 60, the stage's emissive on the near cell by ROUND
+>    43 PART 2, the geometry LOD by RULING 57 §6, and more lift by ROUND 44 — **and this one is not,
+>    and its every measured cell moves the right way.**
+> 2. **It is an ART change and the test says so in the only way this document can enforce.** There is
+>    no aesthetic veto written below, because a veto a critic cannot measure is a veto a builder cannot
+>    satisfy. **Clause A's near mass count IS the aesthetic veto**, stated in a number, with a margin of
+>    0.3, and it is the number the palette's own comment was written to protect.
+> 3. **My probe is NOT a candidate and may not be quoted as one.** It is four clause B cells and no
+>    guards, on one value of one role, and RULING 50's standing rule is that a knob that cannot be
+>    shown to buy a clause may not be allowed to risk one that is MET. `dark = 0.66` has not been shown
+>    to be safe for anything; it has been shown to have a gradient.
+> 4. **And the FIRST job of any palette candidate is not the palette.** It is to re-take clause A, C
+>    and D at zero on `d9cef324894e`, because the baselines the acceptance test in force today quotes
+>    are on `23dc643dceac` — pre-`294f5e0`, the tree whose pose RULING 58 withdrew. **Every guard
+>    baseline on this card is as stale as the clause B figures that were withdrawn for the same
+>    reason**, and no round has said so.
+>
+> #### THE ACCEPTANCE TEST, for a palette change and for nothing else
+>
+> **Meters, fixed, no new instrument.**
+>
+> - **Clause B:** `tools/contour.mjs --tier 3 --ticks 420`, arenas `grid`, `foundry` **and `orbital`**
+>   — the enumerated set is six cells since RULING 58 §4 — **six draws under at least TWO load
+>   conditions** (fault 48), cell = the minimum, and **every draw's stencil, box and `n` printed beside
+>   its cells**. A value that agrees while its denominator moved is a coincidence and this document has
+>   been caught treating one as continuity.
+> - **Clauses A and C:** `shots/_massdrive.mjs --onbody --repeat 6 --tier 3 --ticks 420`, both
+>   arenas, RULING 30's disposition — the **whole observed range** on the passing side, never the
+>   median; more than six draws on any cell inside 0.05 of its threshold.
+> - **Clause D:** `shots/_r15dump.mjs` into `shots/_r16chroma.mjs`, RULING 55's **worse-machine**
+>   reading, both arenas, **with the dump's stencil printed**. The clause B and clause D photographs
+>   are NOT the same frame — RULING 56 §9 — and this test does not pretend otherwise; it requires both
+>   stencils so the mismatch is visible instead of assumed away.
+> - Every figure names its bundle, **hashed off the running server by the person quoting it**, and
+>   every variant is built into its own directory and its server killed afterwards.
+>
+> **Baselines, measured by me this round on `d9cef324894e`, six draws, not remembered:**
+>
+> ```
+>    clause B   foundry near  74.5 x5 / 74.3 x1   n=560  78x217   stencil 8220   floor 0.18
+>               foundry FAR   54.5 x6             n=132  41x39                   floor 0.76
+>               grid    near  86.0 x6             n=1025 157x284  24403/24401    floor 0.10
+>               grid    FAR   70.9 x5 / 70.6 x1   n=326  55x81                   floor 0.31
+>               orbital       NOT RE-MEASURED BY ME. RULING 58's near 89.4 / far 67.7-67.4 stand
+>                             as the last reading, at six draws, on this bundle.
+>    clause A   NOT RE-MEASURED BY ME. RULING 49's baselines are on 23dc643dceac, which is
+>    clause C   PRE-294f5e0 — the tree whose pose RULING 58 withdrew. THE GUARD BASELINES IN
+>    clause D   FORCE TODAY ARE AS STALE AS THE CLAUSE B FIGURES THAT WERE WITHDRAWN, and the
+>               first job of any palette candidate is to re-take them on d9cef324894e at zero.
+> ```
+>
+> **ACCEPTED as a default — the change ships — iff ALL of:**
+>
+> - **B.** `clean >= 90.0` on **all six cells**, each the minimum of six draws.
+> - **Y, clause A.** Whole observed range: **count in `[4.0, 6.0]`** and **top-4 `>= 85.0`** on both
+>   machines of both arenas. **The binding number is the NEAR MASS COUNT.** It stands at 4.3 against a
+>   floor of 4.0 and the mechanism of this change is mass merging.
+> - **Z, clause C.** No cell worse than its own re-taken baseline max + 0.05 (round 24's round-trip
+>   floor), on both machines of both arenas. **1.089 is the best clause C figure this card has ever
+>   held and it is not available to be spent.**
+> - **W, clause D.** Worse-machine reading, both arenas, no cell inverted. The cell is **foundry NEAR
+>   at 0.153 against 0.145, margin 0.008**, and it is the same machine as clause B's worst cell.
+>
+> **ACCEPTED as progress — kept, published, card unchanged — iff** clause B improves on **every cell
+> it moves** by more than that cell's own floor and moves at least one (RULING 56's amendment), **and**
+> every clause A, C and D cell stays inside its own repeat spread.
+>
+> **REFUSED otherwise, and specifically REFUSED if:**
+>
+> 1. **it buys clause B and costs clause A's near count.** No trade is available there: the count is
+>    the art guard, and a machine that has stopped having four masses has stopped being the thing the
+>    palette was written for.
+> 2. **it is argued from the POOLED clause D reading** (RULING 55), or from a clause B figure that does
+>    not carry its own `n` (RULING 47), or at three draws (RULING 51), or at six draws of one load
+>    condition (fault 48).
+> 3. **it moves more than ONE ROLE.** Nine roles is five hundred and twelve attributions and this
+>    document has spent four rounds failing to attribute forty-eight pixels. One role, one number, one
+>    bundle, one round.
+> 4. **it moves the ladder's ORDER, or `PAINT_GAIN`, or the ladder DOWN.** `dark` stays the darkest
+>    paint on the machine, which caps it under `hullLo`'s 0.72. Down is measured and refused: the
+>    comment's own -0.26 translation cost 7.7 points of clean contour and 25 of separation.
+>
+> **What the palette is allowed to cost, in one sentence:** one clause A count of 0.3 and one clause D
+> margin of 0.008 are the entire budget, they are both on the near machine, and they are both on the
+> machine clause B's worst cell belongs to — so a palette candidate is a single-machine trade and must
+> be argued as one.
+
+---
+
+### 5. RULING 62 — **CLAUSE B IS NOT RULED UNREACHABLE, and the far cells are not "short by six" — they are short by NINE PIXELS and TWENTY-ONE PIXELS. What closes that gap is an attribution, and no candidate may be filed against clause B until it is done.**
+
+I was invited to rule clause B unreachable in full and told that arguing it would be acceptable. I
+decline, on a measurement rather than on optimism, and I replace "short by six" with the figure the
+clause is actually made of.
+
+#### 1. Six points is a percentage. Here is the count
+
+`contour.mjs`'s cells are `clean / n` on contours of 132, 326 and 560 boundary pixels, so one pixel is
+0.76, 0.31 and 0.18 points and the deficits are small integers:
+
+```
+  cell                     n      now      clean px   90.0% needs   SHORT BY
+  ------------------------------------------------------------------------------
+  foundry FAR   relocation 132    83.3        110         119        9 pixels
+  grid    FAR   relocation 326    83.7        273         294       21 pixels
+  foundry near  HEAD       560    74.5        417         504       87 pixels
+  foundry near  dark 0.66  560    78.2        438         504       66 pixels
+```
+
+**And ROUND 44's own map says where twenty-one of them are.** On grid's far machine the entire weak
+population is *"48 px in TWO stretches — 9x10 at (783,157) and 9x11 at (808,165)"*, top fifth, thick
+geometry, machine-brighter, unmoved by a lift of 83 display levels. **Twenty-one of those forty-eight
+head-fin pixels is the whole distance between a twenty-round FAIL and this card's first clause B MET
+on a far cell.** That is not a value problem and it has not been one since the relocation. It is a
+question about one part of one model, and the builder has already written the right next step.
+
+#### 2. The directions that are closed, with the arithmetic that closes them
+
+- **More lift.** ROUND 44 measured it: grid FAR is 83.7 at +40, +64 and +89, identical to the decimal.
+  Saturated.
+- **The geometry LOD.** RULING 57 §6 measured full detail at **-6.8 on both far cells**, and at the
+  pinned frame the far machine already draws only **1296 of 22176 hull indices, 5.8%**. Cutting the
+  remaining 5.8% is worth **+0.4** by linear extrapolation on that same measurement. Exhausted.
+- **The size gate.** RULING 60: 6.70%, which is 0.8 points on foundry's near cell and 0.11 on grid's.
+- **The stage — ON THE CELL IT WAS TESTED ON, and only that one.** ROUND 43 PART 2 zeroed
+  `screens`, `walls`, `architecture` and `obstacles` emissive and read foundry's NEAR cell at 74.5,
+  74.6, 74.1, 74.6 against 74.5. That is a null and I accept it. **It is not a closure of "the stage
+  route", because the far cells were never read.** RULING 59's own table says the background RISES on
+  only two cells and both are near machines — the far cells are 0.0% and 9.1% machine-darker, i.e.
+  they are the cells where the machine already wins and the stage is least implicated — so the null
+  on the near cell is the cell where a stage null was most expected. **`--mat` has never been pointed
+  at a far cell. Saying "the stage route is closed" on a near-machine null is the shape of error
+  RULING 59 struck round 38 for.**
+
+#### 3. Why I decline to rule it unreachable
+
+RULING 50 declined on an existence result and was right to. I decline on a stronger one: **a lever
+with a measured positive gradient on four of the four cells it was pointed at has just been found, and
+nobody has spent a round on it.** `dark` 0.52 -> 0.66 moves grid near +0.4, grid far +2.1, foundry
+near +3.7 and foundry far +1.6, on identical stencils, on both arenas — the first candidate in this
+document's history to improve **every** clause B cell it was measured on. It does not reach 90 and I
+am not filing it as a candidate; a clause with an unexhausted lever whose every measured cell moves
+the right way is not an unreachable clause.
+
+> **RULED.**
+>
+> 1. **Clause B is NOT ruled unreachable.** It remains **NOT MET, worst cell 54.5** on the shipped
+>    tree, unchanged, and every figure in this section is a candidate reading and not a card reading.
+> 2. **"Short by six" is retired as a description.** Clause B's far cells are short by **nine and
+>    twenty-one boundary pixels** and any argument about them that is not in pixels is an argument
+>    about a percentage.
+> 3. **No further candidate may be filed against clause B until the 48 pixels are attributed.**
+>    ROUND 44 proposed this itself — hide one material class at a time, re-read the weak population —
+>    and I make it binding. Four mechanisms have been spent on these pixels; the fifth costs a round
+>    and buys nothing while the owner of the pixels is unknown. **The exception is the palette, which
+>    RULING 61 permits, because it is the one lever whose gradient has been measured on the cells the
+>    attribution is not about.**
+> 4. **"The stage route is closed" is CORRECTED to "the stage route is closed on foundry's near
+>    cell".** `--mat` on a far cell is one command and it has never been run.
+
+---
+
+### 6. WHAT I DID NOT MEASURE
+
+- **Clause A, C, D and E on anything, including my own palette probe.** RULING 61's test requires them
+  and I have not run them; the probe is a clause B reading and is quoted as one. **And the guard
+  baselines in force today are on `23dc643dceac`** — the pre-`294f5e0` tree whose pose RULING 58
+  withdrew — so they are exactly as stale as the clause B figures that were withdrawn, and nobody has
+  said so until now.
+- **Orbital, under anything.** It is a third of the enumerated set, it holds the best cell this clause
+  has ever had at 89.4, and it has still never been read under a candidate. I re-measured its
+  `vSizeX` and nothing else.
+- **What the maximally aggressive gate costs clause A.** It lifts grid's near machine by ten display
+  levels and clause A's binding cell is grid's near machine. I did not read it, and the gate is
+  refused on RULING 60's ceiling rather than on that cost.
+- **The one foundry draw that read 73.9.** Filed in fault 48 as an observation without a stencil.
+- **Nothing in `src/` changed this round.** The palette probe was built into `dist-r44-dark66`, served
+  on 4407, and the source tree was reverted before the first commit. Both lift uniforms remain 0.0.
+  `npm test` passes and `npx vite build` is clean.
