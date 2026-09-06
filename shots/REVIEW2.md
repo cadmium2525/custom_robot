@@ -15710,3 +15710,41 @@ improve on every clause A measure. The trade has moved entirely onto the far mac
 > B gain for half the lift.** Half the lift is half the merging, and the two failing guards are both
 > merging. That point has never been measured on the guards or on grid, and it is the obvious next
 > measurement rather than a new idea.
+
+### The half-lift candidate — **refused, and worse than the full one, because the guards are NOT monotone**
+
+Clause B at `uFrameLift = 0.079` holds nearly everything: grid near **91.5 x3** and far **100.0 x3**,
+both passing; foundry near **86.8** (mode of 6, no minority pose) and far **85.6 x6**, giving back
+0.9 and 0.8 against the full lift. That is the 93%-for-half the sweep predicted, confirmed on the
+cells.
+
+The guards are not:
+
+```
+                     baseline      FULL 0.157     HALF 0.079      test           half verdict
+  A near count         4.3            4.8            4.0        in [4.0, 6.0]    MET, on the edge
+  A near top-4        85.2           88.3           87.8        >= 85.0          MET
+  A FAR  count         5.5            3.0            3.3        in [4.0, 6.0]    NOT MET
+  A FAR  top-4        86.2           95.9           95.3        >= 85.0          MET
+  C near ratio       1.707          1.736          1.796        <= 1.759         NOT MET
+  C FAR  ratio       1.288          1.455          1.483        <= 1.338         NOT MET
+```
+
+**Both clause C ratios are WORSE at half the lift than at full.** Near 1.736 -> 1.796, far
+1.455 -> 1.483. The far mass count recovers only 3.0 -> 3.3 and stays out of band, and the near count
+drops 4.8 -> 4.0, onto the band's edge. **Three guards fail at half lift against two at full.**
+
+> **AND THE REASONING THAT PROPOSED IT WAS THE SAME ERROR I WAS CORRECTED FOR IN ROUND 39.** I wrote
+> *"half the lift is half the merging"* — an interpolation between two points, filed as a prediction,
+> exactly as I once wrote *"there is no value of this knob that satisfies both"* from two points and
+> had it refuted by a third. **Clause C's ratio is a step divided by a spread, and a partial lift can
+> close the step between masses while leaving the variation inside them**, which is worse than a lift
+> that raises both together. Nothing about that is visible from two endpoints.
+>
+> **The standing consequence:** a guard response may not be interpolated. The frame lift's effect on
+> clause A and clause C has now been measured at three points and is non-monotone at two of them, so
+> any future candidate on this knob is chosen by SAMPLING the interval, not by halving.
+
+**Where the two candidates stand.** Full lift: clause B 97.4 / 100.0 / 87.7 / 86.4, two guards failing.
+Half lift: 91.5 / 100.0 / 86.8 / 85.6, three guards failing. **The full lift is the better of the two
+and both are refused.** Every lift uniform in the tree remains 0.0.
