@@ -14434,3 +14434,40 @@ names would alias one material's knob onto the other's.
 **The next step is an attribution, not another hypothesis.** Three guesses have now been spent on
 these pixels; the mesh that owns them can be found by hiding each class in turn and re-reading the
 weak population, and nobody should propose a fourth mechanism before that is run.
+
+### 4. The map, and a contradiction that is now the open question
+
+`shots/_r40-where.mjs` on the same capture, grid, far machine, both lifts at maximum
+(`uPaintLiftFar = 0.35`, `uFrameLiftFar = 0.35`), bundle `586e670836d3`:
+
+```
+  weak boundary: 48 px in TWO stretches — 9x10 at (783,157) and 9x11 at (808,165)
+  vertical fifths:  all boundary  23 / 28.8 / 13.2 / 12.6 / 22.4
+                    weak only   95.8 /  4.2 /    0 /    0 /    0
+  weak pixels where the MACHINE IS BRIGHTER than what is behind it: 100%
+  local thickness: weak median 26 of 49, clean median 29 — thin geometry 2.1% vs 2.2%
+  clean machine 187.8, behind 57.2
+```
+
+**This is RULING 48's finding, unchanged under a lift of 83 display levels.** Two stretches, top
+fifth, thick geometry, machine-brighter — the same two head-fin stretches the critic located, in the
+same place, after the largest value change this project has applied to a machine.
+
+> **AND THE MAP CONTRADICTS THE RENDER, WHICH IS THE THING TO RESOLVE NEXT.** The map's own lift model
+> — arithmetic on these very pixels — says adding **20 to 30 levels to the machine half takes the cell
+> from 84.0 to 92.0 and then 100.0**. The render adds **83** and the cell does not move: 83.7 at +40,
+> 83.7 at +64, 83.7 at +89.
+>
+> One further measurement narrows it. Between +40 and +89 the CLEAN rows move 162.9 -> 184.7: **+21.8
+> of luminance for +49 of requested lift**, so the lift is being attenuated to under half even on the
+> pixels it demonstrably reaches. Whatever is eating it may be eating all of it at the fins and half
+> of it everywhere else, which would explain both numbers with one mechanism.
+>
+> **Candidates not yet excluded**, and they are to be attributed rather than guessed: `matEmis`
+> (MeshBasicMaterial) and `matFlare` (additive, DoubleSide, the `renderOrder` 3 mesh in the census) are
+> the two materials on a machine that still have no lift; the post chain's tone map and FXAA both run
+> after the injection point and both compress; and the head crest is the palette's `accent` role,
+> which is the one role at full chroma.
+>
+> **Four hypotheses have now been spent on these 48 pixels. The next round attributes them — hide one
+> material class at a time and re-read the weak population — and does not propose a fifth.**
