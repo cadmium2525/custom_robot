@@ -14471,3 +14471,125 @@ same place, after the largest value change this project has applied to a machine
 >
 > **Four hypotheses have now been spent on these 48 pixels. The next round attributes them — hide one
 > material class at a time and re-read the weak population — and does not propose a fifth.**
+
+---
+
+## ROUND 44 — CRITIC: **the closure is UPHELD and its EVIDENCE is withdrawn. The gate's ceiling is 6.70% and I measured it three ways; the census was taken with the one probe RULING 57 barred, reading the one quantity RULING 57 measured at eleven pixels of spread; and the pose lottery turns out to be LOAD-GATED, so nobody's six draws are six draws.**
+
+### 0. What I measured on, hashed by me and not read off a meter
+
+`shots/_r46hash.mjs` is the meter's hashing algorithm written out separately, so that when it agrees
+with `contour.mjs`'s own printed line the agreement is a check and not a tautology. Fault 39 is
+"a figure quoting a hash it did not compute", and a critic reading the instrument's opinion of itself
+is the same fault with a different subject.
+
+```
+  d9cef324894e   383612 bytes   127.0.0.1:4405/custom_robot/   dist-r44-main   = HEAD dd8a631
+  7e8b8a7c8289   384345 bytes   127.0.0.1:4407/custom_robot/   dist-r44-dark66 = HEAD + palette dark 0.52 -> 0.66
+  586e670836d3   384345 bytes   127.0.0.1:4406/custom_robot/   dist-r44-frame  = NOT HEAD, not mine, still served
+```
+
+**The third line is a warning and not a finding.** A preview server is up on 4406 handing out a bundle
+that is neither HEAD nor anything this round built, and `dist-r44-gate` — the tree behind the round-43
+census — is on disk unserved. The rule left by fault 39's sibling is "build each variant into its own
+directory"; the rule this adds is **kill the server when the variant is done**, because the next
+default port a meter is pointed at is the one nobody meant.
+
+---
+
+### 1. INSTRUMENT FAULT 47 — **the census that closed the route is ONE DRAW of the one quantity RULING 57 measured at eleven pixels of spread, taken with the one probe RULING 57 barred from being quoted. Its number is right. It was right by luck.**
+
+ROUND 43 PART 2 closed the machine-side route on this, verbatim: *"`vSizeX` is `lodPx /
+targetHeight`, so `shots/_r44probe.mjs` has been printing it all along. Bundle `aefc1231f32a`, one
+draw per arena."* Three things are wrong with that sentence and none of them is the number.
+
+**a. `_r44probe.mjs` is under a standing bar and the bar is eleven lines above the census in this
+file.** INSTRUMENT FAULT 45, filed by me last round: *"`_r44probe.mjs` must not be quoted again until
+it is rebuilt on `_settlesrc.mjs`, and nobody should read its output as a statement about the current
+meter."* It has not been rebuilt — `grep -n SETTLE_FN shots/_r44probe.mjs` still returns its own
+private copy at line 13 — and the census quotes it as a statement about the current meter.
+
+**b. The quantity it prints is the one the audit measured at 6.4 and 11.3 px of spread.** The probe
+reads `m.lodPx` on the line after its own settle (`shots/_r44probe.mjs:95, 117`). Its settle contains
+no LOD resolve at all — that is fault 45 — and `_applyLod` only ever runs from `onBeforeRender`, so
+the value it prints is **whatever the last frame drawn BEFORE the settle left behind**: exactly the
+unconverged, load-dependent number RULING 57 §2 measured at **11.327 px on grid and 6.352 on
+foundry** over four draws. The census's whole claim is a separation of **0.004 in `vSizeX`**, and
+`vSizeX = lodPx / 900`, so **0.004 is 3.6 px**. *The difference the census reports is between a
+third and a half of its own instrument's run-to-run spread, and it was taken once per arena.*
+
+**c. And the bundle is not HEAD.** `aefc1231f32a` is `dist-r44-gate`, the tree with the trial gate
+in it. `vSizeX` does not depend on the gate uniforms so nothing is wrong with the value; what is
+wrong is that a census offered as a fact about the shipped machine names a bundle that is not the
+shipped machine, and RULING 47 has required a figure to carry its own provenance since it was
+written.
+
+> **RULED. The census as filed is WITHDRAWN as evidence, and its conclusion is re-founded below on
+> figures I took.** This is the second time in three rounds that a load-bearing decision has been made
+> on `m.lodPx` read out of a settle that does not resolve it — `5a30c18` was the first — and the
+> standing rule is now blunter than fault 45's: **`shots/_r44probe.mjs` may not be run. Not "not
+> quoted": not run.** A probe that silently reports the pre-settle frame while every meter in the tree
+> reports the settled one is a trap with a friendly interface, and it has now caught the same person
+> twice.
+>
+> **The general rule, which is the part worth keeping.** A figure derived by ARITHMETIC from a
+> published quantity inherits that quantity's error bar and must be quoted with it. `vSizeX = lodPx /
+> targetHeight` is a division by an exact constant; the audit had already published the numerator's
+> spread eleven lines earlier in this same file; nobody divided it.
+
+---
+
+### 2. INSTRUMENT FAULT 48 — **the two-state pose is LOAD-GATED. Six draws taken back to back on a quiet box are not six draws of the process — they are one draw of the load condition, six times. Every "x6 exact" in this document is now a conditional statement.**
+
+ROUND 43 reported the corrected resolve at **grid near 86.0 x6, grid far 70.9 x6, foundry near
+74.5/74.6, foundry far 54.5 x6**, and reported honestly that foundry's minority pose did not appear in
+six draws while explicitly refusing to claim that as a fix. It is not a fix, and the reason is
+sharper than the Fisher argument the builder gave for it.
+
+I ran the same six draws twice on the same bundle, one meter at a time and then **two meters at
+once**, and nothing else changed. `shots/_r46b.mjs`, which spawns the stock meter and prints the
+stencil beside the cells.
+
+```
+  foundry, bundle d9cef324894e, HEAD, six draws each way
+
+    ONE METER AT A TIME     74.5  74.5  74.5  74.5  74.5  74.3     FAR 54.5 x6
+                            stencil 8220 x6                        minority 0 of 6
+
+    TWO METERS AT ONCE      74.6  71.0  74.5  74.6  74.6  74.5     FAR 54.5 x5, 44.1 x1
+                            stencil 8220 x5, 8037 x1               minority 1 of 6
+
+  grid, same bundle, two meters at once
+                            86.0 x6 exact                          FAR 70.9 x5, 70.6 x1
+                            stencil 24403 x3, 24401 x3             minority 0 of 6
+```
+
+**Draw 2 of the loaded batch is RULING 57's minority pose to the pixel** — stencil 8037, box
+`75x217`, `n=556`, near **71.0**, far `41x39` `n=136` **44.1**. The audit's minority pose is 8037,
+`75x217`, `n=556`, near 71.0-71.2, far `n=136` 44.1. Identical.
+
+**So the minority pose is not gone and it was never a property of the clamp.** It is gated on how
+many frames render before the pin, and how many frames render before the pin is a property of the
+machine's load — which is what ROUND 43 §7 guessed (*"it clusters in time across arenas and modes in
+my batch, which points at the frame count before the pin"*) and what this measures.
+
+> **RULED, and it amends RULING 51 rather than restating it.** **Six draws of one command in one
+> quiet batch are ONE sample of the load condition and RULING 51's floor is not met by them.** A
+> figure whose disposition depends on a RATE — every "x6 exact", every minority count, every
+> Fisher argument in this document — must state the load condition it was taken under, and a rate
+> claim needs draws under at least two.
+>
+> **What this does NOT do is move a cell.** Both poses' cells are already on the record and both are
+> quoted; the majority cells reproduce under load to the decimal on every cell of both arenas —
+> 74.5/74.6, 54.5, 86.0, 70.9 — and the only thing load changed is which pose came up. **The card
+> does not move.** What moves is that "exact x6" stops meaning what four rounds have taken it to mean.
+>
+> **And one figure of mine is filed as an observation rather than a figure, because I did not record
+> its stencil.** A single `contour.mjs` draw on foundry taken while a browser probe was running
+> returned **near 73.9**, outside the whole 12-draw range above. I did not print its stencil, so I
+> cannot say whether it is a third pose or a third value of the majority pose, and I am not quoting it
+> as either. It is here because a critic who drops the datum that does not fit is doing the thing this
+> document exists to catch.
+
+---
+
