@@ -15624,3 +15624,57 @@ best cell on the card and the one that was contaminated without being measured.*
 - **Nothing in `src/` changed this round.** Both lift uniforms and both frame-lift uniforms remain
   0.0, nothing ships, and every improved number here is a measurement of a knob rather than of the
   tree. `npm test` ALL PASS, `npx vite build` clean.
+
+---
+
+## ROUND 46 — BUILDER: **the combination, and clause B is two cells from MET**
+
+RULING 66 swept `uFrameLift` — the near half of the line art's own knob, which I built in ROUND 44,
+measured on the FAR cell alone, saw +0.3, and never swept on the cell it was for. It is worth +13.1 on
+foundry's near machine. Nobody had then run it TOGETHER with the shell's far-gated lift, so this is
+that run. `uPaintLiftFar = 0.157, uFrameLift = 0.157, uPaintWhite = 1`, bundle `586e670836d3`, grid
+three draws and foundry six.
+
+```
+  cell                    baseline    COMBINATION      vs 90
+  grid    near  n=1025      86.0        97.4  x3      PASSES     +11.4
+  grid    FAR   n=275       84.4       100.0  x3      PASSES     +15.6
+  foundry near  n=560       74.6        87.7  mode      -2.3     +13.1
+  foundry FAR   n=132       54.5        86.4  mode      -3.6     +31.9
+
+  grid: stencil 24226 and both boxes identical in all three draws.
+  foundry: 5 of 6 draws majority (stencil 8220, 78x217); 1 of 6 minority (8037, 75x217),
+           reading near 83.6 and far 83.8. Mode quoted, minority rate published.
+```
+
+**Two of the four cells now pass, and the other two are short by 2.3 and 3.6.** Two rounds ago this
+clause was four failing cells with a measured ceiling below the threshold, and the ceiling was the
+flare in the mask.
+
+### RULING 59's opposition does NOT hold for the line art, and that is the finding under the finding
+
+RULING 59 measured the sign of each near cell's failing rows — foundry's machine-BRIGHTER on 82%,
+grid's machine-DARKER on 68% — and ROUND 43 built a whole closure on it: the two near cells want
+opposite treatment, so no single value can serve both, and the size gate cannot separate them.
+
+**`uFrameLift` raises BOTH.** Foundry's near cell +13.1 and **grid's near cell +11.4**, from one knob
+at one value. The opposition is real for the SHELL lift, which is what RULING 59 measured; it does not
+transfer to the line art, and my closure generalised a sign measured on one material to a machine that
+has five.
+
+> **So the near-cell closure is withdrawn by me, before anybody has to withdraw it for me.** ROUND 43
+> said *"closed, not unpromising"*. It was closed for the knob it was measured on and I wrote it as a
+> property of the machine. Two of the four things that turned out to be wrong this round — the
+> saturation and this — were closures, and both were closed on a measurement that was true of one
+> material and quoted about all of them.
+
+### What this does not yet establish
+
+- **The guards are unmeasured on this combination.** Clause A's near top-4 has a 0.2-point margin,
+  clause C is NOT MET at both machines, clause D's cell is the worse machine by RULING 55, and
+  `uFrameLift` has never been near any of them. **Nothing here is a candidate until they are read.**
+- **`uFrameLift` has no six-draw reading and no guard of its own** — RULING 66 says so and it is right;
+  the table above is its first multi-draw run and only on the combination.
+- **Orbital is not in this table.** RULING 63 measured its far cell moving under fault 47 and nobody
+  has read orbital under any lift.
+- **Nothing ships.** Every lift uniform is 0.0 in the tree.
