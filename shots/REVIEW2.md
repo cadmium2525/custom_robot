@@ -14303,3 +14303,69 @@ one draw of six and no cell moves with it.
 
 Three corrections in one round, all found by re-measurement rather than by argument, and none of them
 changes a clause cell. **The card does not move: clause B's cell is still 54.5.**
+
+---
+
+## ROUND 43 — BUILDER, PART 2: **the size gate cannot separate the two near machines, and that closes the machine-side route to clause B**
+
+### 1. The census, which should have been taken before the hypothesis
+
+`vSizeX` is what every size gate in the shell shader reads: `uBodyH * projection[1][1] / depth * 0.5`,
+the machine's body height as a fraction of frame height. It is also `lodPx / targetHeight`, so
+`shots/_r44probe.mjs` has been printing it all along. Bundle `aefc1231f32a`, one draw per arena:
+
+```
+  arena      NEAR vSizeX    FAR vSizeX
+  grid          0.373          0.111
+  foundry       0.369          0.114
+  orbital       0.388          0.102
+```
+
+**The two near machines differ by 0.004 — about one percent.** The near/far split is clean at 0.37
+against 0.11, which is why a far-gated lift works and reaches exactly the two far cells.
+
+### 2. The plan this kills, and it was mine
+
+RULING 59 measured that the near cells want opposite treatment: foundry's near machine is
+machine-BRIGHTER on 82% of its failing rows, so a lift raises its step; grid's near is machine-DARKER
+on 68%, so a lift lowers it. I proposed separating them with the gate, on the grounds that they are
+different sizes — **78x217 against 157x284 px, 24.1% against 31.6% of frame height.**
+
+**Those are STENCIL BOX fractions and the gate does not read the box.** It reads the body height, and
+the box includes arms and weapons standing above the head. On the quantity the gate actually reads the
+two machines are the same size to within a percent.
+
+Measured before the census, at a gate of 0.24/0.31: **foundry's near cell reads 74.5, unmoved to the
+decimal**, because at `vSizeX = 0.369` it sits above the gate's top and takes the near value. I had
+placed a gate using a proxy I never checked against its input.
+
+> **THE STRUCTURAL RESULT, which is worth more than the plan was.** The two near cells want opposite
+> treatments and are **indistinguishable to the only per-machine discriminator the shell shader has**.
+> No size-gated value change can serve both, at any thresholds, because there are no thresholds
+> between 0.369 and 0.373 that a smoothstep can use. **The machine-side route to clause B's near cells
+> is closed** — not "unpromising", closed, by a measurement of the discriminator itself.
+
+### 3. And the stage route is closed on foundry's near cell too, by the null above
+
+The `--mat` flag was added this round to test the stage hypothesis against clause B for the first
+time. `screens.emissiveIntensity` 2.4 -> 0, `walls` 1.15 -> 0, `architecture` 1.2 -> 0 and `obstacles`
+1.4 -> 0, each applied and each confirmed applied in the output: **foundry's near cell reads 74.5,
+74.6, 74.1 and 74.6 against a baseline of 74.5.** Nothing moves.
+
+**Which RULING 59 predicts and round 38's struck label would not have.** A cell whose machine is
+already brighter than its background on 82% of failing rows is not a cell the stage is drowning. The
+correction is now in the flag's own header, where the struck label had been repeated.
+
+### 4. What is left for clause B, stated as narrowly as the evidence allows
+
+- **The far cells are reachable and short**: 83.7 grid and 83.3-84.8 foundry against 90.
+- **The near cells are not reachable by any value knob in this shader.** Foundry's wants a lift that
+  grid's cannot survive, and nothing distinguishes them.
+- **What has not been tried**: changing the machines' geometry or their PAINT per-role rather than
+  their output — the palette's `dark` role at L 0.52 is the value the failing rows are made of, and no
+  round has moved it since it went 0.33 -> 0.52. That is a change to the art, not to a uniform, and
+  it needs a ruling before a builder touches it.
+
+**Nothing ships. The tree is unchanged apart from the meter's new stage flag** — the two gate uniforms
+this section was written to test are reverted, because a knob the census proves can never be usefully
+set is a knob that will be re-tried by somebody who did not read this.

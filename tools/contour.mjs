@@ -132,10 +132,14 @@ const UNIFORMS = String(flag('u', '') || '').split(',').filter(Boolean).map((kv)
  * `--mat <mesh>.<prop>=<value>[,...]` — live STAGE overrides, the counterpart of
  * `--u`, and here for the same reason `--u` is here.
  *
- * RULING 56 and RULING 59 both end at the stage: clause B's worst cell is
- * foundry's NEAR machine, its weak contour fails against a BRIGHT BACKGROUND
- * rather than a dark machine, and a far-gated machine lift cannot reach it by
- * construction. `shots/_r15dump.mjs` could already sweep a stage knob and this
+ * RULING 56 ends at the stage: clause B's worst cell is foundry's NEAR machine
+ * and a far-gated machine lift cannot reach it by construction.
+ *
+ * (An earlier version of this note said that cell fails against a BRIGHT
+ * BACKGROUND. That is round 38's label and RULING 59 struck it: foundry's near
+ * machine is machine-BRIGHTER on 82% of its failing rows. The stage sweep this
+ * flag was added for duly found nothing there, which the struck label would not
+ * have predicted and the corrected one does.) `shots/_r15dump.mjs` could already sweep a stage knob and this
  * meter — the one that scores the clause — could not, so every stage hypothesis
  * cost a rebuild and none was ever tested against clause B.
  *
