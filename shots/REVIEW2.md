@@ -15098,3 +15098,51 @@ the mirror image of fault 19, which was foundry-only for the same kind of reason
 
 Fixed in all nine copies at once, found by searching for the guard rather than listing the files.
 `npm test` ALL PASS.
+
+### 5. The re-take: **the saturation was the flare, and grid's far cell passes clause B outright**
+
+Withdrawn numbers re-run on the corrected mask, bundle `586e670836d3`:
+
+```
+  grid FAR, far-only lift        WITHDRAWN (flare in mask)      RE-TAKEN (corrected)
+    0                                  70.9                           84.4
+    +40  (0.157)                       83.7                          100.0
+    +64  (0.25)                        83.7                          100.0
+    +89  (0.35)                        83.7                          100.0
+```
+
+**Grid's far cell reaches 100.0 at exactly the +40 RULING 50 priced.** It does not saturate at 83.7;
+it saturates at a hundred. ROUND 44's *"the far cells saturate below the threshold"* is **withdrawn in
+full and the opposite is true on this cell.**
+
+> **AND THE MAP WAS RIGHT.** ROUND 44 filed a contradiction: the map's lift model said +20 takes the
+> cell to 92.0 and +30 to 100.0, while the render at +83 would not move. **The model was correct to
+> the shape and the render was being read through a mask with the flare in it.** The contradiction was
+> the fault. When arithmetic on captured pixels disagrees with a render, this document's own history
+> now says to doubt the mask before doubting the arithmetic.
+
+Foundry, same lift, six draws, corrected mask — and foundry has no flare in its pinned frame, so
+nothing here moved:
+
+```
+  foundry near  74.5 x5 / 74.3 x1      FAR  83.3 x6 exact      stencil 8220 x6
+```
+
+### 6. Clause B's row, re-measured
+
+```
+  cell                 baseline    far-only +40    threshold
+  grid    near  n=1025    86.0          86.0          90       -4.0
+  grid    FAR   n=326     84.4         100.0          90       PASSES
+  foundry near  n=560     74.6          74.5          90      -15.5
+  foundry FAR   n=132     54.5          83.3          90       -6.7
+```
+
+**One cell now passes, and it passes at 100.** The other three are unchanged by the lift's far gate —
+the two near cells by construction, foundry's far because its failure is a different population on a
+41x39 machine with no flare to remove.
+
+**Nothing ships**: every lift uniform is still 0.0, and grid's 100.0 is a measurement of what the knob
+would do, not of what the tree does. What has changed is that clause B is no longer a clause with four
+failing cells and a ceiling under the threshold — it is a clause with three failing cells and a
+demonstrated route on the fourth.
