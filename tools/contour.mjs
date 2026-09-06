@@ -159,6 +159,27 @@ const MATS = String(flag('mat', '') || '').split(',').filter(Boolean).map((kv) =
   }
   return [lhs.slice(0, dot).trim(), lhs.slice(dot + 1).trim(), Number(v)];
 });
+/**
+ * `--hidemat <name>[,<name>]` — hide every MODEL mesh drawn with a named machine
+ * material, so a contour population can be ATTRIBUTED to the material that owns
+ * it instead of guessed at.
+ *
+ * Four hypotheses have been spent on the 48 pixels that survive a maximal paint
+ * lift on grid's far machine — clipping, the outline hull, the line art, and a
+ * size gate before them — and every one was refused by measurement. The machine
+ * has five materials (matShell, matFrame, matOutline, matEmis, matFlare) and two
+ * of them have never been implicated in a contour figure at all. Hiding one at a
+ * time and re-reading the weak population is the measurement that ends the
+ * guessing.
+ *
+ * Names are the model's own property names. It ABORTS if a name is not a
+ * material on the model, or if it matches no drawn mesh — a hide that hid
+ * nothing reads exactly like a material that does not matter.
+ *
+ *   --hidemat matEmis
+ *   --hidemat matEmis,matFlare
+ */
+const HIDEMAT = String(flag('hidemat', '') || '').split(',').map((x) => x.trim()).filter(Boolean);
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
 /**
@@ -727,6 +748,33 @@ const bar = (pct, width = 28) => {
     if (report.gone.length) {
       console.error('contour: --mat found no such mesh or property: ' + report.gone.join(', '));
       console.error('contour: REFUSING rather than scoring a clause on the unmodified stage.');
+      process.exit(2);
+    }
+  }
+  if (HIDEMAT.length) {
+    const rep = await page.evaluate((names) => {
+      const missing = [], nomesh = [], hid = [];
+      for (const m of window.__game.view.models) {
+        for (const n of names) {
+          const mat = m[n];
+          if (!mat) { if (!missing.includes(n)) missing.push(n); continue; }
+          let k = 0;
+          m.group.traverse((o) => {
+            if (!o.isMesh || !o.visible) return;
+            const mats = Array.isArray(o.material) ? o.material : [o.material];
+            if (mats.indexOf(mat) < 0) return;
+            o.visible = false; k++;
+          });
+          if (k) hid.push(n + ' x' + k); else if (!nomesh.includes(n)) nomesh.push(n);
+        }
+      }
+      return { missing, nomesh, hid };
+    }, HIDEMAT);
+    console.log('  hidemat:', rep.hid.join(', ') || '(nothing hidden)');
+    if (rep.missing.length || rep.nomesh.length) {
+      if (rep.missing.length) console.error('contour: --hidemat: not a material on the model: ' + rep.missing.join(', '));
+      if (rep.nomesh.length) console.error('contour: --hidemat: material draws no visible mesh: ' + rep.nomesh.join(', '));
+      console.error('contour: REFUSING — a hide that hid nothing reads as a material that does not matter.');
       process.exit(2);
     }
   }
