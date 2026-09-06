@@ -14369,3 +14369,68 @@ correction is now in the flag's own header, where the struck label had been repe
 **Nothing ships. The tree is unchanged apart from the meter's new stage flag** — the two gate uniforms
 this section was written to test are reverted, because a knob the census proves can never be usefully
 set is a knob that will be re-tried by somebody who did not read this.
+
+---
+
+## ROUND 44 — BUILDER: **the far cells SATURATE, and three explanations for it are refused**
+
+### 1. The saturation, which is the round's finding
+
+`contour.mjs` at HEAD, bundle `d9cef324894e` on port 4405, hashed off the server. Far cells only,
+white direction, far-gated lift:
+
+```
+  lift (display levels)      grid FAR (n=326)     foundry FAR (n=132)
+  0                              70.9                  54.5
+  +40  (0.157)                   83.7                  84.8
+  +64  (0.25)                    83.7                  87.1
+  +89  (0.35)                    83.7                  87.1
+```
+
+**Grid's far cell is identical to the decimal at +40, +64 and +89.** Foundry's stops at 87.1. Neither
+reaches 90 at any value. **More lift buys nothing past a point**, so clause B's far cells are not
+"short by six and reachable" — they are short by six against a ceiling.
+
+Taken with ROUND 43's census — the two near cells want opposite treatment and differ by 0.004 on the
+only axis that could separate them — **a value translation cannot deliver clause B on any of the four
+cells.** That is a stronger statement than either half alone and it is measured on both.
+
+### 2. Where the ceiling is NOT, three times
+
+The diagnosis column locates it exactly. Grid's far machine, +40 against +89:
+
+```
+                       weak rows              clean rows
+                    machine  behind        machine  behind
+    +40 levels        70.2     51.3         162.9    54.3
+    +89 levels        70.2     51.3         184.7    56.1
+```
+
+**The clean rows keep climbing and the failing rows do not move at all.** So the pixels that fail
+never receive the lift, and the ceiling is a question of WHICH PIXELS, not of how much.
+
+- **Not clipping.** The clean rows go on rising to 184.7; nothing is pinned at white.
+- **Not the outline hull.** Collapsing it to nothing at the same lift leaves the weak rows at
+  **70.2 / 51.3, identical**, and the cell at 83.7.
+- **Not the line art.** `roboFrame` genuinely never received the lift — the shell's is injected before
+  `dithering_fragment` and that material's shader was never given it — so this looked like the answer.
+  It is not: giving the frame its own lift moves the cell **83.7 -> 84.0** and leaves the weak rows at
+  **70.2 / 51.3**.
+
+**Three hypotheses, three refutations, and the pinned pair has not moved by a tenth under any of
+them.** Whatever owns those pixels is a fourth thing, and the probe's own mesh census says there are
+at least three more material classes under a machine — a `renderOrder` 1 skinned mesh, a DoubleSide
+`renderOrder` 3 one, and a non-skinned `renderOrder` -1 — none of which anybody here has ever
+attributed a contour pixel to.
+
+### 3. What is committed and why, given it bought 0.3
+
+The frame lift ships, at 0.0, because **the gap it closes is real independent of what it bought**: the
+line art is a third of the machine's drawn detail and the paint knob could not reach it, which would
+have been a trap for the next round exactly as it was for this one. It is named apart from the shell's
+uniforms because `robot.js` merges the frame's uniform objects into the shell's bag and identical
+names would alias one material's knob onto the other's.
+
+**The next step is an attribution, not another hypothesis.** Three guesses have now been spent on
+these pixels; the mesh that owns them can be found by hiding each class in turn and re-reading the
+weak population, and nobody should propose a fourth mechanism before that is run.

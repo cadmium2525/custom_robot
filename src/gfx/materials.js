@@ -810,7 +810,45 @@ uniform float uFrameSizeLo;
 uniform float uFrameSizeHi;
 uniform float uFrameFade;
 uniform vec3  uFrameFadeCol;
+uniform float uFrameLift;
+uniform float uFrameLiftFar;
+uniform float uFrameGateLo;
+uniform float uFrameGateHi;
+uniform vec3  uFrameLiftTint;
+uniform float uFrameLiftWhite;
 varying float vFrameSizeX;
+`;
+
+/**
+ * THE LINE ART'S SHARE OF THE PAINT LIFT, AND WHY IT NEEDS ITS OWN.
+ *
+ * Measured: raising the shell lift from +40 to +89 display levels moves grid's
+ * far machine's CLEAN contour rows from 162.9 to 184.7 and leaves its FAILING
+ * rows at 70.2 — identical, to the decimal, at both lifts and also with the
+ * outline hull collapsed to nothing. The far cell reads 83.7 at +40, +64 and
+ * +89: it saturates, and it saturates because the pixels that fail never
+ * receive the lift at all.
+ *
+ * They are not shell pixels. roboShell gets the lift injected before
+ * dithering_fragment; this material never does, and this material is the
+ * model's line art — the recesses, the seams, the wash behind every hero plate,
+ * and the palette's `dark` role, which is the darkest paint on the machine and
+ * exactly the value a failing contour row is made of.
+ *
+ * So the ceiling on clause B's far cells is not clipping and not the hull; it is
+ * that a third of the silhouette belongs to a material the knob does not reach.
+ *
+ * Injected before dithering_fragment, the same place and the same display-space
+ * arithmetic as the shell's, with its own uniform NAMES because robot.js merges
+ * this material's uniform objects into the shell's bag and identical names there
+ * would alias one material's knob onto the other's. Ships at 0.
+ */
+const FRAME_LIFT = /* glsl */`
+  {
+    float gateF = smoothstep(uFrameGateLo, uFrameGateHi, vFrameSizeX);
+    float liftF = mix(uFrameLiftFar, uFrameLift, gateF);
+    gl_FragColor.rgb += liftF * mix(uFrameLiftTint, vec3(1.0), uFrameLiftWhite);
+  }
 `;
 
 /**
@@ -862,6 +900,15 @@ export function roboFrame(opts = {}) {
         ? opts.fadeColor.clone()
         : new THREE.Color().setRGB(0.32, 0.34, 0.38),
     },
+    // The line art's paint lift. See FRAME_LIFT. All of it ships at 0, and the
+    // gate defaults to the shell's own 0.09/0.22 so that a sweep of the two
+    // materials moves the same machines.
+    uFrameLift: { value: opts.frameLift ?? 0.0 },
+    uFrameLiftFar: { value: opts.frameLiftFar ?? 0.0 },
+    uFrameGateLo: { value: opts.frameGateLo ?? 0.09 },
+    uFrameGateHi: { value: opts.frameGateHi ?? 0.22 },
+    uFrameLiftTint: { value: (opts.liftTint || new THREE.Vector3(1, 1, 1)).clone() },
+    uFrameLiftWhite: { value: opts.frameLiftWhite ?? 1.0 },
   };
 
   mat.onBeforeCompile = (shader) => {
@@ -871,7 +918,8 @@ export function roboFrame(opts = {}) {
       .replace('#include <project_vertex>', `#include <project_vertex>\n${FRAME_VERT}`);
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\n${FRAME_PARS}`)
-      .replace('#include <color_fragment>', `#include <color_fragment>\n${FRAME_FRAG}`);
+      .replace('#include <color_fragment>', `#include <color_fragment>\n${FRAME_FRAG}`)
+      .replace('#include <dithering_fragment>', `${FRAME_LIFT}\n#include <dithering_fragment>`);
   };
 
   mat.userData.u = u;
