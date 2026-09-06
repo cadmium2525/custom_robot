@@ -15442,3 +15442,144 @@ nearly twice the threshold it had to clear; a cell scraping over 40 would be sit
 >    either mask — so the far lift is a clause B result with no guard reading at all, which is the
 >    state RULING 50 refused a candidate in. **A candidate at 0.039 with guards would be the cheapest
 >    unspent round on this card.**
+
+---
+
+### 4. RULING 66 — **the near-cell closure is NOT re-opened by fault 47 — that is measured, not judged. It IS re-opened on the question fault 47 was actually about, and I ran the measurement that settles it: `matFrame` owns the worst cell on the card, and its own knob is worth +12.2 points of it.**
+
+#### 4.1 The direct question, answered with the difference engine rather than with a view
+
+**No near-cell figure in this document is a fault-47 figure.** RULING 63's table shows every
+near-machine quantity — stencil, box, `n`, cell — identical to the digit under both gates on all three
+arenas, at six draws under two load conditions. **And the mechanism cannot recur there**: RULING 63
+§1.3 traces the protrusion to a flare built `noLod: true` behind a shell whose draw range is cut, and
+a near machine at 24.1% and 31.6% of frame height is not cut at all. The specific defect is
+structurally absent on near machines.
+
+#### 4.2 RULING 59's sign table, re-taken — and my own grid FAR row does not survive
+
+`shots/_r45sign.mjs` patches `tools/contour.mjs` at run time, so it inherits fault 47's fix. Six draws
+grid, one orbital, corrected mask:
+
+```
+  cell            RULING 59 (d9cef324894e)     RE-TAKEN (586e670836d3, corrected)
+  grid    NEAR    68.0% of weak n=100          68.0% of 100  x3 / 66.7% of 102 / 67.3% of 101
+  orbital near     6.8% of 88                   6.8% of 88
+  orbital FAR      2.6-2.9% of 34-38            2.6% of 38
+  grid    FAR      0.0% of 53                   0.0% of FIVE
+```
+
+**The near rows reproduce to the decimal, which is what a mask that did not move should do, and it is
+the check that makes the fourth row believable.** And the fourth row is mine, and it is withdrawn:
+grid's far machine has **five** weak boundary pixels, not fifty-three.
+
+> **53 − 5 = 48.** ROUND 44's map found 48 weak pixels in two head-fin stretches. RULING 59's grid FAR
+> weak population was 53. **They are the same population and 48 of the 53 were the flare's edge.** The
+> arithmetic closes exactly, from two instruments that were never compared, and it is the last
+> independent confirmation fault 47 needed.
+
+**RULING 62 §2's "the far cells are the cells where the machine already wins" is therefore built on a
+statistic of five pixels on grid**, not on 53. The direction is unchanged; the weight behind it is a
+tenth of what was claimed.
+
+#### 4.3 And "grid is repeatable" is WITHDRAWN
+
+ROUND 44 wrote *"Grid is repeatable. Stencil, both boxes and all three cells reproduce exactly."* My
+six stock draws agreed. The seventh did not:
+
+```
+  grid, 12 draws at lift 0, one bundle      stencil    near             FAR
+  majority pose   11 of 12                   24226    157x284  86.0    55x69  n=275  84.4
+  MINORITY pose    1 of 12                   24018    156x283  84.3    56x69  n=283  80.2
+```
+
+**Fault 44's lottery is not foundry-and-orbital-only. Grid draws it at about 1 in 12, and it is worth
+4.2 points of the far cell** — comparable to the whole margin RULING 61's acceptance test is written
+around. Grid's far cell is **84.4 as a mode with a 1-in-12 minority at 80.2**, and no figure of this
+arena may be quoted from fewer than six draws again.
+
+#### 4.4 The measurement that settles it, which I ran: the near cells have never been ATTRIBUTED
+
+What fault 47 overturned was not a wrong mechanism. **All four refusals aimed at those 48 pixels were
+correct** — clipping, the hull, the line art and the size gate were each genuinely refused by
+measurement, and all four were irrelevant because the pixels belonged to a mesh nobody had asked
+about. **The lesson is not that closed results are unsafe; it is that a stack of mechanism refusals is
+not a closure while the OWNER of the failing pixels is unknown.** That is exactly the state both near
+cells were in: `--hidemat` had been pointed at one cell in this document's history. So I pointed it at
+the worst one. Foundry, one draw per row, majority pose throughout:
+
+```
+  hidden      near cell  n     box       far cell  n     box      what it says
+  ----------------------------------------------------------------------------------------
+  none        74.5/74.6  560   78x217    54.5      132   41x39
+  matFlare    74.5       560   78x217    54.5      132   41x39    nothing — confirms RULING 63
+  matEmis     72.7       560   78x217    53.8      132   41x39    COSTS 1.8 and 0.7
+  matFrame    82.2       562   74x217    70.5      139   41x39    +7.7 and +16.0
+```
+
+**`matFrame` owns the failing contour of BOTH foundry cells**, and ROUND 45's own table says it is
+worth +6.8 on grid's far cell as well. **It is the only material implicated on every cell it has been
+pointed at.** `matEmis` is the opposite and it matters: hiding it COSTS both cells, so the emissives
+are load-bearing for clause B and any future candidate that dims them is spending the clause.
+
+The hide confounds value with mask — the near box goes 78x217 to 74x217, so the line art protrudes
+four pixels — so I ran the clean version of the same question. `uFrameLift` is the NEAR half of the
+frame's own knob; it ships at 0.0; ROUND 44 swept `uFrameLiftFar` and **nobody has ever swept this
+one.** One draw per point, mask verified unchanged at every point:
+
+```
+  uFrameLift   foundry near  n     box      foundry FAR  n     box      pose
+  0.0            74.5/74.6   560   78x217      54.5      132   41x39    majority
+  0.079          86.8        560   78x217      55.3      132   41x39    majority  +12.2 / +0.8
+  0.157          87.7        560   78x217      56.8      132   41x39    majority  +13.1 / +2.3
+  0.250          84.2        556   75x217      50.0      136   41x39    MINORITY — not comparable
+```
+
+**+13.1 on the worst cell on the card, with `n`, box and stencil identical to the control's**, so it
+is a value effect and not a mask effect. That is larger than every candidate this document has
+credited put together, on the one cell four rounds have called constrained. It takes foundry's near
+cell from **-15.5 to -2.3**.
+
+#### 4.5 Clause B in boundary pixels, all six cells, corrected mask
+
+```
+  cell            n      clean    failing   90.0% allows   SHORT BY   attributed?
+  --------------------------------------------------------------------------------
+  orbital near   976     89.4      103          98             5       NO
+  grid    near  1025     86.0      143         103            40       NO
+  grid    FAR    275     84.4       43          27            16       yes (r45: flare, frame)
+  foundry near   560     74.5      143          56            87       yes (THIS ROUND: frame)
+  orbital FAR    188     68.3       60          18            42       NO
+  foundry FAR    132     54.5       60          13            47       yes (THIS ROUND: frame)
+```
+
+**Orbital's near cell is FIVE boundary pixels from clause B being MET.** RULING 62 retired "short by
+six" as a description of the far cells; it is nearly literally true of the best cell on the card,
+which is not in the four-cell table ROUND 45 published and has never been read under any candidate.
+
+> **RULED.**
+>
+> 1. **The near-cell closure is NOT re-opened by fault 47.** Measured on three arenas under both
+>    gates: no near figure moves, and the mechanism is structurally absent on unLODded machines.
+> 2. **It IS re-opened on OWNERSHIP, and that is the correct reading of what fault 47 taught.** The
+>    mechanism refusals — RULING 49's flatten, RULING 49 §1's illumination, RULING 60's gate ceiling,
+>    ROUND 43 PART 2's stage null, RULING 57 §6's LOD, ROUND 44's lift — **all stand, every one of
+>    them.** What was never established is which mesh owns the pixels, and four of the six cells still
+>    have no answer.
+> 3. **RULING 62 §3's bar is LIFTED.** *"No candidate may be filed against clause B until the 48 pixels
+>    are attributed"* — they are attributed, twice over: 48 of the 53 were the flare, and the residue
+>    on both foundry cells is `matFrame`. **The bar is REPLACED with a narrower one: no candidate may
+>    be filed against a cell whose failing population has not been attributed**, which today permits
+>    grid FAR and both foundry cells and forbids the other three.
+> 4. **`uFrameLift` is the strongest unspent lever on this card and it is NOT a candidate yet.** One
+>    draw per point, no clause A, C or D, no `darker` cost under RULING 59 §2, and RULING 61's test
+>    requires all of them. **What is owed before it may be quoted as a candidate:** six draws under two
+>    load conditions on all six cells, clause A's near mass count, clause C's ratio, clause D's
+>    worse-machine chroma on foundry's near machine at a margin of 0.008 — **the same machine this
+>    lever is aimed at** — and its cost on every cell's `darker` fraction. **It is one role, which
+>    RULING 61 §3 permits, and it is the line art rather than the paint, which is what makes it
+>    interesting: clause A's mass count and clause D's chroma are both properties of the PAINT.**
+> 5. **"Grid is repeatable" is WITHDRAWN**, at 1 in 12 and 4.2 points, and grid joins foundry and
+>    orbital as an arena whose figures need six draws and a published minority rate.
+> 6. **Clause B is NOT MET, worst cell 54.5**, unchanged. Every figure in this section is a probe
+>    reading and none of them is a card reading.
