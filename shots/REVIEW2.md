@@ -15368,3 +15368,77 @@ Clause G is `>= 36 rendered px` and the card scores it on **grid's far machine, 
 >    PRE-FAULT-47 gate. `_massdrive.mjs` regenerates its temp per pid and unlinks best-effort, so the
 >    file is dead — but a meter on disk with a withdrawn gate is exactly the "server nobody meant" that
 >    round warned about. Deleted.
+
+---
+
+### 3. RULING 65 — **THE 100.0 SURVIVES THE ATTACK. It is not fault 35's censor and it is not a moved boundary: the MASK, the BOX and the DENOMINATOR are identical at every lift, so the same 275 pixels were measured five times and 43 of them crossed. And the map that "contradicted the render" is now AHEAD of it by one step, for the reason the fault predicts.**
+
+Fault 35 was a coverage figure censored at 100, and a cell that goes from 84.4 to a perfect score at
+the first lift tested is the right thing to disbelieve. Four tests, all of which it had to pass.
+
+**Test 1 — did the boundary move?** The stencil is a material override and a paint uniform cannot
+reach it, so the mask, the box and `n` MUST be identical at 0 and at +40. If they are not, the 100.0
+is a different population rather than a better one. Six draws each, two load conditions:
+
+```
+  grid FAR      stencil   box      at        n     clean            draws
+  lift 0         24226    55x69   762,169   275    84.4  x6/6   identical to every decimal
+  lift +40       24226    55x69   762,169   275   100.0  x6/6   identical to every decimal
+```
+
+**Every mask quantity is the same number**, and grid is the one arena that reproduces its whole
+report to the decimal under both load conditions. The boundary did not move; the population is the
+same 275 pixels; 43 of them were under 40 and none of them is. (One lift draw read a whole-frame
+stencil of 24228 instead of 24226 — two pixels, on the NEAR component, with both components' `n`
+unchanged. Recorded because an unrecorded two is how fault 44 started.)
+
+**Test 2 — can 100.0 be reached by rounding?** `over40 = round((100 - round(k/n*1000)/10) * 10)/10`
+with `k` the count below 40. At `n = 275` **one pixel is 0.36 points**, so a single failing pixel
+prints 99.6 and not 100.0. The meter has 275-fold resolution on this cell and it is reporting **zero,
+not "small"**. That is the opposite of fault 35, where the metric's own ceiling did the work.
+
+**Test 3 — is the failing population empty, or reclassified?** The meter prints its `where it fails`
+diagnosis only when the weak (`< 25`) set is NON-EMPTY — `tools/contour.mjs:880`,
+`if (c.weakIn != null && c.goodIn != null)`. On grid's far machine at +40 **that line is absent
+entirely, on all six draws**. It is a second statistic over a different subset saying the same thing,
+and it was not put there for this purpose.
+
+**Test 4 — is it a step or a cliff?** A cell that jumps from 84.4 to 100.0 between two adjacent lifts
+is an artefact; one that climbs through the intermediate values is a step. The ramp, corrected mask:
+
+```
+  uPaintLiftFar   display levels   n      clean    p10     body    separation   ROUND 44's map said
+  0.0                  0          275     84.4     34.7    119.6      71.9
+  0.039              +10          275     96.0     48.4    137.3      89.5
+  0.079              +20          275    100.0     57.8    151.8     104.0      92.0
+  0.118              +30          275    100.0     67.2    164.0     116.1     100.0
+  0.157              +40          275    100.0     71.7    174.0     126.1
+```
+
+**It is a step, `n` is 275 at every point, and the near cell is 86.0 at every point** — the far gate
+is doing what it says on the label. **And the map is not merely vindicated in shape; the render now
+arrives one step EARLY**, reaching 100.0 at +20 where the map predicted 92.0. That is the sign fault
+47 predicts: the map's denominator was the inflated 326, of which 51 pixels were the flare's edge and
+could never respond to a lift on the machine. Remove them and the same lift clears the cell sooner.
+**When arithmetic on captured pixels disagrees with a render, this document now has two cases and both
+say to doubt the mask first.**
+
+**And the distribution moves as a body rather than at its tail.** The tenth percentile ends at 71.7,
+nearly twice the threshold it had to clear; a cell scraping over 40 would be sitting on it.
+
+> **RULED.**
+>
+> 1. **The 100.0 is UPHELD as a measurement of the knob**, at six draws under two load conditions, on
+>    a mask, box and denominator identical to the unlifted control's, with a monotone ramp behind it.
+>    **It is not fault 35 and I attacked it on all four fronts I could find.**
+> 2. **The threshold is crossed at +20, not +40.** `uPaintLiftFar = 0.079` is the smallest tested lift
+>    that takes the cell to 100.0, and 0.039 already takes it to 96.0 — **which passes clause B's 90.0
+>    on its own.** Every ruling that priced this route at +40 was pricing the inflated mask.
+> 3. **It remains a reading of a KNOB and not of the tree.** Both lift uniforms ship at 0.0. **The
+>    card's grid FAR cell is 84.4**, it is `-5.6`, and clause B is NOT MET.
+> 4. **What the 100.0 does NOT establish is that the lift is free.** RULING 59 §2's standing rule
+>    prices a machine-side lift as a COST on every cell's `darker` fraction, and RULING 61's test
+>    requires clauses A, C and D beside it. **Not one of those has been read under this lift**, on
+>    either mask — so the far lift is a clause B result with no guard reading at all, which is the
+>    state RULING 50 refused a candidate in. **A candidate at 0.039 with guards would be the cheapest
+>    unspent round on this card.**
