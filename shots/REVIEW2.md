@@ -15748,3 +15748,42 @@ drops 4.8 -> 4.0, onto the band's edge. **Three guards fail at half lift against
 **Where the two candidates stand.** Full lift: clause B 97.4 / 100.0 / 87.7 / 86.4, two guards failing.
 Half lift: 91.5 / 100.0 / 86.8 / 85.6, three guards failing. **The full lift is the better of the two
 and both are refused.** Every lift uniform in the tree remains 0.0.
+
+### Orbital, the named debt — **both its cells cross the threshold, and its baseline reproduces the critic's figure exactly**
+
+Never read under any lift by anybody. Bundle `586e670836d3`, three draws each.
+
+```
+  cell                     baseline           COMBINATION        vs 90
+  orbital near  178x259     89.4 x3           100.0 x3           PASSES
+  orbital FAR    49x63      68.6/68.3/68.6     90.4/90.4/90.5    PASSES
+  stencil                   24264/24262        24264/24262       unchanged
+```
+
+**The baseline near cell is 89.4 in all three draws, which is RULING 58's figure to the decimal** —
+taken in a different session, on a different bundle, before fault 47 was found. The near machine has
+no flare in its mask, so fault 47 left it alone, and it reproduces. That is the meter agreeing with
+itself across the largest instrument correction this document has made.
+
+**Clause B, all six cells, full combination:**
+
+```
+  grid    near   86.0 -> 97.4    PASS       foundry near   74.6 -> 87.7    -2.3
+  grid    FAR    84.4 -> 100.0   PASS       foundry FAR    54.5 -> 86.4    -3.6
+  orbital near   89.4 -> 100.0   PASS
+  orbital FAR    68.6 -> 90.4    PASS
+```
+
+**Four of six cells pass. Only foundry's two fail, by 2.3 and 3.6 points.**
+
+> **STATED WITH ITS LIMITS, because four passing cells is exactly when overclaiming happens.**
+> Orbital's contour is **barred from the gating set** by the round-30 standing rule, so these two are
+> informative and not gating: the acceptance test is grid and foundry. The guards remain **refused** on
+> the far machine's mass count and clause C, measured at full lift on grid. And orbital's own guards
+> have not been read at all — clause A and C there are as unmeasured under this candidate as its
+> contour was an hour ago. **Nothing ships; every lift uniform is 0.0.**
+>
+> What the round establishes is narrower than the table looks and still worth having: **the candidate
+> that was refused on two guards moves five of six clause B cells by 11 to 32 points and crosses the
+> threshold on four of them**, and the one arena it cannot carry is foundry, on both machines, by
+> under four points.
