@@ -17540,3 +17540,114 @@ card is taken from the whole range.
    threshold may be reported as PASS or FAIL.
 
 **Nothing ships. Every lift uniform in the tree is 0.0.**
+
+### 8. DEBT 1 PAID — **the 2x2 is complete on all three arenas, additivity fails on every one of them, and the shell's far lift is GOOD on two arenas and bad only on grid**
+
+RULING 68 ranked this first and ROUND 48 did not run it: `uPaintLiftFar` **alone** on orbital and
+foundry. ROUND 47 §7.2 claimed the two knobs "oppose each other on foundry's far machine" from a 2x2
+with three cells filled. Here is the fourth, and the other two arenas' as well.
+`shots/_massdrive.mjs --onbody --repeat 6`, bundle `586e670836d3 / 93b94641`, chromium-1194,
+**medians below are TRUE medians** (mean of the middle two at `n = 6`), not fault 51's upper median.
+
+```
+  FAR clause C ratio          baseline        uFrameLift .157   uPaintLiftFar .157   COMBINATION
+  grid                   1.313 [1.302,1.317] 1.336 [1.312,1.339] 1.480 [1.469,1.485] 1.458 [1.455,1.461]
+  foundry                0.940 [0.937,0.942] 1.021 [1.019,1.024] 0.905 [0.905,0.914] 0.871 [0.870,0.872]
+  orbital                1.213 [1.211,1.218] 1.228 [1.223,1.231] 1.032 [1.031,1.033] 1.027 [1.025,1.028]
+
+  FAR mass count (band [4.0, 6.0])
+  grid                   4.80                4.80                3.30 [3.00,3.30]     3.00   NOT MET both
+  foundry                5.50                5.00 [4.80,5.00]    5.80 [5.50,5.80]     5.40   all MET
+  orbital                4.30                4.30                4.50                 4.30   all MET
+```
+
+#### 8.1 **`uPaintLiftFar` is the WRONG sign on grid and the right sign everywhere else**
+
+The knob that refused the candidate improves clause C's far ratio by **0.035 on foundry and 0.181 on
+orbital**, and worsens it by **0.167 on grid**. Its effect on the far mass count is the same story:
+grid **4.80 -> 3.30, out of the band**, while foundry goes 5.50 -> 5.80 and orbital 4.30 -> 4.50, both
+comfortably inside it.
+
+> **SO THE REFUSAL IS A GRID REFUSAL, AND EVERY GUARD READING BEFORE ROUND 47 WAS TAKEN ON GRID.** The
+> shell's far lift is not a knob that breaks far machines. It is a knob that breaks **grid's** far
+> machine and helps the other two, and the reason ROUND 46 read it as the former is that grid was the
+> only arena it was measured on. This is RULING 68's sign-warning holding for a third time — first
+> across materials (RULING 59), then across arenas for the line art (ROUND 47 §5), now across arenas
+> for the shell.
+
+#### 8.2 **Additivity fails on all three arenas, and the interaction is ordered by the LINE ART's own effect**
+
+With all four corners measured, the interaction term is arithmetic rather than assertion:
+
+```
+  arena     baseline   frame effect   paint effect   additive prediction   observed   INTERACTION
+  foundry   0.940       +0.081         -0.035         0.986                0.871       -0.115
+  grid      1.313       +0.024         +0.167         1.504                1.460       -0.044
+  orbital   1.213       +0.015         -0.181         1.047                1.027       -0.020
+```
+
+**On foundry the interaction is larger in magnitude than either main effect.** No solo reading of either
+knob predicts the pair there, and §6's "each one buys exactly the machine its gate reaches" is finished
+as a description of the far machines — §7.2 withdrew it for foundry on three cells and the fourth
+confirms it with a number.
+
+**And the interaction is ordered by the frame lift's own main effect, on both columns, from one meter:**
+
+```
+  frame effect      +0.081   +0.024   +0.015          (foundry, grid, orbital)
+  interaction       -0.115   -0.044   -0.020
+  ratio              -1.42    -1.83    -1.33
+```
+
+> **THIS IS THE ORDERING §3's "DOSE-RESPONSE" WAS REACHING FOR, AND UNLIKE THAT ONE IT USES NO MODEL.**
+> ROUND 48 §3 paired a bind-pose CPU model of the gate against a measured response and called it two
+> instruments; FAULT 57 killed that. **Both columns here are `mass.mjs` readings of the same six draws
+> per cell.** The interaction is about `-1.5x` the line art's solo effect on every arena, which is what
+> you would expect if the interaction lives on the pixels the frame lift reaches — the far machine's
+> line art — and there is nothing left to interact with where it does not reach.
+>
+> **Held to the same limit as before: three arenas is three points, the ratio spans -1.33 to -1.83, and
+> this establishes an ordering and a rough scale, not a law.** It predicts nothing about a fourth arena
+> and it does not license interpolating between these three.
+
+#### 8.3 What it does to the card
+
+**Nothing ships and the candidate stays refused** — grid is a gating arena and the combination fails two
+of its guards. But the shape of the problem has changed: the project has been treating `uPaintLiftFar`
+as a knob with a universal guard cost, and it has a guard cost on **one arena of three**, on the far
+machine, where it also happens to buy the clause B far cells nothing else buys. **The question worth
+asking next is what is different about grid's far machine**, not what value of the knob is safe
+everywhere — and that is a question about the stage behind the machine, which clause D's instruments
+already exist to ask.
+
+**Remaining debts after this one: the pose test (fault 49's suspect), `_r23-lightprobe.mjs` on the
+meters' browser (a CLOSED card item rests on it), and the quantisation column from §2 applied to every
+clause B cell — which is §9.**
+
+### 9. DEBT 4 PAID — **the quantisation column, and one cell on the card cannot be scored at any number of draws**
+
+From §2's finding, applied to every clause B cell. `clean%` is a count over the contour population, so
+each cell's resolution is `100/n` and the achievable values step by that amount.
+
+```
+  cell            n      quantum   achievable either side of 90.0   nearest value on card   scoreable?
+  grid    near    1025   0.098     89.95 .. 90.05                   86.0                     yes
+  grid    FAR      275   0.364     89.82 .. 90.18                   85.5                     yes
+  foundry near     560   0.179     89.82 .. 90.00                   87.8                     yes
+  foundry FAR      132   0.758     89.39 .. 90.15                   86.4                     yes
+  orbital near     976   0.102     89.96 .. 90.06                   89.4                     yes
+  orbital FAR      188   0.532     89.89 .. 90.43                   90.2                     NO
+```
+
+**Only orbital's far cell is currently unscoreable**, which is the cell §2 found. But two entries are
+worth carrying forward:
+
+- **`foundry FAR` has the coarsest quantum on the card, 0.758, and it is the cell the project most needs
+  to move.** It sits at 86.4 needing 90.0, and when it gets there it will not be able to report any
+  value between **89.39 and 90.15**. A future round that lands it at "89.4" and calls it 0.6 short will
+  be reading one pixel.
+- **`foundry near` is the only cell whose threshold is exactly achievable** — `504 / 560 = 90.000%` — so
+  it is the one cell that can land on the line rather than stepping over it.
+
+**Standing consequence: every clause B figure from here on carries its `n` and its quantum, and no cell
+within one quantum of its threshold is reported as PASS or FAIL.**
