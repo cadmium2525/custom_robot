@@ -16043,3 +16043,126 @@ gate hands the far machine the 86-93% of the lift that `uFrameLift` cannot.** It
 measurement, and this round does not prejudge it: the interval in §1 is the standing warning against
 predicting a response from anything but a sweep.
 
+
+### 7. Three corrections to this round, two of them to §6, and INSTRUMENT FAULT 50
+
+#### 7.1 **I CORRECT §6: `uFrameLift` alone is NOT guard-clean, and §6 implied it was**
+
+§2 measured the frame lift's guards on **grid** and found every cell MET. §6 then wrote
+*"uFrameLift 0.157 alone — every clause A and C cell MET on grid; guard-clean"*. **The parenthetical
+was accurate and the framing around it was not**, and §5 of this very round had already established
+why: guard responses change sign between arenas. So I read the other two arenas rather than leave the
+claim standing on one.
+
+```
+  uFrameLift 0.157 ALONE, six draws, ceilings re-based per arena from that arena's own baseline
+
+  GRID       C ceilings near <= 1.768   far <= 1.367
+    A near count 4.30 -> 4.80 MET    A FAR count 4.80 -> 4.80 MET
+    A near top4  85.8 -> 88.4 MET    A FAR top4  92.2 -> 92.1 MET
+    C near ratio 1.716 -> 1.740 [1.736, 1.741] MET
+    C FAR  ratio 1.313 -> 1.337 [1.312, 1.339] MET
+
+  ORBITAL    C ceilings near <= 1.975   far <= 1.268
+    A near count 5.00 -> 4.00 MET    A FAR count 4.30 -> 4.30 MET
+    A near top4  87.5 -> 90.9 MET    A FAR top4  92.9 -> 93.2 MET
+    C near ratio 1.912 -> 1.994 [1.992, 1.995]  NOT MET   <-- fully above its ceiling, not a straddle
+    C FAR  ratio 1.214 -> 1.229 [1.223, 1.231]  MET
+
+  FOUNDRY    C ceilings near <= 1.617   far <= 0.992
+    A near count 6.00 -> 4.80 MET    A FAR count 5.50 -> 5.00 MET
+    A near top4  88.7 -> 93.5 MET    A FAR top4  86.9 -> 88.8 MET
+    C near ratio 1.563 -> 1.432 [1.431, 1.437]  MET       <-- improves by 0.131
+    C FAR  ratio 0.940 -> 1.021 [1.019, 1.024]  NOT MET   <-- and through the ABSOLUTE 1.00
+```
+
+**`uFrameLift` alone breaks two cells, and one of them is the best cell on the card.** Foundry's far
+machine at `0.940` is the only cell anywhere that satisfies clause C's absolute test (`ratio < 1.00`,
+a machine flatter than a gradient). The frame lift takes it to **1.021** and it stops satisfying it —
+not a margin lost against a derived ceiling, the clause itself.
+
+> **SO BOTH CANDIDATES ARE REFUSED ON A THREE-ARENA CARD AND NEITHER IS THE SAFE ONE.**
+>
+> ```
+>                            grid                        orbital            foundry
+>   uFrameLift alone         all 6 MET                   C near NOT MET     C FAR NOT MET (through 1.00)
+>   COMBINATION              A FAR count + C FAR NOT MET C near STRADDLE    A FAR top4 NOT MET
+>   ```
+>
+> Five of the six refusals in that table are on arenas nobody had measured before this round, and the
+> knob-alone row is refused on cells the knob-alone grid reading said were safe. **Nothing ships; every
+> lift uniform in the tree is 0.0, and that is now a stronger statement than it was this morning.**
+
+#### 7.2 **I CORRECT §6 AGAIN: the knobs are separable on the NEAR machines and they OPPOSE each other on foundry's FAR machine**
+
+§6 wrote *"each one buys exactly the machine its gate reaches"*. On the near machines that survives
+three arenas — clause C's near ratio under the combination and under the frame lift alone is the same
+number on every one (grid 1.737 / 1.740, orbital 1.994 / 1.994, foundry 1.433 / 1.432), so the near
+cells are the line art's on all three. **On foundry's far machine it is false:**
+
+```
+  foundry FAR      baseline     uFrameLift alone     COMBINATION
+    clause C         0.940         1.021 (+0.081)      0.872 (-0.068)
+    mass count       5.50          5.00                5.50
+```
+
+The frame lift makes that cell worse and the shell's far lift more than undoes it. **The two knobs
+oppose each other there**, so the combination's `0.872` is not either knob's effect and cannot be
+predicted from either. A separability claim is a claim about an interaction term, and I asserted one
+in §6 from two arenas' worth of near cells.
+
+#### 7.3 INSTRUMENT FAULT 50 — **the two meters sit in DIFFERENT POSES on the same bundle, in the same session, under both load conditions. Clause B is scored on one render of the machine and clauses A and C on another.**
+
+The document's "majority" and "minority" poses on grid are on file as two triples, both produced by
+`tools/contour.mjs`: majority `stencil 24226, near 157x284, far 55x69` and minority `stencil 24018,
+near 156x283, far 56x69`. `tools/mass.mjs` prints a per-robot stencil whose sum is the same quantity
+contour prints. Measured this round, one bundle, one box:
+
+```
+  tools/contour.mjs   24226        157x284   55x69     13 of 13 grid draws   = the MAJORITY triple
+  tools/mass.mjs      22277+1741   156x283   56x69      5 of 5 explicit,     = the MINORITY triple
+                      = 24018                            and the box in every 6-draw run
+```
+
+**All three numbers match, in both directions.** The two settles are byte-identical — diffed this round,
+30 lines each, no difference — and the setup around them agrees on seed, tier, viewport, ticks and
+waits. Neither meter moves: contour stays at 24226 when run concurrently with a mass meter, and mass
+stays at 24018 at baseline, at `uFrameLift 0.157` and at the combination.
+
+> **RULED, AND IT REACHES FURTHER BACK THAN THIS ROUND.** The minority pose has been treated for four
+> rounds as a load lottery that `contour.mjs` falls into 1 draw in 6 or 1 in 12. It is also **the pose
+> `mass.mjs` is in every single time.** So every cross-clause sentence this document has written —
+> every "the lift moves clause B up and clause C down", every trade between a contour cell and a guard
+> cell, including the ones in §6 of this round — compares a measurement of the machine in one pose with
+> a measurement of it in another. **The clauses are not commensurable and nobody has been told.**
+>
+> **What this does NOT do is move a cell.** Every figure in this round is internally consistent: the
+> clause B cells are contour-against-contour and the guard cells are mass-against-mass, baselines and
+> treatments taken in the same pose by the same meter. The trades BETWEEN them are what is now
+> conditional. **And it names fault 49's most likely cause without proving it:** if the previous
+> session's `mass.mjs` sat in the majority pose where this one sits in the minority, the far machine's
+> baseline would differ exactly as it does, and the lifted states would still reproduce only if the
+> lift swamps the pose difference — which is a testable claim and not one this round has tested.
+
+#### 7.4 The load condition, because §1 through §6 were all taken on a quiet box
+
+INSTRUMENT FAULT 48: six draws back to back in one quiet batch are ONE sample of the load condition,
+six times. Every figure above was such a batch, so the round's two load-bearing points were re-taken
+with **two meters running at once**:
+
+```
+                        QUIET (n=6)                LOADED, two meters at once (n=6)
+  baseline near count   4.30 [4.00, 4.30]          4.2  [4.0, 4.3]
+  baseline FAR  count   4.80 [4.80, 4.80]          4.8  [4.8, 4.8]
+  baseline FAR  ratio   1.313 [1.302, 1.317]       1.315 [1.312, 1.317]
+  f157     near ratio   1.740 [1.736, 1.741]       1.739 [1.732, 1.740]
+  f157     FAR  count   4.80 [4.80, 4.80]          4.8  [4.8, 4.8]
+  p157     FAR  count   3.30 [3.00, 3.30]          3.1  [3.0, 3.3]   still NOT MET
+  contour  grid         24226 / 86.0 / 84.4        24226 / 86.0 / 84.4
+```
+
+**Every cell reproduces under the second load condition and neither meter's pose flips.** So the
+round's figures are stated under two load conditions as fault 48 requires, **and load is ruled out as
+the explanation of fault 49** — the far baseline that disagrees with the previous session is stable
+against the one variable that was supposed to explain it.
+
