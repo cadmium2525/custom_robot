@@ -16912,3 +16912,74 @@ and it is the mechanism behind a table round 47 could only report.
 
 **Nothing ships. Every lift uniform in the tree is 0.0.** The second owed re-run — §6's COMBINATION
 clause B column, quoted from the session whose baseline does not reproduce — is running.
+
+### 4. The second owed re-run — **every quoted clause B cell reproduces, and one of them is not the verdict it was quoted as**
+
+ROUND 47 §6 priced its trade half on this box and half on ROUND 46's, quoting `grid FAR 100.0` and
+`foundry FAR 86.4` from the session whose baseline §3 shows does not reproduce. Re-measured here,
+`tools/contour.mjs`, six draws per cell, bundle `586e670836d3`, chromium-1194, threshold 90.
+
+```
+  cell            ROUND 46 quoted        ROUND 48, this box, n=6            vs 90
+  grid    near    97.4                   97.4  x6                          PASS
+  grid    FAR     100.0                  100.0 x6                          PASS      exact
+  foundry near    87.7  mode             87.7  mode 3/6 [87.7, 87.9]       -2.3
+  foundry FAR     86.4  mode             86.4  x6                          -3.6      exact
+  orbital near    100.0 x3               100.0 x6                          PASS
+  orbital FAR     90.4  x3  "PASSES"     90.4  mode 2/6 [89.9, 90.5]       STRADDLES  <-- see below
+
+  baselines, same six draws:  orbital near 89.4 x6 (quoted 89.4), orbital FAR 68.3 mode 4/6
+  [68.3, 68.6] (quoted 68.6/68.3/68.6). Stencils: grid 24226 x6, foundry 8220 x6 with the
+  8037 minority absent in 12 draws, orbital 24264/24262 split in both conditions.
+```
+
+**Every quoted value reproduces.** The debt is paid and, as with the census, the answer is that the
+previous session's contour figures were right.
+
+**One verdict does not survive the extra draws.** Orbital's far cell was published as **PASSES** off
+three draws reading `90.4 / 90.4 / 90.5`. Six draws read:
+
+```
+  draw   1      2      3      4      5      6
+  far   90.4   89.9   90.5   90.5   90.4   89.9      range [89.9, 90.5]
+```
+
+**Two draws of six land below the threshold**, so by RULING 30 the whole range is not on the passing
+side and the cell is **UNSCORED**, not PASS. The three-draw reading did not see the low tail because
+three draws is not six, which is the entire content of standing rule 6. (The two low draws do not sort
+by stencil — `24264` produces `90.4, 89.9, 90.4, 89.9` — so the split is not the arena's two-state
+stencil and this round does not know what it is.)
+
+> **SO ROUND 46's HEADLINE MOVES, ON ITS OWN DATA RE-TAKEN.** *"Four of six cells pass"* is **three
+> pass, one is unscored, and two are short** — grid near, grid far and orbital near PASS; orbital far
+> UNSCORED; foundry near and far short by 2.3 and 3.6. Orbital's contour is barred from the gating set
+> by the round-30 rule, so this costs the acceptance test nothing and costs the summary a cell.
+
+### 5. What the two re-runs do to FAULT 49, which is now much narrower and much stranger
+
+With both debts paid, every cross-session comparison this project can currently make is on the record:
+
+```
+  instrument   condition       cells   reproduce?
+  contour      baseline          6      YES  (grid 86.0/84.4, foundry 74.5/54.5, orbital 89.4/68.3)
+  contour      COMBINATION       6      YES  (97.4/100.0, 87.7/86.4, 100.0/90.4-as-a-range)
+  census       n/a               6      YES  (to five decimals, all three arenas)
+  mass         under lift       11      YES  (to 0.006, two ranges identical)
+  mass         BASELINE          6      NO in four of six
+```
+
+**Twenty-nine cells reproduce across sessions and four do not, and all four are the same meter in the
+same condition: `mass.mjs` with every uniform at 0.0.** It is not the bundle, not the browser, not the
+arena, not the load, and not the contour meter — each of those is now excluded by a measurement rather
+than by an argument.
+
+> **THE LEADING HYPOTHESIS, NAMED WITH ITS TEST AND NOT ASSERTED.** Fault 50 established that the two
+> meters sit in different poses on this box — contour in the `24226` triple, mass in the `24018` one.
+> If the previous session's `mass.mjs` sat in the OTHER pose, its baseline cells would differ from
+> this one's while its lifted cells might not, because the document's own figures show the poses differ
+> by 1.7 and 4.2 clause B points **at baseline** and nobody has ever measured how far they differ
+> **under a lift**. That single measurement — the same cell, both poses, baseline and lifted — would
+> confirm or kill it, and it is the next thing owed. **Until it is run, fault 49 has a suspect and not
+> a cause, and I am not writing it up as one.**
+
+**Nothing ships. Every lift uniform in the tree is 0.0.**
