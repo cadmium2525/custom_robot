@@ -15936,3 +15936,58 @@ candidate is proposed is the clause B price of dropping `uPaintLiftFar` — the 
 carried (grid far 84.4 → 100.0, foundry far 54.5 → 86.4) are the far cells it would give back, and the
 line art reaches those machines at a seventh of the strength. That measurement is running and is the
 next section, not a prediction.
+
+### 5. The named debts 2 and 3 — **orbital's and foundry's guards, read for the first time, and each arena refuses the candidate on a DIFFERENT cell**
+
+RULING 67 measured the candidate's guards on **grid only**, and §5 of the handover carried *"orbital's
+guards are unmeasured under the candidate — clause A and C there have never been read"* as the second
+debt. Read now, six draws each, same meter and bundle, clause C ceilings re-derived per arena from that
+arena's own baseline by round 24's rule.
+
+```
+  GRID      n=6/6   boxes 156x283 / 56x69      C ceilings: near <= 1.768   far <= 1.367
+    A near count   4.30 [4.00, 4.30]   -> 4.80 [4.80, 4.80]     MET
+    A near top4    85.8 [85.4, 85.8]   -> 88.4 [88.2, 88.4]     MET
+    C near ratio   1.716 [1.698,1.718] -> 1.737 [1.732,1.740]   MET
+    A FAR  count   4.80 [4.80, 4.80]   -> 3.00 [3.00, 3.00]     NOT MET   <-- out of the band
+    A FAR  top4    92.2 [92.1, 92.3]   -> 95.9 [95.4, 95.9]     MET
+    C FAR  ratio   1.313 [1.302,1.317] -> 1.460 [1.455,1.461]   NOT MET
+
+  ORBITAL   n=6/6   boxes 178x260 / 52x65      C ceilings: near <= 1.975   far <= 1.268
+    A near count   5.00 [4.80, 5.00]   -> 4.00 [4.00, 4.30]     MET
+    A near top4    87.5 [87.0, 87.6]   -> 90.9 [90.8, 91.0]     MET
+    C near ratio   1.912 [1.908,1.925] -> 1.994 [1.973,1.995]   STRADDLE  <-- unscored, crosses 1.975
+    A FAR  count   4.30 [4.30, 4.30]   -> 4.30 [4.30, 4.30]     MET       <-- does not move at all
+    A FAR  top4    92.9 [92.6, 92.9]   -> 90.1 [90.0, 90.1]     MET
+    C FAR  ratio   1.214 [1.211,1.218] -> 1.027 [1.025,1.028]   MET       <-- IMPROVES by 0.187
+
+  FOUNDRY   n=6/6   boxes 75x217 / 41x39       C ceilings: near <= 1.617   far <= 0.992
+    A near count   6.00 [5.80, 6.00]   -> 4.80 [4.50, 4.80]     MET       <-- off the band's ceiling
+    A near top4    88.7 [87.4, 88.8]   -> 93.6 [93.5, 93.7]     MET
+    C near ratio   1.563 [1.524,1.567] -> 1.433 [1.431,1.439]   MET       <-- IMPROVES by 0.130
+    A FAR  count   5.50 [5.50, 5.50]   -> 5.50 [5.30, 5.50]     MET
+    A FAR  top4    86.9 [86.8, 86.9]   -> 84.0 [83.9, 84.0]     NOT MET   <-- through the 85.0 floor
+    C FAR  ratio   0.940 [0.937, 0.942]-> 0.872 [0.870, 0.872]  MET       <-- the only cell on this card
+                                                                              that meets clause C outright
+```
+
+**Every arena refuses the candidate, and no two refuse it on the same cell.** Grid on the far mass
+count and the far ratio; orbital on a near ratio that straddles its ceiling; foundry on a far top-4
+that goes through the 85.0 floor. **Two of those three arenas had never been measured, so two of these
+three refusals are new** — the candidate is refused more broadly than RULING 67 could see, not less.
+
+> **AND THE SIGNS DO NOT AGREE ACROSS ARENAS, WHICH IS THE FINDING UNDER THE TABLE.** Clause C's near
+> ratio **worsens** on grid (1.716 → 1.737), **worsens** on orbital (1.912 → 1.994) and **improves** on
+> foundry (1.563 → 1.433). The far ratio **worsens** on grid (+0.147) and **improves** on both orbital
+> (−0.187) and foundry (−0.068). The far mass count collapses on grid (4.80 → 3.00) and does not move
+> by a thousandth on orbital (4.30 → 4.30) or foundry (5.50 → 5.50). **A knob whose guard response
+> changes sign between arenas cannot be scored on one arena**, and every guard reading before this
+> round was taken on grid. RULING 59's caution was that a sign measured on one material does not
+> transfer to another; this is the same error one level out — a sign measured on one ARENA.
+
+**What foundry's far machine costs, stated plainly.** `A FAR top4 86.9 → 84.0` is the candidate pushing
+a cell that was MET through its floor, and it is the first time this knob combination has been shown to
+BREAK a passing clause A cell rather than merely fail to help one. Foundry's far machine is also the
+only cell anywhere on this card that satisfies clause C outright (`0.872 < 1.00`), so it is the one
+machine the project cannot afford to spend.
+
