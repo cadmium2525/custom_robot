@@ -15787,3 +15787,152 @@ itself across the largest instrument correction this document has made.
 > that was refused on two guards moves five of six clause B cells by 11 to 32 points and crosses the
 > threshold on four of them**, and the one arena it cannot carry is foundry, on both machines, by
 > under four points.
+
+---
+
+## ROUND 47 — BUILDER: **the interval is sampled, and both refusing guards belong to the OTHER knob**
+
+The named debt was *"sample the `uFrameLift` interval properly against clause A and C — it is
+non-monotone, it has no six-draw reading of its own, and it is the strongest unspent lever."* This is
+that sweep, plus the attribution run nobody had done: **`uFrameLift` and `uPaintLiftFar` measured
+SEPARATELY**, because the candidate that was refused changed both at once and the refusal was written
+up as the line art's doing.
+
+`shots/_massdrive.mjs --onbody --repeat 6`, arena grid, tier 3, seed 1234567, bundle
+`586e670836d3 / 93b94641`, browser **chromium-1194** (pinned inside the meter), SwiftShader.
+Six draws per point, one meter at a time, whole range quoted.
+
+### 1. The interval, sampled — and only the two ENDPOINTS are scoreable
+
+```
+  uFrameLift   n   NEAR count          NEAR top4          NEAR ratio C        step  | FAR count        FAR ratio C
+  0.000        6   4.30 [4.00, 4.30]   85.8 [85.4, 85.8]  1.716 [1.698,1.718] 51.9  | 4.80 [4.80,4.80] 1.313 [1.302,1.317]
+  0.010        6   4.50 [4.50, 4.80]   86.1 [84.6, 86.3]  1.700 [1.698,1.781] 50.8  | 4.80 [4.80,4.80] 1.316 [1.297,1.319]
+  0.039        6   4.50 [4.50, 4.50]   88.0 [88.0, 88.0]  2.598 [2.598,2.598] 31.9  | 4.80 [4.80,4.80] 1.316 [1.316,1.316]
+  0.079        6   4.00 [4.00, 4.00]   87.9 [87.7, 88.0]  1.801 [1.794,1.804] 44.3  | 4.80 [4.80,4.80] 1.327 [1.326,1.327]
+  0.118        6   5.00 [4.80, 5.00]   89.0 [88.9, 89.0]  1.870 [1.868,1.876] 41.1  | 4.80 [4.80,4.80] 1.330 [1.329,1.332]
+  0.157        6   4.80 [4.80, 4.80]   88.4 [88.3, 88.4]  1.740 [1.736,1.741] 43.7  | 4.80 [4.80,4.80] 1.337 [1.312,1.339]
+```
+
+**The near clause C ratio goes 1.716 → 1.700 → 2.598 → 1.801 → 1.870 → 1.740.** Against the ceiling
+(below), **only `0.000` and `0.157` are MET; every interior point is NOT MET or STRADDLE.** Two
+endpoints that both pass, with a region between them that fails by up to 0.83 — **a straight line
+between the endpoints would have declared the whole interval safe.** RULING 67 made the standing rule
+*a guard response may not be interpolated* after being burned twice; this is the first sweep dense
+enough to show what the rule was protecting, and the excursion is larger than anything the two
+endpoints could hint at.
+
+**And the mechanism is the DENOMINATOR, measured, not guessed.** Clause C's ratio is
+`sd / (step/2)`. Across the interval the near machine's `sd` barely moves; the **step** goes
+`51.9 → 50.8 → 31.9 → 44.3 → 41.1 → 43.7`. The 2.598 spike at `0.039` is the mass step collapsing to
+**31.9** — the lift has carried `pal.dark` to within a third of a value band of the plates it divides,
+so the masses very nearly touch — and it recovers as the lift carries the line art clear on the other
+side. RULING 67 guessed exactly this (*"a partial lift can close the step between masses while leaving
+the variation inside them"*) and could not show it from two points. Here is the step column.
+
+### 2. The attribution — **`uFrameLift` does not move the far machine AT ALL, and `uPaintLiftFar` alone reproduces BOTH refusing guards**
+
+The candidate RULING 67 refused set `uPaintLiftFar = 0.157` **and** `uFrameLift = 0.157` together, and
+its two failing cells were both on the **far** machine. Run one knob at a time:
+
+```
+                              NEAR count          NEAR ratio C          FAR count           FAR ratio C
+  baseline               n=6  4.30 [4.00,4.30]    1.716 [1.698,1.718]   4.80 [4.80,4.80]    1.313 [1.302,1.317]
+  uFrameLift    0.157    n=6  4.80 [4.80,4.80]    1.740 [1.736,1.741]   4.80 [4.80,4.80]    1.337 [1.312,1.339]
+  uPaintLiftFar 0.157    n=6  4.30 [4.00,4.30]    1.717 [1.698,1.719]   3.30 [3.00,3.30]    1.480 [1.469,1.485]
+  COMBINATION   both     n=6  4.80 [4.80,4.80]    1.737 [1.732,1.740]   3.00 [3.00,3.00]    1.460 [1.455,1.461]
+```
+
+**The two knobs are separable and each owns one machine.** `uFrameLift` moves the near cells and leaves
+the far mass count at **4.80 in all six draws at every one of six lift values, spread 0.00**.
+`uPaintLiftFar` leaves the near cells at baseline (4.30 / 1.717 against 4.30 / 1.716) and drives the far
+count out of the band on its own.
+
+> **RULING 67's MECHANISM IS REFUTED ON THE MACHINE THE FAILURES ARE ON.** It reads: *"the line art is
+> what separates the masses. `pal.dark` is the recesses and seams, and lifting it toward the plates it
+> divides merges them — clause A counts masses and clause C measures the step, and a knob that erases
+> the divider moves both, in the direction measured."* The mechanism is real and this round's near-cell
+> step column is a better demonstration of it than RULING 67 had. **It is not what failed those two
+> guards.** Taken to full lift, alone, the line art's knob moves the far mass count by **0.00** and the
+> far ratio by **+0.024**. The merging that took the far count 4.80 → 3.30 is the SHELL's far lift, a
+> knob the ruling's own candidate changed in the same breath and the write-up never separated.
+
+**Why the line art cannot reach that machine, quantitatively.** `gateF = smoothstep(uFrameGateLo,
+uFrameGateHi, vFrameSizeX)` with the shipped band `0.09 .. 0.22`, and `vFrameSizeX` is the same formula
+as the shell's `vSizeX` (`uFrameBodyH == uBodyH == 2.3`, same projection, same depth), so RULING 60's
+per-fragment census applies to it unchanged:
+
+```
+  machine        vSizeX (census)      gateF            uFrameLift 0.157 -> line art gets
+  grid NEAR      0.34416..0.43409     1.0000           +40.0 / 255   (full)
+  grid FAR       0.11054..0.12065     0.0670..0.1405   + 2.7..5.6 / 255
+  grid FAR, shell, from uPaintLiftFar 0.157            +34.4..37.4 / 255
+```
+
+The far machine is **not below the frame gate — it is inside its transition band**, at 6.7–14.1%. So the
+"near" knob is weakly live there, by about a seventh of what the shell knob delivers, and that seventh
+is worth 0.00 masses. **Two things follow that the card should carry: the gate is not the binary the
+knob table implies, and the far machine's own fragments span a factor of 2.1 in `gateF`, so any lift
+applied through it lands as a depth-driven gradient rather than a constant.**
+
+### 3. INSTRUMENT FAULT 49 — **every LIFTED state reproduces across sessions to 0.006; the UNLIFTED far machine does not, and the clause C ceilings are derived from it**
+
+Same bundle hash, same pinned browser build, same seed, same tier, same meter file (neither
+`tools/mass.mjs` nor `shots/_massdrive.mjs` has changed since `c58a2bf`). Against RULING 67's table:
+
+```
+                              RULING 67            ROUND 47 (this box)     agrees?
+  COMBINATION near count      4.8                  4.80 [4.80, 4.80]       yes
+  COMBINATION near top-4      88.3 [88.2, 88.4]    88.4 [88.2, 88.4]       yes, range identical
+  COMBINATION near ratio      1.736 [1.732,1.741]  1.737 [1.732,1.740]     yes
+  COMBINATION FAR  count      3.0  [3.0, 3.0]      3.00 [3.00, 3.00]       yes
+  COMBINATION FAR  top-4      95.9 [95.4, 95.9]    95.9 [95.4, 95.9]       yes, range identical
+  COMBINATION FAR  ratio      1.455 [1.452,1.460]  1.460 [1.455, 1.461]    yes, within 0.005
+  half-lift  near ratio       1.796                1.801 [1.794, 1.804]    yes, within 0.005
+  --------------------------------------------------------------------------------------------
+  BASELINE   near count       4.3  [4.3, 4.3]      4.30 [4.00, 4.30]       yes (median)
+  BASELINE   near ratio       1.707 [1.706,1.709]  1.716 [1.698, 1.718]    yes, within 0.009
+  BASELINE   FAR  count       5.5  [5.5, 5.5]      4.80 [4.80, 4.80]       NO   — 0.7 apart
+  BASELINE   FAR  top-4       86.2 [86.1, 86.4]    92.2 [92.1, 92.3]       NO   — 6.0 apart
+  BASELINE   FAR  ratio       1.288 [1.288,1.288]  1.313 [1.302, 1.317]    NO   — 0.025 apart
+```
+
+**Eleven of eleven lifted cells reproduce, three of three unlifted far cells do not**, and both sessions
+reported ZERO spread on the far count (5.5 x6 there, 4.80 x6 here). So the disagreement is not draw
+noise and the zero spread was never evidence that it could not be: **a six-draw spread of 0.00 measures
+determinism WITHIN a session and says nothing about stability ACROSS one.** The unlifted far machine is
+dark and low-contrast, its segmentation at step 51 sits on a knife edge, and every lift moves it off
+that edge — which is exactly why the lifted states are the stable ones.
+
+> **RULED AGAINST MYSELF BEFORE THE CRITIC HAS TO: the refusal in RULING 67 STANDS, and its delta column
+> does not.** Clause A's band (`[4.0, 6.0]`) and clause A's top-4 floor (`85.0`) are ABSOLUTE, so the
+> combination's `3.00` and RULING 67's `3.0` fail the same test for the same reason and the verdict is
+> untouched. **Clause C's ceilings are not absolute** — round 24's rule is *"max of range not worse than
+> baseline max + 0.05"*, which is how `1.759` and `1.338` were derived from baseline maxima `1.709` and
+> `1.288`. Re-derived on this box's own baseline (`1.718`, `1.317`) the ceilings are **near ≤ 1.768, far
+> ≤ 1.367**, and every figure in this round is scored against those and quotes them. Any future session
+> must re-run its own baseline before quoting a clause C verdict; the published `1.338` is a figure
+> whose provenance is a measurement that no longer reproduces.
+
+### 4. What this leaves the card
+
+**Guard verdicts on grid, scored on this box against the re-based ceilings:**
+
+```
+                              A near cnt  A near top4  A FAR cnt  A FAR top4  C near   C FAR
+  baseline                    MET         MET          MET        MET         MET      MET
+  uFrameLift    0.157 ALONE   MET         MET          MET        MET         MET      MET
+  uPaintLiftFar 0.157 ALONE   MET         MET          NOT MET    MET         MET      NOT MET
+  COMBINATION                 MET         MET          NOT MET    MET         MET      NOT MET
+```
+
+**`uFrameLift = 0.157` alone is the first non-zero setting of any lift knob to pass every clause A and
+clause C cell on both machines of grid.** Its far ratio, `1.337 [1.312, 1.339]`, would have STRADDLED
+the published `1.338` and is MET against this box's `1.367`; that cell is the one to watch and it is
+named here rather than buried.
+
+**Nothing ships. Every lift uniform in the tree is still 0.0.** What this round is owed before any
+candidate is proposed is the clause B price of dropping `uPaintLiftFar` — the far cells that knob
+carried (grid far 84.4 → 100.0, foundry far 54.5 → 86.4) are the far cells it would give back, and the
+line art reaches those machines at a seventh of the strength. That measurement is running and is the
+next section, not a prediction.
