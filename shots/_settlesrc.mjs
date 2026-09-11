@@ -21,7 +21,7 @@
  * escaped. If either anchor is missing, or the body does not still contain the
  * two lines this project's last two faults were about, nothing is returned.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
@@ -55,4 +55,37 @@ export function settleFn(tool = 'contour.mjs') {
     }
   }
   return body;
+}
+
+/**
+ * The BROWSER the meters pin, read out of the meter at run time.
+ *
+ * INSTRUMENT FAULT 53. `shots/_r46size.mjs` — the census behind RULING 60's
+ * per-fragment table, and behind every gate argument built on it — carried its
+ * own copy of the pin, at a DIFFERENT build from the meters
+ * (`chromium-1148` against the meters' `chromium-1194`) and at a path in
+ * `~/.cache` rather than `/opt/pw-browsers`. Worse than the mismatch, the guard
+ * was `existsSync(PINNED) ? PINNED : undefined`, so on any box where that build
+ * is absent it SILENTLY fell back to whatever playwright resolves by default.
+ * That is fault 29 and 43's shape exactly — a guard a caller can redirect is
+ * not a guard — applied to the rasteriser instead of to a uniform.
+ *
+ * So the pin is read from the meter's own text, like the settle beside it, and
+ * a missing binary is an ABORT rather than a fallback. A probe that cannot run
+ * on the meter's browser must stop, not quietly report on another one.
+ */
+export function pinnedBrowser(tool = 'contour.mjs') {
+  const src = readFileSync(join(HERE, '..', 'tools', tool), 'utf8');
+  const m = src.match(/^const PINNED = '([^']+)';$/m);
+  if (!m) {
+    console.error(`_settlesrc: no "const PINNED = '...'" in tools/${tool}.`);
+    process.exit(2);
+  }
+  if (!existsSync(m[1])) {
+    console.error(`_settlesrc: tools/${tool} pins ${m[1]} and it is not on this box.`);
+    console.error('_settlesrc: refusing to fall back — a probe on a different browser than the meter');
+    console.error('            is not a probe of the meter. Install that build or run elsewhere.');
+    process.exit(2);
+  }
+  return m[1];
 }

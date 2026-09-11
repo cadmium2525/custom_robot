@@ -16802,3 +16802,113 @@ ranges disjoint, and it is the finding worth keeping. Fault 50 stands and is wid
 Everything else in the round is either narrower than I wrote it or owed a re-run. **Nothing ships; every
 lift uniform in the tree is 0.0.**
 
+
+---
+
+## ROUND 48 — BUILDER: **the first owed re-run is paid and the census holds exactly; getting there found a probe that was reporting on a different browser than the meters**
+
+RULING 68 left two re-runs owed. This is the first: **the per-fragment census**, which §2 of round 47
+quoted from bundle `d9cef324894e` to support the gate arithmetic while the round itself ran on
+`586e670836d3`. By rule 4 that is a memory. It is now re-run.
+
+### 1. INSTRUMENT FAULT 53 — **the census instrument pinned a DIFFERENT browser from the meters and fell back to a third one in silence**
+
+`shots/_r46size.mjs` would not start. The reason is worth more than the census was:
+
+```
+  tools/contour.mjs   const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
+  tools/mass.mjs      const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'
+  shots/_r46size.mjs  const PINNED = '/root/.cache/ms-playwright/chromium-1148/chrome-linux/chrome'
+                      executablePath: existsSync(PINNED) ? PINNED : undefined
+```
+
+**Three defects in two lines.** A different build (`1148` against the meters' `1194`); a different root
+(`~/.cache` against `/opt/pw-browsers`); and a ternary that resolves a missing binary to `undefined`,
+which hands the launch to whatever playwright resolves by default. **That is INSTRUMENT FAULT 29 and 43's
+shape — a guard the caller can redirect is not a guard — applied to the rasteriser instead of to a
+uniform.** `_r46size.mjs` opens by explaining that it reads the settle out of the meter's own text so it
+"cannot drift from the meter the way fault 45's probe did", and then pins a browser the meter does not
+use. **It fixed the drift it had been burned by and hard-coded a new one two lines further down.**
+
+The repair is the one this project already uses for the settle: read it from the meter at run time, and
+**abort rather than fall back**. `shots/_settlesrc.mjs` gains `pinnedBrowser(tool)`, which extracts
+`const PINNED = '...'` from the named meter and exits 2 if that binary is not on the box.
+
+**Fixed in both files that carried the defect, found by searching for the launch and not by listing
+files from memory** — `shots/_r46size.mjs` (its own bad pin) and `shots/_r23-lightprobe.mjs`, which
+called `chromium.launch()` with no arguments at all and so has never once run on the meters' browser.
+Every `chromium.launch` in `tools/` and `shots/` now resolves to the meters' build or aborts; the sweep
+that proves it is in the commit.
+
+> **WHAT IT DOES NOT DO IS MOVE THE CENSUS**, and I am saying that before the table rather than after it,
+> because the temptation with a fault this clean is to let it imply the numbers were wrong. `vSizeX` is
+> `uBodyH * projectionMatrix[1][1] / depth * 0.5` — projection arithmetic read back out of the vertex
+> stage, not rasterised coverage — so there is no strong reason a rasteriser build should touch it, and
+> measured, none does.
+
+### 2. The census, re-run on this round's bundle and the meters' browser — **it reproduces to five decimals**
+
+`shots/_r46size.mjs --draws 6`, bundle `586e670836d3`, chromium-1194, tier 3, seed 1234567.
+
+```
+  machine         RULING 60 (bundle d9cef324894e)     ROUND 48 (bundle 586e670836d3)     agrees?
+  grid    NEAR    0.372993   0.36775..               0.37299   0.34416..0.43409          yes
+  grid    FAR     0.111308   0.11054..0.12065        0.11131   0.11054..0.12065          yes, exact
+  foundry NEAR    0.368576                           0.36858   0.34361..0.43160          yes
+  foundry FAR     0.113931   0.11331..0.12397        0.11393   0.11331..0.12397          yes, exact
+  orbital NEAR    0.388190   0.36775..0.46490        0.38819   0.36775..0.46490          yes, exact
+  orbital FAR     0.101883   0.10154..0.11005        0.10188   0.10154..0.11005          yes, exact
+
+  p05-p95 also reproduce exactly on every arena: grid 0.36252-0.43058, foundry 0.35859-0.42780
+  (mine 0.35858), orbital 0.37782-0.45988.
+
+  Draw-to-draw: 5 of 6 cells identical in all six draws. The minority, published rather than
+  hidden behind a mode: orbital NEAR reads 0.36774 in 1 draw of 6 against 0.36775 in 5, off an
+  lodPx of 349.368 against 349.370-349.371. That is a spread of 1e-5 against a gate band 0.13
+  wide, and it changes no figure below.
+```
+
+**So §2 of round 47 stands, and it now stands on this bundle.** The debt is paid and the answer was the
+boring one.
+
+### 3. The gate table, recomputed from the re-run and extended to all three arenas
+
+Round 47 computed this for grid only. `gateF = smoothstep(uFrameGateLo, uFrameGateHi, vFrameSizeX)`,
+shipped band `0.09 .. 0.22`:
+
+```
+  machine        vSizeX min..max     gateF min..max     uFrameLift .157 reaches   uPaintLiftFar .157 reaches
+                                                        the LINE ART by          the SHELL by
+  grid    NEAR   0.34416..0.43409    1.0000..1.0000     +40.0 /255               + 0.0 /255
+  grid    FAR    0.11054..0.12065    0.0670..0.1405     + 2.7.. 5.6 /255         +34.4..37.4 /255
+  foundry NEAR   0.34361..0.43160    1.0000..1.0000     +40.0 /255               + 0.0 /255
+  foundry FAR    0.11331..0.12397    0.0849..0.1692     + 3.4.. 6.8 /255         +33.3..36.6 /255
+  orbital NEAR   0.36774..0.46490    1.0000..1.0000     +40.0 /255               + 0.0 /255
+  orbital FAR    0.10154..0.11005    0.0222..0.0640     + 0.9.. 2.6 /255         +37.5..39.1 /255
+```
+
+**And extending it to three arenas turns round 47's weakest claim into its best-supported one.** §7.1
+reported that `uFrameLift` alone degrades clause C's FAR ratio on every arena, by different amounts,
+and had no account of why the amounts differed. The gate has one:
+
+```
+  far machine   gateF max   clause C FAR ratio under uFrameLift 0.157 alone (n=6)
+  foundry       0.1692      0.940 -> 1.021   +0.081   NOT MET, and through the absolute 1.00
+  grid          0.1405      1.313 -> 1.337   +0.024   UNSCORED (straddles 1.338)
+  orbital       0.0640      1.214 -> 1.229   +0.015   MET
+```
+
+**The damage is ordered by how hard the near knob reaches each far machine, and the order is strict on
+both columns.** Foundry's far machine sits highest in the transition band and loses the most; orbital's
+sits lowest and loses the least. That is a dose-response across three arenas, measured on two
+independent instruments — the census that gives the dose and the mass meter that gives the response —
+and it is the mechanism behind a table round 47 could only report.
+
+> **STATED WITH THE LIMIT IT HAS.** Three points is three points. The ordering is strict and the
+> instruments are independent, but nothing here establishes the FORM of the relationship, and the
+> interval sweep in round 47 §1 is a standing demonstration that a response can be monotone in three
+> places and violently non-monotone between them. **This predicts nothing about a fourth arena and it
+> does not license interpolating a gate band.**
+
+**Nothing ships. Every lift uniform in the tree is 0.0.** The second owed re-run — §6's COMBINATION
+clause B column, quoted from the session whose baseline does not reproduce — is running.

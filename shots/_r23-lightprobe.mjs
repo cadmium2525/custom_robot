@@ -21,6 +21,7 @@
  * document calls the opponent. Centres are read from the `-edge.txt` of --a.
  */
 import { chromium } from 'playwright';
+import { pinnedBrowser } from './_settlesrc.mjs';
 import { readFileSync } from 'node:fs';
 import process from 'node:process';
 
@@ -47,7 +48,12 @@ const centres = {};
   }
 }
 
-const browser = await chromium.launch();
+// INSTRUMENT FAULT 53: this file launched the DEFAULT browser, so it reported on
+// whatever build playwright happened to resolve rather than the one the meters pin.
+const browser = await chromium.launch({
+  executablePath: pinnedBrowser('contour.mjs'),
+  args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
+});
 const page = await browser.newPage();
 
 /**

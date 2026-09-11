@@ -43,7 +43,7 @@ import { chromium } from 'playwright';
 import { createHash } from 'node:crypto';
 import { existsSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
-import { settleFn } from './_settlesrc.mjs';
+import { settleFn, pinnedBrowser } from './_settlesrc.mjs';
 
 const args = process.argv.slice(2);
 const flag = (n, d = null) => {
@@ -58,7 +58,8 @@ const TIER = Number(flag('tier', 3));
 const TICKS = Number(flag('ticks', 420));
 const SEED = Number(flag('seed', 1234567));
 const DRAWS = Number(flag('draws', 6));
-const PINNED = '/root/.cache/ms-playwright/chromium-1148/chrome-linux/chrome';
+// INSTRUMENT FAULT 53: this file used to pin chromium-1148 and fall back in silence.
+const PINNED = pinnedBrowser('contour.mjs');
 
 async function bundleHash(base) {
   const html = await (await fetch(base)).text();
@@ -146,7 +147,7 @@ const rows = [[], []];
 for (let d = 0; d < DRAWS; d++) {
   const browser = await chromium.launch({
     headless: true,
-    executablePath: existsSync(PINNED) ? PINNED : undefined,
+    executablePath: PINNED,
     args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--disable-dev-shm-usage'],
   });
   const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 }, deviceScaleFactor: 1 });
