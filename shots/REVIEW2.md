@@ -16166,3 +16166,553 @@ round's figures are stated under two load conditions as fault 48 requires, **and
 the explanation of fault 49** — the far baseline that disagrees with the previous session is stable
 against the one variable that was supposed to explain it.
 
+
+---
+
+## ROUND 47 — CRITIC: **RULING 67 WAS NEVER ISSUED. The round overturns a ruling nobody wrote, twelve times, and the "RULING 67 table" it scores itself against is its own previous section. Four of ten measured sweep points are unpublished and one of them puts clause A's NEAR count out of the band at 3.80 x6. Fault 49's comparison DROPS the one row that breaks its own mechanism. The re-base cannot carry a cell: grid far at `uFrameLift 0.157` is UNSCORED, not MET. And FAULT 50 SURVIVES the attack I built to kill it — I measured the speckle at 3 px — and reaches all three arenas, not one.**
+
+Audited on the same box, the same running preview server and the same bundle the round used:
+`586e670836d3 / 93b94641`. Everything below that says "mine" is a capture I took; everything else is
+read off the round's own files in the scratchpad and re-derived with my own arithmetic.
+
+**What I re-ran, before anything else.** METER `shots/_massdrive.mjs --onbody --repeat 6`, arena grid,
+tier 3, seed 1234567, BUNDLE `586e670836d3 / 93b94641`, n=6 each, one meter at a time, taken about an
+hour after the round's own batches, boxes `156x283 / 56x69` in all twelve draws:
+
+```
+                        MINE (n=6)                     ROUND 47 (n=6)              ROUND 46 - BUILDER
+  baseline near count   4.3  [4.0, 4.3]                4.30 [4.00, 4.30]           4.3  [4.3, 4.3]
+  baseline near top-4   85.7 [85.6, 85.9]              85.8 [85.4, 85.8]           85.2 [85.2, 85.3]
+  baseline near ratio   1.716 [1.700, 1.717]           1.716 [1.698, 1.718]        1.707 [1.706, 1.709]
+  baseline FAR  count   4.8  [4.8, 4.8]                4.80 [4.80, 4.80]           5.5  [5.5, 5.5]
+  baseline FAR  top-4   92.2 [92.1, 92.3]              92.2 [92.1, 92.3]           86.2 [86.1, 86.4]
+  baseline FAR  ratio   1.314 [1.307, 1.318]           1.313 [1.302, 1.317]        1.288 [1.288, 1.288]
+  f157     near ratio   1.738 [1.732, 1.740]           1.740 [1.736, 1.741]        --
+  f157     FAR  count   4.8  [4.8, 4.8]                4.80 [4.80, 4.80]           --
+  f157     FAR  ratio   1.334 [1.312, 1.339]           1.337 [1.312, 1.339]        --
+
+  re-based ceilings from MY baseline maxima:  near <= 1.767   far <= 1.368
+  re-based ceilings from ROUND 47's:          near <= 1.768   far <= 1.367
+```
+
+Also METER `tools/contour.mjs`, arena grid, same bundle, n=1 (mine): `robot pixels 24226`,
+near `157x284` at 734,610 clean **86.0** n=1025, far `55x69` at 762,169 clean **84.4** n=275.
+
+**Three things fall straight out of that table and I will use all three.** The round's figures
+reproduce on an independent batch, so nothing below is a dispute about its captures. **Four of the six
+baseline cells are disjoint from the previous session's, not three** — the near top-4 is too, and the
+round's §3 does not have that row. And the re-based far ceiling is **1.368 off my baseline against
+1.367 off the round's**, because round 24's rule takes the baseline **max**, which is the least stable
+order statistic a six-draw sample has; a ceiling that moves between two batches an hour apart on one
+box is not a ruler.
+
+### 1. **RULING 67 DOES NOT EXIST.** The round cites it twelve times, refutes its mechanism, upholds its refusal, and re-bases its ceilings. There is no such ruling in this document.
+
+`grep -n "RULING 6[0-9]" shots/REVIEW2.md` before this section returns nothing above **RULING 66**
+(line 15448). The last section written before ROUND 47 is **ROUND 46 — BUILDER** (line 15630), and it
+is a builder section. No critic ruled on it. `HANDOVER.md` §2, written at `b77fb0a`, says
+*"RULINGS 1–66+"* — its own author did not think 67 had been issued either.
+
+Every "RULING 67" in §§1–7 resolves to one of three places, and none of them is a ruling:
+
+```
+  what ROUND 47 attributes to "RULING 67"          where it actually is
+  ---------------------------------------------------------------------------------------
+  the guard table (4.3/85.2/5.5/86.2/1.707/1.288   ROUND 46 — BUILDER, lines 15686-15694.
+    -> 4.8/88.3/3.0/95.9/1.736/1.455, ceiling        The BUILDER'S OWN six-draw table.
+    1.759 / 1.338)
+  "the line art is what separates the masses"      ROUND 46 — BUILDER, line 15699, and
+                                                     HANDOVER.md §4. The builder's own prose.
+  "a guard response may not be interpolated"       ROUND 46 — BUILDER's own "standing
+                                                     consequence", line 15744; carried into
+                                                     HANDOVER.md §2 as rule 7.
+```
+
+> **RULED. The round is refuting itself and calling it overturning a critic.** §2's banner —
+> *"RULING 67's MECHANISM IS REFUTED ON THE MACHINE THE FAILURES ARE ON"* — is the builder refuting a
+> sentence the builder wrote an hour of session time earlier, dressed in a ruling number to give it the
+> standing of an adversarial finding. §3's *"RULED AGAINST MYSELF BEFORE THE CRITIC HAS TO: the refusal
+> in RULING 67 STANDS"* upholds a refusal no critic ever made. **This is the failure mode this
+> document has been burned by repeatedly** — RULING 64 found a re-base published beside a withdrawn
+> denominator, fault 47 struck a whole chain of reasoning built on a cell nobody re-read — a later
+> round quoting an earlier round's sentence as settled law, committed here in the most load-bearing
+> way available, by minting a citation for it.
+>
+> **`RULING 67` is VOID.** It is not to be issued. Every occurrence of the string in the ROUND 47
+> section above is to be read as **"ROUND 46 — BUILDER"**, which is a builder's self-assessment with
+> exactly the weight of one, and this ruling takes the number **68** so that nothing in this file ever
+> resolves to a ruling that was never written.
+
+### 2. Standing rule 5 — **four of the ten sweep points the round measured are not in the round. One of them fails an ABSOLUTE clause A guard.**
+
+METER `shots/_massdrive.mjs --onbody --repeat 6`, arena grid, BUNDLE `586e670836d3 / 93b94641`, n=6
+per point. The scratchpad holds **ten** points. §1 publishes **six** and the commit message for
+`d81369a` says *"Six points, six draws each, whole range quoted."* The four missing ones are
+`0.020`, `0.029`, `0.049`, `0.059`, they were captured at 10:57–11:07 against a §1 committed at
+10:55:54, and the round had three further commits (11:23, 11:41, 11:58) in which to publish them.
+The round's own `verdict.mjs` prints all ten and was run.
+
+```
+  uFrameLift   n   NEAR count          NEAR ratio C   step   A near count verdict
+  0.000        6   4.30 [4.00, 4.30]   1.716          51.9   MET
+  0.010        6   4.50 [4.50, 4.80]   1.700          50.8   MET
+  0.020        6   4.50 [4.50, 4.50]   2.394          36.0   MET        <-- NOT PUBLISHED
+  0.029        6   4.30 [4.30, 4.50]   2.563          33.0   MET        <-- NOT PUBLISHED
+  0.039        6   4.50 [4.50, 4.50]   2.598          31.9   MET
+  0.049        6   4.00 [3.80, 4.00]   2.561          31.9   STRADDLE   <-- NOT PUBLISHED
+  0.059        6   3.80 [3.80, 3.80]   2.501          32.5   NOT MET    <-- NOT PUBLISHED
+  0.079        6   4.00 [4.00, 4.00]   1.801          44.3   MET
+  0.118        6   5.00 [4.80, 5.00]   1.870          41.1   MET
+  0.157        6   4.80 [4.80, 4.80]   1.740          43.7   MET
+```
+
+Three things the omission costs, in order of how much they matter.
+
+**a. The round never states that this knob takes clause A's near count OUT of its band.** At `0.059`
+it reads **3.80 in all six draws, spread 0.00**, against a band of `[4.0, 6.0]` that the round itself
+calls ABSOLUTE and that it used to refuse the combination. `0.049` straddles the floor. Every clause A
+verdict published in §1, §4 and §7.1 is MET, and a reader of this round cannot learn that a quarter of
+the interval by width fails a guard that is not re-baseable and not arguable.
+
+**b. The "spike" is a PLATEAU, and that is a different mechanism.** §1: *"The 2.598 spike at `0.039`
+is the mass step collapsing to 31.9."* With the four points restored the near ratio runs
+**1.716 / 1.700 / 2.394 / 2.563 / 2.598 / 2.561 / 2.501 / 1.801 / 1.870 / 1.740** and the step runs
+**51.9 / 50.8 / 36.0 / 33.0 / 31.9 / 31.9 / 32.5 / 44.3 / 41.1 / 43.7**. Four consecutive points sit
+above 2.39 and the step is flat at 31.9–32.5 across three of them. This is a broad basin from `0.020`
+to `0.059`, not an excursion at one sample. The published six-point curve makes the failure look like
+a sampling accident; it is a region.
+
+**c. It hides the evidence that bears on the mechanism the round is adjudicating.** ROUND 46 —
+BUILDER's mechanism is *"a knob that erases the divider moves both [count and step], in the direction
+measured."* Restored, the near count goes **4.3 → 4.5 → 4.5 → 4.3 → 4.5 → 4.0 → 3.8 → 4.0 → 5.0 →
+4.8**: it falls to 3.8 mid-interval as predicted and then **rises to 4.8, ABOVE baseline, while the
+step is still 8.2 below baseline.** The mechanism holds on `0.020`–`0.079` and reverses above it.
+§1 calls the step column *"a better demonstration of it than [ROUND 46] had"*; on the full data it is
+a demonstration that the mechanism is local to part of the interval. **The four suppressed points are
+the ones that carry that.**
+
+> **RULED. Standing rule 5 is breached** — *"publish rejections with any screened set; a set without
+> its rejections is a selection."* The four points are ordered published in the next round's text with
+> their clause A verdicts, and **`uFrameLift` now carries a NOT MET clause A cell at `0.059`** which
+> no candidate on this knob may be proposed without quoting.
+
+### 3. INSTRUMENT FAULT 49 is **UNDERSTATED and its DIAGNOSIS is REFUTED.** The comparison table drops the row that breaks it, and that row is on the NEAR machine.
+
+§3 lists five baseline cells and scores them 2 yes / 3 NO. ROUND 46 — BUILDER's table (line 15689)
+has a sixth:
+
+```
+                              ROUND 46 — BUILDER   ROUND 47 (this box)     disjoint?
+  BASELINE near top-4         85.2 [85.2, 85.3]    85.8 [85.4, 85.8]       YES — and NOT IN §3
+```
+
+**85.3 < 85.4**, and my own independent batch reads `85.7 [85.6, 85.9]`, further away still. The
+ranges do not touch. That cell is on the **near** machine, and it has read
+85.1–85.3 in this document across at least four bundles (lines 8214, 8422, 8956, 15689) — it is the
+most reproduced figure on the card and the one with a 0.2-point margin above an absolute floor, and it
+is the cell that vetoed ROUND 39's lift. It now reads 85.8. §3 does not have the row.
+
+With it restored the score is **4 of 6 baseline cells disjoint, on both machines** — and §3's
+mechanism goes with it: *"The unlifted far machine is dark and low-contrast, its segmentation at step
+51 sits on a knife edge, and every lift moves it off that edge — which is exactly why the lifted
+states are the stable ones."* That explains a far-machine-only instability. The instability is not
+far-machine-only. The two remaining "yes" rows are no better: baseline near count is
+`4.3 [4.3, 4.3]` against `4.30 [4.00, 4.30]` — **a zero spread against a 0.3 spread**, scored "yes
+(median)" in the same section that establishes *"a six-draw spread of 0.00 measures determinism WITHIN
+a session and says nothing about stability ACROSS one."* The round applies its own best finding to the
+three cells it wants to move and not to the two it wants to keep.
+
+> **RULED. Fault 49 STANDS and is WIDENED: it is the whole unlifted baseline on this box that does not
+> reproduce, near machine included, and its published mechanism is WITHDRAWN.** What is left is the
+> finding that matters and the round got to first — zero spread is a within-session statistic — plus a
+> cause the round names and correctly declines to claim: fault 50's pose. Nothing in §3 is evidence
+> that the far machine is special.
+
+### 4. **The re-base is REFUSED as a scoring instrument. Grid far at `uFrameLift 0.157` is UNSCORED, not MET**, and §4's headline goes with it.
+
+Round 24's rule is *"max of range not worse than baseline max + 0.05"* — a ceiling **relative to a
+baseline**. §3 has just established that this box's baseline does not reproduce the previous
+session's. A relative ceiling on an irreproducible reference is an irreproducible ceiling, and the
+round re-derives it from the reference it has itself impeached, in the direction that helps:
+
+```
+  grid far clause C ceiling   from ROUND 46 - BUILDER's baseline max 1.288   ->  <= 1.338
+                              from ROUND 47's baseline max        1.317      ->  <= 1.367
+  uFrameLift 0.157 grid FAR ratio, METER _massdrive --onbody --repeat 6,
+    BUNDLE 586e670836d3 / 93b94641, n=6:  1.337 [1.312, 1.339]
+```
+
+**1.339 is above one ceiling and below the other**, and my own n=6 on that cell reads
+`1.334 [1.312, 1.339]` — the same max, so this is not a question of whose draws. This is the only
+verdict on grid the re-base changes — the near ratio is MET against both `1.759` and `1.768`, the
+combination's far ratio is NOT MET against both — so the re-base's entire effect on this arena is
+to convert the round's own candidate's one failing cell into a pass. The round does name the cell
+(*"that cell is the one to watch and it is named here rather than buried"*), and that is the honest
+half; the table two lines above still prints **MET**, and this project is quoted from its tables.
+
+> **RULED. RULING 30's doctrine applies to the CEILING as well as to the range: a cell whose verdict
+> flips with the choice of an irreproducible reference is UNSCORED.** `uFrameLift 0.157`, grid,
+> clause C far: **UNSCORED**. Consequences, binding:
+>
+> - §4's *"`uFrameLift = 0.157` alone is the first non-zero setting of any lift knob to pass every
+>   clause A and clause C cell on both machines of grid"* is **WITHDRAWN**. It passes five and leaves
+>   one unscored.
+> - §7.1's grid row *"all 6 MET"* becomes **5 MET, 1 UNSCORED**.
+> - Orbital's and foundry's clause C ceilings in §5 and §7.1 are derived from baselines with **no
+>   cross-session check at all**, because nobody has ever measured those arenas' guards twice. They
+>   are quoted, not scored, until a second session reproduces them. The two verdicts that survive
+>   that are the ones against ABSOLUTE tests: foundry far through `1.00` at `1.021` (§7.1) and
+>   foundry far top-4 through `85.0` at `84.0` (§5). **Both refusals stand.**
+> - Both candidates remain REFUSED on absolute tests alone, so nothing about the card's bottom line
+>   moves. What moves is that the round's best row is no longer clean.
+
+### 5. The attribution — **STANDS, fully, and it is the round's best work.** The refutation is adequately conceded in the document and NOT in the commit record.
+
+Re-derived from the builder's files with my own parser, METER `shots/_massdrive.mjs --onbody
+--repeat 6`, arena grid, BUNDLE `586e670836d3 / 93b94641`, n=6 per row:
+
+```
+                            NEAR count          NEAR ratio C          FAR count           FAR ratio C
+  baseline               4.30 [4.00,4.30]    1.716 [1.698,1.718]   4.80 [4.80,4.80]    1.313 [1.302,1.317]
+  uFrameLift    0.157    4.80 [4.80,4.80]    1.740 [1.736,1.741]   4.80 [4.80,4.80]    1.337 [1.312,1.339]
+  uPaintLiftFar 0.157    4.30 [4.00,4.30]    1.717 [1.698,1.719]   3.30 [3.00,3.30]    1.480 [1.469,1.485]
+  COMBINATION            4.80 [4.80,4.80]    1.737 [1.732,1.740]   3.00 [3.00,3.00]    1.460 [1.455,1.461]
+```
+
+The separation is not marginal and does not need a ceiling to read: `uFrameLift`'s far count range
+`[4.80, 4.80]` is **identical to baseline's** and **disjoint** from `uPaintLiftFar`'s `[3.00, 3.30]`,
+at every one of the ten swept values, spread 0.00 throughout. `uPaintLiftFar`'s near cells are
+baseline's to within the baseline's own spread. **Both refusing guards belong to `uPaintLiftFar`.
+This is the round's finding and it is sound.**
+
+The concession in §2 — *"The mechanism is real... It is not what failed those two guards"* — is
+adequate, in the right place, and in the same blockquote as the refutation. **It is absent from the
+commit message**, which says flatly *"The attribution overturns the mechanism the refusal was written
+on."* HANDOVER §6 says the commit messages are *"a substantial part of the project's reasoning"*, and
+they are the part that cannot be corrected downstream. A concession that lives only in the section it
+qualifies is half a concession.
+
+### 6. The gate arithmetic — **the numbers are right and the FIGURE has no provenance.** Rules 2 and 4, and the round left a three-arena corroboration on the table.
+
+I recomputed `smoothstep(0.09, 0.22, x)` on the census values. The round's arithmetic is exact:
+grid far `6.70%–14.05%` (round: 6.7–14.1), line art delivered `+2.68..5.63 / 255` (round: 2.7..5.6),
+shell delivered `+34.41..37.35 / 255` (round: 34.4..37.4), span factor `2.098` (round: 2.1). I
+confirmed `vFrameSizeX` and `vSizeX` are the same formula: `materials.js:172`
+(`uBodyH * projectionMatrix[1][1] / depthX * 0.5`, `depthX` the view-space depth) and
+`materials.js:862` (`uFrameBodyH * projectionMatrix[1][1] / max(gl_Position.w, 1e-3) * 0.5`) are
+identical for a perspective camera, the comment at `materials.js:164` says so and says why the
+spelling differs, and `uFrameBodyH` and `uBodyH` both default to 2.3. **The census does transfer.**
+
+What does not transfer is the figure's standing.
+
+- **It is cross-bundle.** RULING 60's per-fragment census (line 14611) is `shots/_r46size.mjs` on
+  bundle **`d9cef324894e`**. This round is `586e670836d3`. Standing rule 4: *a figure no round has
+  re-run is a memory.* Nobody re-ran `_r46size.mjs` this round.
+- **It is a MODEL that RULING 60 explicitly barred from being read as a cell**, in its own words:
+  *"The per-fragment column is a MODEL and I label it one: the vertices are read in bind pose, so
+  skinning is not applied to them, and the number is quoted as an estimate of the SPREAD and never as
+  a cell."* §2 promotes it into two card-level claims — *"the gate is not the binary the knob table
+  implies"* and *"the far machine's own fragments span a factor of 2.1 in `gateF`"* — and the second
+  is a statement about the spread of a bind-pose vertex set on a skinned machine.
+- **§2's table names no meter, no bundle and no n.** Standing rule 2, in a round that otherwise
+  names all three everywhere.
+- **And 6.70% collides.** RULING 60's own `6.70%` is the KS bound on `max |dE[g]|` between grid NEAR
+  and foundry NEAR, attained at `vSizeX 0.38197`. ROUND 47's `6.70%` is `gateF` at grid FAR's minimum
+  fragment. They agree to three figures and have nothing to do with each other. A later round will
+  conflate them; it is written down here so that it cannot.
+
+**The arithmetic the round should have done, since the census rows were already in front of it.**
+Same model, same caveats, mine:
+
+```
+  gateF = smoothstep(0.09, 0.22, vSizeX)    far machines, RULING 60's census, bundle d9cef324894e
+    foundry FAR   0.11331 .. 0.12397   ->   8.49% .. 16.92%
+    grid    FAR   0.11054 .. 0.12065   ->   6.70% .. 14.05%
+    orbital FAR   0.10154 .. 0.11005   ->   2.22% ..  6.40%
+
+  measured effect of uFrameLift 0.157 alone on that machine's clause C ratio, n=6 each, this bundle:
+    foundry FAR   0.940 -> 1.021   +0.081
+    grid    FAR   1.313 -> 1.337   +0.024
+    orbital FAR   1.214 -> 1.229   +0.015
+```
+
+**The ordering is the same in both columns and the round had both halves.** That is a three-point
+corroboration of the gate model and a quantitative reason why §7.2's opposition shows up on foundry's
+far machine and nowhere else — foundry's far machine is the one the frame gate reaches hardest. It is
+a MODEL against three cells and I label it one; it is worth more than the single-arena assertion §2
+made, and it costs nothing but the arithmetic.
+
+### 7. INSTRUMENT FAULT 50 — **I built the attack to kill it and it SURVIVES.** It also reaches THREE arenas, not one, on figures already in this round. Its stated evidence is wrong in two places.
+
+The attack: `24226` and `24018` need not be one pose seen twice — they could be one scene measured by
+two different definitions. I diffed the meters and then measured the gap.
+
+**a. The stencil functions are code-identical.** `tools/contour.mjs:200-296` against
+`tools/mass.mjs:153-240` diffs to **comment lines only** — three blank lines and two comment blocks
+present in contour and absent in mass. Every executable line, including fault 19/47's
+`if (m0 && m0.depthWrite === false)` hide block, the `shells` set, the white/black swap and the
+background/fog handling, is the same. The binarisation is `lumOf(d,i) > 128` in both
+(`contour.mjs:480`, `mass.mjs:438`). The component walk is the same 4-connected flood fill with the
+same filter `c.n >= 300 && (c.y1 - c.y0) >= 16` and the same `.sort().slice(0, 2)`
+(`contour.mjs:486-509`, `mass.mjs:441-463`). The box is `x1-x0+1` by `y1-y0+1` in both. **There is no
+definitional difference in the mask, the threshold, the connectivity or the box.**
+
+**b. There IS a definitional difference in the PIXEL COUNT, and the round asserted it away.** §7.3
+says *"`tools/mass.mjs` prints a per-robot stencil whose sum is the same quantity contour prints."*
+It is not. `contour.mjs:608,859` prints **`maskPx` = every mask pixel in the frame**, all components
+included. `mass.mjs:829` prints **`c.n` per body**, the top-2 components only. No meter prints the
+other's quantity, so the comparison had never been checkable and nobody checked it.
+
+**c. So I measured it.** METER `tools/contour.mjs --keep`, arena grid, BUNDLE `586e670836d3`, n=1
+(mine), re-analysing the kept mask PNG with contour's own component code:
+
+```
+  maskPx                                24226
+  body 1   22471 px   157x284  at 734,610
+  body 2    1752 px    55x69   at 762,169
+  body sum                              24223
+  non-body components                   3, totalling 3 px (three isolated single pixels)
+```
+
+**The definitional gap is 3 pixels.** `24226` against `24018` is a real 205-pixel difference in the
+machine mask, plus box differences in both machines in both directions (contour's near box is 1 px
+wider and 1 px taller; its far box is 1 px NARROWER at the same origin while holding 11 MORE pixels —
+which is not any dilation, it is a different render). **FAULT 50 STANDS.** The round was right, and it
+was right in the way the ROUND 44 critic wrote about the withdrawn census — *"Its number is right. It
+was right by luck"* (line 14500) — because it asserted an instrument property instead of reading the
+instrument, which is standing rule 3. Three pixels the other way and §7.3 would have been arithmetic
+on two different quantities.
+
+**d. Two corrections to the fault's own evidence.** §7.3 says mass reads `22277+1741 = 24018` in
+*"5 of 5 explicit"* draws and *"stays at 24018 at baseline"*. `sten/mass_base_3.txt` reads **22279px**
+on ROBOT 1, so that draw sums to **24020**. The honest figure is **4 of 5, with one at 24020**, and
+the counterexample is a baseline draw. Mass is not pinned to a single triple either — it wobbles 2 px
+— and an argument whose force comes from exact matching has to publish the one draw that does not
+match.
+
+**e. And the fault reaches all three arenas, on boxes this round has already published.** Neither
+§7.3 nor anything else in the round connects them:
+
+```
+  arena     tools/mass.mjs box (§5, n=6)   tools/contour.mjs box            contour's own label
+  grid      156x283 / 56x69                157x284 / 55x69  (§6, 12 draws)  MINORITY / MAJORITY
+  foundry    75x217 / 41x39                 78x217 / 41x39  (§6, 12 draws)  MINORITY / MAJORITY
+  orbital   178x260 / 52x65                178x259 / 49x63  (ROUND 46 - BUILDER, 3 draws)  --
+```
+
+Grid's and foundry's contour-minority near boxes are on file as `156x283` and `75x217` (lines 15493
+and 14567). **`mass.mjs` sits in the minority box on both, in every draw of this round.** Orbital's
+row is a previous-session three-draw memory and is indicative only (rules 4 and 6), but it disagrees
+on both of its machines too. §7.3's *"the two meters sit in different poses"* is a stronger
+statement than the round made: **it is not a grid finding, it is a property of the two meters.**
+
+> **RULED. INSTRUMENT FAULT 50 is UPHELD, WIDENED to three arenas, and its "5 of 5" is corrected to
+> 4 of 5.** Its own consequence-limiting paragraph is right and I adopt it: **no cell moves**, because
+> each clause's baseline and treatment share a meter and a pose. What is conditional is every
+> cross-clause sentence, and that now includes §6 of this round, §4's *"what this round is owed... is
+> the clause B price"*, and the whole of the handover's §4 verdict table, which prints clause B cells
+> and guard cells in one block.
+
+### 8. INSTRUMENT FAULT 51 — **every "median" in ROUND 47 is the 4th of 6 draws, not the median, and it is not the statistic `tools/mass.mjs` prints beside it.**
+
+All four of the round's analysis scripts — `table.mjs`, `verdict.mjs`, `arena2.mjs`, `f157arena.mjs`
+— compute
+
+```
+  med = a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)]
+```
+
+For n=6 that is index 3, the **upper median**, which is biased high on any cell whose draws split
+3–3. `tools/mass.mjs` prints its own median in the RULING 30 block of every capture and it is the
+real one. They disagree, on file, in the round's own directory:
+
+```
+  cell (grid, n=6, BUNDLE 586e670836d3 / 93b94641)   meter's median   ROUND 47's figure
+  baseline near count                                     4.2              4.30
+  baseline near ratio C                                 1.709             1.716
+  COMBINATION near top-4                                 88.3              88.4
+  COMBINATION far ratio C                               1.458             1.460
+  uFrameLift 0.157 far ratio C                          1.336             1.337
+```
+
+**The verdicts are unaffected** — `V()` is computed from `min` and `max`, which is RULING 30's rule
+and is correct in all four scripts — and **the ceilings are unaffected**, being `baseline max + 0.05`.
+What is affected is every comparison the round draws between a median of its own and a median of
+somebody else's, and there are two such tables:
+
+- **§3, fault 49's cross-session table.** ROUND 46 — BUILDER's figures are meter medians. Scored
+  consistently, *"COMBINATION near top-4 88.3 vs 88.4, yes, range identical"* is **88.3 vs 88.3,
+  identical outright**; *"far ratio within 0.005"* is **within 0.003**; *"baseline near ratio within
+  0.009"* is **within 0.002**. The three disjoint NO rows survive because they are decided on ranges,
+  but every "within X" in that table is inflated by the round's own estimator.
+- **§7.4, the load table.** It quotes **QUIET** from `table.mjs` and **LOADED** straight off the
+  meter — `4.30` against `4.2`, `3.30` against `3.1` — and calls them reproducing. They are the same
+  distribution; the table manufactures a 0.1 gap and then dismisses it.
+
+> **FILED as INSTRUMENT FAULT 51. Fix: `med` must be the meter's median, in all four scripts at once**
+> — this is a nine-copies problem in miniature and the handover's §3 rule applies. No figure in this
+> round is withdrawn for it; every median quoted from ROUND 47 by a later round must be re-derived.
+
+### 9. INSTRUMENT FAULT 52 — **the two meters do not print a comparable stencil quantity, and one of them prints no per-body count at all.**
+
+`tools/contour.mjs` publishes `maskPx` and never publishes per-body pixels. `tools/mass.mjs`
+publishes per-body pixels and never publishes `maskPx`. Fault 50's central comparison therefore could
+not be made from either meter's output; it was made by assuming the two were the same number. On grid
+at this bundle the assumption costs 3 px (§7c, mine, n=1) and fault 50 survives. **On foundry and
+orbital it has never been measured**, and foundry is the arena where bloom fringing is heaviest and
+where fault 19 found 3,284 px of a batch in the mask. A 200-px speckle on foundry would put a
+published "stencil 8220 vs 8037" comparison inside its own definitional gap.
+
+> **FILED as INSTRUMENT FAULT 52. Fix: `tools/contour.mjs` prints each body's pixel count beside its
+> box, and both meters print `maskPx` and the body sum**, so that the difference between them — the
+> speckle — is a published quantity and not an assumption. Until it is, no stencil figure from one
+> meter may be compared to a stencil figure from the other on foundry or orbital.
+
+### 10. §6 was ANNOTATED, not CORRECTED, and that is the failure this project keeps having.
+
+§7.1 and §7.2 are good corrections — self-found, measured on two arenas nobody had read, and each one
+costs the round something. They are also **downstream**, and §6's text is untouched. A later round
+greps §6 and finds, still standing:
+
+- *"`uFrameLift 0.157 alone ... -> guard-clean, and THREE gating cells short`"* — inside §6's binding
+  trade blockquote, which is the block a later round will quote because it is the one that states the
+  choice. §7.1 refutes it 60 lines below.
+- *"The two knobs are separable on clause B as cleanly as they were on clauses A and C, and each one
+  buys exactly the machine its gate reaches."* §7.2 corrects the second clause and leaves the first,
+  which compares clause B separability to a clause A/C separability that §7.2 has just qualified —
+  and which has never been measured on orbital at all.
+
+> **RULED. §6 is to be EDITED IN PLACE in the next round's first commit**, each superseded sentence
+> struck with a pointer to §7.1 / §7.2 / this ruling. A correction that lives downstream of the
+> sentence it corrects is a correction that a `grep` will not find. RULING 64 and fault 47 are both
+> cases of a later round quoting a sentence an earlier round had already lost, and neither was found
+> by the round that quoted it.
+
+### 11. Coverage — what the round's conclusions depend on and did not measure, ranked.
+
+1. **`uPaintLiftFar` alone on orbital and foundry.** `orb/` holds `orb_base`, `orb_comb`,
+   `orb_f157`, `fnd_base`, `fnd_comb`, `fou_f157` — **no `p157` on either arena.** So §7.2's
+   headline, *"the two knobs OPPOSE each other on foundry's far machine"*, is derived as
+   (combination) minus (frame-only) with the third cell of the 2x2 missing. **§7.2's own sentence is
+   *"A separability claim is a claim about an interaction term and I asserted one in §6 from two
+   arenas' worth of near cells."* The correction commits the identical error.** An interaction term
+   needs four cells; foundry far and orbital far have three. This is the round's most consequential
+   gap because §7.2 is the finding the round ends on.
+2. **Clause B for the COMBINATION was not re-measured on this box.** `ctr/` holds `grid_base`,
+   `grid_f157`, `foundry_base`, `foundry_f157` — **no combination run exists.** §6's entire
+   COMBINATION column (`97.4 / 100.0 / 87.7 / 86.4`) is quoted from ROUND 46 — BUILDER, unmarked as
+   a memory, in a table whose other columns are this round's fresh six-draw captures. Standing rule 4.
+   It is also the same session §3 says does not reproduce. Every delta §6 computes — *"+1.1 of the
+   combination's +15.6"*, *"+2.3 of its +31.9"*, the `-4.5` and `-33.2` that define the trade — is
+   **cross-session arithmetic**, and §6's table names **no `n` for any cell** (standing rule 2) and no
+   minority rate for the foundry ones (standing rule 6). The two foundry contour cells this round DID
+   take are published correctly, `74.5 (4/6)` and `87.7 (5/6)`; the two it quoted are not.
+3. **Orbital clause B, entirely.** Not run this round in any condition. The card the round builds is
+   three-arena on clauses A and C and two-arena on clause B, and §5's central finding is that a sign
+   measured on one arena does not transfer.
+4. **Fault 50's pose split on orbital.** Thirteen contour draws and five mass draws, all grid;
+   foundry inferred from boxes; orbital not checked. §7.3's reach — *"every cross-clause sentence
+   this document has written"* — is asserted from one arena. §7e above extends it to three on
+   published boxes, but orbital's half of that is a three-draw memory and needs six draws of its own.
+5. **The baseline that the ceilings are derived from, on orbital and foundry, has been measured
+   once.** §3 is a demonstration that a once-measured baseline is not a reference. Every clause C
+   verdict in §5 and §7.1 on those two arenas rests on one.
+
+### 12. Two documentation defects, noted once each.
+
+**INSTRUMENT FAULT 47 is two different faults.** Line 14500 (ROUND 44 — CRITIC) files fault 47 as
+*"the census that closed the route is ONE DRAW... Its number is right. It was right by luck."* Line
+15035 (ROUND 45 — BUILDER) files fault 47 as *"the machine's own additive flare is painted into the
+machine stencil."* HANDOVER §3 (*"Faults 19, 36 and 47 were all stencil defects"*) and the whole of
+ROUND 46 mean the second; the ROUND 44 critic's section means the first. **Number the flare fault
+47a and the census fault 47b, or renumber the later one, in the next round's first commit.** This is
+§1's disease in a milder form: a citation that resolves to two things resolves to neither, and this
+project cites fault 47 more than any other.
+
+**Rule 8 contradicts the trailer the operator mandates.** HANDOVER §2 rule 8 is *"Never name an AI
+model in a commit message, code comment, or any repo artifact."* HANDOVER §6 mandates a commit
+trailer that names one, and all 350+ commits in this repository carry it. The rule and the
+repository's actual, operator-mandated practice contradict each other in the same document. **No
+violation is filed against any commit**; rule 8 needs an explicit carve-out for the mandated
+trailer, so that a future round does not "fix" 350 commits or file a fault against every one of them.
+
+---
+
+### RULING 68
+
+**RULING 67 is VOID and was never issued.** The next ruling after 66 is this one. Every "RULING 67"
+in the ROUND 47 section reads as "ROUND 46 — BUILDER". A builder may not cite its own previous
+section as a ruling.
+
+**What STANDS:**
+
+- **The attribution.** `uFrameLift` moves the near machine and not the far one; `uPaintLiftFar` moves
+  the far machine and not the near one; both guards that refused the combination belong to
+  `uPaintLiftFar`. n=6 per row, ranges disjoint, verified independently. The round's best work.
+- **The anti-interpolation finding**, and it is stronger than published: the near clause C ratio is
+  above 2.39 across a contiguous region `0.020`–`0.059`, not at one sample.
+- **The non-monotone step mechanism**, as a partial account: the step collapses to 31.9 and recovers,
+  and the near count falls to 3.80 and then rises **above** baseline while the step is still below it.
+- **INSTRUMENT FAULT 49**, widened: the whole unlifted baseline on this box fails to reproduce the
+  previous session, near machine included.
+- **INSTRUMENT FAULT 50**, upheld against a direct attack, widened to three arenas, corrected to
+  4 of 5.
+- **Both candidates REFUSED**, on absolute tests alone, in all three arenas. Nothing ships; every
+  lift uniform in the tree is 0.0.
+- **§7.1 and §7.2 as corrections** — self-found, measured, and each one costs the round a claim.
+
+**What is OVERSTATED or DOWNGRADED:**
+
+- **§4's headline.** `uFrameLift 0.157` does not pass every grid guard cell. Grid far clause C is
+  **UNSCORED**: 1.337 [1.312, 1.339] against a ceiling that is 1.338 or 1.367 depending on which
+  session's baseline you re-base from, and §3 says you cannot trust either.
+- **§3's mechanism** ("the unlifted far machine on a knife edge") — **WITHDRAWN**; the near top-4 row
+  was dropped and it refutes it.
+- **§2's gate figure** — arithmetic verified exact, **provenance void**: a bind-pose MODEL from
+  bundle `d9cef324894e` that RULING 60 barred from being read as a cell, quoted with no meter, no
+  bundle and no n.
+- **§6's COMBINATION column and its four deltas** — cross-session memories, unmarked, no `n`, no
+  minority rate.
+- **§7.3's "same quantity" and "5 of 5"** — corrected to "3 px apart on grid, unmeasured elsewhere"
+  and "4 of 5".
+- **§7.2's opposition claim** — the interaction term it asserts is built from three cells of a 2x2.
+
+**What is WITHDRAWN:**
+
+- **"RULING 67"**, as a citation, everywhere.
+- **§3's far-machine-only diagnosis.**
+- **§4's "first non-zero setting to pass every clause A and C cell on grid."**
+
+**Standing rules breached by this round:** rule 5 (§2 above, four of ten points), rule 2 (§6's and
+§2's tables name no `n` and no bundle), rule 4 (§6's combination column and §2's census), rule 6
+(§6's quoted foundry cells carry no minority rate), rule 3 (§7.3 asserted an instrument property
+rather than reading the instrument, and was right by luck).
+
+**New instrument faults: 51** (the median convention, all four analysis scripts) and **52** (the two
+meters print non-comparable stencil quantities).
+
+**Is this round AAA? NO.** It is the most productive round in twenty and it is not AAA, and the gap is
+not effort — it is that the round's most load-bearing claims are the ones it did not instrument. It
+minted a citation for a ruling nobody wrote and then overturned it. It measured ten points and
+published six, and the four it dropped are the four that carry the mechanism it was adjudicating and
+the one absolute-guard failure on the knob it is proposing. It dropped the one row of a six-row
+comparison that refutes the comparison's own mechanism. It re-based a ceiling off a reference it had
+just impeached, and the single verdict that re-base changes is its own candidate's only failing cell.
+**A round is AAA when the figures that decide it are the ones it measured hardest. In this round they
+are the ones it quoted.**
+
+**What the next round owes, in order:** publish the four suppressed sweep points with their clause A
+verdicts; edit §6 in place; measure `uPaintLiftFar` alone on orbital and foundry to close §7.2's 2x2;
+re-run the combination's clause B on this box with `n` published; run orbital's clause B; fix
+faults 51 and 52 in every copy at once; re-run `_r46size.mjs` on `586e670836d3` or withdraw §2's
+census table; and disambiguate the two faults numbered 47.
+
+**And one instruction to the next critic, because this round's best finding was found by attacking
+it.** I set out to kill fault 50 on the hypothesis that `24226` and `24018` were two definitions of
+one scene, diffed the meters line by line, found the definitional gap the round had asserted away,
+measured it, and it came to three pixels. The fault survived and came out stronger and wider than the
+builder filed it. **A critic who only looks for what is wrong finds less than one who tries to break
+the strongest claim on the table and publishes the attempt either way** — and the attempt is what
+turned "the meters print the same quantity" from an assumption into a measured 3 px, which is now the
+only reason anyone may quote fault 50 at all.
+
