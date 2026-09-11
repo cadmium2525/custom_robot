@@ -15808,16 +15808,28 @@ Six draws per point, one meter at a time, whole range quoted.
   uFrameLift   n   NEAR count          NEAR top4          NEAR ratio C        step  | FAR count        FAR ratio C
   0.000        6   4.30 [4.00, 4.30]   85.8 [85.4, 85.8]  1.716 [1.698,1.718] 51.9  | 4.80 [4.80,4.80] 1.313 [1.302,1.317]
   0.010        6   4.50 [4.50, 4.80]   86.1 [84.6, 86.3]  1.700 [1.698,1.781] 50.8  | 4.80 [4.80,4.80] 1.316 [1.297,1.319]
+  0.020        6   4.50 [4.50, 4.50]   85.6 [85.3, 85.7]  2.394 [2.388,2.394] 36.0  | 4.80 [4.80,4.80] 1.314 [1.302,1.314]
+  0.029        6   4.30 [4.30, 4.50]   87.7 [86.5, 87.8]  2.563 [2.562,2.640] 33.0  | 4.80 [4.80,4.80] 1.317 [1.315,1.320]
   0.039        6   4.50 [4.50, 4.50]   88.0 [88.0, 88.0]  2.598 [2.598,2.598] 31.9  | 4.80 [4.80,4.80] 1.316 [1.316,1.316]
+  0.049        6   4.00 [3.80, 4.00]   88.5 [88.4, 88.5]  2.561 [2.551,2.568] 31.9  | 4.80 [4.80,4.80] 1.318 [1.317,1.318]
+  0.059        6   3.80 [3.80, 3.80]   87.8 [87.7, 87.9]  2.501 [2.493,2.508] 32.5  | 4.80 [4.80,4.80] 1.322 [1.320,1.322]
   0.079        6   4.00 [4.00, 4.00]   87.9 [87.7, 88.0]  1.801 [1.794,1.804] 44.3  | 4.80 [4.80,4.80] 1.327 [1.326,1.327]
   0.118        6   5.00 [4.80, 5.00]   89.0 [88.9, 89.0]  1.870 [1.868,1.876] 41.1  | 4.80 [4.80,4.80] 1.330 [1.329,1.332]
   0.157        6   4.80 [4.80, 4.80]   88.4 [88.3, 88.4]  1.740 [1.736,1.741] 43.7  | 4.80 [4.80,4.80] 1.337 [1.312,1.339]
+
+  clause A's NEAR COUNT, against its absolute band [4.0, 6.0] — the column the first
+  version of this table did not carry:
+    0.049   4.00 [3.80, 4.00]   STRADDLES the floor
+    0.059   3.80 [3.80, 3.80]   NOT MET — six draws, spread 0.00, BELOW the band
+  every other point MET.
 ```
 
-**The near clause C ratio goes 1.716 → 1.700 → 2.598 → 1.801 → 1.870 → 1.740.** Against the ceiling
+**The near clause C ratio goes 1.716 → 1.700 → 2.394 → 2.563 → 2.598 → 2.561 → 2.501 → 1.801 → 1.870
+→ 1.740**, and the excursion is a PLATEAU spanning `0.020` to `0.059`, not the single spike the first six
+points of this sweep suggested. Against the ceiling
 (below), **only `0.000` and `0.157` are MET; every interior point is NOT MET or STRADDLE.** Two
 endpoints that both pass, with a region between them that fails by up to 0.83 — **a straight line
-between the endpoints would have declared the whole interval safe.** RULING 67 made the standing rule
+between the endpoints would have declared the whole interval safe.** ROUND 46 made the standing rule
 *a guard response may not be interpolated* after being burned twice; this is the first sweep dense
 enough to show what the rule was protecting, and the excursion is larger than anything the two
 endpoints could hint at.
@@ -15827,12 +15839,12 @@ endpoints could hint at.
 `51.9 → 50.8 → 31.9 → 44.3 → 41.1 → 43.7`. The 2.598 spike at `0.039` is the mass step collapsing to
 **31.9** — the lift has carried `pal.dark` to within a third of a value band of the plates it divides,
 so the masses very nearly touch — and it recovers as the lift carries the line art clear on the other
-side. RULING 67 guessed exactly this (*"a partial lift can close the step between masses while leaving
+side. ROUND 46 guessed exactly this (*"a partial lift can close the step between masses while leaving
 the variation inside them"*) and could not show it from two points. Here is the step column.
 
 ### 2. The attribution — **`uFrameLift` does not move the far machine AT ALL, and `uPaintLiftFar` alone reproduces BOTH refusing guards**
 
-The candidate RULING 67 refused set `uPaintLiftFar = 0.157` **and** `uFrameLift = 0.157` together, and
+The candidate ROUND 46 refused set `uPaintLiftFar = 0.157` **and** `uFrameLift = 0.157` together, and
 its two failing cells were both on the **far** machine. Run one knob at a time:
 
 ```
@@ -15848,11 +15860,11 @@ the far mass count at **4.80 in all six draws at every one of six lift values, s
 `uPaintLiftFar` leaves the near cells at baseline (4.30 / 1.717 against 4.30 / 1.716) and drives the far
 count out of the band on its own.
 
-> **RULING 67's MECHANISM IS REFUTED ON THE MACHINE THE FAILURES ARE ON.** It reads: *"the line art is
+> **ROUND 46's MECHANISM IS REFUTED ON THE MACHINE THE FAILURES ARE ON.** It reads: *"the line art is
 > what separates the masses. `pal.dark` is the recesses and seams, and lifting it toward the plates it
 > divides merges them — clause A counts masses and clause C measures the step, and a knob that erases
 > the divider moves both, in the direction measured."* The mechanism is real and this round's near-cell
-> step column is a better demonstration of it than RULING 67 had. **It is not what failed those two
+> step column is a better demonstration of it than ROUND 46 had. **It is not what failed those two
 > guards.** Taken to full lift, alone, the line art's knob moves the far mass count by **0.00** and the
 > far ratio by **+0.024**. The merging that took the far count 4.80 → 3.30 is the SHELL's far lift, a
 > knob the ruling's own candidate changed in the same breath and the write-up never separated.
@@ -15878,10 +15890,10 @@ applied through it lands as a depth-driven gradient rather than a constant.**
 ### 3. INSTRUMENT FAULT 49 — **every LIFTED state reproduces across sessions to 0.006; the UNLIFTED far machine does not, and the clause C ceilings are derived from it**
 
 Same bundle hash, same pinned browser build, same seed, same tier, same meter file (neither
-`tools/mass.mjs` nor `shots/_massdrive.mjs` has changed since `c58a2bf`). Against RULING 67's table:
+`tools/mass.mjs` nor `shots/_massdrive.mjs` has changed since `c58a2bf`). Against ROUND 46's table:
 
 ```
-                              RULING 67            ROUND 47 (this box)     agrees?
+                              ROUND 46            ROUND 47 (this box)     agrees?
   COMBINATION near count      4.8                  4.80 [4.80, 4.80]       yes
   COMBINATION near top-4      88.3 [88.2, 88.4]    88.4 [88.2, 88.4]       yes, range identical
   COMBINATION near ratio      1.736 [1.732,1.741]  1.737 [1.732,1.740]     yes
@@ -15891,22 +15903,34 @@ Same bundle hash, same pinned browser build, same seed, same tier, same meter fi
   half-lift  near ratio       1.796                1.801 [1.794, 1.804]    yes, within 0.005
   --------------------------------------------------------------------------------------------
   BASELINE   near count       4.3  [4.3, 4.3]      4.30 [4.00, 4.30]       yes (median)
+  BASELINE   near top-4       85.2 [85.2, 85.3]    85.8 [85.4, 85.8]       NO   — RANGES DISJOINT
   BASELINE   near ratio       1.707 [1.706,1.709]  1.716 [1.698, 1.718]    yes, within 0.009
   BASELINE   FAR  count       5.5  [5.5, 5.5]      4.80 [4.80, 4.80]       NO   — 0.7 apart
   BASELINE   FAR  top-4       86.2 [86.1, 86.4]    92.2 [92.1, 92.3]       NO   — 6.0 apart
   BASELINE   FAR  ratio       1.288 [1.288,1.288]  1.313 [1.302, 1.317]    NO   — 0.025 apart
 ```
 
-**Eleven of eleven lifted cells reproduce, three of three unlifted far cells do not**, and both sessions
+**Eleven of eleven lifted cells reproduce, and FOUR of six unlifted cells do not — three on the far
+machine and one on the NEAR**, and both sessions
 reported ZERO spread on the far count (5.5 x6 there, 4.80 x6 here). So the disagreement is not draw
 noise and the zero spread was never evidence that it could not be: **a six-draw spread of 0.00 measures
-determinism WITHIN a session and says nothing about stability ACROSS one.** The unlifted far machine is
-dark and low-contrast, its segmentation at step 51 sits on a knife edge, and every lift moves it off
-that edge — which is exactly why the lifted states are the stable ones.
+determinism WITHIN a session and says nothing about stability ACROSS one.**
 
-> **RULED AGAINST MYSELF BEFORE THE CRITIC HAS TO: the refusal in RULING 67 STANDS, and its delta column
+> **THE MECHANISM I FIRST GAVE FOR THIS IS WITHDRAWN, AND I WITHDREW IT ONLY AFTER THE CRITIC MADE ME
+> PUT BACK A ROW I HAD LEFT OUT.** The first version of the table above carried five baseline rows and
+> not the sixth, and the sixth is `near top-4 85.2 [85.2, 85.3]` against `85.8 [85.4, 85.8]` — **two
+> ranges that do not touch, on the NEAR machine.** On five rows the pattern was "the unlifted FAR
+> machine is on a knife edge and every lift moves it off", which is a clean story that the missing row
+> falsifies: the near machine is not dark, not low-contrast, and it does not reproduce either. **The
+> row was not dropped to make the story work — it was dropped because I built the table from the cells
+> the previous section happened to tabulate — and the effect is the same either way, which is the
+> whole content of standing rule 5.** What survives is the observation and not the explanation:
+> every LIFTED cell reproduces and four of six UNLIFTED cells do not, and nothing in this round says
+> why.
+
+> **RULED AGAINST MYSELF BEFORE THE CRITIC HAS TO: the refusal in ROUND 46 STANDS, and its delta column
 > does not.** Clause A's band (`[4.0, 6.0]`) and clause A's top-4 floor (`85.0`) are ABSOLUTE, so the
-> combination's `3.00` and RULING 67's `3.0` fail the same test for the same reason and the verdict is
+> combination's `3.00` and ROUND 46's `3.0` fail the same test for the same reason and the verdict is
 > untouched. **Clause C's ceilings are not absolute** — round 24's rule is *"max of range not worse than
 > baseline max + 0.05"*, which is how `1.759` and `1.338` were derived from baseline maxima `1.709` and
 > `1.288`. Re-derived on this box's own baseline (`1.718`, `1.317`) the ceilings are **near ≤ 1.768, far
@@ -15926,10 +15950,14 @@ that edge — which is exactly why the lifted states are the stable ones.
   COMBINATION                 MET         MET          NOT MET    MET         MET      NOT MET
 ```
 
-**`uFrameLift = 0.157` alone is the first non-zero setting of any lift knob to pass every clause A and
-clause C cell on both machines of grid.** Its far ratio, `1.337 [1.312, 1.339]`, would have STRADDLED
-the published `1.338` and is MET against this box's `1.367`; that cell is the one to watch and it is
-named here rather than buried.
+**`uFrameLift = 0.157` alone passes five of the six clause A and C cells on grid and its sixth is
+UNSCORED.** Its far ratio is `1.337 [1.312, **1.339**]`. Against the published ceiling `1.338` that
+range STRADDLES, and a straddle is UNSCORED by RULING 30; against this box's re-derived `1.367` it
+reads MET. **The re-base changes exactly one grid verdict and it is this one — the only cell standing
+between this round's own candidate and a clean grid card — so the round is not entitled to it.**
+`uFrameLift 0.157`'s grid far clause C is recorded as **UNSCORED** until a baseline that reproduces
+across sessions exists to derive a ceiling from. A ceiling derived from a baseline this same round
+shows does not reproduce cannot carry a cell that turns on 0.001.
 
 **Nothing ships. Every lift uniform in the tree is still 0.0.** What this round is owed before any
 candidate is proposed is the clause B price of dropping `uPaintLiftFar` — the far cells that knob
@@ -15939,7 +15967,7 @@ next section, not a prediction.
 
 ### 5. The named debts 2 and 3 — **orbital's and foundry's guards, read for the first time, and each arena refuses the candidate on a DIFFERENT cell**
 
-RULING 67 measured the candidate's guards on **grid only**, and §5 of the handover carried *"orbital's
+ROUND 46 measured the candidate's guards on **grid only**, and §5 of the handover carried *"orbital's
 guards are unmeasured under the candidate — clause A and C there have never been read"* as the second
 debt. Read now, six draws each, same meter and bundle, clause C ceilings re-derived per arena from that
 arena's own baseline by round 24's rule.
@@ -15974,7 +16002,7 @@ arena's own baseline by round 24's rule.
 **Every arena refuses the candidate, and no two refuse it on the same cell.** Grid on the far mass
 count and the far ratio; orbital on a near ratio that straddles its ceiling; foundry on a far top-4
 that goes through the 85.0 floor. **Two of those three arenas had never been measured, so two of these
-three refusals are new** — the candidate is refused more broadly than RULING 67 could see, not less.
+three refusals are new** — the candidate is refused more broadly than ROUND 46 could see, not less.
 
 > **AND THE SIGNS DO NOT AGREE ACROSS ARENAS, WHICH IS THE FINDING UNDER THE TABLE.** Clause C's near
 > ratio **worsens** on grid (1.716 → 1.737), **worsens** on orbital (1.912 → 1.994) and **improves** on
@@ -16017,7 +16045,7 @@ foundry far gets **+2.3 of its +31.9**. And in the other direction, `uPaintLiftF
 guard cells at baseline in §2. **The two knobs are separable on clause B as cleanly as they were on
 clauses A and C, and each one buys exactly the machine its gate reaches.**
 
-> **SO THE TRADE IS NOW PRICED AND IT IS NOT THE ONE RULING 67 WAS DECIDING.** That ruling read the
+> **SO THE TRADE IS NOW PRICED AND IT IS NOT THE ONE ROUND 46 WAS DECIDING.** That ruling read the
 > candidate as one lift with a clause B gain and a guard cost, and looked for a value of it that kept
 > the gain and dropped the cost — which is what the half-lift attempt was. **There is no such value,
 > because the gain and the cost are not on the same knob.** The choice available is:
@@ -16061,7 +16089,7 @@ claim standing on one.
     A near count 4.30 -> 4.80 MET    A FAR count 4.80 -> 4.80 MET
     A near top4  85.8 -> 88.4 MET    A FAR top4  92.2 -> 92.1 MET
     C near ratio 1.716 -> 1.740 [1.736, 1.741] MET
-    C FAR  ratio 1.313 -> 1.337 [1.312, 1.339] MET
+    C FAR  ratio 1.313 -> 1.337 [1.312, 1.339] UNSCORED (straddles the published 1.338; see §4)
 
   ORBITAL    C ceilings near <= 1.975   far <= 1.268
     A near count 5.00 -> 4.00 MET    A FAR count 4.30 -> 4.30 MET
@@ -16085,7 +16113,7 @@ not a margin lost against a derived ceiling, the clause itself.
 >
 > ```
 >                            grid                        orbital            foundry
->   uFrameLift alone         all 6 MET                   C near NOT MET     C FAR NOT MET (through 1.00)
+>   uFrameLift alone         5 MET, C FAR UNSCORED       C near NOT MET     C FAR NOT MET (through 1.00)
 >   COMBINATION              A FAR count + C FAR NOT MET C near STRADDLE    A FAR top4 NOT MET
 >   ```
 >
@@ -16715,4 +16743,62 @@ builder filed it. **A critic who only looks for what is wrong finds less than on
 the strongest claim on the table and publishes the attempt either way** — and the attempt is what
 turned "the meters print the same quantity" from an assumption into a measured 3 px, which is now the
 only reason anyone may quote fault 50 at all.
+
+
+---
+
+## ROUND 47 — BUILDER, REPAIRS: **the citation was void, the set was screened, and the row I dropped was the one that mattered**
+
+RULING 68 is accepted in full on the four findings that touch the record, and the repairs are made **in
+place** rather than downstream, because this document's own history is that a superseded sentence left
+standing gets quoted three rounds later by somebody who did not read the correction. What was changed,
+so that a future round can tell an edit from an original:
+
+1. **The citation.** Every one of the 21 occurrences of "RULING 67" in §1–§7 above now reads
+   **"ROUND 46"**. There is no RULING 67 and there never was: the highest ruling in this file is 66,
+   and the section I was scoring against is **ROUND 46 — BUILDER**, which no critic has audited. I read
+   the tail of the file, found a table with verdicts in it, and promoted the builder's own prose to a
+   binding ruling — then "overturned" it twelve times. **The handover I was working from says
+   "RULINGS 1–66+" on its face and I did not check.** Nothing in §2's attribution depends on the
+   citation, but every sentence that framed the round as correcting a critic was wrong about who it was
+   correcting, and the difference is the whole point of having a critic.
+
+2. **The screened set.** §1's table published 6 of the 10 points measured. The four missing were
+   `0.020, 0.029, 0.049, 0.059`, and the table now carries all ten with clause A's near-count verdicts
+   beside them. They change two things. **`0.059` reads near count `3.80 [3.80, 3.80]` — six draws,
+   spread 0.00, below clause A's ABSOLUTE band** — so the interior of the interval fails a guard that no
+   re-basing can soften, and `0.049` straddles the same floor. And the "2.598 spike" is not a spike: the
+   ratio sits above 2.39 from `0.020` to `0.059`, a **plateau four points wide**. The sweep was run in
+   two batches and I wrote the table from the first; the second finished and I never came back. **Rule 5
+   does not have an exemption for the set you meant to publish later.**
+
+3. **The dropped row.** §3's cross-session table carried five baseline cells and not the sixth, and the
+   sixth — `near top-4 85.2 [85.2, 85.3]` against `85.8 [85.4, 85.8]`, **disjoint** — is the one that
+   kills the mechanism the section proposed. Restored, with the diagnosis withdrawn: four of six
+   unlifted cells fail to reproduce, one of them on the near machine, and this round does not know why.
+
+4. **The cell the re-base was carrying.** `uFrameLift 0.157`'s grid far clause C is now **UNSCORED**,
+   not MET. It reads `1.337 [1.312, 1.339]`; the published ceiling is `1.338` and the re-derived one is
+   `1.367`, and the re-base flips exactly this verdict — the sole cell between the round's own candidate
+   and a clean grid card. **A ceiling derived from a baseline the same round proves unstable cannot be
+   used to carry a cell that turns on a thousandth.** The critic's independent n=6 read the same maximum,
+   `1.339`, which is the useful part: the cell is reproducible and the CEILING is what is unavailable.
+
+**Two of RULING 68's findings I record without repairing, because repairing them is measurement and not
+editing.** The census in §2 is quoted from bundle `d9cef324894e` and this round is on `586e670836d3`, so
+by rule 4 it is a memory and the gate figure it supports is arithmetic on one — the smoothstep is exact
+and the input is unverified on this bundle. And §6's COMBINATION clause B column (`100.0`, `86.4`) is
+quoted from ROUND 46, the same session whose baseline §3 shows does not reproduce. **Both are re-runs
+somebody owes, and until they are run the clause B trade in §6 is priced half on this box and half on a
+box that disagrees with it.**
+
+**INSTRUMENT FAULT 51 is accepted as stated**: the analysis scripts behind every table in this round take
+`sorted[floor(n/2)]`, which for `n = 6` is the fourth value, not the median `mass.mjs` itself prints.
+Every "median" in §1–§7 is an **upper median**. No verdict in the round moves, because all of them are
+computed from the whole range, which is what RULING 30 requires and why it requires it.
+
+**What this round is, after the repairs.** The attribution in §2 stands — it is verified, six draws,
+ranges disjoint, and it is the finding worth keeping. Fault 50 stands and is wider than I filed it.
+Everything else in the round is either narrower than I wrote it or owed a re-run. **Nothing ships; every
+lift uniform in the tree is 0.0.**
 
