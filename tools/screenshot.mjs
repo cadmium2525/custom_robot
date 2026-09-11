@@ -543,7 +543,16 @@ async function main() {
   // The sandbox image ships a pinned Chromium that may not match the version
   // this Playwright build expects, so use it directly rather than downloading.
   const pinned = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-  const executablePath = existsSync(pinned) ? pinned : undefined;
+  // INSTRUMENT FAULT 56. This used to read `pinned`, which
+  // resolves a missing pin to the DEFAULT browser instead of stopping. A guard the
+  // caller can redirect is not a guard (faults 29, 43 and 53), and a figure taken on a
+  // different rasteriser than the card was measured on is not comparable to it.
+  if (!existsSync(pinned)) {
+    console.error('INSTRUMENT FAULT 56: this file pins ' + pinned + ' and it is not on this box.');
+    console.error('Refusing to fall back to the default browser. Install that build or run elsewhere.');
+    process.exit(2);
+  }
+  const executablePath = pinned;
 
   const browser = await chromium.launch({
     headless: HEADLESS,

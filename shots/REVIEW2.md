@@ -15910,8 +15910,9 @@ Same bundle hash, same pinned browser build, same seed, same tier, same meter fi
   BASELINE   FAR  ratio       1.288 [1.288,1.288]  1.313 [1.302, 1.317]    NO   — 0.025 apart
 ```
 
-**Eleven of eleven lifted cells reproduce, and FOUR of six unlifted cells do not — three on the far
-machine and one on the NEAR**, and both sessions
+**SEVEN of seven lifted cells reproduce, and FOUR of six unlifted cells do not — three on the far
+machine and one on the NEAR** (the table has seven lifted rows; "eleven" stood here for two rounds and
+was corrected in ROUND 49 §3, where it came from and what it cost are set out), and both sessions
 reported ZERO spread on the far count (5.5 x6 there, 4.80 x6 here). So the disagreement is not draw
 noise and the zero spread was never evidence that it could not be: **a six-draw spread of 0.00 measures
 determinism WITHIN a session and says nothing about stability ACROSS one.**
@@ -16964,12 +16965,13 @@ With both debts paid, every cross-session comparison this project can currently 
   contour      baseline          6      YES  (grid 86.0/84.4, foundry 74.5/54.5, orbital 89.4/68.3)
   contour      COMBINATION       6      YES  (97.4/100.0, 87.7/86.4, 100.0/90.4-as-a-range)
   census       n/a               6      YES  (to five decimals, all three arenas)
-  mass         under lift       11      YES  (to 0.006, two ranges identical)
+  mass         under lift        7      YES  (to 0.006, two ranges identical)
   mass         BASELINE          6      NO in four of six
 ```
 
-**Twenty-nine cells reproduce across sessions and four do not, and all four are the same meter in the
-same condition: `mass.mjs` with every uniform at 0.0.** It is not the bundle, not the browser, not the
+**TWENTY-SEVEN of thirty-one cells reproduce across sessions and four do not, and all four are the same
+meter in the same condition: `mass.mjs` with every uniform at 0.0.** (Published here as "twenty-nine and
+four", which was wrong twice over and is corrected in ROUND 49 §3.) It is not the bundle, not the browser, not the
 arena, not the load, and not the contour meter — each of those is now excluded by a measurement rather
 than by an argument.
 
@@ -17371,3 +17373,170 @@ ships and nothing should.
 > round's FIRST commit carries, in this order: `uPaintLiftFar` alone on orbital and foundry;
 > `_r23-lightprobe.mjs` re-run on `chromium-1194`; the twelve remaining launches; and `n` on every
 > cell of §4's table. **Nothing on the card moves and nothing ships.**
+
+---
+
+## ROUND 49 — BUILDER: **RULING 69 accepted; the launch sweep was 13 files wrong, the census is a CPU model, and two of its corrections needed correcting themselves**
+
+RULING 69 is accepted on every finding. Two of its numbers are wrong in my favour and I am fixing those
+too, because a correction nobody checks is the same defect one level up.
+
+### 1. FAULT 56 — **the sweep sentence was false, and the real scope is 13 files, not 2 of 14**
+
+ROUND 48 §1 claimed *"every `chromium.launch` in `tools/` and `shots/` now resolves to the meters' build
+or aborts"*. **It was false when written.** My sweep predicate was
+
+```
+  grep -q 'chromium.launch' && ! grep -qE 'chromium-1194|pinnedBrowser'
+```
+
+which tests whether the meters' path **appears in the file**, not whether the launch can be redirected
+away from it. Thirteen files define `PINNED = '/opt/pw-browsers/chromium-1194/...'` and then write
+`executablePath: existsSync(PINNED) ? PINNED : undefined`, so they name the right build and discard it
+the moment it is absent. **They passed a check that was looking for the string rather than the
+behaviour** — which is the same error as trusting a `--u` that warns instead of aborting, and this
+project has filed that three times.
+
+**RULING 69's count is understated in one direction and overstated in the other, and the corrected
+census of every launcher is:**
+
+```
+  chromium launchers in tools/ and shots/                                    52
+    redirectable guard (existsSync ? PINNED : undefined) -- REPAIRED          13
+    read the pin from the meter and abort (pinnedBrowser)                      2
+    hard pin: executablePath: PINNED, which throws a LOUD launch error          37
+    no pin at all                                                               0
+```
+
+RULING 69 says "2 of 14". The 14 is the ternary-matching subset, not the population; the population is
+52 and the 37 hard pins were never broken — playwright throws on a missing `executablePath`, which is an
+abort. **The defect was 13 files and it is now 0.** Each repaired file aborts with the build it wanted
+named in the message. Verified: `grep -rn 'executablePath: existsSync' tools/ shots/` returns nothing,
+and every launcher classifies into the table above.
+
+`npm test` ALL PASS; `npx vite build` clean; **`tools/deploycheck.mjs` — one of the thirteen — plays a
+full match to a result in all three arenas, `DEPLOY OK`**, which is the acceptance test running through
+the patch that touched it.
+
+### 2. FAULT 54 — **accepted, verified, and it is the best finding in either ruling: orbital's far cell is ONE PIXEL wide and its threshold is unreachable**
+
+Clause B's `clean%` is a count over the contour population, so it is quantised at `100/n`. For orbital's
+far machine `n = 188`:
+
+```
+  169 / 188 = 89.89%     <-- the threshold 90.00 falls in HERE, and nothing can land in it
+  170 / 188 = 90.43%         the gap is 0.53 points wide
+  171 / 189 = 90.48%     (the n = 189 draws)
+```
+
+**The six draws read `90.4, 89.9, 90.5, 90.5, 90.4, 89.9` and those are exactly `170/188`, `169/188` and
+`171/189`.** The cell is not varying by half a point; it is **one boundary pixel** moving in or out, and
+the 90.0 threshold sits inside a gap no draw of this cell can ever report.
+
+**And the split sorts further than ROUND 48 §4 said.** I wrote that the two low draws "do not sort by
+stencil". They sort partly: both `90.5` draws are stencil `24262` at `n = 189`, and all four `24264`
+draws are `n = 188`. What does not sort is the `89.9` against `90.4` **within** `n = 188` — and that is
+now identified as the single row `169` against `170`, not as an unknown.
+
+> **THE VERDICT DOES NOT CHANGE AND ITS MEANING DOES.** The range still straddles, so UNSCORED still
+> follows from RULING 30. But ROUND 48 presented the cell as unstable across draws when it is stable to
+> within one pixel and merely unlucky in where the threshold sits. **A cell whose threshold lies inside
+> its own quantisation gap cannot be scored PASS or FAIL at any number of draws**, and that is a
+> property of the instrument, not of the render. It applies to every small-`n` contour cell on the card
+> — foundry far at `n = 132` quantises at 0.76 points, grid far at `n = 275` at 0.36.
+
+### 3. The cell tally — **RULING 69 corrected my number and inherited my mistake inside it**
+
+ROUND 47 §3 wrote *"eleven of eleven lifted cells reproduce"*. **The table has SEVEN lifted rows** — six
+COMBINATION cells and one half-lift cell — and I have counted them row by row. Eleven appears to be the
+seven plus the half-lift candidate's four clause B cells, which that table never compared. RULING 69
+re-derived the tally as `6+6+6+11+6 = 35` and **kept the phantom 11**, then moved the two mass-baseline
+cells that DO reproduce out of the numerator without taking them out of the denominator, arriving at
+"29 and 6". Neither figure is right:
+
+```
+  instrument   condition      cells   reproduce
+  contour      baseline          6       6
+  contour      COMBINATION       6       6
+  census       n/a               6       6
+  mass         under lift        7       7
+  mass         BASELINE          6       2      (near count, near ratio; the other four do not)
+  --------------------------------------------------------------------------------------
+                                31      27
+```
+
+**Twenty-seven of thirty-one reproduce; four do not; all four are `mass.mjs` with every uniform at 0.0.**
+Both round 47 §3 and round 48 §5 are corrected in place. **The finding RULING 69 was making stands
+entirely** — my tally was inconsistent about its own denominator, and that was worth catching.
+
+### 4. FAULT 57 — **accepted in full. The census is a CPU model over BIND-POSE vertices, and my description of it was wrong**
+
+ROUND 48 §1 called `vSizeX` *"projection arithmetic read back out of the vertex stage, not rasterised
+coverage"*. **Nothing is read back and no GPU is involved.** `_r46size.mjs`'s `READ_FN` re-implements the
+GLSL in JavaScript: it walks `mesh.geometry.getAttribute('position')`, transforms by `mesh.matrixWorld`
+on the CPU, and computes `bodyH * P11 / depth * 0.5` in JS, subsampling with
+`step = Math.floor(pos.count / 4000)`.
+
+Three things follow and all of them cut against ROUND 48:
+
+- **"Reproduces to five decimals" is close to vacuous.** A deterministic CPU computation over the same
+  geometry and the same matrices cannot vary with a browser build. It was never going to disagree, so
+  its agreement is not evidence about the rasteriser. What the re-run does establish is narrower and
+  real: **the bundle change did not move the model's inputs** — geometry, matrices and `uBodyH` are the
+  same on `586e670836d3` as on `d9cef324894e`. That discharges RULING 68's rule-4 complaint, which was
+  about bundle provenance, and nothing more.
+- **"Two independent instruments" is WITHDRAWN.** §3's dose-response pairs a *model* of the gate input
+  against a *measurement* of the guard response. Two things, but not two instruments.
+- **`getAttribute('position')` is the BIND POSE.** The shader's `vFrameSizeX` is computed from
+  `gl_Position.w` of the vertex actually drawn, which for a skinned machine is post-skinning. **So the
+  census does not measure what the gate sees; it models what the gate would see if the machine were in
+  its bind pose.** RULING 60's bar on reading it as a cell was right and was never lifted.
+
+**What survives of §3.** The gateF ordering `0.169 / 0.141 / 0.064` and the clause C ordering
+`+0.081 / +0.024 / +0.015` are both still on the record, and the two orderings still agree. But the
+first column is a bind-pose model, the deltas are upper medians under fault 51 (grid is `+0.023`, not
+`+0.024`; orbital reads `1.213 -> 1.228`), and three points agreeing on two columns has probability
+one-third under a random-ordering null. **"Dose-response" is more than this carries. It is a consistent
+ordering, it is worth writing down, and it is not a relationship.**
+
+### 5. FAULT 55 — **accepted; two published cells reported a mode that does not exist**
+
+`combb.mjs` and `clauseb.mjs` do not repeat fault 51's upper median — they take a mode — but their
+`mode()` sorts by count with no tie-break, so a tie silently returns **draw 1's value**. Two of the six
+cells published in ROUND 48 §4 are ties:
+
+```
+  foundry COMBINATION near   87.7, 87.9, 87.9, 87.7, 87.9, 87.7   ->  87.7 x3 and 87.9 x3, a 3-3 TIE
+                                                                     published as "87.7 (mode 3/6)"
+  orbital COMBINATION FAR    90.4, 89.9, 90.5, 90.5, 90.4, 89.9   ->  2-2-2, a THREE-WAY TIE
+                                                                     published as "90.4 (mode 2/6)"
+```
+
+Rule 6 asks for *the mode of six draws with the minority rate published*. **A tie has no mode and I
+published one anyway, twice, and in both cases it was the first draw.** Republished: foundry's near cell
+is **bimodal 87.7/87.9** and orbital's far cell is **three-way 89.9/90.4/90.5**, which is the same
+information the quantisation in §2 gives — and neither changes a verdict, because every verdict on this
+card is taken from the whole range.
+
+### 6. Accepted without argument
+
+- **Orbital's clause C near cell under `uFrameLift` alone: MET -> UNSCORED.** It was scored only against
+  a per-arena ceiling re-derived from a once-measured baseline, and RULING 68 §4 barred exactly that —
+  a bar I accepted in `318689b` and then relied on four sections later. Foundry's `NOT MET` stands: it
+  is through clause C's ABSOLUTE 1.00 and needs no ceiling.
+- **Rule 2: ROUND 48 §4's table names no `n` on any cell.** Republished with it here. `n` is not even
+  constant on the cell the section turns on — orbital far is `188, 188, 189, 189, 188, 188` — which is
+  the quantisation of §2 showing up as the thing rule 2 exists to surface.
+
+### 7. Still owed, ranked
+
+1. **`uPaintLiftFar` alone on orbital and foundry.** RULING 68 ranked it first, ROUND 48 did not run it,
+   and ROUND 47 §7.2's opposition claim still rests on a 2x2 with three cells filled. Two commands.
+2. **The pose test** — the same cell in both poses, baseline and lifted. It is the only thing that
+   turns fault 49's suspect into a cause.
+3. **`shots/_r23-lightprobe.mjs` re-run on chromium-1194.** RULING 69 found a CLOSED card item resting
+   on a probe that has never run on the meters' build.
+4. **A quantisation column on every clause B cell**, per §2 — no cell within one quantum of its
+   threshold may be reported as PASS or FAIL.
+
+**Nothing ships. Every lift uniform in the tree is 0.0.**

@@ -58,6 +58,15 @@ const SEED = Number(flag('seed', 1234567));
 const AGES = String(flag('ages', '1,7,14,20,26,32,48'));
 const MAX = Number(flag('max', 6));
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+// INSTRUMENT FAULT 56. This used to read `PINNED`, which
+// resolves a missing pin to the DEFAULT browser instead of stopping. A guard the
+// caller can redirect is not a guard (faults 29, 43 and 53), and a figure taken on a
+// different rasteriser than the card was measured on is not comparable to it.
+if (!existsSync(PINNED)) {
+  console.error('INSTRUMENT FAULT 56: this file pins ' + PINNED + ' and it is not on this box.');
+  console.error('Refusing to fall back to the default browser. Install that build or run elsewhere.');
+  process.exit(2);
+}
 
 // ---------------------------------------------------------------------------
 // GATE 1 — geometric, off the scan listing, free.
@@ -131,7 +140,7 @@ console.log(`  ${rows.length} blasts scanned, ${g1.length} pass gate 1, ${rejGeo
 
 const browser = await chromium.launch({
   headless: true,
-  executablePath: existsSync(PINNED) ? PINNED : undefined,
+  executablePath: PINNED,
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--mute-audio'],
 });
 const page = await browser.newPage({ viewport: { width: 400, height: 300 } });

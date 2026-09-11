@@ -5,7 +5,16 @@ import { existsSync } from 'node:fs';
 const A = process.argv.slice(2);
 const f = (n, d) => { const i = A.indexOf('--' + n); return i < 0 ? d : A[i + 1]; };
 const PINNED = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-const b = await chromium.launch({ headless: true, executablePath: existsSync(PINNED) ? PINNED : undefined,
+// INSTRUMENT FAULT 56. This used to read `PINNED`, which
+// resolves a missing pin to the DEFAULT browser instead of stopping. A guard the
+// caller can redirect is not a guard (faults 29, 43 and 53), and a figure taken on a
+// different rasteriser than the card was measured on is not comparable to it.
+if (!existsSync(PINNED)) {
+  console.error('INSTRUMENT FAULT 56: this file pins ' + PINNED + ' and it is not on this box.');
+  console.error('Refusing to fall back to the default browser. Install that build or run elsewhere.');
+  process.exit(2);
+}
+const b = await chromium.launch({ headless: true, executablePath: PINNED,
   args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--mute-audio'] });
 const p = await b.newPage({ viewport: { width: 800, height: 450 } });
 await p.goto(f('base', 'http://127.0.0.1:4403/custom_robot/'), { waitUntil: 'domcontentloaded', timeout: 60000 });

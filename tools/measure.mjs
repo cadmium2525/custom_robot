@@ -536,9 +536,18 @@ function line(label, s) {
 
 async function main() {
   const pinned = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+  // INSTRUMENT FAULT 56. This used to read `pinned`, which
+  // resolves a missing pin to the DEFAULT browser instead of stopping. A guard the
+  // caller can redirect is not a guard (faults 29, 43 and 53), and a figure taken on a
+  // different rasteriser than the card was measured on is not comparable to it.
+  if (!existsSync(pinned)) {
+    console.error('INSTRUMENT FAULT 56: this file pins ' + pinned + ' and it is not on this box.');
+    console.error('Refusing to fall back to the default browser. Install that build or run elsewhere.');
+    process.exit(2);
+  }
   const browser = await chromium.launch({
     headless: true,
-    executablePath: existsSync(pinned) ? pinned : undefined,
+    executablePath: pinned,
     args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
       '--disable-lcd-text', '--force-color-profile=srgb', '--hide-scrollbars', '--mute-audio'],
   });
