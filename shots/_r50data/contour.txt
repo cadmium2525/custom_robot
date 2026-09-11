@@ -1,0 +1,468 @@
+grid_base_1   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_base_1 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_base_1      clean    (>=40)  85.6%  ########################....
+grid_base_1                       clean rows: machine 149.8  behind  53.1
+grid_base_1   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_base_1      clean    (>=40)    86%  ########################....
+grid_base_1                       clean rows: machine 156.9  behind  53.1
+grid_base_1   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_base_1      clean    (>=40)  84.4%  ########################....
+grid_base_1                       clean rows: machine   132  behind  53.4
+grid_base_2   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_base_2 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_base_2      clean    (>=40)  85.6%  ########################....
+grid_base_2                       clean rows: machine 149.8  behind  53.1
+grid_base_2   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_base_2      clean    (>=40)    86%  ########################....
+grid_base_2                       clean rows: machine 156.9  behind  53.1
+grid_base_2   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_base_2      clean    (>=40)  84.4%  ########################....
+grid_base_2                       clean rows: machine   132  behind  53.4
+grid_base_3   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_base_3 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_base_3      clean    (>=40)  85.6%  ########################....
+grid_base_3                       clean rows: machine 149.8  behind  53.1
+grid_base_3   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_base_3      clean    (>=40)    86%  ########################....
+grid_base_3                       clean rows: machine 156.6  behind  52.9
+grid_base_3   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_base_3      clean    (>=40)  84.4%  ########################....
+grid_base_3                       clean rows: machine   132  behind  53.4
+grid_base_4   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_base_4 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_base_4      clean    (>=40)  85.6%  ########################....
+grid_base_4                       clean rows: machine 149.8  behind  53.1
+grid_base_4   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_base_4      clean    (>=40)    86%  ########################....
+grid_base_4                       clean rows: machine 156.9  behind  53.1
+grid_base_4   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_base_4      clean    (>=40)  84.4%  ########################....
+grid_base_4                       clean rows: machine   132  behind  53.4
+grid_base_5   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_base_5 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_base_5      clean    (>=40)  85.6%  ########################....
+grid_base_5                       clean rows: machine 149.8  behind  53.1
+grid_base_5   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_base_5      clean    (>=40)    86%  ########################....
+grid_base_5                       clean rows: machine 156.8  behind  52.9
+grid_base_5   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_base_5      clean    (>=40)  84.4%  ########################....
+grid_base_5                       clean rows: machine   132  behind  53.4
+grid_base_6   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_base_6 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_base_6      clean    (>=40)  85.6%  ########################....
+grid_base_6                       clean rows: machine 149.8  behind  53.1
+grid_base_6   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_base_6      clean    (>=40)    86%  ########################....
+grid_base_6                       clean rows: machine 156.9  behind    53
+grid_base_6   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_base_6      clean    (>=40)  84.4%  ########################....
+grid_base_6                       clean rows: machine   132  behind  53.4
+grid_comb_1   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_comb_1 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_comb_1      clean    (>=40)  97.9%  ###########################.
+grid_comb_1                       clean rows: machine   159  behind  54.5
+grid_comb_1   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_comb_1      clean    (>=40)  97.4%  ###########################.
+grid_comb_1                       clean rows: machine 156.3  behind  54.4
+grid_comb_1   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_comb_1      clean    (>=40)   100%  ############################
+grid_comb_2   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_comb_2 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_comb_2      clean    (>=40)  97.9%  ###########################.
+grid_comb_2                       clean rows: machine 158.9  behind  54.4
+grid_comb_2   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_comb_2      clean    (>=40)  97.4%  ###########################.
+grid_comb_2                       clean rows: machine 156.2  behind  54.4
+grid_comb_2   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_comb_2      clean    (>=40)   100%  ############################
+grid_comb_3   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_comb_3 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_comb_3      clean    (>=40)  97.9%  ###########################.
+grid_comb_3                       clean rows: machine   159  behind  54.5
+grid_comb_3   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_comb_3      clean    (>=40)  97.4%  ###########################.
+grid_comb_3                       clean rows: machine 156.3  behind  54.4
+grid_comb_3   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_comb_3      clean    (>=40)   100%  ############################
+grid_comb_4   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_comb_4 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_comb_4      clean    (>=40)  97.9%  ###########################.
+grid_comb_4                       clean rows: machine   159  behind  54.5
+grid_comb_4   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_comb_4      clean    (>=40)  97.4%  ###########################.
+grid_comb_4                       clean rows: machine 156.3  behind  54.4
+grid_comb_4   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_comb_4      clean    (>=40)   100%  ############################
+grid_comb_5   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_comb_5 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_comb_5      clean    (>=40)  97.9%  ###########################.
+grid_comb_5                       clean rows: machine 158.9  behind  54.5
+grid_comb_5   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_comb_5      clean    (>=40)  97.4%  ###########################.
+grid_comb_5                       clean rows: machine 156.2  behind  54.4
+grid_comb_5   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_comb_5      clean    (>=40)   100%  ############################
+grid_comb_6   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_comb_6 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_comb_6      clean    (>=40)  97.9%  ###########################.
+grid_comb_6                       clean rows: machine   159  behind  54.5
+grid_comb_6   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_comb_6      clean    (>=40)  97.4%  ###########################.
+grid_comb_6                       clean rows: machine 156.3  behind  54.4
+grid_comb_6   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_comb_6      clean    (>=40)   100%  ############################
+grid_f157_1   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_f157_1 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_f157_1      clean    (>=40)  94.8%  ###########################.
+grid_f157_1                       clean rows: machine 150.5  behind  54.2
+grid_f157_1   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_f157_1      clean    (>=40)  97.4%  ###########################.
+grid_f157_1                       clean rows: machine 156.2  behind  54.4
+grid_f157_1   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_f157_1      clean    (>=40)  85.5%  ########################....
+grid_f157_1                       clean rows: machine   132  behind  53.3
+grid_f157_2   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_f157_2 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_f157_2      clean    (>=40)  94.8%  ###########################.
+grid_f157_2                       clean rows: machine 150.5  behind  54.2
+grid_f157_2   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_f157_2      clean    (>=40)  97.4%  ###########################.
+grid_f157_2                       clean rows: machine 156.2  behind  54.4
+grid_f157_2   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_f157_2      clean    (>=40)  85.5%  ########################....
+grid_f157_2                       clean rows: machine   132  behind  53.3
+grid_f157_3   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_f157_3 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_f157_3      clean    (>=40)  94.8%  ###########################.
+grid_f157_3                       clean rows: machine 150.6  behind  54.2
+grid_f157_3   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_f157_3      clean    (>=40)  97.4%  ###########################.
+grid_f157_3                       clean rows: machine 156.3  behind  54.3
+grid_f157_3   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_f157_3      clean    (>=40)  85.5%  ########################....
+grid_f157_3                       clean rows: machine   132  behind  53.3
+grid_f157_4   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_f157_4 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_f157_4      clean    (>=40)  94.8%  ###########################.
+grid_f157_4                       clean rows: machine 150.5  behind  54.2
+grid_f157_4   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_f157_4      clean    (>=40)  97.4%  ###########################.
+grid_f157_4                       clean rows: machine 156.2  behind  54.4
+grid_f157_4   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_f157_4      clean    (>=40)  85.5%  ########################....
+grid_f157_4                       clean rows: machine   132  behind  53.3
+grid_f157_5   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_f157_5 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_f157_5      clean    (>=40)  94.8%  ###########################.
+grid_f157_5                       clean rows: machine 150.6  behind  54.2
+grid_f157_5   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_f157_5      clean    (>=40)  97.4%  ###########################.
+grid_f157_5                       clean rows: machine 156.3  behind  54.4
+grid_f157_5   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_f157_5      clean    (>=40)  85.5%  ########################....
+grid_f157_5                       clean rows: machine   132  behind  53.3
+grid_f157_6   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+grid_f157_6 SILHOUETTE — grid @ tier 3, 1600x900, robot pixels 24226
+grid_f157_6      clean    (>=40)  94.8%  ###########################.
+grid_f157_6                       clean rows: machine 150.5  behind  54.2
+grid_f157_6   ROBOT 1  157x284px (31.6% of frame height) at 734,610
+grid_f157_6      clean    (>=40)  97.4%  ###########################.
+grid_f157_6                       clean rows: machine 156.2  behind  54.4
+grid_f157_6   ROBOT 2  55x69px (7.7% of frame height) at 762,169
+grid_f157_6      clean    (>=40)  85.5%  ########################....
+grid_f157_6                       clean rows: machine   132  behind  53.3
+foundry_base_1   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_base_1 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_base_1      clean    (>=40)  70.6%  ####################........
+foundry_base_1                       clean rows: machine 148.3  behind  51.2
+foundry_base_1   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_base_1      clean    (>=40)  74.5%  #####################.......
+foundry_base_1                       clean rows: machine 153.1  behind  49.5
+foundry_base_1   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_base_1      clean    (>=40)  54.5%  ###############.............
+foundry_base_1                       clean rows: machine 123.8  behind  56.7
+foundry_base_2   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_base_2 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_base_2      clean    (>=40)  70.6%  ####################........
+foundry_base_2                       clean rows: machine 148.3  behind  51.2
+foundry_base_2   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_base_2      clean    (>=40)  74.5%  #####################.......
+foundry_base_2                       clean rows: machine   153  behind  49.5
+foundry_base_2   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_base_2      clean    (>=40)  54.5%  ###############.............
+foundry_base_2                       clean rows: machine 123.8  behind  56.7
+foundry_base_3   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_base_3 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_base_3      clean    (>=40)  70.7%  ####################........
+foundry_base_3                       clean rows: machine 148.2  behind  51.2
+foundry_base_3   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_base_3      clean    (>=40)  74.6%  #####################.......
+foundry_base_3                       clean rows: machine 153.1  behind  49.5
+foundry_base_3   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_base_3      clean    (>=40)  54.5%  ###############.............
+foundry_base_3                       clean rows: machine 123.8  behind  56.7
+foundry_base_4   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_base_4 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_base_4      clean    (>=40)  70.7%  ####################........
+foundry_base_4                       clean rows: machine 148.2  behind  51.2
+foundry_base_4   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_base_4      clean    (>=40)  74.6%  #####################.......
+foundry_base_4                       clean rows: machine 153.1  behind  49.5
+foundry_base_4   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_base_4      clean    (>=40)  54.5%  ###############.............
+foundry_base_4                       clean rows: machine 123.8  behind  56.7
+foundry_base_5   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_base_5 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_base_5      clean    (>=40)  70.6%  ####################........
+foundry_base_5                       clean rows: machine 148.4  behind  51.2
+foundry_base_5   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_base_5      clean    (>=40)  74.5%  #####################.......
+foundry_base_5                       clean rows: machine 153.1  behind  49.5
+foundry_base_5   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_base_5      clean    (>=40)  54.5%  ###############.............
+foundry_base_5                       clean rows: machine 123.8  behind  56.7
+foundry_base_6   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_base_6 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_base_6      clean    (>=40)  70.6%  ####################........
+foundry_base_6                       clean rows: machine 148.2  behind  51.2
+foundry_base_6   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_base_6      clean    (>=40)  74.5%  #####################.......
+foundry_base_6                       clean rows: machine 153.1  behind  49.5
+foundry_base_6   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_base_6      clean    (>=40)  54.5%  ###############.............
+foundry_base_6                       clean rows: machine 123.8  behind  56.7
+foundry_comb_1   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_comb_1 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_comb_1      clean    (>=40)  87.4%  ########################....
+foundry_comb_1                       clean rows: machine 153.9  behind  55.4
+foundry_comb_1   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_comb_1      clean    (>=40)  87.7%  #########################...
+foundry_comb_1                       clean rows: machine 152.7  behind  51.7
+foundry_comb_1   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_comb_1      clean    (>=40)  86.4%  ########################....
+foundry_comb_1                       clean rows: machine 158.5  behind  60.9
+foundry_comb_2   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_comb_2 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_comb_2      clean    (>=40)  87.6%  #########################...
+foundry_comb_2                       clean rows: machine 153.8  behind  55.4
+foundry_comb_2   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_comb_2      clean    (>=40)  87.9%  #########################...
+foundry_comb_2                       clean rows: machine 152.6  behind  51.7
+foundry_comb_2   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_comb_2      clean    (>=40)  86.4%  ########################....
+foundry_comb_2                       clean rows: machine 158.5  behind  60.9
+foundry_comb_3   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_comb_3 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_comb_3      clean    (>=40)  87.6%  #########################...
+foundry_comb_3                       clean rows: machine 153.8  behind  55.3
+foundry_comb_3   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_comb_3      clean    (>=40)  87.9%  #########################...
+foundry_comb_3                       clean rows: machine 152.6  behind  51.7
+foundry_comb_3   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_comb_3      clean    (>=40)  86.4%  ########################....
+foundry_comb_3                       clean rows: machine 158.5  behind  60.9
+foundry_comb_4   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_comb_4 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_comb_4      clean    (>=40)  87.4%  ########################....
+foundry_comb_4                       clean rows: machine 153.9  behind  55.3
+foundry_comb_4   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_comb_4      clean    (>=40)  87.7%  #########################...
+foundry_comb_4                       clean rows: machine 152.7  behind  51.7
+foundry_comb_4   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_comb_4      clean    (>=40)  86.4%  ########################....
+foundry_comb_4                       clean rows: machine 158.4  behind  60.9
+foundry_comb_5   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_comb_5 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_comb_5      clean    (>=40)  87.6%  #########################...
+foundry_comb_5                       clean rows: machine 153.8  behind  55.4
+foundry_comb_5   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_comb_5      clean    (>=40)  87.9%  #########################...
+foundry_comb_5                       clean rows: machine 152.7  behind  51.7
+foundry_comb_5   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_comb_5      clean    (>=40)  86.4%  ########################....
+foundry_comb_5                       clean rows: machine 158.4  behind  60.9
+foundry_comb_6   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_comb_6 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_comb_6      clean    (>=40)  87.4%  ########################....
+foundry_comb_6                       clean rows: machine 153.9  behind  55.4
+foundry_comb_6   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_comb_6      clean    (>=40)  87.7%  #########################...
+foundry_comb_6                       clean rows: machine 152.8  behind  51.7
+foundry_comb_6   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_comb_6      clean    (>=40)  86.4%  ########################....
+foundry_comb_6                       clean rows: machine 158.4  behind  60.9
+foundry_f157_1   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_f157_1 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_f157_1      clean    (>=40)  81.7%  #######################.....
+foundry_f157_1                       clean rows: machine 148.7  behind  53.3
+foundry_f157_1   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_f157_1      clean    (>=40)  87.7%  #########################...
+foundry_f157_1                       clean rows: machine 152.7  behind  51.7
+foundry_f157_1   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_f157_1      clean    (>=40)  56.8%  ################............
+foundry_f157_1                       clean rows: machine 123.8  behind  57.8
+foundry_f157_2   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_f157_2 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_f157_2      clean    (>=40)  81.7%  #######################.....
+foundry_f157_2                       clean rows: machine 148.7  behind  53.3
+foundry_f157_2   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_f157_2      clean    (>=40)  87.7%  #########################...
+foundry_f157_2                       clean rows: machine 152.7  behind  51.7
+foundry_f157_2   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_f157_2      clean    (>=40)  56.8%  ################............
+foundry_f157_2                       clean rows: machine 123.8  behind  57.8
+foundry_f157_3   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_f157_3 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_f157_3      clean    (>=40)  81.7%  #######################.....
+foundry_f157_3                       clean rows: machine 148.7  behind  53.3
+foundry_f157_3   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_f157_3      clean    (>=40)  87.7%  #########################...
+foundry_f157_3                       clean rows: machine 152.6  behind  51.7
+foundry_f157_3   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_f157_3      clean    (>=40)  56.8%  ################............
+foundry_f157_3                       clean rows: machine 123.8  behind  57.8
+foundry_f157_4   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_f157_4 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_f157_4      clean    (>=40)  81.7%  #######################.....
+foundry_f157_4                       clean rows: machine 148.7  behind  53.3
+foundry_f157_4   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_f157_4      clean    (>=40)  87.7%  #########################...
+foundry_f157_4                       clean rows: machine 152.8  behind  51.7
+foundry_f157_4   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_f157_4      clean    (>=40)  56.8%  ################............
+foundry_f157_4                       clean rows: machine 123.8  behind  57.8
+foundry_f157_5   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_f157_5 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_f157_5      clean    (>=40)  81.7%  #######################.....
+foundry_f157_5                       clean rows: machine 148.7  behind  53.3
+foundry_f157_5   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_f157_5      clean    (>=40)  87.7%  #########################...
+foundry_f157_5                       clean rows: machine 152.8  behind  51.7
+foundry_f157_5   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_f157_5      clean    (>=40)  56.8%  ################............
+foundry_f157_5                       clean rows: machine 123.8  behind  57.8
+foundry_f157_6   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+foundry_f157_6 SILHOUETTE — foundry @ tier 3, 1600x900, robot pixels 8220
+foundry_f157_6      clean    (>=40)  81.8%  #######################.....
+foundry_f157_6                       clean rows: machine 148.6  behind  53.3
+foundry_f157_6   ROBOT 1  78x217px (24.1% of frame height) at 727,583
+foundry_f157_6      clean    (>=40)  87.9%  #########################...
+foundry_f157_6                       clean rows: machine 152.6  behind  51.7
+foundry_f157_6   ROBOT 2  41x39px (4.3% of frame height) at 775,353
+foundry_f157_6      clean    (>=40)  56.8%  ################............
+foundry_f157_6                       clean rows: machine 123.8  behind  57.8
+orbital_base_1   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_base_1 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24262
+orbital_base_1      clean    (>=40)    86%  ########################....
+orbital_base_1                       clean rows: machine 146.3  behind    45
+orbital_base_1   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_base_1      clean    (>=40)  89.4%  #########################...
+orbital_base_1                       clean rows: machine 149.5  behind  44.5
+orbital_base_1   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_base_1      clean    (>=40)  68.3%  ###################.........
+orbital_base_1                       clean rows: machine 112.3  behind  48.8
+orbital_base_2   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_base_2 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24262
+orbital_base_2      clean    (>=40)    86%  ########################....
+orbital_base_2                       clean rows: machine 146.2  behind    45
+orbital_base_2   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_base_2      clean    (>=40)  89.4%  #########################...
+orbital_base_2                       clean rows: machine 149.5  behind  44.6
+orbital_base_2   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_base_2      clean    (>=40)  68.3%  ###################.........
+orbital_base_2                       clean rows: machine 112.3  behind  48.6
+orbital_base_3   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_base_3 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24262
+orbital_base_3      clean    (>=40)    86%  ########################....
+orbital_base_3                       clean rows: machine 146.2  behind    45
+orbital_base_3   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_base_3      clean    (>=40)  89.4%  #########################...
+orbital_base_3                       clean rows: machine 149.5  behind  44.6
+orbital_base_3   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_base_3      clean    (>=40)  68.3%  ###################.........
+orbital_base_3                       clean rows: machine 112.3  behind  48.6
+orbital_base_4   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_base_4 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24264
+orbital_base_4      clean    (>=40)  86.1%  ########################....
+orbital_base_4                       clean rows: machine 146.3  behind  44.9
+orbital_base_4   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_base_4      clean    (>=40)  89.4%  #########################...
+orbital_base_4                       clean rows: machine 149.5  behind  44.5
+orbital_base_4   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_base_4      clean    (>=40)  68.6%  ###################.........
+orbital_base_4                       clean rows: machine 112.5  behind    49
+orbital_base_5   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_base_5 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24262
+orbital_base_5      clean    (>=40)    86%  ########################....
+orbital_base_5                       clean rows: machine 146.2  behind    45
+orbital_base_5   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_base_5      clean    (>=40)  89.4%  #########################...
+orbital_base_5                       clean rows: machine 149.5  behind  44.6
+orbital_base_5   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_base_5      clean    (>=40)  68.3%  ###################.........
+orbital_base_5                       clean rows: machine 112.3  behind  48.6
+orbital_base_6   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_base_6 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24264
+orbital_base_6      clean    (>=40)  86.1%  ########################....
+orbital_base_6                       clean rows: machine 146.3  behind    45
+orbital_base_6   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_base_6      clean    (>=40)  89.4%  #########################...
+orbital_base_6                       clean rows: machine 149.5  behind  44.5
+orbital_base_6   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_base_6      clean    (>=40)  68.6%  ###################.........
+orbital_base_6                       clean rows: machine 112.6  behind  48.8
+orbital_comb_1   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_comb_1 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24264
+orbital_comb_1      clean    (>=40)  98.5%  ############################
+orbital_comb_1                       clean rows: machine 151.7  behind  45.6
+orbital_comb_1   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_comb_1      clean    (>=40)   100%  ############################
+orbital_comb_1   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_comb_1      clean    (>=40)  90.4%  #########################...
+orbital_comb_1                       clean rows: machine 157.8  behind  53.3
+orbital_comb_2   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_comb_2 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24264
+orbital_comb_2      clean    (>=40)  98.4%  ############################
+orbital_comb_2                       clean rows: machine 151.7  behind  45.6
+orbital_comb_2   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_comb_2      clean    (>=40)   100%  ############################
+orbital_comb_2   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_comb_2      clean    (>=40)  89.9%  #########################...
+orbital_comb_2                       clean rows: machine 158.1  behind  53.4
+orbital_comb_3   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_comb_3 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24262
+orbital_comb_3      clean    (>=40)  98.5%  ############################
+orbital_comb_3                       clean rows: machine 151.5  behind  45.7
+orbital_comb_3   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_comb_3      clean    (>=40)   100%  ############################
+orbital_comb_3   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_comb_3      clean    (>=40)  90.5%  #########################...
+orbital_comb_3                       clean rows: machine 156.9  behind  53.4
+orbital_comb_4   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_comb_4 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24262
+orbital_comb_4      clean    (>=40)  98.5%  ############################
+orbital_comb_4                       clean rows: machine 151.5  behind  45.7
+orbital_comb_4   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_comb_4      clean    (>=40)   100%  ############################
+orbital_comb_4   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_comb_4      clean    (>=40)  90.5%  #########################...
+orbital_comb_4                       clean rows: machine 157.4  behind  53.5
+orbital_comb_5   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_comb_5 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24264
+orbital_comb_5      clean    (>=40)  98.5%  ############################
+orbital_comb_5                       clean rows: machine 151.7  behind  45.6
+orbital_comb_5   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_comb_5      clean    (>=40)   100%  ############################
+orbital_comb_5   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_comb_5      clean    (>=40)  90.4%  #########################...
+orbital_comb_5                       clean rows: machine 157.8  behind  53.3
+orbital_comb_6   bundle: 586e670836d3   base: http://127.0.0.1:4400/custom_robot/
+orbital_comb_6 SILHOUETTE — orbital @ tier 3, 1600x900, robot pixels 24264
+orbital_comb_6      clean    (>=40)  98.4%  ############################
+orbital_comb_6                       clean rows: machine 151.7  behind  45.6
+orbital_comb_6   ROBOT 1  178x259px (28.8% of frame height) at 746,641
+orbital_comb_6      clean    (>=40)   100%  ############################
+orbital_comb_6   ROBOT 2  49x63px (7% of frame height) at 779,255
+orbital_comb_6      clean    (>=40)  89.9%  #########################...
+orbital_comb_6                       clean rows: machine   158  behind  53.4

@@ -1,0 +1,7 @@
+draw 1  R1 178x260px count 4.0 top4 90.9 ratio 1.994 step 37.79   R2 52x65px count 4.3 top4 90.1 ratio 1.028 step 57.14
+draw 2  R1 178x260px count 4.0 top4 91.0 ratio 1.995 step 37.76   R2 52x65px count 4.3 top4 90.1 ratio 1.027 step 57.10
+draw 3  R1 178x260px count 4.0 top4 90.9 ratio 1.994 step 37.85   R2 52x65px count 4.3 top4 90.0 ratio 1.027 step 57.13
+draw 4  R1 178x260px count 4.0 top4 90.9 ratio 1.993 step 37.85   R2 52x65px count 4.3 top4 90.1 ratio 1.028 step 57.10
+draw 5  R1 178x260px count 4.3 top4 90.8 ratio 1.973 step 38.30   R2 52x65px count 4.3 top4 90.1 ratio 1.025 step 57.18
+draw 6  R1 178x260px count 4.0 top4 90.9 ratio 1.994 step 37.84   R2 52x65px count 4.3 top4 90.1 ratio 1.027 step 57.11
+  bundle: 586e670836d3 / 93b94641

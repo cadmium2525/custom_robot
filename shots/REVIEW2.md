@@ -18111,3 +18111,115 @@ throw rather than on an explicit abort. That is sound today and it is one refact
    RULING 70's fault 59 is filed against the practice, and this round fixed one table.
 
 **Nothing ships. Every lift uniform in the tree is 0.0.**
+
+---
+
+## ROUND 50 — BUILDER: **DEBT 1 PAID — the tally was asserted twice and checked by nobody; checked, it is 25 / 1 / 4 of 30, fault 49 survives, and one of round 47's comparisons was of two different configurations**
+
+ROUND 48 §5 said *"twenty-nine cells reproduce and four do not"*. ROUND 49 §3 corrected it to
+*"twenty-seven of thirty-one"*. RULING 70 declined to adjudicate. **A number asserted twice and checked
+by nobody is exactly what this document exists to catch**, so it is now a script — `shots/_r50ledger.mjs`
+— that reads the draw lines in `shots/_r50data/` and the priors transcribed with their line numbers, and
+applies one criterion to every cell. Run `node shots/_r50ledger.mjs`.
+
+**The criterion, stated once and applied uniformly** (the prose it replaces wrote "yes", "yes, within
+0.005" and "yes (median)" in the same column):
+
+```
+  AGREE       one whole interval contains the other
+  CONSISTENT  the intervals overlap but neither contains the other
+  DISAGREE    the intervals are disjoint
+  A prior published as a bare point is a zero-width interval.
+```
+
+### 1. The result
+
+```
+  30 probative cross-session cells:   AGREE 25    CONSISTENT 1    DISAGREE 4
+
+  contour baseline        6 cells    6 AGREE
+  contour COMBINATION     6 cells    6 AGREE
+  mass COMBINATION        6 cells    5 AGREE, 1 CONSISTENT (C FAR ratio: prior [1.452,1.460]
+                                     against mine [1.455,1.461] -- overlap, neither contains)
+  mass HALF-LIFT          6 cells    6 AGREE     <-- newly measured, see §2
+  mass BASELINE           6 cells    2 AGREE, 4 DISAGREE
+```
+
+**All four disagreements are `mass.mjs` at baseline: near top-4, far count, far top-4, far ratio.**
+INSTRUMENT FAULT 49's claim — every lifted cell reproduces and only the unlifted mass baseline does not —
+**survives the audit it had never had**, and is now established on 30 cells with a stated criterion
+rather than on a tally nobody checked.
+
+**Two corrections to my own arithmetic, neither of which changes that conclusion:**
+
+- **The census's six cells are removed from the count entirely.** FAULT 57 established it is a
+  deterministic CPU model over bind-pose vertices — it *cannot* fail to reproduce, so counting it
+  inflated the numerator with six cells that were never a test of anything. My "31" included them.
+- **"27 of 31" was also wrong in the other direction**, because it counted a seventh lifted row that was
+  not a like-for-like comparison at all. Which is §2.
+
+### 2. **ROUND 47 §3's half-lift row compared TWO DIFFERENT CONFIGURATIONS, and measured properly the prior reproduces exactly**
+
+§3's seventh lifted row read *"half-lift near ratio 1.796 against my 1.801, yes, within 0.005"*. The
+prior at L15725-30 is the half-lift candidate, and reading what that candidate actually set:
+its grid FAR clause B cell is **100.0**, a figure only `uPaintLiftFar` has ever produced. So
+
+```
+  the prior's HALF 0.079   =   uPaintLiftFar 0.157  +  uFrameLift 0.079     (only the FRAME was halved)
+  what ROUND 47 compared   =   uPaintLiftFar 0       +  uFrameLift 0.079     (my interval sweep point)
+```
+
+**They are not the same setting**, and §3 published the difference as a reproduction within 0.005. It
+came out close only because `uPaintLiftFar` barely reaches the near machine — which this round measured
+at `+0.007` on that very cell — so the error hid behind the knob's own gate.
+
+Measured at the configuration the prior actually used, `shots/_massdrive.mjs --onbody --repeat 6`, grid,
+bundle `586e670836d3 / 93b94641`, chromium-1194:
+
+```
+  cell            prior (L15725-30)   ROUND 50, n=6          verdict
+  A near count    4.0                 4.0  [4.0, 4.0]        AGREE
+  A near top-4    87.8                87.8 [87.7, 87.8]      AGREE
+  C near ratio    1.796               1.796 [1.794, 1.796]   AGREE   <-- the prior EXACTLY
+  A FAR  count    3.3                 3.3  [3.0, 3.3]        AGREE
+  A FAR  top-4    95.3                95.5 [95.3, 95.7]      AGREE
+  C FAR  ratio    1.483               1.480 [1.477, 1.483]   AGREE
+```
+
+**The prior reproduces exactly on the cell §3 got wrong — 1.796 against 1.796 — where the mismatched
+comparison gave 1.801.** And the half-lift condition had **six** published cells; §3 compared one and
+left five on the table. All six are now compared and all six agree.
+
+> **THE LESSON IS NOT THAT THE NUMBER WAS OFF BY 0.005.** It is that a comparison across sessions is
+> only a comparison if the SETTING matches, and §3 never checked what the prior's setting was — it read
+> a column header, "HALF 0.079", and assumed it meant the knob the round happened to be sweeping.
+> **Every cell in the ledger now names the configuration it was taken at**, and the one row that could
+> not name it is the row that was wrong.
+
+### 3. INSTRUMENT FAULT 62 — **the ledger's first run read a file the meter was still writing, and turned three AGREEs into DISAGREEs**
+
+The first run of `_r50ledger.mjs` reported the half-lift's `A near top-4`, `A FAR top-4` and
+`C FAR ratio` as **DISAGREE**. They are not. The meter was still running: the file held **2 draws of 6**,
+the ranges were zero-width because two identical draws look like certainty, and the priors happened to
+fall on values that had not been drawn yet. Draw 2 already carried `95.3` and `1.483` — both of them
+prior values — and the fourth and fifth draws widened every range to contain its prior.
+
+**Nothing in the output said the set was partial.** That is HANDOVER §7's *"`tail -N` can cut off the
+line you are about to file a fault about"* in a new place, and it was one commit away from putting three
+false disagreements into this document against a session that cannot defend itself.
+
+**Fixed: the ledger asserts its own denominator and exits 2 on a short file**, demonstrated against a
+truncated copy before this was written. **Standing consequence: a parser that does not check its own `n`
+is an instrument that reports on whatever happened to be on disk, and every parser in `shots/` should
+carry the assertion.** The six already written this session do not.
+
+### 4. What is still owed
+
+1. **The pose test** — fault 49's suspect. The ledger sharpens why it matters: the four disagreements
+   are now a clean, audited set, all one meter in one condition, and the pose is the only hypothesis on
+   the table.
+2. **`shots/_r23-lightprobe.mjs` on chromium-1194** — a CLOSED card item rests on it.
+3. **Error propagation on every derived quantity** (RULING 70's fault 59); round 50 added it to none.
+4. **The `n` assertion in the other six parsers** (fault 62).
+
+**Nothing ships. Every lift uniform in the tree is 0.0.**
