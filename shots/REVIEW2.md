@@ -15991,3 +15991,55 @@ BREAK a passing clause A cell rather than merely fail to help one. Foundry's far
 only cell anywhere on this card that satisfies clause C outright (`0.872 < 1.00`), so it is the one
 machine the project cannot afford to spend.
 
+
+### 6. The clause B price of the attribution — **the near cells are the line art's and the far cells are the shell's, and neither knob buys the other's**
+
+The round owed this: if `uPaintLiftFar` is what fails the guards, what does clause B lose by dropping
+it? `tools/contour.mjs`, six draws per cell, bundle `586e670836d3`, stencil and box verified identical
+to the control in every draw, so every figure below is a VALUE effect and not a mask effect.
+
+```
+  cell            baseline        uFrameLift 0.157 ALONE     COMBINATION      vs 90
+  grid    near    86.0  x6        97.4  x6                   97.4             PASS
+  grid    FAR     84.4  x6        85.5  x6                  100.0             -4.5  frame-only
+  foundry near    74.5  (4/6)     87.7  (5/6) [87.7, 87.9]   87.7             -2.3
+  foundry FAR     54.5  x6        56.8  x6                   86.4             -33.2 frame-only
+
+  grid    stencil 24226 in 12 of 12 draws     box 157x284 / 55x69, every draw
+  foundry stencil  8220 in 12 of 12 draws     box  78x217 / 41x39, every draw
+  (the foundry minority pose, 8037 / 75x217, did NOT appear in 12 draws under either condition)
+```
+
+**The line art alone delivers the near cells in full and essentially none of the far cells.**
+Grid near reads **97.4, the combination's figure to the decimal** — the shell's far lift contributes
+nothing to it, exactly as its gate says it cannot. Grid far gets **+1.1 of the combination's +15.6**;
+foundry far gets **+2.3 of its +31.9**. And in the other direction, `uPaintLiftFar` left both near
+guard cells at baseline in §2. **The two knobs are separable on clause B as cleanly as they were on
+clauses A and C, and each one buys exactly the machine its gate reaches.**
+
+> **SO THE TRADE IS NOW PRICED AND IT IS NOT THE ONE RULING 67 WAS DECIDING.** That ruling read the
+> candidate as one lift with a clause B gain and a guard cost, and looked for a value of it that kept
+> the gain and dropped the cost — which is what the half-lift attempt was. **There is no such value,
+> because the gain and the cost are not on the same knob.** The choice available is:
+>
+> ```
+>   uFrameLift 0.157 alone   every clause A and C cell MET on grid; clause B 97.4 / 85.5 / 87.7 / 56.8
+>                            -> guard-clean, and THREE gating cells short (-4.5, -2.3, -33.2)
+>   COMBINATION              clause B 97.4 / 100.0 / 87.7 / 86.4, two cells short (-2.3, -3.6)
+>                            -> and a guard refused in every one of the three arenas, §5
+>   ```
+>
+> **Neither is acceptable and the reason is one sentence: the far cells need a lift the far guards
+> will not pay for.** Grid far needs +4.5 clause B points that only `uPaintLiftFar` has ever produced,
+> and `uPaintLiftFar` takes grid's far mass count from 4.80 to 3.30 on its own.
+
+**The lever this names, and it is not a new idea either.** `uFrameLiftFar` — the FAR half of the line
+art's knob — ships at 0.0 and is the one uniform in the table that has never been swept on a corrected
+mask. The only reading of it on file is ROUND 42's, at `0.35` alongside `uPaintLiftFar = 0.35`, on a
+capture whose stencil still had the flare in it; fault 47 later re-based that very cell by 13.5 points
+and struck the reasoning built on it. **It reaches the machine that needs the points, through the
+material that ROUND 45 showed owns the failing contour of every cell it has been pointed at, and its
+gate hands the far machine the 86-93% of the lift that `uFrameLift` cannot.** It is the next
+measurement, and this round does not prejudge it: the interval in §1 is the standing warning against
+predicting a response from anything but a sweep.
+
