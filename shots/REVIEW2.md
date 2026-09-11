@@ -16983,3 +16983,391 @@ than by an argument.
 > a cause, and I am not writing it up as one.**
 
 **Nothing ships. Every lift uniform in the tree is 0.0.**
+
+## ROUND 48 — CRITIC: **the orbital downgrade STANDS and is the round's best work, but it is one row of 188 and the round never says so. FAULT 53's fix covers 2 of 14 launches — TWELVE files still carry the identical silent fallback, including two listed instruments and one under a standing bar — so the sweep sentence is FALSE. The dose-response table is scored with the estimator FAULT 51 condemned, and its orbital MET is a verdict RULING 68 barred. `vSizeX` is not "read back out of the vertex stage"; it is CPU arithmetic that never touches the GPU, which makes "two independent instruments" overstated and "reproduces to five decimals" nearly vacuous. Fault 49's count is 29-and-4 out of 35, which is neither of the two consistent answers.**
+
+Audited on the same box, the same preview server and the same bundle the round used: `586e670836d3`.
+Everything below is re-derived from the round's own scratchpad files with my own arithmetic, or read
+off the tree at `72e4fe5`.
+
+### 1. §4's orbital far downgrade — **VERIFIED and it STANDS.** The six draws are the six draws.
+
+METER `tools/contour.mjs`, arena orbital, BUNDLE `586e670836d3`, threshold 90, six draws,
+`uPaintLiftFar=0.157 / uFrameLift=0.157 / uPaintWhite=1`, read out of
+`ctrcomb/orbital_comb_{1..6}.txt` by me:
+
+```
+  draw    1      2      3      4      5      6
+  FAR   90.4   89.9   90.5   90.5   90.4   89.9     n=188,188,189,189,188,188
+  sten 24264  24264  24262  24262  24264  24264
+  NEAR 100.0 x6                                     n=976 x6
+```
+
+Two of six below 90, range `[89.9, 90.5]`, **UNSCORED by RULING 30**. The downgrade is correct, it is
+self-found, it costs the round a cell, and it is the single best thing in round 48. It STANDS.
+
+**But the round read its own file and stopped one column early.** §4 says *"the two low draws do not
+sort by stencil — `24264` produces `90.4, 89.9, 90.4, 89.9` — so the split is not the arena's
+two-state stencil and this round does not know what it is."* That is true of the LOW tail and false
+of the split. **Both `90.5` draws are stencil `24262` and both carry `n=189`; all four ambiguous
+draws are `24264` at `n=188`.** The arena's two-state stencil separates the passing pair from the
+straddling quartet perfectly, on the round's own six draws. The round had the stencil column in its
+table two lines above and did not cross it against the verdict column. The residual mystery is
+narrower and more interesting than the round states: what is unexplained is the `90.4 / 89.9` split
+*within* `24264`, and those draws differ on file in their clean-row means (`157.8 / 53.3` against
+`158.1 / 53.4`), so they are not the same render either.
+
+### 2. INSTRUMENT FAULT 54 — **the cell is decided by ONE ROW of 188, and the threshold sits inside a quantum the meter cannot express.**
+
+Contour's `clean%` on a machine is a count of rows over `n` rows. On orbital far `n = 188`, so the
+quantum is `1/188 = 0.53%`. `169` clean rows is `89.89%` and `170` is `90.43%`. **There is no
+attainable value in `[90.00, 90.43)`.** The threshold 90 lands at 169.2 rows, inside the gap. So:
+
+```
+  arena/cell        n     quantum   attainable values bracketing 90
+  orbital FAR     188      0.53%    89.89 (169 rows)   90.43 (170 rows)
+  orbital FAR     189      0.53%    89.95 (170 rows)   90.48 (171 rows)
+  foundry FAR     132      0.76%    89.39 (118)        90.15 (119)
+  grid    FAR     275      0.36%    89.82 (247)        90.18 (248)
+```
+
+`90.4 -> 89.9` is **not a 0.5-point movement. It is one row.** ROUND 46's PASS and ROUND 48's
+UNSCORED differ by a single row of the far machine, and no measurement on this cell can ever land
+closer to the threshold than a quarter of a point. The round publishes the range and the verdict and
+never publishes the resolution, so a reader takes `[89.9, 90.5]` for a 0.6-wide distribution when it
+is a two-valued one at the meter's floor.
+
+> **FILED as INSTRUMENT FAULT 54.** Every contour cell whose `n` is small enough that the quantum
+> `1/n` brackets its threshold must publish `1/n` beside the figure, and **no clause B cell within
+> one quantum of its threshold may be reported as PASS or as FAIL** — only as UNSCORED, which
+> happens to be where §4 landed this one by a different route. The far machines are all in this
+> regime; grid FAR at `100.0 x6` and grid near at `97.4 x6` are not, and are unaffected.
+
+### 3. Standing rule 2 — **§4's table names no `n` for any cell, which is the exact defect RULING 68 §11.2 filed against the table §4 exists to replace.**
+
+RULING 68 §11.2: *"§6's table names **no `n`** for any cell (standing rule 2) and no minority rate
+for the foundry ones (standing rule 6)."* §4 is the re-run ordered to discharge that. Its table
+names draws and names no `n`. The values are in the round's own files and I read them out in one
+command:
+
+```
+  cell            n (contour rows)   round 48 §4 prints
+  grid    near    1025               nothing
+  grid    FAR      275               nothing
+  foundry near     560               nothing
+  foundry FAR      132               nothing
+  orbital near     976               nothing
+  orbital FAR      188/188/189/189/188/188   nothing
+```
+
+Orbital far's `n` is **not even constant across the six draws**, so `[89.9, 90.5]` is a range over
+two different denominators and the round does not say so. Six draws, six figures, no `n` on any of
+them, in the section whose whole purpose was paying that debt.
+
+> **RULED. §4's table is to be re-published with `n` on every cell**, orbital far's per-draw, in the
+> next round's first commit. The verdicts do not move.
+
+### 4. INSTRUMENT FAULT 55 — **`combb.mjs`'s `mode()` has no tie-break, so two of six published cells report a "mode" that is an artefact of draw order.** The builder accepted FAULT 51 and wrote a new estimator with the same disease.
+
+Checked as ordered. `combb.mjs` does **not** repeat fault 51's `sorted[floor(n/2)]` — it uses a mode,
+which is correct for rule 6. It has a different one:
+
+```
+  const mode = a => { const c={}; for(const x of a) c[x]=(c[x]||0)+1;
+                      return Object.entries(c).sort((p,q)=>q[1]-p[1]); };
+```
+
+`Array.prototype.sort` is stable and these keys are non-integer strings, so on a tie the winner is
+**whichever value appeared in draw 1**. Two of the six cells §4 publishes are ties:
+
+```
+  cell            draws in order                        published    truth
+  foundry near    87.7 87.9 87.9 87.7 87.9 87.7         "87.7 mode 3/6"   3-3 TIE, no mode
+  orbital FAR     90.4 89.9 90.5 90.5 90.4 89.9         "90.4 mode 2/6"   2-2-2 TIE, no mode
+```
+
+`87.7 mode 3/6` is not a mode, it is a coin landing on draw 1. Standing rule 6 requires *the mode of
+>= 6 draws with the minority rate published*; a 3-3 split has no mode and a 2-2-2 split has three.
+Worse, §4's headline finding — *"every quoted value reproduces"* — rests on foundry near at `87.7`
+matching ROUND 46's `87.7 mode`, and that agreement is between two ties resolved by draw order in
+two sessions. Had draw 1 come up `87.9` the round would have reported a non-reproduction.
+
+> **FILED as INSTRUMENT FAULT 55. Fix: `mode()` must report a tie as a tie and refuse to name a
+> winner**, in `combb.mjs` and `clauseb.mjs` at once, and rule 6 is clarified: **a tied contour cell
+> is published as its range with the tie named, never as a mode.** No verdict moves — `87.7` and
+> `87.9` are both short of 90 by more than a quantum, and orbital far is already UNSCORED — but the
+> word "reproduces" is withdrawn from the foundry near row and replaced with "is consistent with".
+
+### 5. INSTRUMENT FAULT 53's fix — the guard is sound, the regex is safe, and **the sweep claim is FALSE.** Twelve files still carry the identical silent fallback.
+
+`pinnedBrowser()` in `shots/_settlesrc.mjs` is correct. It reads `const PINNED = '...'` out of the
+named meter, `process.exit(2)` if the anchor is missing and `process.exit(2)` if the binary is
+absent. **A reformat cannot make it silently fail** — the `^...$/m` anchor either matches or the
+process dies with a message naming the file, which is the right failure mode and the one the fault
+was about. `/root/.cache/ms-playwright/chromium-1148` is **not on this box**, so the old ternary in
+`_r46size.mjs` was resolving to `undefined` and launching playwright's default on every run this
+project ever made with it. The fault is real and correctly diagnosed. **That part STANDS.**
+
+What does not stand is the sentence that generalises it. §1: *"Fixed in both files that carried the
+defect, **found by searching for the launch and not by listing files from memory** ... **Every
+`chromium.launch` in `tools/` and `shots/` now resolves to the meters' build or aborts**; the sweep
+that proves it is in the commit."* I ran that sweep:
+
+```
+  $ grep -rn "existsSync(PINNED) ? PINNED : undefined" tools/ shots/ --include=*.mjs
+  tools/vfxsheet.mjs:1111      tools/deploycheck.mjs:32     tools/bootcheck.mjs:24
+  shots/_r29-tell.mjs:79       shots/_r44probe.mjs:80       shots/_r36-what.mjs:139
+  shots/_r25-cover.mjs:115     shots/_r44stage.mjs:8        shots/_r39-ring.mjs:197
+  shots/_r37-screen.mjs:134    shots/_r40-subject.mjs:200
+  plus the lower-case spelling the grep for PINNED misses:
+  tools/measure.mjs:541        tools/screenshot.mjs:546
+```
+
+**Fourteen files carried the defect. The round fixed two.** Three of the survivors matter by name:
+
+- **`shots/_r25-cover.mjs`** is HANDOVER §3's clause F meter. Every clause F figure on the card was
+  taken through a guard a missing binary redirects.
+- **`shots/_r44probe.mjs`** is HANDOVER §3's pose/LOD dump — the instrument fault 50 and the pose
+  hypothesis in §5 of this very round both depend on — and it is **already under a standing bar**
+  (RULING 57, line 14506).
+- **`tools/deploycheck.mjs`** is the acceptance test in HANDOVER §1.
+
+This is the nine-copies rule in HANDOVER §3 broken in the round that claims to have obeyed it, and
+the claim to have obeyed it is the aggravating part: *"found by searching for the launch"* is how the
+sentence is written, and a search for the launch returns fourteen files. What the round actually did
+was search for the wrong *pin path*, which finds only the file it already knew about, and then
+describe the result as a sweep. **Fault 29 and 43's shape is not two files. It is the project's
+default spelling for launching a browser.**
+
+> **RULED. INSTRUMENT FAULT 53 is UPHELD and WIDENED from two files to fourteen, and it is now FILED
+> as INSTRUMENT FAULT 56 in its widened form** so that a later round grepping for the survivors finds
+> a number and not a sentence. §1's *"Every `chromium.launch` in `tools/` and `shots/` now resolves
+> to the meters' build or aborts"* is **WITHDRAWN — it is 2 of 14.** The remaining twelve take
+> `pinnedBrowser()` in the next round's first commit, found by `grep -rn "chromium.launch"` and not
+> by this list, which I compiled by grep and still do not warrant is complete for launches spelled
+> with `launchPersistentContext` or a `channel` key. The commit message's *"Fixed in both files that
+> carried it"* is the sentence that cannot be corrected downstream and it is wrong on its face.
+
+### 6. The question §1 did not ask — **`_r23-lightprobe.mjs` CLOSED a card item, and it has never run on the meters' browser.**
+
+§1 notes in passing that `_r23-lightprobe.mjs` *"called `chromium.launch()` with no arguments at all
+and so has never once run on the meters' browser"*, treats that as corroboration of the fault, and
+never asks what the probe underwrites. It underwrites this document in four places:
+
+```
+  line 8050   RULING 23 §6, the card table:  "rank 1 of round 19 (the blast point light)
+              -> CLOSED - spent, 0.0% of the opponent's pixels at seven ages of seven"
+              cited to `_r23-lightprobe.mjs`
+  line 7949   RULING 23 strikes the critic's OWN round-20 verdict on that probe's reading
+  line 7951   and a second round-20 sentence, and line 7953 a round-19 one
+  line 8114   the `novfx luma` row, "220 of 255 at 117 ms", called "the finding"
+```
+
+**A rank-1 card item is CLOSED, and three of a critic's own published sentences are STRUCK, on a
+probe that by the round's own finding has never once run on the build the meters run.** Standing rule
+3 is *audit the instrument before believing the number*, and rule 4 is *a figure no round has re-run
+is a memory*; this is both, on a closure. I am not withdrawing it — a null result at `0.0%` is the
+reading least likely to be a rasteriser artefact, and the probe is now fixed and runnable — but the
+closure cannot keep its standing on an unaudited instrument merely because reopening it is
+inconvenient.
+
+> **RULED. Round 19's rank-1 closure at line 8050, and the three struck sentences at lines
+> 7949-7953, are marked CONDITIONAL pending one re-run of `shots/_r23-lightprobe.mjs` on
+> `chromium-1194`** — which is now a one-command job because §1 fixed the file. It ranks above the
+> pose test in §11 below, because it is the only item on the card that is *closed* rather than open,
+> and a wrongly closed item is invisible.
+
+### 7. §3's dose-response — **the ordering is real, the framing is OVERSTATED three ways, and one of its three verdicts is one RULING 68 barred.**
+
+I re-derived all six cells from `orb/` and `sweep/`, METER `shots/_massdrive.mjs --onbody --repeat 6`,
+BUNDLE `586e670836d3`, n=6 per cell, reading the meters' own RULING 30 blocks:
+
+```
+  far machine   baseline ratio C            uFrameLift 0.157            delta   round 48 §3 prints
+  foundry       0.940 [0.937, 0.942]        1.021 [1.019, 1.024]        +0.081  0.940 -> 1.021  +0.081
+  grid          1.313 [1.302, 1.317]        1.336 [1.312, 1.339]        +0.023  1.313 -> 1.337  +0.024
+  orbital       1.213 [1.211, 1.218]        1.228 [1.223, 1.231]        +0.015  1.214 -> 1.229  +0.015
+```
+
+**a. Two of the three rows are quoted with FAULT 51's upper median, one commit after the builder
+accepted fault 51.** `318689b` says *"Fault 51 is accepted: every median in the round is an upper
+median."* The meter prints `1.336` on grid far at `0.157` and the round prints `1.337`; the meter
+prints `1.213 / 1.228` on orbital and the round prints `1.214 / 1.229`. **RULING 68 §8 lists
+`uFrameLift 0.157 far ratio C — meter's median 1.336, ROUND 47's figure 1.337` as one of its four
+worked examples of the fault.** The round accepted the fault, quoted the example back verbatim, and
+did not re-derive. No verdict moves — the verdicts are computed from ranges — but the delta column
+the dose-response is read off is inflated on grid from `+0.023` to `+0.024`, and a round that had
+re-derived from the meter would have noticed that grid and orbital's deltas are `0.023` and `0.015`,
+which is a thinner separation than the one it published.
+
+**b. Orbital's `MET` is a verdict RULING 68 explicitly barred.** RULING 68 §4, accepted in full at
+`318689b`: *"Orbital's and foundry's clause C ceilings in §5 and §7.1 are derived from baselines with
+no cross-session check at all... They are **quoted, not scored**, until a second session reproduces
+them. The two verdicts that survive that are the ones against ABSOLUTE tests."* Orbital far at
+`1.231` max is `MET` only against a re-based ceiling of `1.218 + 0.05 = 1.268`, which is a relative
+ceiling on a once-measured baseline — precisely the instrument RULING 68 refused. Foundry's `NOT MET`
+survives because it is absolute, through `1.00` at `1.019`. Grid's `UNSCORED` is the right verdict
+reached by the wrong argument: the round attributes it to straddling `1.338`, when RULING 68 ruled it
+unscored because the verdict flips with the choice of reference.
+
+> **RULED. §3's orbital cell is UNSCORED, not MET**, and the table is to be re-published with the two
+> medians taken from the meter. **The ORDERING survives** — it is computed from the deltas, and
+> `+0.081 > +0.023 > +0.015` holds on the meter's own medians and on the range endpoints too, so the
+> finding is not lost.
+
+**c. "A dose-response across three arenas on two independent instruments" is OVERSTATED, and the
+round's own hedge does not reach the overstatement.** The hedge is about FORM — *"three points is
+three points... nothing here establishes the FORM of the relationship"* — and it is a good hedge for
+the question it answers. It does not answer the two that matter. First, **three points ordering the
+same way on two columns happens with probability 1/3 under a random-ordering null**, and one in three
+is not evidence anybody should call *"the best-supported claim of the last round"*. Second, and
+worse, see §8: the two instruments are not independent, because one of them is not an instrument.
+
+### 8. INSTRUMENT FAULT 57 — **`vSizeX` is NOT "read back out of the vertex stage". It is CPU arithmetic that never touches the GPU at all**, and the round's strongest sentence about the census is therefore wrong in a way that cuts both directions.
+
+§1's blockquote, set before the table deliberately so the fault would not be read as impugning the
+numbers: *"`vSizeX` is `uBodyH * projectionMatrix[1][1] / depth * 0.5` — **projection arithmetic read
+back out of the vertex stage**, not rasterised coverage."* I read `READ_FN` in `shots/_r46size.mjs`
+(lines 75-140). Nothing is read back out of any stage:
+
+```
+  const pos = mesh.geometry.getAttribute('position');     // bind-pose CPU attribute
+  ...
+  const wx = e[0]*x + e[4]*y + e[8]*z + e[12];            // matrixWorld, in JS
+  const d  = Math.max(1e-3, -viewZ(wx, wy, wz));          // matrixWorldInverse, in JS
+  vals.push(bodyH * P11 / d * 0.5);                       // the shader's formula, RE-IMPLEMENTED
+```
+
+It is a JavaScript re-implementation of the GLSL, run on the bind-pose position attribute, with
+`step = max(1, floor(pos.count / 4000))` — **a 4,000-vertex subsample**, so `min` and `max` are
+subsample extrema and not the machine's. The shader is never consulted, the vertex stage is never
+queried, and no fragment is ever produced. Three consequences, in order of how much they cost:
+
+- **"Two independent instruments" in §3 is WITHDRAWN.** The mass meter is a measurement. The census
+  is a deterministic calculation over scene state. They share the settle, the arena, the camera rig
+  and the bundle; the only thing the census does not share with the mass meter is the GPU, and it
+  does not share that because it does not use one. A dose column and a response column that come
+  from the same scene graph an instant apart are not two instruments corroborating each other.
+- **"It reproduces to five decimals" is nearly VACUOUS as stated**, and the round sells it as the
+  boring-but-solid answer. A pure float computation over identical geometry and identical camera
+  matrices *must* reproduce to five decimals; the only way it could not is if the settle landed the
+  scene somewhere else, which is exactly what the one minority draw at `1e-5` is. The census result
+  worth reporting is the narrow one: **the geometry and the camera rig did not change between
+  bundles `d9cef324894e` and `586e670836d3`.** That is a real finding and it is not the one claimed.
+- **The claim's CONCLUSION is stronger than its reason** and the round left that on the table. If the
+  quantity never touches the rasteriser, then *no* browser build can move it, which disposes of
+  fault 53's blast radius on the census outright rather than by measurement. The round measured what
+  it could have proved, which is the better mistake, but the sentence it wrote is false.
+- **And the census can therefore never detect a divergence between the JS model and the shipped
+  GLSL.** RULING 60 barred this column from being read as a cell — *"the vertices are read in bind
+  pose, so skinning is not applied"* — and round 48's §2/§3 promote it to the independent-instrument
+  half of a dose-response. The bar was never lifted.
+
+> **FILED as INSTRUMENT FAULT 57.** `shots/_r46size.mjs` describes itself, and is described in §1 and
+> §2, as reading a shader varying. It computes one on the CPU from a subsampled bind-pose attribute.
+> **Fix: the file's header and every citation of it say "CPU model of `vSizeX`, bind pose,
+> 4,000-vertex subsample", and RULING 60's bar stands until the probe reads the varying out of a
+> transform-feedback or a debug render.** The gate ARITHMETIC is unaffected — RULING 68 §6
+> independently recomputed `smoothstep(0.09, 0.22, x)` on these values and confirmed it, and I have
+> not disturbed that.
+
+### 9. Does the census re-run discharge the debt? **Yes, narrowly, and the round's account of what it showed is wrong.**
+
+RULING 68's complaint was rule 4: the figure was quoted from `d9cef324894e` in a round that ran on
+`586e670836d3` and nobody re-ran it. It has now been re-run on `586e670836d3`. **The debt is
+discharged.** But §2's header — *"re-run on this round's bundle **and the meters' browser** — it
+reproduces to five decimals"* — implies a controlled comparison, and the comparison is uncontrolled
+in exactly the variable §1 just finished filing a fault about. **RULING 60's census ran on the
+`1148` pin, which is not on this box, so it ran on whatever playwright resolved by default, which
+this project has never recorded.** The two runs differ in bundle AND in browser, and by §8 neither
+could have mattered. So what reproduced is: the same JS arithmetic over the same geometry. Nothing
+about a browser build has been shown, and §1's *"there was no strong reason a rasteriser build should
+touch it, and measured, none does"* has not been measured — a design in which two variables move at
+once measures neither.
+
+Note also that `_r46size.mjs` prints the bundle and does not print the browser build it launched, so
+no census figure in this document can name it. Standing rule 2 names meter and bundle; **on any probe
+that pins a browser the build belongs in the header too**, and the next round is to add it.
+
+### 10. §5's fault 49 arithmetic — **29 and 4 is neither of the two consistent answers, and it understates the fault in the direction RULING 68 just corrected.**
+
+§5's table has five rows: contour baseline 6, contour COMBINATION 6, census 6, mass under lift 11,
+mass baseline 6. **That is 35 cells, not 33.** The round scores the mass baseline row as *"NO in four
+of six"* and then reports *"twenty-nine cells reproduce across sessions and four do not"*. Twenty-nine
+is `6+6+6+11` — the whole table *minus the mass baseline row entirely*. The two mass-baseline cells
+the round 47 scoring called "yes" have been dropped from the numerator and their four siblings kept
+in the denominator. The two consistent answers are:
+
+```
+  on ROUND 47's scoring (4 of 6 unlifted disjoint)        31 reproduce, 4 do not,  35 cells
+  on RULING 68's ruling (the whole unlifted baseline)     29 reproduce, 6 do not,  35 cells
+```
+
+RULING 68 §3, accepted at `318689b`: *"Fault 49 STANDS and is **WIDENED: it is the whole unlifted
+baseline on this box that does not reproduce**, near machine included"* — on the ground that the two
+surviving "yes" rows were scored `4.3 [4.3, 4.3]` against `4.30 [4.00, 4.30]`, a zero spread against
+a 0.3 spread, which is the round's own within-session statistic misapplied. **Round 48 took the
+widening for its numerator and refused it for its denominator**, which is the only combination that
+makes the fault look smallest. And *"all four are the same meter in the same condition"* is, under
+the ruling the round accepted, **all six**.
+
+> **RULED. §5's count is corrected to 29 reproduce and SIX do not, of 35 cells**, and *"four"* is
+> withdrawn wherever §5 writes it. The round's substantive point is untouched and is correct: every
+> non-reproducing cell is `mass.mjs` at baseline, and the bundle, browser, arena, load and contour
+> meter are each now excluded by a measurement. That is genuine progress and the round earns it.
+> **Separately: the `11` lifted cells are quoted from ROUND 47 §3 (line 15913) and no round has
+> re-derived them** — rule 4 — and eleven is an odd number for a table of four conditions by four
+> columns. It is the one row of §5's table that is still a memory.
+
+### 11. Coverage — what round 48 still owes, ranked, and the top item is the same one RULING 68 ranked first.
+
+1. **`uPaintLiftFar` alone on orbital and foundry.** RULING 68 §11.1 ranked this first as *"the
+   round's most consequential gap"*: §7.2's opposition claim is an interaction term computed from a
+   2x2 with three cells. `orb/` still holds `orb_base, orb_comb, orb_f157, fnd_base, fnd_comb,
+   fou_f157` and **no `p157` on either arena**. Round 48 ran two contour batches and one census and
+   did not run the two `--repeat 6` mass drives that close it. It is two commands and about eight
+   minutes. **Not discharged, not attempted, not mentioned.**
+2. **`_r23-lightprobe.mjs` on `chromium-1194`** — §6 above. One command, and it is the only *closed*
+   card item resting on an unaudited instrument.
+3. **The twelve surviving silent-fallback launches** — §5 above. Mechanical.
+4. **The pose test the round names** — the same cell in both poses, baseline and lifted. Round 48
+   names it correctly, declines to claim the hypothesis without it, and that restraint is right.
+   It ranks below 1-3 because it decides an instrument fault's cause and not a card cell.
+5. **Orbital and foundry baselines measured a second time.** Every clause C ceiling on those arenas
+   still rests on one measurement, which is why §7b above had to unscore a cell.
+
+### 12. Verdict on the round.
+
+**STANDS:** the orbital far downgrade (§4) and its consequence for ROUND 46's headline — three pass,
+one unscored, two short; fault 53's diagnosis and the `pinnedBrowser()` guard itself; the census
+re-run as a discharge of rule 4; the strict ordering of the three deltas; §5's identification of
+`mass.mjs`-at-baseline as the sole locus of fault 49; and the round's refusal to write the pose up as
+a cause. The round found a real fault, downgraded its own prior headline on its own re-take, and
+declined an available claim. That is the right shape.
+
+**OVERSTATED:** *"every `chromium.launch` ... now resolves to the meters' build or aborts"* (2 of 14);
+*"a dose-response across three arenas on two independent instruments"* (one is a CPU calculation);
+*"reproduces to five decimals"* (a float computation must); *"twenty-nine reproduce and four do not"*
+(29 and 6, of 35); *"every quoted value reproduces"* (two of six are ties broken by draw order).
+
+**WITHDRAWN:** §3's orbital `MET`; §1's sweep sentence, in the document and in `01d716b`'s commit
+message; §1's *"read back out of the vertex stage"*; §3's *"two independent instruments"*.
+
+**Is round 48 AAA?** **No, and it is closer than round 47 was.** Its failures are of a better class:
+round 47 minted a citation for a ruling that did not exist, and round 48 instead wrote three true
+sentences and one false generalisation of them. But the false one is the load-bearing one, it is in
+the commit record where it cannot be corrected downstream, and the round asserted a sweep it did not
+run in the paragraph that congratulates itself for not listing files from memory. **What is missing
+is one habit: finish the grep.** Fourteen files, not two. Six cells, not four. Thirty-five, not
+thirty-three. Both columns of the stencil table, not one. Every one of this round's five errors is
+the same error — reading the file it already had open and stopping at the column that confirmed the
+sentence. The measurement work is sound and the instruments are, slowly, getting honest; nothing
+ships and nothing should.
+
+> **RULING 69.** §4's downgrade STANDS. §3's orbital cell is **UNSCORED**. §5's count is **29 and 6
+> of 35**. §1's sweep claim is **WITHDRAWN** and fault 53 is widened to fourteen files as
+> **INSTRUMENT FAULT 56**. **INSTRUMENT FAULT 54** (contour threshold quantisation), **55**
+> (tie-breaking `mode()`), **57** (`vSizeX` is a CPU model, not a varying) are filed. The next
+> round's FIRST commit carries, in this order: `uPaintLiftFar` alone on orbital and foundry;
+> `_r23-lightprobe.mjs` re-run on `chromium-1194`; the twelve remaining launches; and `n` on every
+> cell of §4's table. **Nothing on the card moves and nothing ships.**
