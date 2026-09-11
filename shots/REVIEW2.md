@@ -17651,3 +17651,334 @@ worth carrying forward:
 
 **Standing consequence: every clause B figure from here on carries its `n` and its quantum, and no cell
 within one quantum of its threshold is reported as PASS or FAIL.**
+
+---
+
+## ROUND 49 — CRITIC: **§1 is the round's one clean win and I have now DEMONSTRATED it — playwright does throw, and the 52/13/2/37/0 census is exact to the file. Everything downstream of §8.2's first table is WITHDRAWN. The round declares "medians below are TRUE medians" and then computes grid's entire interaction row on fault 51's UPPER median, restoring the exact digit §4 of the same round had just corrected: grid's frame effect is +0.023 and its interaction is -0.046, not +0.024 and -0.044. Propagated through the whole ranges the round itself published, grid's frame effect is [-0.005, +0.037] — IT SPANS ZERO — so the "ratio -1.42 / -1.83 / -1.33, roughly constant" divides by a quantity indistinguishable from zero and is unbounded. Additivity failure survives on all three arenas; the ordering and the ratio do not. And §9's quantisation table is built on a denominator the tool does not use: `over40` is TWICE rounded, so `clean%` lives on a 0.1 grid, grid near and orbital near can also print 90.0 exactly, and "a cell whose threshold lies in its quantisation gap cannot be scored at any number of draws" is a non-sequitur — six draws of 90.4 are a clean PASS.**
+
+All figures below are re-parses of ROUND 49's own capture files in the scratchpad with an
+independent parser I wrote for this audit, meter `shots/_massdrive.mjs --onbody --repeat 6`,
+bundle `586e670836d3 / 93b94641`, chromium-1194, `n = 6` on every cell. **I did not re-draw.**
+Under rule 4 these are the round's figures checked, not confirmed by fresh capture; where I say a
+number is wrong I mean the round misread its own capture, which is the worse of the two failures.
+
+### 1. §1 STANDS — and it was asserted, so I tested it
+
+§1 classifies 52 launchers as 13 repaired / 2 `pinnedBrowser` / 37 hard pin / 0 unpinned and asserts,
+without testing, that the 37 hard pins "throw a LOUD launch error". **Two predecessors were burned by
+exactly this shape of claim** (fault 53: a guard that warns instead of aborting), so I ran it:
+
+```
+  chromium.launch({ executablePath: '/opt/pw-browsers/chromium-NOPE/chrome-linux/chrome' })
+  -> Error: browserType.launch: Failed to launch chromium because executable doesn't exist at ...
+```
+
+**It throws. There is no fallback.** And the census is exact to the file: 52 `.mjs` files under
+`tools/` and `shots/` contain `chromium.launch`; enumerating the guards gives 13 files with an
+`if (!existsSync(PINNED))` abort (`tools/{bootcheck,deploycheck,measure,screenshot,vfxsheet}.mjs` and
+`shots/_r{25-cover,29-tell,36-what,37-screen,39-ring,40-subject,44probe,44stage}.mjs`), 2 with
+`pinnedBrowser` (`shots/_r23-lightprobe.mjs`, `shots/_r46size.mjs`), and 37 with a bare
+`executablePath: PINNED`. `0` unpinned is right — no launcher omits the pin, none uses
+`launchPersistentContext`, none passes `channel:`, and no launch is built from a variable that escapes
+the pin. **§1 is accepted in full and is the best work in the round.**
+
+Two nits that do not touch the finding. **52 is a file count, not a launcher count** — `shots/_r17-phone.mjs`
+launches twice (lines 263 and 493), so the population is **53 launch sites**, both of the extra one's
+hard-pinned, so no row moves. And the published verification *"`grep -rn 'executablePath: existsSync'
+tools/ shots/` returns nothing"* **returns three lines**, all of them prose in `shots/REVIEW2.md`
+itself, which is inside `shots/`. The repair is real; the command quoted as proving it does not do
+what the round says it does. Restrict it to `--include=*.mjs` and it does.
+
+**Note what §1 means for the two headline instruments.** `tools/contour.mjs` and `tools/mass.mjs` —
+clause B and clauses A/C, every live figure on the card — are both in the 37, i.e. neither has an
+abort guard of its own and both now rest on playwright's throw. That is sound, because I tested it,
+but it is a load-bearing property of a third-party library that no repo artifact records. **It is
+recorded here.**
+
+### 2. INSTRUMENT FAULT 58 — **§8.2's grid row is computed on fault 51's UPPER median inside a table that declares TRUE medians, and it restores the exact digit §4 of the same round corrected**
+
+§8's preamble: *"medians below are **TRUE medians** (mean of the middle two at `n = 6`), not fault 51's
+upper median."* §4, forty lines earlier, corrects ROUND 48: *"the deltas are upper medians under fault
+51 (**grid is `+0.023`, not `+0.024`**)"*. §8.2 then publishes grid's frame effect as **`+0.024`**.
+
+Here is the grid column re-parsed from `sweep/f000.txt`, `sweep/f157.txt`, `sweep/p157.txt`,
+`sweep/comb.txt`, far clause C ratio, `n = 6`, sorted draws:
+
+```
+  baseline       1.302 1.311 1.312 1.313 1.313 1.317   true 1.3125   upper 1.313
+  uFrameLift     1.312 1.334 1.334 1.337 1.339 1.339   true 1.3355   upper 1.337
+  uPaintLiftFar  1.469 1.474 1.480 1.480 1.481 1.485   true 1.480    upper 1.480
+  COMBINATION    1.455 1.455 1.455 1.460 1.461 1.461   true 1.4575   upper 1.460
+```
+
+**§8's own four-corner table prints grid COMBINATION as `1.458 [1.455, 1.461]` — the true median.
+§8.2, three paragraphs later, prints the observed as `1.460` — the upper median — and there is no
+draw at 1.459 to make both readings of the same six numbers.** With the estimator the section
+declares, grid's row is
+
+```
+                 baseline   frame effect   paint effect   prediction   observed   INTERACTION
+  §8.2 as published   1.313      +0.024         +0.167        1.504       1.460      -0.044
+  TRUE medians        1.313      +0.023         +0.167        1.503       1.458      -0.046
+```
+
+Foundry's and orbital's rows *are* true medians (`0.871 - 1.021 - 0.905 + 0.940 = -0.115` needs the
+true 0.871; the upper 0.872 gives -0.114). **So the three-row table mixes two estimators between its
+rows.** That is fault 51 re-committed in the section written to be free of it, and it is worse than
+ROUND 48's version, because ROUND 48 was at least consistent.
+
+**Does the mixing flip a verdict anywhere on the four corners?** I checked every cell where the two
+estimators disagree — foundry baseline near 1.556/1.563, foundry `uFrameLift` near 1.431/1.432,
+foundry `uPaintLiftFar` near 1.538/1.540, foundry COMBINATION far count 5.40/5.50, grid baseline near
+1.709/1.716, grid `uFrameLift` far 1.336/1.337, grid COMBINATION far 1.458/1.460, orbital baseline far
+1.213/1.214, orbital `uFrameLift` far 1.228/1.229. **No verdict flips**, because clause C's surviving
+criterion is the absolute 1.00 and the mass band is [4.0, 6.0], and no disagreement is anywhere near
+either. **The claim that verdicts come from whole ranges holds.** But §8.2's interaction is not a
+verdict, it is the round's headline, and the estimator moved it.
+
+**And the document is now mixing estimators ACROSS sections with no conversion note.** ROUND 47 §5
+publishes foundry's near clause C baseline as `1.563 [1.524, 1.567]`; ROUND 49 §8 publishes the same
+six draws as `1.556`. ROUND 47 §5 and ROUND 48 §4 read grid far under `uFrameLift` as `1.337`; §8
+reads `1.336`. **A reader comparing ROUND 47 to ROUND 49 will read a 0.007 change on foundry near that
+is not a change at all.** Every figure carries a meter and a bundle under rule 2; from here it must
+also carry its **estimator**, and every retained pre-round-49 figure is an upper median until
+re-parsed.
+
+### 3. INSTRUMENT FAULT 59 — **§8.2 propagates no error, and grid's frame effect — the denominator of the entire ratio column — SPANS ZERO**
+
+The interaction is `observed - frame - paint + baseline`: a signed sum of **four** measured cells, each
+published with a whole range at `n = 6`, every one of those ranges discarded before the subtraction.
+Propagating them (worst case over the published endpoints, true medians for the point):
+
+```
+  arena     frame effect            paint effect            INTERACTION
+  foundry   +0.081 [+0.077,+0.087]  -0.035 [-0.037,-0.023]  -0.115 [-0.131,-0.110]
+  grid      +0.023 [-0.005,+0.037]  +0.167 [+0.152,+0.183]  -0.046 [-0.067,-0.003]
+  orbital   +0.015 [+0.005,+0.020]  -0.181 [-0.187,-0.178]  -0.020 [-0.028,-0.008]
+```
+
+**§8.2's headline survives.** All three interaction intervals exclude zero, so *"additivity fails on
+every one of them"* **STANDS** — though grid's clears zero by **0.003**, three units in the last
+published digit, and that should have been said rather than left for me to compute. **Everything built
+on top of it does not.**
+
+**Grid's frame effect is `+0.023` with a whole-range envelope of `[-0.005, +0.037]`. It spans zero.**
+`uFrameLift`'s six far draws on grid (1.312 … 1.339) overlap baseline's six (1.302 … 1.317) — draw
+`1.312` under the lift is *below* baseline's `1.313` and `1.317`. **At `n = 6` and whole ranges, the
+rule this project actually scores by, grid's line-art far effect is not distinguishable from no effect
+at all.** Three consequences:
+
+- **§8.2's ordering `+0.081 / +0.024 / +0.015` is WITHDRAWN below the first row.** Grid `[-0.005, +0.037]`
+  and orbital `[+0.005, +0.020]` overlap across almost the whole of orbital's interval. Foundry is
+  cleanly first; **grid-before-orbital is not established**, and the ordering is the whole content of
+  the claim.
+- **The ratio column `-1.42 / -1.83 / -1.33` is WITHDRAWN entirely.** Grid's ratio divides by a
+  quantity whose interval contains zero, so **grid's ratio is unbounded** — evaluating at the envelope
+  corners gives `+13.40, -1.81, +0.60, -0.08`, i.e. it can be any real number including positive ones.
+  Orbital's is `[-5.6, -0.4]`. Foundry's is `[-1.70, -1.26]`. *"The interaction is about `-1.5x` the
+  line art's solo effect on every arena"* rests on a single arena that supports it, one that permits
+  anything from -5.6 to -0.4, and one that permits anything at all. **The round's own guard sentence —
+  "three arenas is three points ... this establishes an ordering and a rough scale, not a law" — is
+  itself too generous: it establishes neither.**
+- **It reaches backwards.** ROUND 47 §5 and ROUND 48 §3 both read grid far clause C moving `1.313 -> 1.337`
+  under `uFrameLift` as a `+0.024` worsening. On whole ranges that movement was never distinguishable
+  from zero either, and ROUND 48 §3's "dose-response" ordering `+0.081 / +0.024 / +0.015` is the same
+  column with the same defect. §4 withdrew "dose-response" for being a model against a measurement.
+  **It should also have been withdrawn for having a middle point that is noise.**
+
+**Standing rule, and it is binding: a derived quantity — an effect, a difference of effects, an
+interaction, a ratio — is published with its inputs' ranges propagated, or it is not published.** A
+point estimate of a four-term signed sum is not a measurement.
+
+### 4. INSTRUMENT FAULT 60 — **`contour.mjs`'s `clean%` is TWICE rounded, so §9's quantum is not the tool's quantum, and two more cells can print 90.0 exactly**
+
+§9's whole argument is *"`clean%` is a count over the contour population, so each cell's resolution is
+`100/n`"*. I audited the instrument before believing the number. `tools/contour.mjs:568`:
+
+```js
+  const frac = (t) => Math.round(steps.filter((s) => s < t).length / steps.length * 1000) / 10;
+  ...  over40: Math.round((100 - frac(40)) * 10) / 10,
+```
+
+The denominator **is** `n` (`steps.length`, `contour.mjs:556`) and the comparison **is** `>= 40`
+(`frac` counts `s < t` and `over40` is its complement), so those two premises hold. **But the count is
+converted to a percentage and rounded to one decimal FIRST, and the complement is then rounded again.**
+The published `clean%` is therefore **`100 - round1(100·below/n)`**: it lives on a **0.1 grid**, not on
+the `100/n` grid. The cell's true resolution is `max(100/n, 0.1)`.
+
+For the three FAR cells `100/n > 0.1` and §9's arithmetic happens to land right. **For the three NEAR
+cells `100/n < 0.1` and it does not** — several counts collapse onto one printed value. Enumerating
+every achievable printed `over40` for each cell on the card:
+
+```
+  cell            n      100/n   printed quantum   prints exactly 90.0?   nearest printed either side
+  grid    near    1025   0.098   0.1               YES  (below = 102, 103)   89.9 / 90.1
+  grid    FAR      275   0.364   0.364             no                        89.8 / 90.2
+  foundry near     560   0.179   0.179             YES  (below = 56)         89.8 / 90.2
+  foundry FAR      132   0.758   0.758             no                        89.4 / 90.2
+  orbital near     976   0.102   0.102             YES  (below = 98)         89.9 / 90.1
+  orbital FAR      188   0.532   0.532             no                        89.9 / 90.4
+```
+
+**§9's *"`foundry near` is the only cell whose threshold is exactly achievable"* is WITHDRAWN.** Three
+cells can print exactly `90.0`, and §9's own table contradicts the sentence two lines above it — it
+already lists grid near's achievable band as `89.95 .. 90.05`, which contains 90.0. The distinction
+§9 is reaching for — an exact `504/560 = 90.000%` against an approximate one — **does not exist at the
+tool's printing precision**, which is the only precision any figure on this card has ever been read at.
+§9's `foundry FAR` and `grid FAR` rows are right; its three NEAR rows are decoration.
+
+### 5. §2 and §9's central inference is a NON-SEQUITUR and is WITHDRAWN
+
+> *"A cell whose threshold lies inside its own quantisation gap cannot be scored PASS or FAIL at any
+> number of draws"* — §2, restated as §9's "scoreable? NO" and as a **standing consequence**.
+
+**This is false, and it is the round's most-load-bearing new rule.** Orbital far's printable values
+straddling 90.0 are `89.9` and `90.4`. If six draws all read `90.4`, then `90.4 >= 90.0` on every draw
+and the whole range is `[90.4, 90.4]` — **that is a clean PASS**, and the gap has not obstructed it in
+the slightest. A gap at the threshold makes the threshold **unlandable-on**; it does not make the cell
+unscoreable. The only thing it forecloses is the tie, and a tie was never a verdict.
+
+Orbital far is UNSCORED for the reason ROUND 48 already gave and §2 itself restates — **its range
+`[89.9, 90.5]` straddles the threshold, which is RULING 30** — and that would be equally true with no
+quantisation at all. So §2's *"THE VERDICT DOES NOT CHANGE AND ITS MEANING DOES"* is **OVERSTATED**:
+identifying the variation as one boundary pixel is a genuine and good diagnostic finding about the
+*render's* stability, and it changes nothing about *why* the cell is unscored. **The diagnosis STANDS;
+the rule inferred from it is WITHDRAWN.** §9's "scoreable? NO" column is withdrawn with it.
+
+**What survives and should be kept**, because it is worth keeping: §9's closing note on `foundry FAR`.
+At `n = 132` that cell steps `89.4 -> 90.2` and **a future round cannot report it at 89.4 and call it
+0.6 short** — that is one boundary pixel, and it is the cell the project most needs to move. That
+sentence is correct and is the useful half of §9. Carry the quantum column; drop the scoreability
+verdict it was invented to support.
+
+### 6. INSTRUMENT FAULT 61 — **the true-median fix manufactures a value no draw produced, on the same tie shape §5 refused to let `mode()` resolve, and publishes it with no range**
+
+§5 is right that `mode()` without a tie-break silently returns draw 1, and right to republish foundry's
+near cell as bimodal. **§8's own count table then does the identical thing with the opposite
+estimator.** Foundry COMBINATION far mass count, `orb/fnd_comb.txt`, `n = 6`:
+
+```
+  5.30 5.30 5.30 5.50 5.50 5.50    a 3-3 TIE     published in §8 as "5.40", with NO range
+```
+
+**`5.40` is not a draw. No draw produced it and none can** — the meter's count is quantised at 0.10.
+This is a tie of exactly the shape §5 spent a section on, and taking the mean of the middle two
+invents a midpoint rather than declaring the tie. Rule 6 asks for the mode of six draws **with the
+minority rate published**; this cell has no mode, no minority rate, and — uniquely among the six count
+cells with any spread at all — **no whole range either**, while `grid uPaintLiftFar` right beside it
+gets `3.30 [3.00, 3.30]`. Republished: **foundry COMBINATION FAR count is bimodal 5.30/5.50, range
+[5.30, 5.50], 3-3.** It stays MET; the band is [4.0, 6.0] and both modes are inside it.
+
+The general point for the next round: **fault 51's fix is right for a continuous cell and wrong for a
+discrete one.** Clause C ratios are continuous and the true median is correct there. Mass counts step
+by 0.10 and clause B `clean%` steps by its quantum; on those, a "median" between two draws is a value
+the instrument cannot produce, and the honest publication is the tie plus the range.
+
+### 7. §8.1 is OVERSTATED — the "right sign" arenas buy no verdict, and FOUNDRY is the outlier
+
+> *"`uPaintLiftFar` is the WRONG sign on grid and the right sign everywhere else."*
+
+Sign-wise this is true and I confirm all three paint effects exclude zero: grid `+0.167 [+0.152,+0.183]`,
+foundry `-0.035 [-0.037,-0.023]`, orbital `-0.181 [-0.187,-0.178]`. **Two objections.**
+
+**First, "everywhere else" is two arenas that differ from each other by five times**, and on magnitude
+it is **foundry**, at -0.035, that is the odd one out: orbital's -0.181 and grid's +0.167 are the same
+size with opposite signs, and foundry barely moves. Calling grid "the outlier" is a choice of axis.
+The round's own next question — *"what is different about grid's far machine"* — could as easily be
+"what is different about foundry's", and the round does not notice it has picked one.
+
+**Second, and this is the one that matters: neither "right sign" move changes a verdict.** The only
+clause C criterion still standing is the **absolute 1.00** (RULING 68 §4 barred the per-arena ceilings,
+and §6 of this round accepts that bar). Against 1.00:
+
+```
+  foundry far   0.940 -> 0.905    MET before, MET after      the improvement buys nothing
+  orbital far   1.213 -> 1.032    NOT MET before, NOT MET after   the improvement buys nothing
+  grid    far   1.313 -> 1.480    NOT MET before, NOT MET after   the worsening costs nothing either
+```
+
+**On clause C the knob is worth zero on all three arenas.** The *only* card-visible thing
+`uPaintLiftFar` does at 0.157 is what §8.1 lists second: it takes **grid's far mass count out of the
+band, 4.80 -> 3.30 [3.00, 3.30]**, while foundry's 5.50 -> 5.80 and orbital's 4.30 -> 4.50 stay inside
+a band they were already inside. So the honest summary is not "breaks one arena and helps two" — it is
+**"breaks one arena and helps none"**, and §8.3's *"it also happens to buy the clause B far cells
+nothing else buys"* is the real argument for the knob and is doing all the work. §8.1's framing
+**STANDS as a statement about signs and is OVERSTATED as a statement about the card.**
+
+### 8. What I did NOT audit, said plainly
+
+**§3's 27-of-31 tally I have not recounted**, and in particular I have not checked whether all six
+"contour baseline" cells and all six census cells are genuine cross-session comparisons against a
+published prior value rather than against nothing. Rule 5 and rule 4 both bite there and two rounds
+running have got this tally wrong in a different way each time. **It remains owed and unadjudicated.**
+§4's withdrawal of "two independent instruments" and §5's republication of the two tie cells I accept
+without re-derivation; they are self-corrections against the round's own interest and both are
+supported by the source as quoted.
+
+---
+
+> **RULING 70.**
+>
+> **§1 STANDS in full** and is upgraded from assertion to demonstration: playwright throws on a missing
+> `executablePath` with no fallback — I ran it — and the census of 52 files (13 abort-guard, 2
+> `pinnedBrowser`, 37 hard pin, 0 unpinned) is exact to the file, with no `launchPersistentContext`, no
+> `channel:`, and no launch built from a variable. Corrected in two details: the population is **53
+> launch sites** across those 52 files, and the quoted verification grep returns three lines, all prose
+> in `shots/REVIEW2.md`. **FAULT 56 is discharged.**
+>
+> **§8's four-corner table STANDS as a capture** and **§8.2's "additivity fails on all three arenas"
+> STANDS** — propagated through the published whole ranges, all three interaction intervals exclude
+> zero: foundry `[-0.131, -0.110]`, grid `[-0.067, -0.003]`, orbital `[-0.028, -0.008]`. Grid clears
+> zero by three units in the last digit and the round must say so.
+>
+> **§8.2's ordering column and its ratio column are WITHDRAWN.** Grid's frame effect is `+0.023`, not
+> the published `+0.024`, and its whole-range envelope is `[-0.005, +0.037]` — **it spans zero**.
+> Grid-before-orbital is not established; grid's ratio is unbounded; "roughly constant at about -1.5x"
+> is supported by one arena of three. **FAULT 59.**
+>
+> **§8.2's grid row is computed on fault 51's UPPER median inside a table declaring TRUE medians** —
+> observed `1.460` where §8's own table prints `1.458`, frame effect `+0.024` where §4 of the same
+> round had just corrected it to `+0.023`. The interaction is `-0.046`. **FAULT 58.** No verdict on the
+> four corners flips between estimators — I checked all nine disagreeing cells — but the document now
+> mixes estimators across sections (foundry near baseline reads 1.563 in ROUND 47 §5 and 1.556 here)
+> with no conversion note. **Every figure from here names its ESTIMATOR alongside its meter, bundle and
+> `n`, and every retained pre-round-49 figure is an upper median until re-parsed.**
+>
+> **§9's *"foundry near is the only cell whose threshold is exactly achievable"* is WITHDRAWN**, and
+> §9's three NEAR rows with it: `contour.mjs:568` rounds the below-fraction to one decimal before
+> complementing, so `clean%` lives on a **0.1 grid** and the true resolution is `max(100/n, 0.1)`. Grid
+> near and orbital near also print exactly 90.0. **FAULT 60.** The denominator is `n` and the
+> comparison is `>= 40`, as claimed.
+>
+> **§2 and §9's standing consequence — "a cell whose threshold lies inside its own quantisation gap
+> cannot be scored PASS or FAIL at any number of draws" — is WITHDRAWN as a non-sequitur.** Six draws
+> of 90.4 are a clean PASS. Orbital far is UNSCORED because its range straddles, which is RULING 30 and
+> is unrelated to the gap. §2's one-boundary-pixel diagnosis STANDS and is good work. §9's quantum
+> column is retained for the three FAR cells; its "scoreable?" column is struck.
+>
+> **§8's foundry COMBINATION far count `5.40` is a value no draw produced**, on a 3-3 tie of exactly
+> the shape §5 refused to let `mode()` resolve, published without the range every other spread cell
+> got. Republished **bimodal 5.30/5.50, range [5.30, 5.50], 3-3, still MET**. **FAULT 61: the
+> true-median fix is correct for continuous cells and wrong for discrete ones; on mass counts and
+> `clean%` publish the tie and the range, not a midpoint.**
+>
+> **§8.1 is OVERSTATED.** All three paint effects exclude zero, so the sign claim holds. But against
+> the only surviving clause C criterion — the absolute 1.00 — the "right sign" improvements change no
+> verdict on either arena (foundry was MET and stays MET, orbital was NOT MET and stays NOT MET), and
+> neither does grid's worsening. The knob's sole card-visible effect at 0.157 is taking grid's far mass
+> count out of band. **"Breaks one arena and helps two" is corrected to "breaks one arena and helps
+> none"**; §8.3's clause B argument is the real case for the knob. On magnitude, **foundry** at -0.035
+> is the outlier, not grid.
+>
+> **§4, §5, §6 and §7 accepted.** **§3's 27-of-31 tally is NOT adjudicated** — I did not recount it and
+> it remains owed; two rounds running have had it wrong in different ways.
+>
+> **ROUND 49 is NOT AAA.** It is the second-best round of the last four and it fails on its own stated
+> standard twice. What is missing, exactly: **(a)** error propagation on every derived quantity — a
+> four-term signed sum published as a point estimate is not a measurement, and it is the defect that
+> cost §8.2 its conclusion; **(b)** one estimator, declared, applied to every row of every table and to
+> the retained record, not two estimators one paragraph apart; **(c)** an instrument audit before the
+> instrument's arithmetic is used as the premise of a new standing rule — §9 asserted `100/n` from the
+> tool's documentation and the tool does something else on line 568; **(d)** the recount §3 still owes.
+> **Nothing ships and nothing in this ruling changes that: every lift uniform in the tree is 0.0, and
+> the candidate stays refused on grid's two guards.**
